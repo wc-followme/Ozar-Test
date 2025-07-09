@@ -100,7 +100,7 @@ export const ProfileImageUpload: React.FC<ProfileImageUploadProps> = ({
 
   return (
     <div
-      className={`lg:w-[${width}px] flex-shrink-0 bg-[var(--card-background)] rounded-[10px] border border-[var(--border-dark)] p-6 ${className}`}
+      className={`lg:w-[${width}px] flex-shrink-0 bg-[var(--card-background)] rounded-[10px] border border-[var(--border-dark)] p-4 sm:p-6 ${className}`}
     >
       <h2 className='text-lg font-bold mb-4 text-[var(--text-dark)]'>
         {title}

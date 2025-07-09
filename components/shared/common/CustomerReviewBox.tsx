@@ -60,23 +60,26 @@ export const CustomerReviewBox = ({
       {/* Review Content */}
       <div className='flex-1 min-w-0'>
         {/* Review Title and Stars */}
-        <div className='flex md:items-center md:flex-row flex-col md:gap-4 gap-2 mb-2'>
-          <h4 className='font-bold text-[var(--text-dark)] text-lg'>
-            "{reviewTitle}"
-          </h4>
-          <div className='flex items-center gap-1'>
-            {[...Array(5)].map((_, starIndex) => (
-              <Star1
-                key={starIndex}
-                size={16}
-                className={
-                  starIndex < rating
-                    ? 'text-yellow-500 fill-yellow-500'
-                    : 'text-gray-300 fill-gray-300'
-                }
-              />
-            ))}
+        <div className='flex md:items-center md:gap-4 gap-2 mb-2'>
+          <div className='flex md:items-center md:flex-row flex-col md:gap-4 gap-2'>
+            <h4 className='font-bold text-[var(--text-dark)] text-lg'>
+              "{reviewTitle}"
+            </h4>
+            <div className='flex items-center gap-1'>
+              {[...Array(5)].map((_, starIndex) => (
+                <Star1
+                  key={starIndex}
+                  size={16}
+                  className={
+                    starIndex < rating
+                      ? 'text-yellow-500 fill-yellow-500'
+                      : 'text-gray-300 fill-gray-300'
+                  }
+                />
+              ))}
+            </div>
           </div>
+
           {/* Three Dots Menu - Only show for current user */}
           {isCurrentUser && (
             <Dropdown

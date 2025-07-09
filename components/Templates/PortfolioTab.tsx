@@ -121,7 +121,7 @@ export const PortfolioTab = () => {
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 w-full'>
       <div className='flex justify-end'>
         <Button onClick={handleAddProject} className='btn-primary'>
           Add Project

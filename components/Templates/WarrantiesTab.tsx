@@ -16,7 +16,7 @@ import { SearchNormal1 } from 'iconsax-react';
 import { useMemo, useState } from 'react';
 
 export const WarrantiesTab = () => {
-  const [selectedTab, setSelectedTab] = useState('all');
+  const [selectedTab, setSelectedTab] = useState('workmanship');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);

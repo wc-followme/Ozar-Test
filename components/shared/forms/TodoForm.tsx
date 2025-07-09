@@ -529,7 +529,10 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                       ? []
                       : jobs.map(job => ({
                           value: job.uuid,
-                          label: job.project_name,
+                          label:
+                            job.project_name ||
+                            job.project_id ||
+                            'Unnamed Project',
                         }))
                   }
                   placeholder={

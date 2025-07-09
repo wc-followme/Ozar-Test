@@ -124,7 +124,7 @@ export const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({
         />
 
         {/* Right Column - Company Information */}
-        <div className='flex-1 bg-[var(--card-background)] rounded-[10px] w-full border border-[var(--border-dark)] p-6'>
+        <div className='flex-1 bg-[var(--card-background)] rounded-[10px] w-full border border-[var(--border-dark)] p-4 sm:p-6'>
           <h2 className='text-lg font-bold mb-6 text-[var(--text-dark)]'>
             Company Information
           </h2>

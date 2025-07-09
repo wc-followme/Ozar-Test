@@ -136,7 +136,7 @@ const CompanyProfile = () => {
                         <span className='text-gray-500 text-sm'>5 Reviews</span>
                       </div>
                     </div>
-                    <div className='flex gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
+                    <div className='flex flex-wrap gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
                       <Button
                         variant='secondary'
                         className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'

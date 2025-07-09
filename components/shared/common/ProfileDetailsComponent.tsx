@@ -19,35 +19,18 @@ export const ProfileDetailsComponent = () => {
         <div className='flex-1 max-w-full'>
           <h3 className='text-sm text-[var(--text-secondary)] mb-2'>About</h3>
           <div className='text-[var(--text-dark)] leading-snug font-medium space-y-3'>
-            <div className='relative'>
-              <p
-                className={`${!isExpanded ? 'lg:block md:hidden line-clamp-5' : ''}`}
-              >
-                Lorem ipsum dolor sit amet consecte tur adipiscing elit semper
-                dalar dolor elementum tempus hac.Lorem ipsum dolor sit amet
-                consecte tur adipiscing elit semper dalar dolor elementum tempus
-                hac.Lorem ipsum dolor sit amet consecte tur adipiscing elit
-                semper dalar dolor elementum tempus hac.Lorem ipsum dolor sit
-                amet consecte tur adipiscing elit semper dalar dolor elementum
-                tempus hac .Lorem ipsum dolor sit amet consecte tur adipiscing
-                elit semper dalar dolor elementum tempus hac.Lorem ipsum dolor
-                sit amet consecte tur adipiscing elit semper dalar dolor
-                elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
-                adipiscing elit semper dalar dolor elementum tempus hac.Lorem
-                ipsum dolor sit amet consecte tur adipiscing elit semper dalar
-                dolor elementum tempus hac.
-              </p>
-
-              {/* Mobile View More/Less Button */}
-              <div className='md:hidden mt-3'>
-                <button
-                  onClick={toggleExpanded}
-                  className='text-[var(--primary)] text-sm font-medium hover:underline'
-                >
-                  {isExpanded ? 'Show Less' : 'View More'}
-                </button>
-              </div>
-            </div>
+            Lorem ipsum dolor sit amet consecte tur adipiscing elit semper dalar
+            dolor elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
+            adipiscing elit semper dalar dolor elementum tempus hac.Lorem ipsum
+            dolor sit amet consecte tur adipiscing elit semper dalar dolor
+            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
+            adipiscing elit semper dalar dolor elementum tempus hac .Lorem ipsum
+            dolor sit amet consecte tur adipiscing elit semper dalar dolor
+            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
+            adipiscing elit semper dalar dolor elementum tempus hac.Lorem ipsum
+            dolor sit amet consecte tur adipiscing elit semper dalar dolor
+            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
+            adipiscing elit semper dalar dolor elementum tempus hac.
           </div>
         </div>
 
