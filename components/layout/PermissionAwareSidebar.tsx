@@ -1,5 +1,10 @@
 'use client';
-import { sidebarItems } from '@/constants/sidebar-items';
+import {
+  PERMISSION_ACTIONS,
+  PERMISSION_CATEGORIES,
+  SIDEBAR_TITLES,
+  sidebarItems,
+} from '@/constants/sidebar-items';
 import { usePermissions } from '@/lib/permission-context';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -19,32 +24,59 @@ export function PermissionAwareSidebar() {
   }
 
   // Filter sidebar items based on permissions
-  const filteredSidebarItems = sidebarItems.filter(item => {
+  const filteredSidebarItems = sidebarItems.filter(menu_item => {
     // If no permissions loaded, show only home
     if (!permissions) {
-      return item.title === 'Home';
+      return menu_item.title === SIDEBAR_TITLES.HOME;
     }
 
-    switch (item.title) {
-      case 'Category Management':
-        return hasPermission('categories', 'view');
-      case 'Role Management':
-        return hasPermission('roles', 'view');
-      case 'User Management':
-        return hasPermission('users', 'view');
-      case 'Company Management':
-        return hasPermission('companies', 'view');
-      case 'Trade Management':
-        return hasPermission('trades', 'view');
-      case 'Service Management':
-        return hasPermission('services', 'view');
-      case 'Material Management':
-        return hasPermission('materials', 'view');
-      case 'Tools Management':
-        return hasPermission('tools', 'view');
-      case 'Jobs':
-        return hasPermission('jobs', 'view') || hasPermission('jobs', 'edit');
-      case 'Home':
+    switch (menu_item.title) {
+      case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.CATEGORIES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.ROLE_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.ROLES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.USER_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.USERS,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.COMPANIES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.TRADE_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.TRADES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.SERVICES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.MATERIALS,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.TOOLS,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.JOBS:
+        return (
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT)
+        );
+      case SIDEBAR_TITLES.HOME:
         return true; // Always show home
       default:
         return true; // Show other items by default
@@ -85,8 +117,8 @@ export function PermissionAwareSidebar() {
           <ScrollArea className='h-full w-full px-4'>
             <ul className='py-2 [&>li+li]:mt-0.5'>
               {filteredSidebarItems.map(
-                ({ title, href, icon: Icon }, index) => (
-                  <li key={index}>
+                ({ menu_id, title, href, icon: Icon }) => (
+                  <li key={menu_id}>
                     <Link
                       href={href}
                       className={cn(
