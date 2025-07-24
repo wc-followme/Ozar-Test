@@ -177,9 +177,17 @@ export default function TradeManagementPage() {
           setTrades(prevTrades =>
             prevTrades.filter((_, index) => index !== deleteIdx)
           );
-        } catch (error) {
-          console.error('Failed to delete trade:', error);
-          showErrorToast(TRADE_MESSAGES.DELETE_ERROR);
+        } catch (err: unknown) {
+          // Handle auth errors first (will redirect to login if 401)
+          if (handleAuthError(err)) {
+            return; // Don't show toast if it's an auth error
+          }
+
+          const message = extractApiErrorMessage(
+            err,
+            TRADE_MESSAGES.DELETE_ERROR
+          );
+          showErrorToast(message);
         }
       }
       setDeleteIdx(null);
