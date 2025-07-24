@@ -1,9 +1,9 @@
 'use client';
-import { 
-  sidebarItems, 
-  SIDEBAR_TITLES, 
-  PERMISSION_CATEGORIES, 
-  PERMISSION_ACTIONS 
+import {
+  PERMISSION_ACTIONS,
+  PERMISSION_CATEGORIES,
+  SIDEBAR_TITLES,
+  sidebarItems,
 } from '@/constants/sidebar-items';
 import { usePermissions } from '@/lib/permission-context';
 import { cn } from '@/lib/utils';
@@ -13,7 +13,7 @@ import { useState } from 'react';
 import { ScrollArea } from '../ui/scroll-area';
 import { MinimalSidebar } from './MinimalSidebar';
 
-export function Sidebar() {
+export function PermissionAwareSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { permissions, isLoading, hasPermission } = usePermissions();
   const pathname = usePathname();
@@ -32,24 +32,50 @@ export function Sidebar() {
 
     switch (menu_item.title) {
       case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.CATEGORIES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.CATEGORIES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.ROLE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.ROLES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.ROLES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.USER_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.USERS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.USERS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.COMPANIES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.COMPANIES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.TRADE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.TRADES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.TRADES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.SERVICES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.SERVICES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.MATERIALS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.MATERIALS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.TOOLS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.TOOLS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.JOBS:
-        return hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) || 
-               hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT);
+        return (
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT)
+        );
       case SIDEBAR_TITLES.HOME:
         return true; // Always show home
       default:
@@ -58,11 +84,7 @@ export function Sidebar() {
   });
 
   return (
-    <aside
-      className={cn(
-        'hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0'
-      )}
-    >
+    <aside className='hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0'>
       <div className='flex flex-col h-screen max-h-[100dvh]'>
         {/* Burger Menu */}
         <div className='w-[60px] h-[60px] flex items-center px-[18px] mx-4 mt-2'>
