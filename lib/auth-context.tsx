@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ApiError, apiService, LoginResponse, User } from './api';
+import { clearPermissionCache } from './permission-loader';
 import { encryptData } from './utils';
 
 interface AuthContextType {
@@ -58,11 +59,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('device_id');
+    localStorage.removeItem('user_permissions');
     // Clear cookies
     deleteCookie('is_authenticated');
     deleteCookie('user_data');
     deleteCookie('auth_token');
     deleteCookie('refresh_token');
+    deleteCookie('user_permissions');
+    // Clear permission cache
+    clearPermissionCache();
   };
 
   // Handle authentication errors (401 Unauthorized)
@@ -175,7 +180,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         try {
           const permissionsRes = await apiService.getMyPermissions();
           if (permissionsRes && permissionsRes.data) {
-            const encrypted = encryptData(JSON.stringify(permissionsRes.data.permissions));
+            const encrypted = encryptData(
+              JSON.stringify(permissionsRes.data.permissions)
+            );
             localStorage.setItem('user_permissions', encrypted);
             setCookie('user_permissions', encrypted);
             console.log('🔒 User permissions encrypted and stored');
