@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, JobStatus, ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { extractApiErrorMessage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { ClipboardClose, Setting2, UserAdd } from 'iconsax-react';
 import Image from 'next/image';
@@ -28,6 +30,7 @@ export default function JobDetailsPage() {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const { showErrorToast, showSuccessToast } = useToast();
+  const { handleAuthError } = useAuth();
 
   // Handle client-side only logic
   useEffect(() => {
@@ -42,14 +45,23 @@ export default function JobDetailsPage() {
         if (response.data) {
           setJob(response.data);
         }
-      } catch (error: any) {
-        showErrorToast(error?.message || JOB_MESSAGES.FETCH_DETAILS_ERROR);
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show toast if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(
+          err,
+          JOB_MESSAGES.FETCH_DETAILS_ERROR
+        );
+        showErrorToast(message);
       } finally {
         setLoading(false);
       }
     };
     if (uuid) fetchJobData();
-  }, [uuid, showErrorToast]);
+  }, [uuid, showErrorToast, handleAuthError]);
 
   const handleArchiveClick = () => {
     setShowArchiveConfirm(true);
@@ -71,8 +83,14 @@ export default function JobDetailsPage() {
         prev ? { ...prev, status: CommonStatus.INACTIVE } : null
       );
       setShowArchiveConfirm(false);
-    } catch (error: any) {
-      showErrorToast(error?.message || JOB_MESSAGES.ARCHIVE_ERROR);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(err, JOB_MESSAGES.ARCHIVE_ERROR);
+      showErrorToast(message);
     } finally {
       setArchiving(false);
     }
@@ -88,8 +106,14 @@ export default function JobDetailsPage() {
       // Update the local job state to reflect the change
       setJob(prev => (prev ? { ...prev, job_status: JobStatus.DONE } : null));
       setShowCloseConfirm(false);
-    } catch (error: any) {
-      showErrorToast(error?.message || JOB_MESSAGES.CLOSE_ERROR);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(err, JOB_MESSAGES.CLOSE_ERROR);
+      showErrorToast(message);
     } finally {
       setClosing(false);
     }

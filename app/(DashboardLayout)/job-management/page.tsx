@@ -10,10 +10,15 @@ import {
   ROUTES,
 } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import {
+  extractApiErrorMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { IconFlag } from '@tabler/icons-react';
 import { Add, Profile2User } from 'iconsax-react';
 import { DollarSign } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FlagHookIcon } from '../../../components/icons/FalgHookIcon';
 import { JobCard } from '../../../components/shared/cards/JobCard';
 import { StatsCard } from '../../../components/shared/cards/StatsCard';
@@ -30,7 +35,6 @@ import {
   TabsList,
   TabsTrigger,
 } from '../../../components/ui/tabs';
-import { getUserPermissionsFromStorage } from '../../../lib/utils';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
 
@@ -43,10 +47,12 @@ export default function JobManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const { showSuccessToast, showErrorToast } = useToast();
+  const { handleAuthError } = useAuth();
+  const isInitialMount = useRef(true);
 
   // Get user permissions for jobs
   const userPermissions = getUserPermissionsFromStorage();
-  const canView = userPermissions?.jobs?.view;
+
   const canEdit = userPermissions?.jobs?.edit;
 
   // Helper function to generate home-owner link
@@ -71,10 +77,14 @@ export default function JobManagement() {
       if (response.data) {
         setFilterCounts(response.data);
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
       // Error handled silently - filter counts are not critical
     }
-  }, []);
+  }, [handleAuthError]);
 
   // Function to fetch jobs based on selected tab
   const fetchJobsByTab = useCallback(
@@ -124,14 +134,21 @@ export default function JobManagement() {
             params.status = CommonStatus.ACTIVE;
             params.type = JobFilterType.ALL;
         }
+
         const response = await apiService.fetchJobs(params);
         setJobs(
           Array.isArray(response.data)
             ? response.data
             : response.data?.data || []
         );
-      } catch (error: any) {
-        showErrorToast(error?.message || JOB_MESSAGES.FETCH_ERROR);
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show toast if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(err, JOB_MESSAGES.FETCH_ERROR);
+        showErrorToast(message);
       } finally {
         if (isInitialLoad) {
           setLoading(false);
@@ -140,7 +157,7 @@ export default function JobManagement() {
         }
       }
     },
-    [showErrorToast]
+    [showErrorToast, handleAuthError]
   );
 
   // Effect to fetch filter counts on mount
@@ -150,35 +167,24 @@ export default function JobManagement() {
 
   // Effect to fetch jobs when selected tab changes
   useEffect(() => {
-    fetchJobsByTab(selectedTab, true); // Initial load
-  }, [fetchJobsByTab, selectedTab]); // Include dependencies
-
-  // Effect to fetch jobs when selected tab changes (for tab switching)
-  useEffect(() => {
+    // Skip fetching for tabs that don't have API data
     if (
-      selectedTab !== 'info' &&
-      selectedTab !== 'ongoingJob' &&
-      selectedTab !== 'waitingOnClient'
+      selectedTab === 'info' ||
+      selectedTab === 'ongoingJob' ||
+      selectedTab === 'waitingOnClient'
     ) {
-      fetchJobsByTab(selectedTab, false); // Tab switching
+      return;
+    }
+
+    // Use isInitialLoad=true only on first mount, false for tab switching
+    const isInitialLoad = isInitialMount.current;
+    fetchJobsByTab(selectedTab, isInitialLoad);
+
+    // Mark that initial mount is complete
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
     }
   }, [selectedTab, fetchJobsByTab]);
-
-  // Check if user has permission to view jobs
-  if (!canView) {
-    return (
-      <div className='flex items-center justify-center h-full'>
-        <div className='text-center'>
-          <h2 className='text-xl font-semibold text-[var(--text-dark)] mb-2'>
-            Access Denied
-          </h2>
-          <p className='text-[var(--text-secondary)]'>
-            You don&apos;t have permission to view jobs.
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -252,8 +258,14 @@ export default function JobManagement() {
       } else {
         showErrorToast(response.message || JOB_MESSAGES.CREATE_ERROR);
       }
-    } catch (err: any) {
-      showErrorToast(err?.message || JOB_MESSAGES.CREATE_ERROR);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(err, JOB_MESSAGES.CREATE_ERROR);
+      showErrorToast(message);
     } finally {
       setIsSubmitting(false);
     }
