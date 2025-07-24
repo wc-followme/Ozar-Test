@@ -1,5 +1,5 @@
 'use client';
-import { sidebarItems } from '@/constants/sidebar-items';
+import { sidebarItems, SIDEBAR_TITLES } from '@/constants/sidebar-items';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -11,7 +11,7 @@ export function MinimalSidebar() {
   const pathname = usePathname();
 
   // Show only home while loading to prevent flash
-  const minimalItems = sidebarItems.filter(item => item.title === 'Home');
+  const minimalItems = sidebarItems.filter(menu_item => menu_item.title === SIDEBAR_TITLES.HOME);
 
   return (
     <aside className='hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0 opacity-75'>
@@ -46,8 +46,8 @@ export function MinimalSidebar() {
         <div className='flex-1 min-h-0'>
           <ScrollArea className='h-full w-full px-4'>
             <ul className='py-2 [&>li+li]:mt-0.5'>
-              {minimalItems.map(({ title, href, icon: Icon }, index) => (
-                <li key={index}>
+              {minimalItems.map(({ menu_id, title, href, icon: Icon }) => (
+                <li key={menu_id}>
                   <Link
                     href={href}
                     className={cn(
