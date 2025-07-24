@@ -10,6 +10,7 @@ import { showErrorToast, showSuccessToast } from '@/components/ui/use-toast';
 import { ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { extractApiErrorMessage } from '@/lib/utils';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { HOME_OWNER_MESSAGES } from '../home-owner-messages';
@@ -27,7 +28,7 @@ import {
 export default function HomeOwnerWizardPage() {
   const params = useParams();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, handleAuthError } = useAuth();
   const uuid = params['uuid'] as string;
 
   // Job data state
@@ -130,8 +131,17 @@ export default function HomeOwnerWizardPage() {
             selectedType: category_id ? category_id.toString() : '',
           });
         }
-      } catch (err) {
-        setError(HOME_OWNER_MESSAGES.JOB_FETCH_ERROR);
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show error if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(
+          err,
+          HOME_OWNER_MESSAGES.JOB_FETCH_ERROR
+        );
+        setError(message);
       } finally {
         setIsLoading(false);
       }
@@ -318,13 +328,17 @@ export default function HomeOwnerWizardPage() {
       }
 
       // Redirect to job management page after a short delay
-    } catch (error: any) {
-      // Show error toast with API response message
-      if (error && error.message) {
-        showErrorToast(error.message);
-      } else {
-        showErrorToast(HOME_OWNER_MESSAGES.FORM_SUBMIT_ERROR);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
+
+      const message = extractApiErrorMessage(
+        err,
+        HOME_OWNER_MESSAGES.FORM_SUBMIT_ERROR
+      );
+      showErrorToast(message);
     } finally {
     }
   };
