@@ -87,7 +87,7 @@ export const Avatar: React.FC<AvatarProps> = ({
         />
       ) : (
         <AvatarImage
-          src='/img-placeholder-sm.png'
+          src='/images/img-placeholder-sm.png'
           alt='placeholder'
           className='rounded-[10px] object-cover text-6 font-bold'
           style={{
