@@ -124,8 +124,6 @@ export default function JobManagement() {
             params.status = CommonStatus.ACTIVE;
             params.type = JobFilterType.ALL;
         }
-
-        console.log('params', params);
         const response = await apiService.fetchJobs(params);
         setJobs(
           Array.isArray(response.data)
