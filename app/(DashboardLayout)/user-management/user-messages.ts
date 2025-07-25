@@ -83,7 +83,7 @@ export const USER_MESSAGES = {
   // Page Titles and Headers
   USER_MANAGEMENT_TITLE: 'Admin / User Management',
   ADD_USER_TITLE: 'Add User',
-  EDIT_USER_TITLE: 'Edit User',
+  EDIT_USER_TITLE: 'Edit',
 
   // Breadcrumb
   USER_MANAGEMENT_BREADCRUMB: 'User Management',

@@ -5,7 +5,8 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+
 import { apiService, FetchUsersResponse, User } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -57,7 +58,7 @@ export default function UserManagement() {
           const rolesRes = await apiService.fetchRoles({
             page: 1,
             limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-            status: 'ACTIVE', // Only fetch active roles for dropdown
+            status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
           });
           const roleList = isRoleApiResponse(rolesRes)
             ? rolesRes.data.data
@@ -66,7 +67,7 @@ export default function UserManagement() {
             roleList.map(({ id, name, status }) => ({
               id,
               name,
-              status: status || 'ACTIVE',
+              status: status || CommonStatus.ACTIVE,
             }))
           );
         }
@@ -75,7 +76,7 @@ export default function UserManagement() {
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
           role_id,
-          status: 'ACTIVE', // Only fetch active users
+          status: CommonStatus.ACTIVE, // Only fetch active users
         });
         const newUsers = usersRes.data;
 
@@ -143,7 +144,9 @@ export default function UserManagement() {
       const user = users.find(u => u.id === id);
       if (!user || !user.uuid)
         throw new Error(USER_MESSAGES.USER_NOT_FOUND_ERROR);
-      const newStatus = currentStatus ? 'INACTIVE' : 'ACTIVE';
+      const newStatus = currentStatus
+        ? CommonStatus.INACTIVE
+        : CommonStatus.ACTIVE;
       const response = await apiService.updateUserStatus(user.uuid, newStatus);
       setUsers(users =>
         users.map(u => (u.id === id ? { ...u, status: newStatus } : u))
@@ -186,13 +189,18 @@ export default function UserManagement() {
   // Handler for create user navigation with loading state
   const handleCreateUser = useCallback(() => {
     setIsNavigating(true);
-    router.push('/user-management/create-user');
+    router.push(ROUTES.CREATE_USER);
   }, [router]);
 
   const menuOptions: MenuOption[] = [
-    { label: 'Edit', action: ACTIONS.EDIT, icon: Edit2, variant: 'default' },
     {
-      label: 'Archive',
+      label: USER_MESSAGES.EDIT_USER_TITLE,
+      action: ACTIONS.EDIT,
+      icon: Edit2,
+      variant: 'default',
+    },
+    {
+      label: USER_MESSAGES.ARCHIVE_BUTTON,
       action: ACTIONS.DELETE,
       icon: Trash,
       variant: 'destructive',
@@ -285,8 +293,10 @@ export default function UserManagement() {
                           profile_picture_url
                         : ''
                     }
-                    status={status === 'ACTIVE'}
-                    onToggle={() => handleToggleStatus(id, status === 'ACTIVE')}
+                    status={status === CommonStatus.ACTIVE}
+                    onToggle={() =>
+                      handleToggleStatus(id, status === CommonStatus.ACTIVE)
+                    }
                     menuOptions={menuOptions}
                     onDelete={() => handleDeleteUser(uuid)}
                     disableActions={loading}

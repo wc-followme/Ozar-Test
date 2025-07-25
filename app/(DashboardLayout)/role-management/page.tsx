@@ -5,7 +5,7 @@ import { RoleCard } from '@/components/shared/cards/RoleCard';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { roleIconOptions } from '@/constants/sidebar-items';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -54,9 +54,14 @@ const IconAdapter = (IconComp: any) => {
 };
 
 const RoleManagement = () => {
+  // Destructure constants for better readability
+  const { CREATE_ROLE, EDIT_ROLE } = ROUTES;
+  const { ROLES_LIMIT } = PAGINATION;
+  const { ACTIVE } = CommonStatus;
+
   const [roles, setRoles] = useState<Role[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(12); // Use common constant
+  const [limit] = useState(ROLES_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [name] = useState('');
@@ -72,14 +77,16 @@ const RoleManagement = () => {
 
   const fetchRoles = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
         const params: FetchRolesParams = {
           page: targetPage,
           limit,
           search,
           name,
-          status: 'ACTIVE', // Only fetch active roles
+          status: ACTIVE, // Only fetch active roles
         };
         const res = (await apiService.fetchRoles(params)) as RoleApiResponse;
         const data = res.data || { data: [], total: 0 };
@@ -101,14 +108,24 @@ const RoleManagement = () => {
         const total = data.total;
         setPage(targetPage);
         setHasMore(targetPage * limit < total);
-      } catch {
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show toast if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(
+          err,
+          ROLE_MESSAGES.FETCH_ROLES_ERROR
+        );
+        showErrorToast(message);
         if (!append) setRoles([]);
         setHasMore(false);
       } finally {
         setLoading(false);
       }
     },
-    [limit, search, name]
+    [limit, search, name, handleAuthError, showErrorToast]
   );
 
   // Fetch first page of roles
@@ -159,7 +176,7 @@ const RoleManagement = () => {
   const handleEditRole = useCallback(
     (uuid: string) => {
       setIsNavigating(true);
-      router.push(`/role-management/edit-role/${uuid}`);
+      router.push(`${EDIT_ROLE}/${uuid}`);
     },
     [router]
   );
@@ -167,7 +184,7 @@ const RoleManagement = () => {
   // Handler for create role navigation with loading state
   const handleCreateRole = useCallback(() => {
     setIsNavigating(true);
-    router.push('/role-management/create-role');
+    router.push(CREATE_ROLE);
   }, [router]);
 
   // Show navigation loading state

@@ -7,8 +7,11 @@ export const PAGINATION = {
   ROLES_DROPDOWN_LIMIT: 50, // Higher limit for role dropdowns to get complete lists
   TOOLS_LIMIT: 28, // Limit for tools management
   CATEGORIES_LIMIT: 16, // Limit for category management
+  MATERIALS_LIMIT: 32, // Limit for material management
+  ROLES_LIMIT: 12, // Limit for role management
   COMPANY_LIMIT: 8, // Limit for company management
   JOBS_LIMIT: 8, // Limit for job management
+  TRADES_LIMIT: 32, // Limit for trade management
 } as const;
 
 // General App Constants
@@ -34,6 +37,7 @@ export const ROUTES = {
   CREATE_USER: '/user-management/create-user',
   ROLE_MANAGEMENT: '/role-management',
   CREATE_ROLE: '/role-management/create-role',
+  EDIT_ROLE: '/role-management/edit-role',
   CATEGORY_MANAGEMENT: '/category-management',
   MATERIAL_MANAGEMENT: '/material-management',
   SERVICE_MANAGEMENT: '/service-management',

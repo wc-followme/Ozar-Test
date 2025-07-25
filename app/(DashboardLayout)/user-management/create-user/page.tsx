@@ -4,7 +4,7 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
@@ -39,7 +39,7 @@ export default function AddUserPage() {
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const handleCancel = () => {
-    router.push('/user-management');
+    router.push(ROUTES.USER_MANAGEMENT);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -61,14 +61,14 @@ export default function AddUserPage() {
         const rolesRes = await apiService.fetchRoles({
           page: 1,
           limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
+          status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
         setRoles(
           roleList.map(({ id, name, status }: Role) => ({
             id,
             name,
-            status: status || 'ACTIVE',
+            status: status || CommonStatus.ACTIVE,
           }))
         );
       } catch (err: unknown) {
@@ -104,8 +104,9 @@ export default function AddUserPage() {
         purpose: 'profile-picture',
         customPath: ``,
       });
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      const { data } = presigned;
+      await uploadFileToPresignedUrl(data['uploadUrl'], file);
+      setFileKey(data['fileKey'] || '');
     } catch {
       showErrorToast(USER_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
@@ -121,33 +122,47 @@ export default function AddUserPage() {
   };
 
   const handleCreateUser = async (data: UserFormData) => {
+    const {
+      role_id,
+      name,
+      email,
+      country_code,
+      phone_number,
+      date_of_joining,
+      designation,
+      preferred_communication_method,
+      address,
+      city,
+      pincode,
+    } = data;
+
     setFormLoading(true);
     try {
       // Ensure all required fields are provided for create operation
-      if (!data.date_of_joining) {
+      if (!date_of_joining) {
         throw new Error('Date of joining is required for user creation');
       }
 
       const payload: CreateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
+        role_id,
+        name,
+        email,
         // Password will be generated on the backend
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        date_of_joining: data.date_of_joining,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
       };
       const response = await apiService.createUser(payload);
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.CREATE_SUCCESS)
       );
-      router.push('/user-management');
+      router.push(ROUTES.USER_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -164,7 +179,7 @@ export default function AddUserPage() {
   const breadcrumbData: BreadcrumbItem[] = [
     {
       name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB,
-      href: '/user-management',
+      href: ROUTES.USER_MANAGEMENT,
     },
     { name: USER_MESSAGES.ADD_USER_BREADCRUMB },
   ];

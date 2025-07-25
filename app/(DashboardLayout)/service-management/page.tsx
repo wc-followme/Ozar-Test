@@ -7,11 +7,12 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  extractApiSuccessMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -41,9 +42,14 @@ const menuOptions: {
 ];
 
 export default function ServiceManagementPage() {
+  // Destructure constants for better readability
+  const { EDIT, DELETE } = ACTIONS;
+  const { ACTIVE } = CommonStatus;
+  const { MATERIALS_LIMIT } = PAGINATION; // Using MATERIALS_LIMIT as it's 32, same as services
+
   const [services, setServices] = useState<Service[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(32);
+  const [limit] = useState(MATERIALS_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -63,7 +69,9 @@ export default function ServiceManagementPage() {
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
         const response = await apiService.fetchServices({
           page: targetPage,
@@ -83,8 +91,9 @@ export default function ServiceManagementPage() {
           }
           // If data is nested under data.data
           else if (servicesData.data && Array.isArray(servicesData.data)) {
-            newServices = servicesData.data;
-            total = servicesData.total || servicesData.data.length;
+            const { data: nestedData, total: totalCount } = servicesData;
+            newServices = nestedData;
+            total = totalCount || nestedData.length;
           }
           // If data is just the response itself (fallback)
           else if (Array.isArray(servicesData)) {
@@ -158,14 +167,35 @@ export default function ServiceManagementPage() {
     const service = services[idx];
     if (!service) return;
 
-    if (action === 'edit') {
+    if (action === EDIT) {
       setEditingServiceUuid(service.uuid);
       setSideSheetOpen(true);
     }
-    if (action === 'delete') {
+    if (action === DELETE) {
       setDeleteIdx(idx);
       setDeleteServiceName(service.name || '');
       setModalOpen(true);
+    }
+  };
+
+  // Handler for deleting a service
+  const handleDeleteService = async (uuid: string) => {
+    try {
+      const response = await apiService.deleteService(uuid);
+      setServices(prev => prev.filter(service => service.uuid !== uuid));
+      showSuccessToast(
+        extractApiSuccessMessage(response, SERVICE_MESSAGES.DELETE_SUCCESS)
+      );
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+      const message = extractApiErrorMessage(
+        err,
+        SERVICE_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -173,17 +203,7 @@ export default function ServiceManagementPage() {
     if (deleteIdx !== null) {
       const service = services[deleteIdx];
       if (service) {
-        try {
-          const { message } = await apiService.deleteService(service.uuid);
-          showSuccessToast(message || SERVICE_MESSAGES.DELETE_SUCCESS);
-          // Remove the service from local state instead of fetching again
-          setServices(prevServices =>
-            prevServices.filter((_, index) => index !== deleteIdx)
-          );
-        } catch (error) {
-          console.error('Failed to delete service:', error);
-          showErrorToast(SERVICE_MESSAGES.DELETE_ERROR);
-        }
+        await handleDeleteService(service.uuid);
       }
       setDeleteIdx(null);
       setModalOpen(false);
@@ -195,26 +215,28 @@ export default function ServiceManagementPage() {
     trades: string;
     serviceData?: Service;
   }) => {
+    const { serviceName, trades, serviceData } = data;
+
     // Use the actual service data from API response if available
-    if (data.serviceData) {
+    if (serviceData) {
       // Add the new service to the beginning of the services list
-      setServices(prevServices => [data.serviceData!, ...prevServices]);
+      setServices(prevServices => [serviceData, ...prevServices]);
     } else {
       // Fallback: Create a new service object to add to local state
       const newService: Service = {
         id: Date.now(), // Temporary ID for local state
         uuid: `temp-${Date.now()}`, // Temporary UUID
-        name: data.serviceName,
+        name: serviceName,
         description: '',
         is_default: false,
         is_active: true,
-        status: 'ACTIVE',
+        status: ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trades: data.trades.split(', ').map(trade => ({
+        trades: trades.split(', ').map(trade => ({
           id: Date.now(),
           name: trade.trim(),
-          status: 'ACTIVE',
+          status: ACTIVE,
         })),
       };
 
@@ -228,12 +250,14 @@ export default function ServiceManagementPage() {
     trades: string;
     serviceData?: Service;
   }) => {
+    const { serviceName, trades, serviceData } = data;
+
     // Use the actual service data from API response if available
-    if (data.serviceData) {
+    if (serviceData) {
       // Update the service in local state with the actual API response data
       setServices(prevServices =>
         prevServices.map(service =>
-          service.uuid === editingServiceUuid ? data.serviceData! : service
+          service.uuid === editingServiceUuid ? serviceData : service
         )
       );
     } else {
@@ -243,11 +267,11 @@ export default function ServiceManagementPage() {
           service.uuid === editingServiceUuid
             ? {
                 ...service,
-                name: data.serviceName,
-                trades: data.trades.split(', ').map(trade => ({
+                name: serviceName,
+                trades: trades.split(', ').map(trade => ({
                   id: Date.now(),
                   name: trade.trim(),
-                  status: 'ACTIVE',
+                  status: ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -297,16 +321,19 @@ export default function ServiceManagementPage() {
             />
           </div>
         ) : (
-          services.map((service, idx) => (
-            <InfoCard
-              key={service.uuid}
-              tradeName={service.name || ''}
-              category={`${service.trades?.length || 0} Trade${(service.trades?.length || 0) !== 1 ? 's' : ''}`}
-              menuOptions={menuOptions}
-              onMenuAction={action => handleMenuAction(action, idx)}
-              module='services'
-            />
-          ))
+          services.map((service, idx) => {
+            const { uuid, name, trades } = service;
+            return (
+              <InfoCard
+                key={uuid}
+                tradeName={name || ''}
+                category={`${trades?.length || 0} Trade${(trades?.length || 0) !== 1 ? 's' : ''}`}
+                menuOptions={menuOptions}
+                onMenuAction={action => handleMenuAction(action, idx)}
+                module='services'
+              />
+            );
+          })
         )}
       </div>
 

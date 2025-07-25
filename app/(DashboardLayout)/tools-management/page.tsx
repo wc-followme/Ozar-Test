@@ -83,23 +83,25 @@ export default function ToolsManagement() {
           limit: PAGINATION.TOOLS_LIMIT,
         });
 
-        if (response.statusCode === 200) {
+        const { statusCode, data, message } = response;
+
+        if (statusCode === 200) {
           // Handle both possible response structures
-          let toolsData = response.data;
+          let toolsData = data;
           let total = 0;
 
           if (
-            response.data &&
-            typeof response.data === 'object' &&
-            !Array.isArray(response.data) &&
-            'data' in response.data
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            'data' in data
           ) {
-            const { data, total: responseTotal } = response.data as any;
+            const { data: nestedData, total: responseTotal } = data as any;
+            toolsData = nestedData;
+            total = responseTotal || nestedData.length;
+          } else if (Array.isArray(data)) {
             toolsData = data;
-            total = responseTotal || data.length;
-          } else if (Array.isArray(response.data)) {
-            toolsData = response.data;
-            total = response.data.length;
+            total = data.length;
           }
 
           setTools(prev => {
@@ -119,16 +121,16 @@ export default function ToolsManagement() {
           setHasMore(targetPage * PAGINATION.TOOLS_LIMIT < total);
         } else {
           showErrorToast(
-            extractApiErrorMessage(response.message) || 'Failed to load tools'
+            extractApiErrorMessage(message) || 'Failed to load tools'
           );
         }
       } catch (error: any) {
-        console.error('Error loading tools:', error);
-        if (error.status === 401) {
+        const { status, message: errorMessage } = error;
+        if (status === 401) {
           handleAuthError(error);
         } else {
           showErrorToast(
-            extractApiErrorMessage(error.message) || 'Failed to load tools'
+            extractApiErrorMessage(errorMessage) || 'Failed to load tools'
           );
         }
         if (!append) setTools([]);
@@ -171,21 +173,23 @@ export default function ToolsManagement() {
   const handleDelete = async (uuid: string) => {
     try {
       const response = await apiService.deleteTool(uuid);
-      if (response.statusCode === 200) {
-        showSuccessToast(response.message || TOOL_MESSAGES.DELETE_SUCCESS);
+      const { statusCode, message } = response;
+
+      if (statusCode === 200) {
+        showSuccessToast(message || TOOL_MESSAGES.DELETE_SUCCESS);
         setTools(tools.filter(tool => tool.uuid !== uuid));
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.DELETE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.DELETE_ERROR
         );
       }
     } catch (error: any) {
-      console.error('Delete tool error:', error);
-      if (error.status === 401) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
         showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.DELETE_ERROR
+          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.DELETE_ERROR
         );
       }
     }
@@ -205,9 +209,11 @@ export default function ToolsManagement() {
     setOriginalToolAssets('');
     try {
       const response = await apiService.getToolDetails(uuid);
-      if (response.statusCode === 200 && response.data) {
-        const { tool_assets, assets } = response.data;
-        setEditToolData(response.data);
+      const { statusCode, data, message } = response;
+
+      if (statusCode === 200 && data) {
+        const { tool_assets, assets } = data;
+        setEditToolData(data);
 
         // Check if tool_assets exists in the response
         const toolAssetsValue = tool_assets;
@@ -227,11 +233,10 @@ export default function ToolsManagement() {
         setOriginalToolAssets(finalToolAssets ?? '');
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.FETCH_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.FETCH_ERROR
         );
       }
     } catch (error) {
-      console.error('Error fetching tool details:', error);
       showErrorToast(TOOL_MESSAGES.FETCH_ERROR);
     } finally {
       setEditLoading(false);
@@ -245,10 +250,10 @@ export default function ToolsManagement() {
     tool_assets: string;
     service_ids: string;
   }) => {
+    const { name, available_quantity, manufacturer, service_ids } = data;
+
     setFormLoading(true);
     try {
-      const { name, available_quantity, manufacturer, service_ids } = data;
-
       const payload: CreateToolRequest = {
         name,
         available_quantity,
@@ -258,9 +263,10 @@ export default function ToolsManagement() {
       };
 
       const response = await apiService.createTool(payload);
+      const { statusCode, message } = response;
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        showSuccessToast(response.message || TOOL_MESSAGES.CREATE_SUCCESS);
+      if (statusCode === 200 || statusCode === 201) {
+        showSuccessToast(message || TOOL_MESSAGES.CREATE_SUCCESS);
         setSideSheetOpen(false);
         setPhoto(null);
         setFileKey('');
@@ -269,31 +275,35 @@ export default function ToolsManagement() {
           page: 1,
           limit: PAGINATION.TOOLS_LIMIT,
         });
-        if (refreshResponse.statusCode === 200) {
+        const { statusCode: refreshStatusCode, data: refreshData } =
+          refreshResponse;
+
+        if (refreshStatusCode === 200) {
           // Handle both possible response structures
-          let toolsData = refreshResponse.data;
+          let toolsData = refreshData;
           if (
-            refreshResponse.data &&
-            typeof refreshResponse.data === 'object' &&
-            !Array.isArray(refreshResponse.data) &&
-            'data' in refreshResponse.data
+            refreshData &&
+            typeof refreshData === 'object' &&
+            !Array.isArray(refreshData) &&
+            'data' in refreshData
           ) {
-            const { data } = refreshResponse.data as any;
+            const { data } = refreshData as any;
             toolsData = data;
           }
           setTools(Array.isArray(toolsData) ? toolsData : []);
         }
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.CREATE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.CREATE_ERROR
         );
       }
     } catch (error: any) {
-      if (error.status === 401) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
         showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.CREATE_ERROR
+          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.CREATE_ERROR
         );
       }
     } finally {
@@ -308,6 +318,8 @@ export default function ToolsManagement() {
     tool_assets: string;
     service_ids: string;
   }) => {
+    const { name, available_quantity, manufacturer, service_ids } = data;
+
     // Prevent submission if originalToolAssets is not loaded yet
     if (
       !originalToolAssets &&
@@ -319,8 +331,6 @@ export default function ToolsManagement() {
 
     setFormLoading(true);
     try {
-      const { name, available_quantity, manufacturer, service_ids } = data;
-
       // Send tool_assets as it is if not changed, otherwise use new file or empty if deleted
       const toolAssets =
         fileKey || (imageDeleted ? '' : (originalToolAssets ?? ''));
@@ -334,8 +344,9 @@ export default function ToolsManagement() {
       };
 
       const response = await apiService.updateTool(editToolUuid!, payload);
+      const { statusCode, message } = response;
 
-      if (response.statusCode === 200) {
+      if (statusCode === 200) {
         showSuccessToast(TOOL_MESSAGES.UPDATE_SUCCESS);
         setSideSheetOpen(false);
         setPhoto(null);
@@ -349,32 +360,35 @@ export default function ToolsManagement() {
           page: 1,
           limit: PAGINATION.TOOLS_LIMIT,
         });
-        if (refreshResponse.statusCode === 200) {
+        const { statusCode: refreshStatusCode, data: refreshData } =
+          refreshResponse;
+
+        if (refreshStatusCode === 200) {
           // Handle both possible response structures
-          let toolsData = refreshResponse.data;
+          let toolsData = refreshData;
           if (
-            refreshResponse.data &&
-            typeof refreshResponse.data === 'object' &&
-            !Array.isArray(refreshResponse.data) &&
-            'data' in refreshResponse.data
+            refreshData &&
+            typeof refreshData === 'object' &&
+            !Array.isArray(refreshData) &&
+            'data' in refreshData
           ) {
-            const { data } = refreshResponse.data as any;
+            const { data } = refreshData as any;
             toolsData = data;
           }
           setTools(Array.isArray(toolsData) ? toolsData : []);
         }
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.UPDATE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.UPDATE_ERROR
         );
       }
     } catch (error: any) {
-      console.error('Error updating tool:', error);
-      if (error.status === 401) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
         showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.UPDATE_ERROR
+          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.UPDATE_ERROR
         );
       }
     } finally {
@@ -453,23 +467,29 @@ export default function ToolsManagement() {
           ) : (
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
               {tools.map((tool, index) => {
+                const {
+                  id,
+                  name,
+                  manufacturer,
+                  available_quantity,
+                  assets,
+                  uuid,
+                } = tool;
                 const imageUrl =
-                  tool.assets && tool.assets[0]?.media_url
-                    ? cdnPrefix + tool.assets[0].media_url
+                  assets && assets[0]?.media_url
+                    ? cdnPrefix + assets[0].media_url
                     : '/images/img-placeholder-sm.png';
                 return (
                   <ToolCard
-                    key={
-                      tool.id ?? `${tool.name}-${tool.manufacturer}-${index}`
-                    }
+                    key={id ?? `${name}-${manufacturer}-${index}`}
                     image={imageUrl}
-                    name={tool.name}
-                    brand={tool.manufacturer}
-                    quantity={tool.available_quantity}
+                    name={name}
+                    brand={manufacturer}
+                    quantity={available_quantity}
                     videoCount={0} // Static 0 for now as requested
                     menuOptions={menuOptions}
-                    onDelete={() => handleDelete(tool.uuid)}
-                    onEdit={() => handleEdit(tool.uuid)}
+                    onDelete={() => handleDelete(uuid)}
+                    onEdit={() => handleEdit(uuid)}
                   />
                 );
               })}
