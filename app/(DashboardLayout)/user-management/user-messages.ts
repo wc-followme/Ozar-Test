@@ -76,6 +76,7 @@ export const USER_MESSAGES = {
   UPDATE_BUTTON: 'Update',
   CANCEL_BUTTON: 'Cancel',
   DELETE_USER_BUTTON: 'Delete User',
+  ARCHIVE_BUTTON: 'Archive',
   ADD_ADMIN_USER_BUTTON: 'Create User',
   REMOVE_PHOTO_ARIA: 'Remove photo',
 

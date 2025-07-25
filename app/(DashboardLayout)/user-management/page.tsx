@@ -300,11 +300,7 @@ export default function UserManagement() {
       )}
       {loading && users.length > 0 && (
         <div className='text-center py-4'>
-          <LoadingComponent
-            variant='inline'
-            size='sm'
-            text={USER_MESSAGES.LOADING_MORE}
-          />
+          <LoadingComponent variant='inline' size='md' text={''} />
         </div>
       )}
     </div>

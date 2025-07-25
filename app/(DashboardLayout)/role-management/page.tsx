@@ -5,7 +5,7 @@ import { RoleCard } from '@/components/shared/cards/RoleCard';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACTIONS } from '@/constants/common';
 import { roleIconOptions } from '@/constants/sidebar-items';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -56,7 +56,7 @@ const IconAdapter = (IconComp: any) => {
 const RoleManagement = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(PAGINATION.DEFAULT_LIMIT); // Use common constant
+  const [limit] = useState(12); // Use common constant
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [name] = useState('');
@@ -258,11 +258,7 @@ const RoleManagement = () => {
       {/* Loading more roles */}
       {loading && roles.length > 0 && (
         <div className='w-full text-center py-4'>
-          <LoadingComponent
-            variant='inline'
-            size='sm'
-            text={ROLE_MESSAGES.LOADING_ROLES}
-          />
+          <LoadingComponent variant='inline' size='md' text={''} />
         </div>
       )}
     </section>

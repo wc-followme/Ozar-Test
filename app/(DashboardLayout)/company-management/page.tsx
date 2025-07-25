@@ -3,8 +3,9 @@
 import { CompanyCard } from '@/components/shared/cards/CompanyCard';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
+import CompanyCardSkeleton from '@/components/shared/skeleton/CompanyCardSkeleton';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { apiService, Company, FetchCompaniesResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -16,23 +17,7 @@ import {
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import CompanyCardSkeleton from '../../../components/shared/skeleton/CompanyCardSkeleton';
 import { COMPANY_MESSAGES } from './company-messages';
-
-const menuOptions = [
-  {
-    label: 'Edit',
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-    variant: 'default' as const,
-  },
-  {
-    label: 'Archive',
-    action: ACTIONS.DELETE,
-    icon: Trash,
-    variant: 'destructive' as const,
-  },
-];
 
 export default function CompanyManagement() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -43,6 +28,27 @@ export default function CompanyManagement() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const router = useRouter();
+
+  // Destructure constants for cleaner code
+  const { COMPANY_LIMIT } = PAGINATION;
+  const { ACTIVE, INACTIVE } = CommonStatus;
+  const { EDIT, DELETE } = ACTIONS;
+
+  // Memoize menu options to prevent unnecessary re-renders
+  const menuOptions = [
+    {
+      label: COMPANY_MESSAGES.EDIT_MENU,
+      action: EDIT,
+      icon: Edit2,
+      variant: 'default' as const,
+    },
+    {
+      label: COMPANY_MESSAGES.DELETE_MENU,
+      action: DELETE,
+      icon: Trash,
+      variant: 'destructive' as const,
+    },
+  ];
 
   // Get user permissions for companies
   const userPermissions = getUserPermissionsFromStorage();
@@ -73,18 +79,21 @@ export default function CompanyManagement() {
     try {
       const res: FetchCompaniesResponse = await apiService.fetchCompanies({
         page: targetPage,
-        limit: PAGINATION.DEFAULT_LIMIT,
-        status: 'ACTIVE',
+        limit: COMPANY_LIMIT,
+        status: ACTIVE,
         sortOrder: 'ASC',
       });
 
       if (isCompanyApiResponse(res)) {
-        const newCompanies = res.data.data;
+        const { data } = res;
+        const { data: companiesData, page, totalPages } = data;
+
+        const newCompanies = companiesData;
         setCompanies(prev =>
           append ? [...prev, ...newCompanies] : newCompanies
         );
         _setPage(targetPage);
-        _setHasMore(res.data.page < res.data.totalPages);
+        _setHasMore(page < totalPages);
       } else {
         // Fallback for unexpected response structure
         setCompanies([]);
@@ -109,7 +118,7 @@ export default function CompanyManagement() {
   // Handler for create company navigation with loading state
   const handleCreateCompany = () => {
     setIsNavigating(true);
-    router.push('/company-management/add-company');
+    router.push(ROUTES.ADD_COMPANY);
   };
 
   // Status toggle handler - updated to actually call API
@@ -128,7 +137,7 @@ export default function CompanyManagement() {
         return;
       }
 
-      const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const newStatus = currentStatus === ACTIVE ? INACTIVE : ACTIVE;
       const response = await apiService.updateCompanyStatus(
         company.uuid,
         newStatus
@@ -175,7 +184,7 @@ export default function CompanyManagement() {
         extractApiSuccessMessage(response, COMPANY_MESSAGES.DELETE_SUCCESS)
       );
       // Redirect to company listing page after successful archive
-      router.push('/company-management');
+      router.push(ROUTES.COMPANY_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -277,11 +286,7 @@ export default function CompanyManagement() {
 
       {loading && companies.length > 0 && (
         <div className='text-center py-4'>
-          <LoadingComponent
-            variant='inline'
-            size='sm'
-            text={COMPANY_MESSAGES.LOADING_MORE}
-          />
+          <LoadingComponent variant='inline' size='md' text={''} />
         </div>
       )}
     </div>

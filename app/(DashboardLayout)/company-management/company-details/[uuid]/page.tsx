@@ -1,13 +1,14 @@
 'use client';
 import { Search } from '@/components/icons/Search';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { UserCard } from '@/components/shared/cards/UserCard';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import {
   apiService,
   FetchUsersResponse,
@@ -26,7 +27,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { UserCard } from '../../../../../components/shared/cards/UserCard';
 import {
   MenuOption,
   Role,
@@ -42,11 +42,20 @@ interface CompanyDetailsPageProps {
 }
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Company Details' }, // current page
+  {
+    name: COMPANY_MESSAGES.COMPANY_MANAGEMENT_TITLE,
+    href: ROUTES.COMPANY_MANAGEMENT,
+  },
+  { name: COMPANY_MESSAGES.COMPANY_DETAILS_TITLE }, // current page
 ];
 
 const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
+  // Destructure constants for better readability
+  const { ROLES_DROPDOWN_LIMIT, USERS_LIMIT } = PAGINATION;
+  const { ACTIVE, INACTIVE } = CommonStatus;
+  const { EDIT, ARCHIVE } = ACTIONS;
+  const { COMPANY_MANAGEMENT, ADD_USER } = ROUTES;
+
   const resolvedParams = React.use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -118,7 +127,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
           COMPANY_MESSAGES.FETCH_DETAILS_ERROR
         );
         showErrorToast(errorMessage);
-        router.push('/company-management');
+        router.push(COMPANY_MANAGEMENT);
       } finally {
         setLoading(false);
       }
@@ -171,8 +180,8 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       if (targetPage === 1) {
         const rolesRes = await apiService.fetchRoles({
           page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
+          limit: ROLES_DROPDOWN_LIMIT,
+          status: ACTIVE, // Only fetch active roles for dropdown
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
         setRoles(
@@ -184,7 +193,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       const searchParam = searchTerm.trim();
       const fetchParams: any = {
         page: targetPage,
-        limit: PAGINATION.USERS_LIMIT,
+        limit: USERS_LIMIT,
         role_id,
         company_id: company.id, // Filter by current company
       };
@@ -193,7 +202,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       }
       const usersRes: FetchUsersResponse = await apiService.fetchUsers({
         ...fetchParams,
-        status: 'ACTIVE', // Only fetch active users
+        status: ACTIVE, // Only fetch active users
       });
 
       const newUsers = usersRes.data;
@@ -231,7 +240,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       const user = users.find(u => u.id === id);
       if (!user || !user.uuid)
         throw new Error(USER_MESSAGES.USER_NOT_FOUND_ERROR);
-      const newStatus = currentStatus ? 'INACTIVE' : 'ACTIVE';
+      const newStatus = currentStatus ? INACTIVE : ACTIVE;
       const response = await apiService.updateUserStatus(user.uuid, newStatus);
       setUsers(users =>
         users.map(u => (u.id === id ? { ...u, status: newStatus } : u))
@@ -278,10 +287,15 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
   // Menu options for user cards
   const menuOptions: MenuOption[] = [
-    { label: 'Edit', action: 'edit', icon: Edit2, variant: 'default' },
     {
-      label: 'Archive',
-      action: 'delete',
+      label: USER_MESSAGES.UPDATE_BUTTON,
+      action: EDIT,
+      icon: Edit2,
+      variant: 'default',
+    },
+    {
+      label: USER_MESSAGES.ARCHIVE_BUTTON,
+      action: ARCHIVE,
       icon: Trash,
       variant: 'destructive',
     },
@@ -306,7 +320,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       }
 
       const currentStatus = company.status;
-      const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const newStatus = currentStatus === 'ACTIVE' ? INACTIVE : ACTIVE;
 
       const response = await apiService.updateCompanyStatus(
         company.uuid,
@@ -325,8 +339,8 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       );
 
       // If company is archived (status changed to INACTIVE), redirect to company listing
-      if (newStatus === 'INACTIVE') {
-        router.push('/company-management');
+      if (newStatus === INACTIVE) {
+        router.push(COMPANY_MANAGEMENT);
       }
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -386,7 +400,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
             ) : (
               <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center bg-gray-50'>
                 <span className='text-gray-400 text-sm text-center'>
-                  No Image
+                  {COMPANY_MESSAGES.NO_IMAGE_LABEL}
                 </span>
               </div>
             )}
@@ -398,12 +412,14 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                   {company.name}
                 </h1>
                 <p className='text-sm md:text-[16px] text-[var(--text-secondary)] leading-[1]'>
-                  Construction Company
+                  {COMPANY_MESSAGES.COMPANY_TYPE_LABEL}
                 </p>
               </div>
 
               <div className='flex flex-row items-center gap-2 sm:gap-4'>
-                <Link href={`/company-management/edit-company/${company.uuid}`}>
+                <Link
+                  href={`${COMPANY_MANAGEMENT}/edit-company/${company.uuid}`}
+                >
                   <Button
                     variant='outline'
                     className='btn-secondary !h-9 text-sm w-auto'
@@ -414,16 +430,18 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                       className='[&_path]:stroke-2'
                     />
                     <span className='text-[var(--text-dark)]'>
-                      Edit Details
+                      {COMPANY_MESSAGES.EDIT_DETAILS_BUTTON}
                     </span>
                   </Button>
                 </Link>
                 <Link
                   className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full'
-                  href={`/company-management/add-user?company_id=${company.uuid}`}
+                  href={`${ADD_USER}?company_id=${company.uuid}`}
                 >
                   <UserAdd size='20' color='#fff' className='sm:hidden' />
-                  <span className='hidden sm:inline'>Add User</span>
+                  <span className='hidden sm:inline'>
+                    {COMPANY_MESSAGES.ADD_USER_BUTTON}
+                  </span>
                 </Link>
               </div>
             </div>
@@ -432,15 +450,15 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               <div className='flex flex-col sm:flex-row sm:gap-6 gap-3 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
                 <div>
                   <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Industry
+                    {COMPANY_MESSAGES.INDUSTRY_LABEL}
                   </div>
                   <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    Construction
+                    {COMPANY_MESSAGES.INDUSTRY_VALUE}
                   </div>
                 </div>
                 <div>
                   <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Created on
+                    {COMPANY_MESSAGES.CREATED_ON_LABEL}
                   </div>
                   <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
                     {formatDate(company.created_at)}
@@ -448,7 +466,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 </div>
                 <div>
                   <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Subscription Ends
+                    {COMPANY_MESSAGES.SUBSCRIPTION_ENDS_LABEL}
                   </div>
                   <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
                     {formatDate(company.expiry_date)}
@@ -459,7 +477,9 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               {!company.is_default && (
                 <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start'>
                   <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
-                    {enabled ? 'Enable' : 'Disable'}
+                    {enabled
+                      ? COMPANY_MESSAGES.ENABLE_LABEL
+                      : COMPANY_MESSAGES.DISABLE_LABEL}
                   </span>
                   <Switch
                     checked={enabled}
@@ -488,13 +508,13 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 value='about'
                 className='px-3 md:px-6 lg:px-8 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
-                About
+                {COMPANY_MESSAGES.ABOUT_LABEL}
               </TabsTrigger>
               <TabsTrigger
                 value='usermanagement'
                 className='px-3 md:px-6 lg:px-8 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
-                User Management
+                {COMPANY_MESSAGES.TAB_USER_MANAGEMENT}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -503,10 +523,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
             {/* About Section */}
             <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6'>
               <div className='text-xs md:text-sm text-[var(--text-secondary)] font-normal mb-2'>
-                About
+                {COMPANY_MESSAGES.ABOUT_LABEL}
               </div>
               <div className='text-xs md:text-sm text-[var(--text-dark)] font-medium leading-tight'>
-                {company.about || 'No description available.'}
+                {company.about || COMPANY_MESSAGES.NO_DESCRIPTION_LABEL}
               </div>
             </div>
             {/* Contact Info Row */}
@@ -514,41 +534,42 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-xs md:text-sm'>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                    Email
+                    {COMPANY_MESSAGES.EMAIL_LABEL}
                   </div>
                   <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
-                    {company.email || 'N/A'}
+                    {company.email || COMPANY_MESSAGES.N_A_LABEL}
                   </div>
                 </div>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                    Phone Number
+                    {COMPANY_MESSAGES.PHONE_LABEL}
                   </div>
                   <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
-                    {company.phone_number || 'N/A'}
+                    {company.phone_number || COMPANY_MESSAGES.N_A_LABEL}
                   </div>
                 </div>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                    Address
+                    {COMPANY_MESSAGES.ADDRESS_LABEL}
                   </div>
                   <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
                     {company.city && company.pincode
                       ? `${company.city}, ${company.pincode}`
-                      : 'N/A'}
+                      : COMPANY_MESSAGES.N_A_LABEL}
                   </div>
                 </div>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                    Communication
+                    {COMPANY_MESSAGES.COMMUNICATION_LABEL}
                   </div>
                   <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
-                    {company.preferred_communication_method || 'N/A'}
+                    {company.preferred_communication_method ||
+                      COMPANY_MESSAGES.N_A_LABEL}
                   </div>
                 </div>
                 <div className='min-w-0 sm:col-span-2 lg:col-span-1'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                    Website
+                    {COMPANY_MESSAGES.WEBSITE_LABEL}
                   </div>
                   <div className='flex items-center gap-1 text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
                     {company.website ? (
@@ -567,7 +588,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                         </Link>
                       </>
                     ) : (
-                      'N/A'
+                      COMPANY_MESSAGES.N_A_LABEL
                     )}
                   </div>
                 </div>
@@ -580,7 +601,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               <div className='relative w-full sm:max-w-[360px]'>
                 <Input
                   id='search'
-                  placeholder='Search here...'
+                  placeholder={COMPANY_MESSAGES.SEARCH_PLACEHOLDER}
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
                   className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)]'

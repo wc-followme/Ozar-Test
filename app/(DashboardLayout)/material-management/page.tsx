@@ -43,7 +43,7 @@ const menuOptions: {
 export default function MaterialManagementPage() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(32);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);

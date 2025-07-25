@@ -43,7 +43,7 @@ const menuOptions: {
 export default function TradeManagementPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(32);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
