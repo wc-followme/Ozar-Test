@@ -5,7 +5,7 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
@@ -33,11 +33,19 @@ const UserInfoForm = dynamic(
 );
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Add User' }, // current page
+  {
+    name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB,
+    href: ROUTES.USER_MANAGEMENT,
+  },
+  { name: USER_MESSAGES.ADD_USER_BREADCRUMB }, // current page
 ];
 
 export default function AddCompanyUserPage() {
+  // Destructure constants for better readability
+  const { ROLES_DROPDOWN_LIMIT } = PAGINATION;
+  const { ACTIVE } = CommonStatus;
+  const { COMPANY_DETAILS } = ROUTES;
+
   const [selectedTab, setSelectedTab] = useState('info');
   const [fileKey, setFileKey] = useState<string>('');
   const [uploading, setUploading] = useState<boolean>(false);
@@ -58,9 +66,7 @@ export default function AddCompanyUserPage() {
 
   const handleCancel = () => {
     // Redirect back to the company details page
-    router.push(
-      `/company-management/company-details/${companyUuid}?tab=usermanagement`
-    );
+    router.push(`${COMPANY_DETAILS}/${companyUuid}?tab=usermanagement`);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -82,22 +88,14 @@ export default function AddCompanyUserPage() {
       try {
         const companyRes = await apiService.getCompanyDetails(companyUuid);
         const rawId = companyRes.data.id;
-        console.log('Company response data:', companyRes.data);
-        console.log('Raw ID from API:', rawId, 'Type:', typeof rawId);
 
         // Convert string ID to number
         const numericId =
           typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
-        console.log(
-          'Converted to numeric ID:',
-          numericId,
-          'Type:',
-          typeof numericId
-        );
 
         if (isNaN(numericId) || typeof numericId !== 'number') {
           console.error('Could not convert ID to number:', rawId);
-          showErrorToast('Invalid company ID received from server');
+          showErrorToast(USER_MESSAGES.USER_NOT_FOUND_ERROR);
           return;
         }
 
@@ -106,7 +104,7 @@ export default function AddCompanyUserPage() {
         if (handleAuthError(err)) {
           return; // Don't show toast if it's an auth error
         }
-        showErrorToast('Failed to load company details');
+        showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
       } finally {
         setLoadingCompany(false);
       }
@@ -120,8 +118,8 @@ export default function AddCompanyUserPage() {
       try {
         const rolesRes = await apiService.fetchRoles({
           page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
+          limit: ROLES_DROPDOWN_LIMIT,
+          status: ACTIVE, // Only fetch active roles for dropdown
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
         setRoles(
@@ -133,12 +131,13 @@ export default function AddCompanyUserPage() {
         }
         // Error fetching roles - proceed with empty array
         setRoles([]);
+        showErrorToast(USER_MESSAGES.LOAD_ROLES_ERROR);
       } finally {
         setLoadingRoles(false);
       }
     };
     fetchRoles();
-  }, [handleAuthError]);
+  }, [handleAuthError, ROLES_DROPDOWN_LIMIT, ACTIVE]);
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -179,7 +178,7 @@ export default function AddCompanyUserPage() {
   const handleCreateUser = async (data: UserFormData) => {
     // Prevent submission if company details are not loaded yet
     if (loadingCompany || !companyNumericId) {
-      showErrorToast('Company details are still loading. Please wait.');
+      showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
       return;
     }
 
@@ -190,44 +189,37 @@ export default function AddCompanyUserPage() {
         throw new Error('Date of joining is required for user creation');
       }
 
+      // Destructure form data for cleaner code
+      const {
+        role_id,
+        name,
+        email,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
+      } = data;
+
       const payload: CreateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
+        role_id,
+        name,
+        email,
         // Password will be generated on the backend
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        date_of_joining: data.date_of_joining,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
         company_id: companyNumericId!, // Pass the numeric company_id to associate user with specific company
       };
-
-      console.log('=== FORM SUBMISSION DEBUG ===');
-      console.log(
-        'companyNumericId value:',
-        companyNumericId,
-        'Type:',
-        typeof companyNumericId
-      );
-      console.log(
-        'companyUuid value:',
-        companyUuid,
-        'Type:',
-        typeof companyUuid
-      );
-      console.log(
-        'Final payload.company_id:',
-        payload.company_id,
-        'Type:',
-        typeof payload.company_id
-      );
-      console.log('Full payload:', payload);
-      console.log('=== END DEBUG ===');
 
       const response = await apiService.createUser(payload);
       showSuccessToast(
@@ -235,9 +227,7 @@ export default function AddCompanyUserPage() {
       );
 
       // Redirect to company details page with user management tab
-      router.push(
-        `/company-management/company-details/${companyUuid}?tab=usermanagement`
-      );
+      router.push(`${COMPANY_DETAILS}/${companyUuid}?tab=usermanagement`);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -269,13 +259,13 @@ export default function AddCompanyUserPage() {
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
-                Info
+                {USER_MESSAGES.INFO_TAB}
               </TabsTrigger>
               <TabsTrigger
                 value='permissions'
                 className='px-8 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
-                Settings
+                {USER_MESSAGES.SETTINGS_TAB}
               </TabsTrigger>
             </TabsList>
 
@@ -317,7 +307,7 @@ export default function AddCompanyUserPage() {
 
             <TabsContent value='permissions' className='pt-8'>
               <div className='text-center py-10 text-gray-500'>
-                Permissions management coming soon...
+                {USER_MESSAGES.PERMISSIONS_TAB} management coming soon...
               </div>
             </TabsContent>
           </Tabs>
