@@ -8,7 +8,8 @@ import TradeForm from '@/components/shared/forms/TradeForm';
 import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -43,7 +44,7 @@ const menuOptions: {
 export default function TradeManagementPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(PAGINATION.TRADES_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -74,22 +75,24 @@ export default function TradeManagementPage() {
         // Handle different possible response structures
         let newTrades: Trade[] = [];
         let total = 0;
+        const { data } = response;
 
-        if (response && response.data) {
+        if (data) {
           // If data is directly an array
-          if (Array.isArray(response.data)) {
-            newTrades = response.data;
-            total = response.data.length; // Fallback if no total provided
+          if (Array.isArray(data)) {
+            newTrades = data;
+            total = data.length; // Fallback if no total provided
           }
           // If data is nested under data.data
-          else if (response.data.data && Array.isArray(response.data.data)) {
-            newTrades = response.data.data;
-            total = response.data.total || response.data.data.length;
+          else if (data.data && Array.isArray(data.data)) {
+            const { data: nestedData, total: totalCount } = data;
+            newTrades = nestedData;
+            total = totalCount || nestedData.length;
           }
           // If data is just the response itself (fallback)
-          else if (Array.isArray(response)) {
-            newTrades = response;
-            total = response.length;
+          else if (Array.isArray(data)) {
+            newTrades = data;
+            total = data.length;
           }
         }
 
@@ -172,7 +175,8 @@ export default function TradeManagementPage() {
       if (trade) {
         try {
           const response = await apiService.deleteTrade(trade.uuid);
-          showSuccessToast(response.message || TRADE_MESSAGES.DELETE_SUCCESS);
+          const { message } = response;
+          showSuccessToast(message || TRADE_MESSAGES.DELETE_SUCCESS);
           // Remove the trade from local state instead of fetching again
           setTrades(prevTrades =>
             prevTrades.filter((_, index) => index !== deleteIdx)
@@ -200,26 +204,28 @@ export default function TradeManagementPage() {
     category: string;
     tradeData?: Trade;
   }) => {
+    const { tradeName, category, tradeData } = data;
+
     // Use the actual trade data from API response if available
-    if (data.tradeData) {
+    if (tradeData) {
       // Add the new trade to the beginning of the trades list
-      setTrades(prevTrades => [data.tradeData!, ...prevTrades]);
+      setTrades(prevTrades => [tradeData, ...prevTrades]);
     } else {
       // Fallback: Create a new trade object to add to local state
       const newTrade: Trade = {
         id: Date.now(), // Temporary ID for local state
         uuid: `temp-${Date.now()}`, // Temporary UUID
-        name: data.tradeName,
+        name: tradeName,
         description: '',
         is_default: false,
         is_active: true,
-        status: 'ACTIVE',
+        status: CommonStatus.ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        categories: data.category.split(', ').map(cat => ({
+        categories: category.split(', ').map(cat => ({
           id: Date.now(),
           name: cat.trim(),
-          status: 'ACTIVE',
+          status: CommonStatus.ACTIVE,
         })),
       };
 
@@ -233,12 +239,14 @@ export default function TradeManagementPage() {
     category: string;
     tradeData?: Trade;
   }) => {
+    const { tradeName, category, tradeData } = data;
+
     // Use the actual trade data from API response if available
-    if (data.tradeData) {
+    if (tradeData) {
       // Update the trade in local state with the actual API response data
       setTrades(prevTrades =>
         prevTrades.map(trade =>
-          trade.uuid === editingTradeUuid ? data.tradeData! : trade
+          trade.uuid === editingTradeUuid ? tradeData : trade
         )
       );
     } else {
@@ -248,11 +256,11 @@ export default function TradeManagementPage() {
           trade.uuid === editingTradeUuid
             ? {
                 ...trade,
-                name: data.tradeName,
-                categories: data.category.split(', ').map(cat => ({
+                name: tradeName,
+                categories: category.split(', ').map(cat => ({
                   id: Date.now(),
                   name: cat.trim(),
-                  status: 'ACTIVE',
+                  status: CommonStatus.ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -302,16 +310,19 @@ export default function TradeManagementPage() {
             />
           </div>
         ) : (
-          trades.map((trade, idx) => (
-            <InfoCard
-              key={trade.uuid}
-              tradeName={trade.name || ''}
-              category={`${trade.categories?.length || 0} Category${(trade.categories?.length || 0) !== 1 ? 's' : ''}`}
-              menuOptions={menuOptions}
-              onMenuAction={action => handleMenuAction(action, idx)}
-              module='trades'
-            />
-          ))
+          trades.map((trade, idx) => {
+            const { uuid, name, categories } = trade;
+            return (
+              <InfoCard
+                key={uuid}
+                tradeName={name || ''}
+                category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
+                menuOptions={menuOptions}
+                onMenuAction={action => handleMenuAction(action, idx)}
+                module='trades'
+              />
+            );
+          })
         )}
       </div>
 

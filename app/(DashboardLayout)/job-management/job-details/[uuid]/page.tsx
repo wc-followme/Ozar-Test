@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, JobStatus, ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { extractApiErrorMessage } from '@/lib/utils';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { ClipboardClose, Setting2, UserAdd } from 'iconsax-react';
 import Image from 'next/image';
@@ -20,6 +20,11 @@ import { JOB_MESSAGES } from '../../job-messages';
 import { Job } from '../../types';
 
 export default function JobDetailsPage() {
+  // Destructure constants for better readability
+  const { INACTIVE } = CommonStatus;
+  const { DONE } = JobStatus;
+  const { JOB_MANAGEMENT } = ROUTES;
+
   const params = useParams();
   const uuid = params['uuid'] as string;
   const [job, setJob] = useState<Job | null>(null);
@@ -42,8 +47,10 @@ export default function JobDetailsPage() {
       try {
         setLoading(true);
         const response = await apiService.fetchJobById(uuid);
-        if (response.data) {
-          setJob(response.data);
+        // Destructure response data for cleaner code
+        const { data } = response;
+        if (data) {
+          setJob(data);
         }
       } catch (err: unknown) {
         // Handle auth errors first (will redirect to login if 401)
@@ -76,12 +83,12 @@ export default function JobDetailsPage() {
 
     try {
       setArchiving(true);
-      await apiService.updateJob(uuid, { status: CommonStatus.INACTIVE });
-      showSuccessToast(JOB_MESSAGES.ARCHIVE_SUCCESS);
-      // Update the local job state to reflect the change
-      setJob(prev =>
-        prev ? { ...prev, status: CommonStatus.INACTIVE } : null
+      const response = await apiService.updateJob(uuid, { status: INACTIVE });
+      showSuccessToast(
+        extractApiSuccessMessage(response, JOB_MESSAGES.ARCHIVE_SUCCESS)
       );
+      // Update the local job state to reflect the change
+      setJob(prev => (prev ? { ...prev, status: INACTIVE } : null));
       setShowArchiveConfirm(false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -101,10 +108,12 @@ export default function JobDetailsPage() {
 
     try {
       setClosing(true);
-      await apiService.updateJob(uuid, { job_status: JobStatus.DONE });
-      showSuccessToast(JOB_MESSAGES.CLOSE_SUCCESS);
+      const response = await apiService.updateJob(uuid, { job_status: DONE });
+      showSuccessToast(
+        extractApiSuccessMessage(response, JOB_MESSAGES.CLOSE_SUCCESS)
+      );
       // Update the local job state to reflect the change
-      setJob(prev => (prev ? { ...prev, job_status: JobStatus.DONE } : null));
+      setJob(prev => (prev ? { ...prev, job_status: DONE } : null));
       setShowCloseConfirm(false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -120,7 +129,7 @@ export default function JobDetailsPage() {
   };
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: JOB_MESSAGES.JOB_MANAGEMENT_TITLE, href: ROUTES.JOB_MANAGEMENT },
+    { name: JOB_MESSAGES.JOB_MANAGEMENT_TITLE, href: JOB_MANAGEMENT },
     { name: job?.project_id || job?.['uuid'] || 'Job Details' },
   ];
 
@@ -150,19 +159,23 @@ export default function JobDetailsPage() {
     job_status,
   } = job;
 
-  // Fallbacks for client info
+  // Fallbacks for job properties
   const clientName = client_name || '-';
   const clientEmail = client_email || '-';
   const clientPhone = client_phone_number || '-';
   const clientAddress = client_address || '-';
   const projectImage = job_image || '/images/auth/login-slider-01.webp';
-  const mapImage = '/images/map-placeholder.png';
   const projectId = project_id || '-';
   const projectName = project_name || '-';
+  const budgetAmount = budget ?? 57000;
+
+  // Static constants
+  const mapImage = '/images/map-placeholder.png';
+  const spent = 17200; // Static fallback
+
+  // Category name with fallback
   const categoryName =
     typeof category === 'string' ? category : (category as any)?.name || '-';
-  const budgetAmount = budget ?? 57000;
-  const spent = 17200; // Static fallback
 
   const dropdownMenuItems = [
     {
@@ -171,7 +184,7 @@ export default function JobDetailsPage() {
       action: handleCloseClick,
       className:
         'text-sm px-3 py-2 rounded-md var(--text-dark) cursor-pointer transition-colors flex items-center gap-2',
-      disabled: closing || job_status === JobStatus.DONE,
+      disabled: closing || job_status === DONE,
     },
     {
       label: 'Add Employee',
@@ -186,7 +199,7 @@ export default function JobDetailsPage() {
       action: handleArchiveClick,
       className:
         'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
-      disabled: archiving || status === CommonStatus.INACTIVE,
+      disabled: archiving || status === INACTIVE,
     },
     {
       label: 'Settings',
@@ -243,12 +256,12 @@ export default function JobDetailsPage() {
       </div>
       {/* Card */}
       <div className='bg-[var(--card-background)] rounded-[20px] p-4 md:p-6 flex flex-col md:flex-row md:justify-between border border-[var(--border-dark)] max-w-full gap-4 md:gap-0 relative'>
-        {status === CommonStatus.INACTIVE && (
+        {status === INACTIVE && (
           <div className='absolute top-4 right-4 bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-medium'>
             {JOB_MESSAGES.ARCHIVED_STATUS}
           </div>
         )}
-        {job_status === JobStatus.DONE && (
+        {job_status === DONE && (
           <div className='absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium'>
             {JOB_MESSAGES.CLOSED_STATUS}
           </div>
