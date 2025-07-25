@@ -50,7 +50,7 @@ export function JobCard({ job }: JobCardProps) {
 
   return (
     <Card
-      className='border-1 border-[var(--border-dark)] shadow-sm hover:shadow-xl bg-[var(--card-background)] transition-shadow duration-200 rounded-[16px] overflow-hidden cursor-pointer'
+      className='border-1 border-[var(--border-dark)] shadow-lg sm:shadow-sm hover:shadow-2xl sm:hover:shadow-xl bg-[var(--card-background)] transition-all duration-300 rounded-[16px] overflow-hidden cursor-pointer transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'
       onClick={handleCardClick}
     >
       <CardContent className='p-0'>
@@ -60,7 +60,7 @@ export function JobCard({ job }: JobCardProps) {
             alt={job.title}
             width={400}
             height={200}
-            className='w-full h-32 xl:h-48 object-cover rounded-t-lg'
+            className='w-full h-40 xl:h-48 object-cover rounded-t-lg'
             onError={() => setImgSrc('/images/img-placeholder-md.png')}
           />
           <Badge
@@ -91,7 +91,7 @@ export function JobCard({ job }: JobCardProps) {
             </Link>
           </div>
         </div>
-        <div className='p-3 xl:p-5'>
+        <div className='p-5'>
           <div className='mb-3'>
             <h3 className='font-semibold text-base text-[var(--text-dark)] mb-1 truncate'>
               {job.title}

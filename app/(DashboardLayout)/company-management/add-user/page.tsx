@@ -258,13 +258,13 @@ export default function AddCompanyUserPage() {
         <Breadcrumb items={breadcrumbData} className='mb-6 mt-2' />
 
         {/* Main Content */}
-        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-[28px]'>
+        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-[28px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <Tabs
             value={selectedTab}
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
@@ -289,6 +289,7 @@ export default function AddCompanyUserPage() {
                     onDeletePhoto={handleDeletePhoto}
                     label={USER_MESSAGES.UPLOAD_PHOTO_LABEL}
                     text={USER_MESSAGES.UPLOAD_PHOTO_TEXT}
+                    className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                   />
                   {uploading && (
                     <div className='text-xs mt-2'>

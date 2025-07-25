@@ -1,4 +1,5 @@
 import { ROLE_MESSAGES } from '@/app/(DashboardLayout)/role-management/role-messages';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -355,21 +356,22 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
           </div>
 
           {/* Footer with action buttons */}
-          <div className='flex items-start justify-end gap-3'>
-            <button
+          <div className='flex justify-end gap-3 pt-4'>
+            <Button
               type='button'
-              className='btn-secondary !px-4 md:!px-8'
+              variant='outline'
               onClick={handleCancel}
+              className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
-              {ROLE_MESSAGES.CANCEL_BUTTON}
-            </button>
-            <button
+              Cancel
+            </Button>
+            <Button
               type='submit'
-              className='btn-primary !px-4 md:!px-8'
               disabled={isSubmitting}
+              className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
               {submitButtonContent}
-            </button>
+            </Button>
           </div>
         </form>
       </Card>

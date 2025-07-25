@@ -47,7 +47,7 @@ const menuOptions: MenuOption[] = [
 // Adapter for icons that expect className instead of size/color
 const IconAdapter = (IconComp: any) => {
   const WrappedIcon = ({ color = '#00a8bf' }) => (
-    <IconComp className='w-[30px] h-[30px]' style={{ color }} />
+    <IconComp className='w-8 h-8' style={{ color }} />
   );
   WrappedIcon.displayName = `IconAdapter(${IconComp.displayName || IconComp.name || 'Component'})`;
   return WrappedIcon;
@@ -188,7 +188,7 @@ const RoleManagement = () => {
               onClick={handleCreateRole}
               className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
             >
-              <Add size='20' color='#fff' className='sm:hidden' />
+              <Add size='24' color='#fff' className='sm:hidden' />
               <span className='hidden sm:inline'>
                 {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
               </span>

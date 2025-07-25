@@ -89,7 +89,7 @@ export function UserCard({
   };
 
   return (
-    <div className='flex flex-col bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] p-[10px] hover:shadow-lg transition-shadow duration-200'>
+    <div className='flex flex-col bg-[var(--card-background)] rounded-[16px] sm:rounded-[12px] border border-[var(--border-dark)] p-4 sm:p-[10px] hover:shadow-xl sm:hover:shadow-lg transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
       {/* Header with Avatar, User Info and Menu */}
       <div className='flex items-start gap-4 mb-2'>
         <Avatar
@@ -98,7 +98,7 @@ export function UserCard({
           avatarColor={avatarColor}
           height={80}
           width={80}
-          className='rounded-[10px]' // tailwind for rounded corners
+          className='rounded-[12px] sm:rounded-[10px] shadow-lg sm:shadow-none transition-transform duration-300 hover:scale-105 sm:hover:scale-100'
         />
 
         <div className='flex-1 min-w-0'>
@@ -120,7 +120,7 @@ export function UserCard({
                   <Button
                     variant='ghost'
                     size='sm'
-                    className='h-8 w-8 p-0 flex-shrink-0'
+                    className='h-8 w-fit p-0 flex-shrink-0 shadow-sm sm:shadow-none hover:shadow-md sm:hover:shadow-none transition-all duration-200'
                     disabled={disableActions}
                   >
                     <IconDotsVertical
@@ -160,7 +160,7 @@ export function UserCard({
 
       {/* Status Toggle */}
       {canEdit && (
-        <div className='flex items-center mt-auto justify-between bg-[var(--border-light)] rounded-[30px] py-2 px-3'>
+        <div className='flex items-center mt-auto justify-between bg-[var(--border-light)] rounded-[30px] py-2 px-3 shadow-sm sm:shadow-none'>
           <span className='text-xs font-medium text-[var(--text-dark)]'>
             Enable
           </span>

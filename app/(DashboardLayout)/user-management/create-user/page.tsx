@@ -175,7 +175,7 @@ export default function AddUserPage() {
         <Breadcrumb items={breadcrumbData} className='mb-6 mt-2' />
 
         {/* Main Content */}
-        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <div className=''>
             <div className='flex flex-col xl:flex-row items-start gap-3 md:gap-6'>
               {/* Left Column - Upload Photo */}
@@ -186,7 +186,7 @@ export default function AddUserPage() {
                   onDeletePhoto={handleDeletePhoto}
                   label={USER_MESSAGES.UPLOAD_PHOTO_LABEL}
                   // text={USER_MESSAGES.UPLOAD_PHOTO_TEXT}
-                  className='h-[250px]'
+                  className='h-[250px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                 />
                 {uploading && (
                   <div className='text-xs mt-2'>{USER_MESSAGES.UPLOADING}</div>

@@ -61,27 +61,27 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side='left'
-        className='p-0 w-[280px] max-w-full bg-[var(--card-background)] px-2 border-0 overflow-auto'
+        className='p-0 w-[280px] max-w-full bg-[var(--card-background)] px-4 border-0 overflow-auto shadow-2xl'
       >
         <SheetTitle className='hidden'></SheetTitle>
-        <nav className='py-3'>
-          <ul className='py-2 [&>li+li]:mt-0.5'>
+        <nav className='py-6'>
+          <ul className='py-2 space-y-2'>
             {filteredSidebarItems.map(({ title, href, icon: Icon }, index) => (
               <li key={index}>
                 <Link
                   href={href}
                   className={cn(
-                    'flex items-center flex-nowrap w-full px-[8px] rounded-[8px] h-[48px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                    pathname === href && 'bg-[var(--primary)] text-white'
+                    'flex items-center flex-nowrap w-full px-4 rounded-[16px] h-[56px] text-[var(--text-dark)] transition-all duration-300 hover:bg-[var(--primary)] hover:shadow-lg group transform hover:scale-[1.02] active:scale-[0.98]',
+                    pathname === href && 'bg-[var(--primary)] text-white shadow-lg'
                   )}
                   onClick={() => onOpenChange(false)}
                 >
-                  <div className='stroke-[var(--text)] group-hover:text-white'>
+                  <div className='stroke-[var(--text)] group-hover:text-white transition-colors duration-300'>
                     <Icon size='24' color='currentcolor' />
                   </div>
                   <span
                     className={cn(
-                      'overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white ml-2 max-w-[180px] opacity-100'
+                      'overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white ml-3 max-w-[180px] opacity-100 font-medium'
                     )}
                   >
                     {title}

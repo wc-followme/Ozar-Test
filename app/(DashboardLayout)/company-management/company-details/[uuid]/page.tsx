@@ -367,12 +367,12 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     <div className='w-full h-full overflow-auto'>
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbData} className='mb-6' />
-      <div className='p-4 md:p-6 bg-[var(--white-background)] rounded-[16px] md:rounded-[24px]'>
+      <div className='p-4 md:p-6 bg-[var(--white-background)] rounded-[16px] md:rounded-[24px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
         {/* Header */}
-        <div className='flex flex-col sm:flex-row gap-4 md:gap-6 items-start sm:items-center'>
-          <div className='flex-shrink-0 w-[100px] sm:w-[120px]'>
+        <div className='grid grid-cols-[100px_auto] sm:grid-cols-[120px_auto] gap-4 gap-y-1 sm:gap-y-4 items-start sm:items-start'>
+          <div className='flex-shrink-0 row-span-2 w-[100px] sm:w-[120px]'>
             {company.image ? (
-              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] p-3 rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center'>
+              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] p-3 rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
                 <Image
                   src={
                     (process.env['NEXT_PUBLIC_CDN_URL'] || '') + company.image
@@ -384,115 +384,111 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 />
               </div>
             ) : (
-              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center bg-gray-50'>
+              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center bg-gray-50 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
                 <span className='text-gray-400 text-sm text-center'>
                   No Image
                 </span>
               </div>
             )}
           </div>
-          <div className='flex-1 -mt-[5px] w-full'>
-            <div className='flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 border-b border-[var(--border-dark)] pb-3 md:pb-4 mb-3 md:mb-4'>
-              <div className='flex-1'>
-                <h1 className='text-lg sm:text-xl md:text-[24px] font-bold text-[var(--text-dark)] leading-[1] mb-2'>
-                  {company.name}
-                </h1>
-                <p className='text-sm md:text-[16px] text-[var(--text-secondary)] leading-[1]'>
-                  Construction Company
-                </p>
-              </div>
+          <div className='flex flex-col lg:flex-row item-start lg:items-center gap-3 lg:gap-4 lg:border-b border-[var(--border-dark)] pb-3 md:pb-4'>
+            <div className='flex-1'>
+              <h1 className='text-lg sm:text-xl md:text-[24px] font-bold text-[var(--text-dark)] leading-[1] mb-2'>
+                {company.name}
+              </h1>
+              <p className='text-sm md:text-[16px] text-[var(--text-secondary)] leading-[1]'>
+                Construction Company
+              </p>
+            </div>
 
-              <div className='flex flex-row items-center gap-2 sm:gap-4'>
-                <Link href={`/company-management/edit-company/${company.uuid}`}>
-                  <Button
-                    variant='outline'
-                    className='btn-secondary !h-9 text-sm w-auto'
-                  >
-                    <Edit2
-                      size='28'
-                      color='currentColor'
-                      className='[&_path]:stroke-2'
-                    />
-                    <span className='text-[var(--text-dark)]'>
-                      Edit Details
-                    </span>
-                  </Button>
-                </Link>
-                <Link
-                  className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full'
-                  href={`/company-management/add-user?company_id=${company.uuid}`}
+            <div className='flex flex-row items-center gap-2 sm:gap-4'>
+              <Link href={`/company-management/edit-company/${company.uuid}`}>
+                <Button
+                  variant='outline'
+                  className='btn-secondary !h-9 text-sm w-auto shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                 >
-                  <UserAdd size='20' color='#fff' className='sm:hidden' />
-                  <span className='hidden sm:inline'>Add User</span>
-                </Link>
-              </div>
-            </div>
-            {/* Info Row */}
-            <div className='flex flex-col sm:flex-row gap-3 md:gap-4'>
-              <div className='flex flex-col sm:flex-row sm:gap-6 gap-3 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Industry
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    Construction
-                  </div>
-                </div>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Created on
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    {formatDate(company.created_at)}
-                  </div>
-                </div>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Subscription Ends
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    {formatDate(company.expiry_date)}
-                  </div>
-                </div>
-              </div>
-              {/* Status Toggle */}
-              {!company.is_default && (
-                <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start'>
-                  <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
-                    {enabled ? 'Enable' : 'Disable'}
-                  </span>
-                  <Switch
-                    checked={enabled}
-                    onCheckedChange={handleToggle}
-                    disabled={isToggling}
-                    className={switchStyleSm}
+                  <Edit2
+                    size='28'
+                    color='currentColor'
+                    className='[&_path]:stroke-2'
                   />
-                </div>
-              )}
+                  <span className='text-[var(--text-dark)]'>Edit Details</span>
+                </Button>
+              </Link>
+              <Link
+                className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
+                href={`/company-management/add-user?company_id=${company.uuid}`}
+              >
+                <UserAdd size='20' color='#fff' className='sm:hidden' />
+                <span className='hidden sm:inline'>Add User</span>
+              </Link>
             </div>
+          </div>
+          {/* Info Row */}
+          <div className='flex flex-col sm:flex-row gap-3 md:gap-4 col-span-2 lg:col-span-1 flex-wrap'>
+            <div className='flex flex-col sm:flex-row sm:gap-6 gap-3 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
+              <div>
+                <div className='text-[var(--text-secondary)] text-sm'>
+                  Industry
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                  Construction
+                </div>
+              </div>
+              <div>
+                <div className='text-[var(--text-secondary)] text-sm'>
+                  Created on
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                  {formatDate(company.created_at)}
+                </div>
+              </div>
+              <div>
+                <div className='text-[var(--text-secondary)] text-sm'>
+                  Subscription Ends
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                  {formatDate(company.expiry_date)}
+                </div>
+              </div>
+            </div>
+            {/* Status Toggle */}
+            {!company.is_default && (
+              <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start shadow-lg sm:shadow-none'>
+                <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
+                  {enabled ? 'Enable' : 'Disable'}
+                </span>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={handleToggle}
+                  disabled={isToggling}
+                  className={switchStyleSm}
+                />
+              </div>
+            )}
           </div>
         </div>
 
         {/* Tabs */}
       </div>
       {/* Main Content */}
-      <div className='bg-[var(--white-background)] rounded-[16px] md:rounded-[20px] p-4 md:p-[28px] mt-4 min-h-[calc(100vh-370px)]'>
+      <div className='bg-[var(--white-background)] rounded-[16px] md:rounded-[20px] p-4 md:p-[28px] mt-4 min-h-[calc(100vh-370px)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
         <Tabs
           value={selectedTab}
           onValueChange={setSelectedTab}
           className='w-full'
         >
           <div className='flex justify-center sm:justify-start'>
-            <TabsList className='grid grid-cols-[auto_auto] sm:grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal w-full max-w-md sm:w-auto'>
+            <TabsList className='grid grid-cols-[auto_auto] sm:grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal w-full max-w-md sm:w-auto shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='about'
-                className='px-3 md:px-6 lg:px-8 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
+                className='px-3 md:px-6 lg:px-8 py-2 text-sm transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
                 About
               </TabsTrigger>
               <TabsTrigger
                 value='usermanagement'
-                className='px-3 md:px-6 lg:px-8 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
+                className='px-3 md:px-6 lg:px-8 py-2 text-sm transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
                 User Management
               </TabsTrigger>
@@ -501,56 +497,56 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
           <TabsContent value='about' className='py-4 md:py-6'>
             {/* About Section */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6'>
-              <div className='text-xs md:text-sm text-[var(--text-secondary)] font-normal mb-2'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+              <div className='text-sm text-[var(--text-secondary)] font-normal mb-2'>
                 About
               </div>
-              <div className='text-xs md:text-sm text-[var(--text-dark)] font-medium leading-tight'>
+              <div className='text-sm text-[var(--text-dark)] font-medium leading-tight'>
                 {company.about || 'No description available.'}
               </div>
             </div>
             {/* Contact Info Row */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5'>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-xs md:text-sm'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-sm'>
                 <div className='min-w-0'>
-                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
                     Email
                   </div>
-                  <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
                     {company.email || 'N/A'}
                   </div>
                 </div>
                 <div className='min-w-0'>
-                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
                     Phone Number
                   </div>
-                  <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
                     {company.phone_number || 'N/A'}
                   </div>
                 </div>
                 <div className='min-w-0'>
-                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
                     Address
                   </div>
-                  <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
                     {company.city && company.pincode
                       ? `${company.city}, ${company.pincode}`
                       : 'N/A'}
                   </div>
                 </div>
                 <div className='min-w-0'>
-                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
                     Communication
                   </div>
-                  <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
                     {company.preferred_communication_method || 'N/A'}
                   </div>
                 </div>
                 <div className='min-w-0 sm:col-span-2 lg:col-span-1'>
-                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
                     Website
                   </div>
-                  <div className='flex items-center gap-1 text-[var(--text-dark)] text-xs md:text-sm font-medium break-words'>
+                  <div className='flex items-center gap-1 text-[var(--text-dark)] text-sm font-medium break-words'>
                     {company.website ? (
                       <>
                         <span className='truncate'>{company.website}</span>
@@ -583,7 +579,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                   placeholder='Search here...'
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)]'
+                  className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
                 />
                 <Search className='absolute top-3 left-4' />
               </div>
@@ -600,7 +596,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 placeholder={USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40 rounded-full'
                 optionClassName={''}
-                triggerClassName='rounded-full h-[42px] border-2 border-[var(--border-dark)]'
+                triggerClassName='rounded-full h-[42px] border-2 border-[var(--border-dark)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
               />
             </div>
             <div className='mt-4 md:mt-6'>
