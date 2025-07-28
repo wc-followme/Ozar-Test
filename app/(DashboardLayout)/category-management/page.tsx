@@ -5,9 +5,11 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import CategoryForm from '@/components/shared/forms/CategoryForm';
+import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { catIconOptions } from '@/constants/sidebar-items';
 import { STATUS_CODES } from '@/constants/status-codes';
 import {
   apiService,
@@ -30,8 +32,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import CategoryCardSkeleton from '../../../components/shared/skeleton/CategoryCardSkeleton';
-import { catIconOptions } from '../../../constants/sidebar-items';
 import { CATEGORY_MESSAGES } from './category-messages';
 
 const CategoryManagement = () => {
@@ -40,6 +40,8 @@ const CategoryManagement = () => {
   const [open, setOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
+  const [_page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
 
@@ -86,55 +88,105 @@ const CategoryManagement = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fetchCategories = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await apiService.fetchCategories({
-        page: 1,
-        limit: PAGINATION.DEFAULT_LIMIT,
-        status: 'ACTIVE', // Only fetch active categories
-      });
-
-      // Handle different possible response structures
-      let newCategories: Category[] = [];
-
-      if (res && res.data) {
-        // If data is directly an array
-        if (Array.isArray(res.data)) {
-          newCategories = res.data;
-        }
-        // If data is nested under data.data
-        else if (res.data.data && Array.isArray(res.data.data)) {
-          newCategories = res.data.data;
-        }
-        // If data is just the response itself (fallback)
-        else if (Array.isArray(res)) {
-          newCategories = res;
-        }
+  const fetchCategories = useCallback(
+    async (targetPage = 1, append = false) => {
+      if (targetPage === 1) {
+        setLoading(true);
       }
 
-      setCategories(newCategories);
-    } catch (err: unknown) {
-      // Handle auth errors first (will redirect to login if 401)
-      if (handleAuthError(err)) {
-        return; // Don't show toast if it's an auth error
+      try {
+        const res = await apiService.fetchCategories({
+          page: targetPage,
+          limit: PAGINATION.CATEGORIES_LIMIT,
+          status: CommonStatus.ACTIVE, // Only fetch active categories
+        });
+
+        // Handle different possible response structures
+        let newCategories: Category[] = [];
+        let total = 0;
+
+        if (res && res.data) {
+          const { data } = res;
+
+          // If data is directly an array
+          if (Array.isArray(data)) {
+            newCategories = data;
+            total = data.length;
+          }
+          // If data is nested under data.data
+          else if (data.data && Array.isArray(data.data)) {
+            newCategories = data.data;
+            total = data.total || data.data.length;
+          }
+          // If data is just the response itself (fallback)
+          else if (Array.isArray(res)) {
+            newCategories = res;
+            total = res.length;
+          }
+        }
+
+        setCategories(prev => {
+          if (append) {
+            // Filter out duplicates when appending to prevent duplicate keys
+            const existingUuids = new Set(prev.map(category => category.uuid));
+            const uniqueNewCategories = newCategories.filter(
+              category => !existingUuids.has(category.uuid)
+            );
+            return [...prev, ...uniqueNewCategories];
+          } else {
+            return newCategories;
+          }
+        });
+
+        setPage(targetPage);
+        setHasMore(targetPage * PAGINATION.CATEGORIES_LIMIT < total); // Use PAGINATION.LIMIT
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show toast if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(
+          err,
+          CATEGORY_MESSAGES.FETCH_ERROR
+        );
+        showErrorToast(message);
+        if (!append) setCategories([]);
+        setHasMore(false);
+      } finally {
+        setLoading(false);
       }
+    },
+    [handleAuthError, showErrorToast]
+  );
 
-      const message = extractApiErrorMessage(
-        err,
-        CATEGORY_MESSAGES.FETCH_ERROR
-      );
-      showErrorToast(message);
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [handleAuthError, showErrorToast]);
-
-  // Fetch categories
+  // Fetch first page of categories
   useEffect(() => {
-    fetchCategories();
+    setPage(1);
+    setHasMore(true);
+    setCategories([]);
+    fetchCategories(1, false);
   }, [fetchCategories]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 200 &&
+        !loading &&
+        hasMore
+      ) {
+        setPage(prevPage => {
+          const nextPage = prevPage + 1;
+          fetchCategories(nextPage, true);
+          return nextPage;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, hasMore, fetchCategories]);
 
   // Delete handler
   const handleDeleteCategory = async (uuid: string) => {
@@ -151,7 +203,7 @@ const CategoryManagement = () => {
       showSuccessToast(
         extractApiSuccessMessage(response, CATEGORY_MESSAGES.DELETE_SUCCESS)
       );
-      fetchCategories();
+      fetchCategories(1, false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -174,14 +226,14 @@ const CategoryManagement = () => {
         await apiService.getCategoryDetails(uuid);
 
       if (response.statusCode === STATUS_CODES.OK && response.data) {
-        const category = response.data;
-        setEditingCategory(category);
+        const { name, description, icon } = response.data;
+        setEditingCategory(response.data);
 
         // Reset form with category data
         reset({
-          name: category.name,
-          description: category.description,
-          icon: category.icon,
+          name,
+          description,
+          icon,
         });
 
         setOpen(true);
@@ -215,18 +267,18 @@ const CategoryManagement = () => {
   const onSubmit = async (data: CreateCategoryFormData) => {
     setIsSubmitting(true);
     try {
+      const { name, description, icon } = data;
+
       if (editingCategory) {
         // Update existing category
+        const { uuid } = editingCategory;
         const updateData: UpdateCategoryRequest = {
-          name: data.name,
-          description: data.description,
-          icon: data.icon,
+          name,
+          description,
+          icon,
         };
 
-        const response = await apiService.updateCategory(
-          editingCategory.uuid,
-          updateData
-        );
+        const response = await apiService.updateCategory(uuid, updateData);
         if (
           response.statusCode === STATUS_CODES.OK ||
           response.statusCode === STATUS_CODES.CREATED
@@ -237,9 +289,7 @@ const CategoryManagement = () => {
 
           // Update the category in the list
           setCategories(categories =>
-            categories.map(c =>
-              c.uuid === editingCategory.uuid ? { ...c, ...updateData } : c
-            )
+            categories.map(c => (c.uuid === uuid ? { ...c, ...updateData } : c))
           );
 
           // Reset form and close modal
@@ -256,10 +306,10 @@ const CategoryManagement = () => {
       } else {
         // Create new category
         const categoryData: CreateCategoryRequest = {
-          name: data.name,
-          description: data.description,
-          icon: data.icon,
-          status: 'ACTIVE', // Default to ACTIVE when creating
+          name,
+          description,
+          icon,
+          status: CommonStatus.ACTIVE, // Default to ACTIVE when creating
           is_default: false, // New categories are not default
         };
 
@@ -281,7 +331,7 @@ const CategoryManagement = () => {
           setOpen(false);
 
           // Refresh categories list
-          fetchCategories();
+          fetchCategories(1, false);
         } else {
           throw new Error(response.message || CATEGORY_MESSAGES.CREATE_ERROR);
         }
@@ -403,6 +453,11 @@ const CategoryManagement = () => {
             </div>
           )}
         </>
+      )}
+      {loading && categories.length > 0 && (
+        <div className='text-center py-4'>
+          <LoadingComponent variant='inline' size='md' text={''} />
+        </div>
       )}
 
       {/* Create/Edit Category Side Sheet */}

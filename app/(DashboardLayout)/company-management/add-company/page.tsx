@@ -4,6 +4,7 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { CompanyInfoForm } from '@/components/shared/forms/CompanyinfoForm';
 import { useToast } from '@/components/ui/use-toast';
+import { CommonStatus, ROUTES } from '@/constants/common';
 import { apiService, CreateCompanyRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
@@ -15,8 +16,11 @@ import { COMPANY_MESSAGES } from '../company-messages';
 import { CompanyCreateFormData } from '../company-types';
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Add Company' }, // current page
+  {
+    name: COMPANY_MESSAGES.COMPANY_MANAGEMENT_TITLE,
+    href: ROUTES.COMPANY_MANAGEMENT,
+  },
+  { name: COMPANY_MESSAGES.ADD_COMPANY_TITLE }, // current page
 ];
 
 export default function AddCompanyPage() {
@@ -27,6 +31,9 @@ export default function AddCompanyPage() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  // Destructure constants for cleaner code
+  const { ACTIVE } = CommonStatus;
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -60,53 +67,70 @@ export default function AddCompanyPage() {
   };
 
   const handleCreateCompany = async (data: CompanyCreateFormData) => {
-    console.log('Received form data in handleCreateCompany:', data);
     setFormLoading(true);
     try {
+      const {
+        name,
+        tagline,
+        about,
+        email,
+        country_code,
+        phone_number,
+        communication,
+        website,
+        preferred_communication_method,
+        city,
+        pincode,
+        projects,
+        contractor_name,
+        contractor_email,
+        contractor_phone,
+        contractor_profile_url,
+        expiry_date,
+      } = data;
+
       const payload: CreateCompanyRequest = {
-        name: data.name,
-        tagline: data.tagline,
-        about: data.about,
-        email: data.email,
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        communication: data.communication,
-        website: data.website,
-        preferred_communication_method: data.preferred_communication_method,
-        city: data.city,
-        pincode: data.pincode,
-        projects: data.projects,
+        name,
+        tagline,
+        about,
+        email,
+        country_code,
+        phone_number,
+        communication,
+        website,
+        preferred_communication_method,
+        city,
+        pincode,
+        projects,
         is_default: false,
-        status: 'ACTIVE',
+        status: ACTIVE,
         image: fileKey,
       };
 
       // Add contractor information if provided
-      if (data.contractor_name) {
-        payload.contractor_name = data.contractor_name;
+      if (contractor_name) {
+        payload.contractor_name = contractor_name;
       }
-      if (data.contractor_email) {
-        payload.contractor_email = data.contractor_email;
+      if (contractor_email) {
+        payload.contractor_email = contractor_email;
       }
-      if (data.contractor_phone) {
-        payload.contractor_phone = data.contractor_phone;
+      if (contractor_phone) {
+        payload.contractor_phone = contractor_phone;
       }
-      if (data.contractor_profile_url) {
-        payload.contractor_profile_url = data.contractor_profile_url;
+      if (contractor_profile_url) {
+        payload.contractor_profile_url = contractor_profile_url;
       }
 
       // Add expiry_date only if it's provided
-      if (data.expiry_date) {
-        payload.expiry_date = data.expiry_date;
+      if (expiry_date) {
+        payload.expiry_date = expiry_date;
       }
-
-      console.log('Final API payload being sent:', payload);
 
       const response = await apiService.createCompany(payload);
       showSuccessToast(
         extractApiSuccessMessage(response, COMPANY_MESSAGES.CREATE_SUCCESS)
       );
-      router.push('/company-management');
+      router.push(ROUTES.COMPANY_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -134,7 +158,10 @@ export default function AddCompanyPage() {
           <div className='flex items-start flex-col xl:flex-row gap-4 md:gap-6'>
             {/* Left Column - Upload Photo */}
             <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 relative shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
-              <h2 className='text-lg font-bold mb-4'>Upload Logo</h2>
+              <h2 className='text-lg font-bold mb-4'>
+                {' '}
+                {COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
+              </h2>
               <PhotoUploadField
                 photo={photoFile}
                 onPhotoChange={handlePhotoChange}

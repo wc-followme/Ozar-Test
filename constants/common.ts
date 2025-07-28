@@ -5,6 +5,13 @@ export const PAGINATION = {
   DEFAULT_LIMIT: 10, // Standard limit for most listing pages
   USERS_LIMIT: 20, // Higher limit for user listing to improve infinite scroll UX
   ROLES_DROPDOWN_LIMIT: 50, // Higher limit for role dropdowns to get complete lists
+  TOOLS_LIMIT: 28, // Limit for tools management
+  CATEGORIES_LIMIT: 16, // Limit for category management
+  MATERIALS_LIMIT: 32, // Limit for material management
+  ROLES_LIMIT: 12, // Limit for role management
+  COMPANY_LIMIT: 8, // Limit for company management
+  JOBS_LIMIT: 8, // Limit for job management
+  TRADES_LIMIT: 32, // Limit for trade management
 } as const;
 
 // General App Constants
@@ -21,6 +28,20 @@ export const ROUTES = {
   HOME_OWNER: '/home-owner',
   JOB_MANAGEMENT: '/job-management',
   DASHBOARD: '/',
+  COMPANY_MANAGEMENT: '/company-management',
+  ADD_COMPANY: '/company-management/add-company',
+  COMPANY_DETAILS: '/company-management/company-details',
+  ADD_USER: '/company-management/add-user',
+  TOOLS_MANAGEMENT: '/tools-management',
+  USER_MANAGEMENT: '/user-management',
+  CREATE_USER: '/user-management/create-user',
+  ROLE_MANAGEMENT: '/role-management',
+  CREATE_ROLE: '/role-management/create-role',
+  EDIT_ROLE: '/role-management/edit-role',
+  CATEGORY_MANAGEMENT: '/category-management',
+  MATERIAL_MANAGEMENT: '/material-management',
+  SERVICE_MANAGEMENT: '/service-management',
+  TRADE_MANAGEMENT: '/trade-management',
 } as const;
 
 // Action constants for menu options and permissions
@@ -214,6 +235,16 @@ export enum JobFilterType {
   WAITING_ON_CLIENT = 'WAITING_ON_CLIENT',
   ONGOING = 'ONGOING',
 }
+
+// Job Management Tab Values
+export const JOB_TABS = {
+  NEW_LEADS: 'newLeads',
+  INFO: 'info',
+  ONGOING_JOB: 'ongoingJob',
+  WAITING_ON_CLIENT: 'waitingOnClient',
+  ARCHIVE: 'archive',
+  CLOSED: 'closed',
+} as const;
 
 // Future constants can be added here
 // export const OTHER_CONSTANTS = {

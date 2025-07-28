@@ -1,51 +1,66 @@
 'use client';
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 
+import { FlagHookIcon } from '@/components/icons/FalgHookIcon';
+import { JobCard } from '@/components/shared/cards/JobCard';
+import { StatsCard } from '@/components/shared/cards/StatsCard';
+import ComingSoon from '@/components/shared/common/ComingSoon';
+import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
+import SideSheet from '@/components/shared/common/SideSheet';
+import { CreateJobForm } from '@/components/shared/forms/CreateJobForm';
+import { JobCardSkeleton } from '@/components/shared/skeleton/JobCardSkeleton';
+import JobManagementPageSkeleton from '@/components/shared/skeleton/JobManagementPageSkeleton';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import {
   APP_CONFIG,
   CommonStatus,
+  JOB_TABS,
   JobFilterType,
   JobStatus,
+  PAGINATION,
   ROUTES,
 } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  extractApiSuccessMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { IconFlag } from '@tabler/icons-react';
 import { Add, Profile2User } from 'iconsax-react';
 import { DollarSign } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlagHookIcon } from '../../../components/icons/FalgHookIcon';
-import { JobCard } from '../../../components/shared/cards/JobCard';
-import { StatsCard } from '../../../components/shared/cards/StatsCard';
-import ComingSoon from '../../../components/shared/common/ComingSoon';
-import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
-import SideSheet from '../../../components/shared/common/SideSheet';
-import { CreateJobForm } from '../../../components/shared/forms/CreateJobForm';
-import { JobCardSkeleton } from '../../../components/shared/skeleton/JobCardSkeleton';
-import JobManagementPageSkeleton from '../../../components/shared/skeleton/JobManagementPageSkeleton';
-import { Badge } from '../../../components/ui/badge';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '../../../components/ui/tabs';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
-
 export default function JobManagement() {
-  const [selectedTab, setSelectedTab] = useState('newLeads');
+  // Destructure constants for better readability
+  const { ACTIVE, INACTIVE } = CommonStatus;
+  const { NEW_LEADS, ALL } = JobFilterType;
+  const { DONE } = JobStatus;
+  const { HOME_OWNER } = ROUTES;
+  const { JOBS_LIMIT } = PAGINATION;
+  const {
+    NEW_LEADS: NEW_LEADS_TAB,
+    INFO,
+    ONGOING_JOB,
+    WAITING_ON_CLIENT,
+    ARCHIVE,
+    CLOSED,
+  } = JOB_TABS;
+
+  const [selectedTab, setSelectedTab] = useState<string>(NEW_LEADS_TAB);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]); // Replace mockJobs
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedLink, setGeneratedLink] = useState<string>('');
+  const [_page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const isInitialMount = useRef(true);
@@ -57,7 +72,7 @@ export default function JobManagement() {
 
   // Helper function to generate home-owner link
   const generateHomeOwnerLink = (jobUuid: string) =>
-    `${APP_CONFIG.BASE_URL}${ROUTES.HOME_OWNER}/${jobUuid}`;
+    `${APP_CONFIG.BASE_URL}${HOME_OWNER}/${jobUuid}`;
 
   // State for filter counts
   const [filterCounts, setFilterCounts] = useState<JobFilterCounts>({
@@ -88,59 +103,92 @@ export default function JobManagement() {
 
   // Function to fetch jobs based on selected tab
   const fetchJobsByTab = useCallback(
-    async (tab: string, isInitialLoad = false) => {
+    async (tab: string, targetPage = 1, append = false) => {
       try {
-        if (isInitialLoad) {
+        if (targetPage === 1) {
           setLoading(true);
         } else {
           setTabLoading(true);
         }
         const params: any = {
-          page: 1,
-          limit: 10,
+          page: targetPage,
+          limit: JOBS_LIMIT,
         };
 
         // Set parameters based on selected tab
         switch (tab) {
-          case 'newLeads':
-            params.status = CommonStatus.ACTIVE;
-            params.type = JobFilterType.NEW_LEADS;
+          case NEW_LEADS_TAB:
+            params.status = ACTIVE;
+            params.type = NEW_LEADS;
             break;
-          case 'info':
+          case INFO:
             return;
-          // params.status = CommonStatus.ACTIVE;
-          // params.type = JobFilterType.NEED_ATTENTION;
+          // params.status = ACTIVE;
+          // params.type = NEED_ATTENTION;
           // break;
-          case 'ongoingJob':
+          case ONGOING_JOB:
             return;
-          // params.status = CommonStatus.ACTIVE;
-          // params.type = JobFilterType.ONGOING;
+          // params.status = ACTIVE;
+          // params.type = ONGOING;
           // break;
-          case 'waitingOnClient':
+          case WAITING_ON_CLIENT:
             return;
-          // params.status = CommonStatus.ACTIVE;
-          // params.type = JobFilterType.WAITING_ON_CLIENT;
+          // params.status = ACTIVE;
+          // params.type = WAITING_ON_CLIENT;
           // break;
-          case 'archive':
-            params.status = CommonStatus.INACTIVE;
-            params.type = JobFilterType.ALL;
+          case ARCHIVE:
+            params.status = INACTIVE;
+            params.type = ALL;
             break;
-          case 'closed':
-            params.status = CommonStatus.ACTIVE;
-            params.type = JobFilterType.ALL;
-            params.job_status = JobStatus.DONE;
+          case CLOSED:
+            params.status = ACTIVE;
+            params.type = ALL;
+            params.job_status = DONE;
             break;
           default:
-            params.status = CommonStatus.ACTIVE;
-            params.type = JobFilterType.ALL;
+            params.status = ACTIVE;
+            params.type = ALL;
         }
 
         const response = await apiService.fetchJobs(params);
-        setJobs(
-          Array.isArray(response.data)
-            ? response.data
-            : response.data?.data || []
-        );
+
+        // Handle different possible response structures
+        let newJobs: Job[] = [];
+        let total = 0;
+
+        if (response && response.data) {
+          // If data is directly an array
+          if (Array.isArray(response.data)) {
+            newJobs = response.data;
+            total = response.data.length; // Fallback if no total provided
+          }
+          // If data is nested under data.data
+          else if (response.data.data && Array.isArray(response.data.data)) {
+            newJobs = response.data.data;
+            total = response.data.total || response.data.data.length;
+          }
+          // If data is just the response itself (fallback)
+          else if (Array.isArray(response)) {
+            newJobs = response;
+            total = response.length;
+          }
+        }
+
+        setJobs(prev => {
+          if (append) {
+            // Filter out duplicates when appending to prevent duplicate keys
+            const existingUuids = new Set(prev.map(job => job.uuid));
+            const uniqueNewJobs = newJobs.filter(
+              job => !existingUuids.has(job.uuid)
+            );
+            return [...prev, ...uniqueNewJobs];
+          } else {
+            return newJobs;
+          }
+        });
+
+        setPage(targetPage);
+        setHasMore(targetPage * JOBS_LIMIT < total);
       } catch (err: unknown) {
         // Handle auth errors first (will redirect to login if 401)
         if (handleAuthError(err)) {
@@ -149,8 +197,10 @@ export default function JobManagement() {
 
         const message = extractApiErrorMessage(err, JOB_MESSAGES.FETCH_ERROR);
         showErrorToast(message);
+        if (!append) setJobs([]);
+        setHasMore(false);
       } finally {
-        if (isInitialLoad) {
+        if (targetPage === 1) {
           setLoading(false);
         } else {
           setTabLoading(false);
@@ -169,22 +219,45 @@ export default function JobManagement() {
   useEffect(() => {
     // Skip fetching for tabs that don't have API data
     if (
-      selectedTab === 'info' ||
-      selectedTab === 'ongoingJob' ||
-      selectedTab === 'waitingOnClient'
+      selectedTab === INFO ||
+      selectedTab === ONGOING_JOB ||
+      selectedTab === WAITING_ON_CLIENT
     ) {
       return;
     }
 
-    // Use isInitialLoad=true only on first mount, false for tab switching
-    const isInitialLoad = isInitialMount.current;
-    fetchJobsByTab(selectedTab, isInitialLoad);
+    // Reset pagination for new tab
+    setPage(1);
+    setHasMore(true);
+    setJobs([]);
+    fetchJobsByTab(selectedTab, 1, false);
 
     // Mark that initial mount is complete
     if (isInitialMount.current) {
       isInitialMount.current = false;
     }
   }, [selectedTab, fetchJobsByTab]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 200 &&
+        !loading &&
+        !tabLoading &&
+        hasMore
+      ) {
+        setPage(prevPage => {
+          const nextPage = prevPage + 1;
+          fetchJobsByTab(selectedTab, nextPage, true);
+          return nextPage;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, tabLoading, hasMore, fetchJobsByTab, selectedTab]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -193,6 +266,7 @@ export default function JobManagement() {
 
   // Handle job creation
   const handleCreateJob = async (data: CreateJobFormData) => {
+    // Destructure form data for cleaner code
     const {
       client_name,
       client_email,
@@ -238,12 +312,17 @@ export default function JobManagement() {
       // Call API using apiService
       const response = await apiService.createJob(payload);
 
-      if (response.data) {
+      // Destructure response data for cleaner code
+      const { data: responseData } = response;
+
+      if (responseData) {
         // Generate home-owner link with job UUID
-        const jobUuid = response.data?.uuid || response.data?.id;
+        const jobUuid = responseData?.uuid || responseData?.id;
         const homeOwnerLink = jobUuid ? generateHomeOwnerLink(jobUuid) : null;
 
-        showSuccessToast(response?.message || JOB_MESSAGES.CREATE_SUCCESS);
+        showSuccessToast(
+          extractApiSuccessMessage(response, JOB_MESSAGES.CREATE_SUCCESS)
+        );
 
         // Set the generated link
         if (homeOwnerLink) {
@@ -251,7 +330,7 @@ export default function JobManagement() {
         }
         if (job_boxes_step?.length === 0) {
           setIsOpen(false);
-          fetchJobsByTab(selectedTab);
+          fetchJobsByTab(selectedTab, 1, false);
           fetchFilterCounts();
         }
         // Refresh jobs and counts after successful creation
@@ -305,7 +384,8 @@ export default function JobManagement() {
       bgColor: 'bg-[#F58B1E1A]',
     },
   ];
-  if (loading) {
+  // Show full page skeleton only on initial load
+  if (loading && isInitialMount.current) {
     return <JobManagementPageSkeleton />;
   }
 
@@ -313,6 +393,7 @@ export default function JobManagement() {
   const JobGrid = ({ jobs }: { jobs: Job[] }) => (
     <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
       {jobs.map((job: Job) => {
+        // Destructure job data for cleaner code
         const {
           uuid,
           client_name,
@@ -360,16 +441,20 @@ export default function JobManagement() {
     <div className=''>
       {/* Stats Cards */}
       <div className='grid grid-cols-2 lg:grid-cols-4 md:gap-6 sm:gap-4 gap-2 mb-8'>
-        {stats.map(stat => (
-          <StatsCard
-            key={stat.id}
-            icon={stat.icon}
-            value={stat.value}
-            label={stat.label}
-            iconColor={stat.iconColor}
-            bgColor={stat.bgColor}
-          />
-        ))}
+        {stats.map(stat => {
+          // Destructure stat data for cleaner code
+          const { id, icon, value, label, iconColor, bgColor } = stat;
+          return (
+            <StatsCard
+              key={id}
+              icon={icon}
+              value={value}
+              label={label}
+              iconColor={iconColor}
+              bgColor={bgColor}
+            />
+          );
+        })}
       </div>
 
       {/* Jobs Grid */}
@@ -396,7 +481,7 @@ export default function JobManagement() {
             >
               <TabsList className='flex w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full overflow-hidden shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
                 <TabsTrigger
-                  value='newLeads'
+                  value={NEW_LEADS_TAB}
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
                   <span className='flex items-center gap-2'>
@@ -404,49 +489,49 @@ export default function JobManagement() {
                       New Leads
                     </span>
                     <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'newLeads' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === NEW_LEADS_TAB ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
                     >
                       {filterCounts.new_leads}
                     </Badge>
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
-                  value='info'
+                  value={INFO}
                   className='hidden px-4 py-2 text-sm xl:text-base gap-3 transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
                 >
                   Need Attention{' '}
                   <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === 'info' ? 'bg-sidebarpurple text-white' : 'bg-transparent text-sidebarpurple'}`}
+                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === INFO ? 'bg-sidebarpurple text-white' : 'bg-transparent text-sidebarpurple'}`}
                   >
                     {filterCounts.need_attention}
                   </Badge>
                 </TabsTrigger>
 
                 <TabsTrigger
-                  value='ongoingJob'
+                  value={ONGOING_JOB}
                   className='hidden px-8  py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
                 >
                   Ongoing Job
                   <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === 'ongoingJob' ? 'bg-yellowbrand text-white' : 'bg-transparent text-yellowbrand'}`}
+                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === ONGOING_JOB ? 'bg-yellowbrand text-white' : 'bg-transparent text-yellowbrand'}`}
                   >
                     {filterCounts.ongoing_jobs}
                   </Badge>
                 </TabsTrigger>
                 <TabsTrigger
-                  value='waitingOnClient'
+                  value={WAITING_ON_CLIENT}
                   className='hidden px-8  py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
                 >
                   {filterCounts.waiting_on_client}
                   <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === 'closed' ? 'bg-greenbrand text-white' : 'bg-transparent text-greenbrand'}`}
+                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === WAITING_ON_CLIENT ? 'bg-greenbrand text-white' : 'bg-transparent text-greenbrand'}`}
                   >
                     {filterCounts.waiting_on_client || 0}
                   </Badge>
                 </TabsTrigger>
 
                 <TabsTrigger
-                  value='archive'
+                  value={ARCHIVE}
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
                   <span className='flex items-center gap-2'>
@@ -454,14 +539,14 @@ export default function JobManagement() {
                       Archived
                     </span>
                     <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'archive' ? 'bg-graybrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-graybrand'}`}
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === ARCHIVE ? 'bg-graybrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-graybrand'}`}
                     >
                       {filterCounts.archived}
                     </Badge>
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
-                  value='closed'
+                  value={CLOSED}
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
                   <span className='flex items-center gap-2'>
@@ -469,7 +554,7 @@ export default function JobManagement() {
                       Closed
                     </span>
                     <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'closed' ? 'bg-greenbrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-greenbrand'}`}
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === CLOSED ? 'bg-greenbrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-greenbrand'}`}
                     >
                       {filterCounts.closed || 0}
                     </Badge>
@@ -489,54 +574,78 @@ export default function JobManagement() {
               </button>
             )}
           </div>
-          <TabsContent value='newLeads' className='pt-4 sm:pt-8'>
-            {tabLoading ? (
+          <TabsContent value={NEW_LEADS_TAB} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
-            ) : jobs.length === 0 ? (
+            ) : jobs.length === 0 && !loading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
                 onButtonClick={() => setIsOpen(true)}
               />
             ) : (
-              <JobGrid jobs={jobs} />
+              <>
+                <JobGrid jobs={jobs} />
+                {/* Loading more jobs */}
+                {tabLoading && jobs.length > 0 && (
+                  <div className='w-full text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
-          <TabsContent value='info' className='pt-4 sm:pt-8'>
+          <TabsContent value={INFO} className='pt-4 sm:pt-8'>
             <ComingSoon />
           </TabsContent>
 
-          <TabsContent value='ongoingJob' className='p-8'>
+          <TabsContent value={ONGOING_JOB} className='p-8'>
             <NoDataFound buttonText='Create Job' />
           </TabsContent>
-          <TabsContent value='waitingOnClient' className='p-8'>
+          <TabsContent value={WAITING_ON_CLIENT} className='p-8'>
             <NoDataFound buttonText='Create Job' />
           </TabsContent>
-          <TabsContent value='closed' className='pt-4 sm:pt-8'>
-            {tabLoading ? (
+          <TabsContent value={CLOSED} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
-            ) : jobs.length === 0 ? (
+            ) : jobs.length === 0 && !loading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
                 onButtonClick={() => setIsOpen(true)}
               />
             ) : (
-              <JobGrid jobs={jobs} />
+              <>
+                <JobGrid jobs={jobs} />
+                {/* Loading more jobs */}
+                {tabLoading && jobs.length > 0 && (
+                  <div className='w-full text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
-          <TabsContent value='archive' className='pt-4 sm:pt-8'>
-            {tabLoading ? (
+          <TabsContent value={ARCHIVE} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
-            ) : jobs.length === 0 ? (
+            ) : jobs.length === 0 && !loading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
                 onButtonClick={() => setIsOpen(true)}
               />
             ) : (
-              <JobGrid jobs={jobs} />
+              <>
+                <JobGrid jobs={jobs} />
+                {/* Loading more jobs */}
+                {tabLoading && jobs.length > 0 && (
+                  <div className='w-full text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
         </Tabs>
@@ -548,7 +657,7 @@ export default function JobManagement() {
           setIsOpen(open);
           if (!open) {
             setGeneratedLink(''); // Clear generated link when opening form
-            fetchJobsByTab(selectedTab);
+            fetchJobsByTab(selectedTab, 1, false);
             fetchFilterCounts();
           }
         }}

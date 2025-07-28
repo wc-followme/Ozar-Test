@@ -6,7 +6,7 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import { PAGINATION } from '@/constants/common';
+import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import {
   apiService,
   UpdateUserRequest,
@@ -43,12 +43,11 @@ interface EditUserPageProps {
   }>;
 }
 
-const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'User Management', href: '/user-management' },
-  { name: 'Edit User' }, // current page
-];
-
 export default function EditUserPage({ params }: EditUserPageProps) {
+  const { USER_MANAGEMENT } = ROUTES;
+  const { ACTIVE } = CommonStatus;
+  const { ROLES_DROPDOWN_LIMIT } = PAGINATION;
+
   const resolvedParams = React.use(params);
 
   // State for all accordions' switches
@@ -190,8 +189,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
+  const breadcrumbData: BreadcrumbItem[] = [
+    { name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB, href: USER_MANAGEMENT },
+    { name: USER_MESSAGES.EDIT_USER_BREADCRUMB },
+  ];
+
   const handleCancel = () => {
-    router.push('/user-management');
+    router.push(USER_MANAGEMENT);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -209,7 +213,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   // Load permissions from localStorage and initialize
   useEffect(() => {
     // Remove localStorage logic - we'll load from API instead
-    console.log('Removed localStorage logic - loading from API');
   }, []); // Run only once on component mount
 
   // Fetch user details and roles
@@ -222,17 +225,18 @@ export default function EditUserPage({ params }: EditUserPageProps) {
           apiService.getUserDetails(resolvedParams.uuid),
           apiService.fetchRoles({
             page: 1,
-            limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
+            limit: ROLES_DROPDOWN_LIMIT,
             status: '', // Fetch both active and inactive roles
           }),
         ]);
 
         // Set user data
         if (userRes.statusCode === 200 && userRes.data) {
-          setUser(userRes.data);
+          const { data: userData } = userRes;
+          setUser(userData);
           // Set existing image if available
-          if (userRes.data.profile_picture_url) {
-            setFileKey(userRes.data.profile_picture_url);
+          if (userData.profile_picture_url) {
+            setFileKey(userData.profile_picture_url);
           }
         }
 
@@ -242,7 +246,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
           roleList.map(({ id, name, status }) => ({
             id,
             name,
-            status: status || 'ACTIVE',
+            status: status || ACTIVE,
           }))
         );
       } catch (err: unknown) {
@@ -256,7 +260,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
           USER_MESSAGES.FETCH_DETAILS_ERROR
         );
         showErrorToast(message);
-        router.push('/user-management');
+        router.push(USER_MANAGEMENT);
       } finally {
         setLoading(false);
         setLoadingRoles(false);
@@ -264,7 +268,15 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     };
 
     fetchData();
-  }, [resolvedParams.uuid, router, showErrorToast, handleAuthError]);
+  }, [
+    resolvedParams.uuid,
+    router,
+    showErrorToast,
+    handleAuthError,
+    ROLES_DROPDOWN_LIMIT,
+    ACTIVE,
+    USER_MANAGEMENT,
+  ]);
 
   // Fetch user permissions
   useEffect(() => {
@@ -276,8 +288,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         );
         if (response.statusCode === 200 && response.data) {
           // Extract permissions from the response
-          const permissionsData = response.data.permissions || response.data;
-          console.log('Fetched permissions data:', permissionsData);
+          const { data: permissionsData } = response;
+          const permissions = permissionsData.permissions || permissionsData;
 
           // Update accordions state based on fetched permissions
           const updatedAccordions = ACCESS_CONTROL_ACCORDIONS_DATA.map(
@@ -295,10 +307,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
               ];
               const permissionKey = permissionKeys[accordionIdx];
               const userPermissions = permissionKey
-                ? (permissionsData as any)[permissionKey]
+                ? (permissions as any)[permissionKey]
                 : undefined;
-
-              console.log(`Processing ${permissionKey}:`, userPermissions);
 
               if (userPermissions) {
                 const updatedStripes = acc.stripes.map((_, stripeIdx) => {
@@ -323,10 +333,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     const permissionValue = (userPermissions as any)[
                       permissionName
                     ];
-                    console.log(
-                      `Setting ${permissionKey}.${permissionName} to:`,
-                      permissionValue
-                    );
+
                     return permissionValue === true;
                   }
                   return false;
@@ -339,9 +346,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
               }
 
               // If no permissions found for this section, default all to false
-              console.log(
-                `No permissions found for ${permissionKey}, defaulting to false`
-              );
               return {
                 title: acc.title,
                 stripes: acc.stripes.map(() => false),
@@ -393,8 +397,9 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         purpose: 'profile-picture',
         customPath: '',
       });
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      const { data } = presigned;
+      await uploadFileToPresignedUrl(data['uploadUrl'], file);
+      setFileKey(data['fileKey'] || '');
     } catch {
       showErrorToast(USER_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
@@ -410,30 +415,45 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   };
 
   const handleUpdateUser = async (data: UserFormData) => {
+    const {
+      role_id,
+      name,
+      email,
+      country_code,
+      phone_number,
+      designation,
+      preferred_communication_method,
+      address,
+      city,
+      pincode,
+      password,
+      date_of_joining,
+    } = data;
+
     setFormLoading(true);
     try {
       const payload: UpdateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        role_id,
+        name,
+        email,
+        country_code,
+        phone_number,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
       };
 
       // Only include password if provided
-      if (data.password) {
-        payload.password = data.password;
+      if (password) {
+        payload.password = password;
       }
 
       // Only include date if provided
-      if (data.date_of_joining) {
-        payload.date_of_joining = data.date_of_joining;
+      if (date_of_joining) {
+        payload.date_of_joining = date_of_joining;
       }
 
       const response = await apiService.updateUser(
@@ -443,7 +463,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.UPDATE_SUCCESS)
       );
-      router.push('/user-management');
+      router.push(USER_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -461,7 +481,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     setFormLoading(true);
     try {
       const permissionsData = generatePermissionsJson(accordions);
-      console.log('Sending permissions data to API:', permissionsData);
 
       const response = await apiService.updateUserPermissions(
         resolvedParams.uuid,
@@ -633,7 +652,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                   </div>
                   <div className='flex justify-end sm:gap-6 gap-4 mt-8'>
                     <Link
-                      href={'/user-management'}
+                      href={USER_MANAGEMENT}
                       className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     >
                       Cancel

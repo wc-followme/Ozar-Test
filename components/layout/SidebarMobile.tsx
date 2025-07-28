@@ -64,7 +64,7 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
         className='p-0 w-[280px] max-w-full bg-[var(--card-background)] px-4 border-0 overflow-auto shadow-2xl'
       >
         <SheetTitle className='hidden'></SheetTitle>
-        <nav className='py-6'>
+        <nav className='py-8'>
           <ul className='py-2 space-y-2'>
             {filteredSidebarItems.map(({ title, href, icon: Icon }, index) => (
               <li key={index}>
@@ -72,7 +72,8 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
                   href={href}
                   className={cn(
                     'flex items-center flex-nowrap w-full px-4 rounded-[16px] h-[56px] text-[var(--text-dark)] transition-all duration-300 hover:bg-[var(--primary)] hover:shadow-lg group transform hover:scale-[1.02] active:scale-[0.98]',
-                    pathname === href && 'bg-[var(--primary)] text-white shadow-lg'
+                    pathname === href &&
+                      'bg-[var(--primary)] text-white shadow-lg'
                   )}
                   onClick={() => onOpenChange(false)}
                 >

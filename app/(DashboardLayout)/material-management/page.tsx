@@ -2,20 +2,21 @@
 import { InfoCard } from '@/components/shared/cards/InfoCard';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import MaterialForm from '@/components/shared/forms/MaterialForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  extractApiSuccessMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import React, { useCallback, useEffect, useState } from 'react';
-import NoDataFound from '../../../components/shared/common/NoDataFound';
 import TradeCardSkeleton from '../../../components/shared/skeleton/TradeCardSkeleton';
 import { MATERIAL_MESSAGES } from './material-messages';
 import { Material } from './material-types';
@@ -41,9 +42,14 @@ const menuOptions: {
 ];
 
 export default function MaterialManagementPage() {
+  // Destructure constants for better readability
+  const { EDIT, DELETE } = ACTIONS;
+  const { ACTIVE } = CommonStatus;
+  const { MATERIALS_LIMIT } = PAGINATION;
+
   const [materials, setMaterials] = useState<Material[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(MATERIALS_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -158,11 +164,11 @@ export default function MaterialManagementPage() {
     const material = materials[idx];
     if (!material) return;
 
-    if (action === ACTIONS.EDIT) {
+    if (action === EDIT) {
       setEditingMaterialUuid(material.uuid);
       setSideSheetOpen(true);
     }
-    if (action === ACTIONS.DELETE) {
+    if (action === DELETE) {
       setDeleteIdx(idx);
       setDeleteMaterialName(material.name || '');
       setModalOpen(true);
@@ -173,18 +179,27 @@ export default function MaterialManagementPage() {
     if (deleteIdx !== null) {
       const material = materials[deleteIdx];
       if (material) {
+        const { uuid } = material;
         try {
-          const response = await apiService.deleteMaterial(material.uuid);
+          const response = await apiService.deleteMaterial(uuid);
           showSuccessToast(
-            response.message || MATERIAL_MESSAGES.DELETE_SUCCESS
+            extractApiSuccessMessage(response, MATERIAL_MESSAGES.DELETE_SUCCESS)
           );
           // Remove the material from local state instead of fetching again
           setMaterials(prevMaterials =>
             prevMaterials.filter((_, index) => index !== deleteIdx)
           );
-        } catch (error) {
-          console.error('Failed to delete material:', error);
-          showErrorToast(MATERIAL_MESSAGES.DELETE_ERROR);
+        } catch (err: unknown) {
+          // Handle auth errors first (will redirect to login if 401)
+          if (handleAuthError(err)) {
+            return; // Don't show toast if it's an auth error
+          }
+
+          const message = extractApiErrorMessage(
+            err,
+            MATERIAL_MESSAGES.DELETE_ERROR
+          );
+          showErrorToast(message);
         }
       }
       setDeleteIdx(null);
@@ -197,26 +212,28 @@ export default function MaterialManagementPage() {
     services: string;
     materialData?: Material;
   }) => {
+    const { materialName, services, materialData } = data;
+
     // Use the actual material data from API response if available
-    if (data.materialData) {
+    if (materialData) {
       // Add the new material to the beginning of the materials list
-      setMaterials(prevMaterials => [data.materialData!, ...prevMaterials]);
+      setMaterials(prevMaterials => [materialData, ...prevMaterials]);
     } else {
       // Fallback: Create a new material object to add to local state
       const newMaterial: Material = {
         id: Date.now(), // Temporary ID for local state
         uuid: `temp-${Date.now()}`, // Temporary UUID
-        name: data.materialName,
+        name: materialName,
         description: '',
         is_default: false,
         is_active: true,
-        status: 'ACTIVE',
+        status: ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        services: data.services.split(', ').map(service => ({
+        services: services.split(', ').map(service => ({
           id: Date.now(),
           name: service.trim(),
-          status: 'ACTIVE',
+          status: ACTIVE,
         })),
       };
 
@@ -230,12 +247,14 @@ export default function MaterialManagementPage() {
     services: string;
     materialData?: Material;
   }) => {
+    const { materialName, services, materialData } = data;
+
     // Use the actual material data from API response if available
-    if (data.materialData) {
+    if (materialData) {
       // Update the material in local state with the actual API response data
       setMaterials(prevMaterials =>
         prevMaterials.map(material =>
-          material.uuid === editingMaterialUuid ? data.materialData! : material
+          material.uuid === editingMaterialUuid ? materialData : material
         )
       );
     } else {
@@ -245,11 +264,11 @@ export default function MaterialManagementPage() {
           material.uuid === editingMaterialUuid
             ? {
                 ...material,
-                name: data.materialName,
-                services: data.services.split(', ').map(service => ({
+                name: materialName,
+                services: services.split(', ').map(service => ({
                   id: Date.now(),
                   name: service.trim(),
-                  status: 'ACTIVE',
+                  status: ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -286,7 +305,7 @@ export default function MaterialManagementPage() {
       <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
         {materials.length === 0 && loading ? (
           // Initial loading state with skeleton cards
-          Array.from({ length: 10 }).map((_, idx) => (
+          Array.from({ length: MATERIALS_LIMIT }).map((_, idx) => (
             <TradeCardSkeleton key={idx} />
           ))
         ) : materials.length === 0 && !loading ? (

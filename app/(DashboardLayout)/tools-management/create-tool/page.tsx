@@ -3,6 +3,7 @@
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
+import { ROUTES } from '@/constants/common';
 import { apiService, CreateToolRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
@@ -13,12 +14,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { TOOL_MESSAGES } from '../tool-messages';
 import { ToolCreateFormData } from '../tool-types';
 
-const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Tools Management', href: '/tools-management' },
-  { name: 'Create Tool' }, // current page
-];
-
 export default function CreateToolPage() {
+  // Destructure constants for better readability
+  const { TOOLS_MANAGEMENT } = ROUTES;
+
   const [fileKey, setFileKey] = useState<string>('');
   const [uploading, setUploading] = useState<boolean>(false);
   const [formLoading, setFormLoading] = useState(false);
@@ -26,6 +25,11 @@ export default function CreateToolPage() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  const breadcrumbData: BreadcrumbItem[] = [
+    { name: TOOL_MESSAGES.TOOL_MANAGEMENT_BREADCRUMB, href: TOOLS_MANAGEMENT },
+    { name: TOOL_MESSAGES.CREATE_TOOL_BREADCRUMB }, // current page
+  ];
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -47,8 +51,10 @@ export default function CreateToolPage() {
         purpose: 'tool', // Using 'tool' as purpose for tool images
         customPath: ``,
       });
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      const { data } = presigned;
+      const { uploadUrl, fileKey: presignedFileKey } = data;
+      await uploadFileToPresignedUrl(uploadUrl, file);
+      setFileKey(presignedFileKey || '');
     } catch (_err: unknown) {
       showErrorToast(TOOL_MESSAGES.CREATE_ERROR);
       setPhotoFile(null);
@@ -59,39 +65,38 @@ export default function CreateToolPage() {
   };
 
   const handleCreateTool = async (data: ToolCreateFormData) => {
-    console.log('Received form data in handleCreateTool:', data);
+    const { name, available_quantity, manufacturer, service_ids } = data;
+
     setFormLoading(true);
     try {
       const payload: CreateToolRequest = {
-        name: data.name,
-        available_quantity: data.available_quantity,
-        manufacturer: data.manufacturer,
+        name,
+        available_quantity,
+        manufacturer,
         tool_assets: fileKey,
-        service_ids: data.service_ids,
+        service_ids,
       };
 
-      console.log('Sending payload to API:', payload);
-
       const response = await apiService.createTool(payload);
+      const { statusCode, message } = response;
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
+      if (statusCode === 200 || statusCode === 201) {
         showSuccessToast(
-          extractApiSuccessMessage(response.message) ||
-            TOOL_MESSAGES.CREATE_SUCCESS
+          extractApiSuccessMessage(message) || TOOL_MESSAGES.CREATE_SUCCESS
         );
-        router.push('/tools-management');
+        router.push(TOOLS_MANAGEMENT);
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.CREATE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.CREATE_ERROR
         );
       }
     } catch (error: any) {
-      console.error('Error creating tool:', error);
-      if (error.status === 401) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
         showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.CREATE_ERROR
+          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.CREATE_ERROR
         );
       }
     } finally {
@@ -123,7 +128,7 @@ export default function CreateToolPage() {
           uploading={uploading}
           onSubmit={handleCreateTool}
           loading={formLoading}
-          onCancel={() => router.push('/tools-management')}
+          onCancel={() => router.push(TOOLS_MANAGEMENT)}
         />
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
+import { ROUTES } from '@/constants/common';
 import {
   apiService,
   GetCompanyResponse,
@@ -12,7 +13,7 @@ import {
 
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage } from '@/lib/utils';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -33,8 +34,11 @@ const CompanyInfoForm = dynamic(
 );
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Edit Company' }, // current page
+  {
+    name: COMPANY_MESSAGES.COMPANY_MANAGEMENT_TITLE,
+    href: ROUTES.COMPANY_MANAGEMENT,
+  },
+  { name: COMPANY_MESSAGES.EDIT_COMPANY_TITLE }, // current page
 ];
 
 interface EditCompanyPageProps {
@@ -44,6 +48,9 @@ interface EditCompanyPageProps {
 }
 
 export default function EditCompanyPage({ params }: EditCompanyPageProps) {
+  // Destructure constants for better readability
+  const { COMPANY_MANAGEMENT } = ROUTES;
+
   const resolvedParams = React.use(params);
 
   const [fileKey, setFileKey] = useState<string>('');
@@ -78,10 +85,12 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
         );
 
         if (isCompanyApiResponse(response)) {
-          setCompany(response.data);
+          // Destructure response data for cleaner code
+          const { data } = response;
+          setCompany(data);
           // Set existing image if available
-          if (response.data.image) {
-            setFileKey(response.data.image);
+          if (data.image) {
+            setFileKey(data.image);
             setImageDeleted(false); // Reset deleted state when loading existing image
           }
         } else {
@@ -96,7 +105,7 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
           COMPANY_MESSAGES.FETCH_ERROR
         );
         showErrorToast(errorMessage);
-        router.push('/company-management');
+        router.push(COMPANY_MANAGEMENT);
       } finally {
         setLoading(false);
       }
@@ -116,21 +125,25 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
     setUploading(true);
 
     try {
-      const ext = file.name.split('.').pop() || 'png';
+      // Destructure file properties for cleaner code
+      const { name: fileName, type: fileType, size: fileSize } = file;
+      const ext = fileName.split('.').pop() || 'png';
       const timestamp = Date.now();
       const companyUuid = uuidv4();
       const generatedFileName = `company_${companyUuid}_${timestamp}.${ext}`;
 
       const presigned = await getPresignedUrl({
         fileName: generatedFileName,
-        fileType: file.type,
-        fileSize: file.size,
+        fileType,
+        fileSize,
         purpose: 'company',
         customPath: '',
       });
 
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      // Destructure presigned response data
+      const { data: presignedData } = presigned;
+      await uploadFileToPresignedUrl(presignedData['uploadUrl'], file);
+      setFileKey(presignedData['fileKey'] || '');
       setImageDeleted(false); // Reset deleted state when new image is uploaded
     } catch (err: unknown) {
       showErrorToast(COMPANY_MESSAGES.UPLOAD_ERROR);
@@ -149,23 +162,40 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
   const handleUpdateCompany = async (data: CompanyCreateFormData) => {
     setFormLoading(true);
     try {
+      // Destructure form data for cleaner code
+      const {
+        name,
+        tagline,
+        about,
+        email,
+        country_code,
+        phone_number,
+        communication,
+        website,
+        preferred_communication_method,
+        city,
+        pincode,
+        projects,
+        expiry_date,
+      } = data;
+
       const updatePayload: UpdateCompanyRequest = {
-        name: data.name.trim(),
-        tagline: data.tagline.trim(),
-        about: data.about.trim(),
-        email: data.email.trim(),
-        country_code: data.country_code,
-        phone_number: data.phone_number.trim(),
-        communication: data.communication.trim(),
-        website: data.website?.trim() || '',
-        preferred_communication_method: data.preferred_communication_method,
-        city: data.city.trim(),
-        pincode: data.pincode.trim(),
-        projects: data.projects.trim(),
+        name: name.trim(),
+        tagline: tagline.trim(),
+        about: about.trim(),
+        email: email.trim(),
+        country_code,
+        phone_number: phone_number.trim(),
+        communication: communication.trim(),
+        website: website?.trim() || '',
+        preferred_communication_method,
+        city: city.trim(),
+        pincode: pincode.trim(),
+        projects: projects.trim(),
       };
 
-      if (data.expiry_date) {
-        updatePayload.expiry_date = data.expiry_date;
+      if (expiry_date) {
+        updatePayload.expiry_date = expiry_date;
       }
 
       // Add image if file was uploaded, or remove if deleted
@@ -180,22 +210,30 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
         updatePayload
       );
 
-      if (response.statusCode === 200) {
-        showSuccessToast(COMPANY_MESSAGES.UPDATE_SUCCESS);
-        router.push('/company-management');
+      // Destructure response for cleaner code
+      const { statusCode } = response;
+
+      if (statusCode === 200) {
+        showSuccessToast(
+          extractApiSuccessMessage(response, COMPANY_MESSAGES.UPDATE_SUCCESS)
+        );
+        router.push(COMPANY_MANAGEMENT);
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) ||
-            COMPANY_MESSAGES.UPDATE_ERROR
+          extractApiErrorMessage(response, COMPANY_MESSAGES.UPDATE_ERROR)
         );
       }
-    } catch (error: any) {
-      console.error('Error updating company:', error);
-      if (error.status === 401) {
-        handleAuthError(error);
-      } else {
-        showErrorToast(COMPANY_MESSAGES.UPDATE_ERROR);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
+
+      const message = extractApiErrorMessage(
+        err,
+        COMPANY_MESSAGES.UPDATE_ERROR
+      );
+      showErrorToast(message);
     } finally {
       setFormLoading(false);
     }
@@ -205,21 +243,39 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
   const getInitialData = (): CompanyInitialData | undefined => {
     if (!company) return undefined;
 
+    // Destructure company data for cleaner code
+    const {
+      name,
+      tagline,
+      about,
+      email,
+      country_code,
+      phone_number,
+      communication,
+      website,
+      expiry_date,
+      preferred_communication_method,
+      city,
+      pincode,
+      projects,
+      image,
+    } = company;
+
     return {
-      name: company.name,
-      tagline: company.tagline,
-      about: company.about,
-      email: company.email,
-      country_code: company.country_code, // Now properly typed
-      phone_number: company.phone_number,
-      communication: company.communication,
-      website: company.website,
-      expiry_date: company.expiry_date,
-      preferred_communication_method: company.preferred_communication_method,
-      city: company.city,
-      pincode: company.pincode,
-      projects: company.projects,
-      image: company.image,
+      name,
+      tagline,
+      about,
+      email,
+      country_code,
+      phone_number,
+      communication,
+      website,
+      expiry_date,
+      preferred_communication_method,
+      city,
+      pincode,
+      projects,
+      image,
     };
   };
 
@@ -251,7 +307,9 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
         <div className='flex flex-col xl:flex-row items-start gap-4 md:gap-6'>
           {/* Left Column - Upload Photo */}
           <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-[1rem] relative shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
-            <h2 className='text-lg font-bold mb-4'>Upload Logo</h2>
+            <h2 className='text-lg font-bold mb-4'>
+              {COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
+            </h2>
             <PhotoUploadField
               photo={photoFile}
               onPhotoChange={handlePhotoChange}
