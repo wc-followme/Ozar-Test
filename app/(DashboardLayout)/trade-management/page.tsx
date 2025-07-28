@@ -9,7 +9,9 @@ import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -61,6 +63,7 @@ export default function TradeManagementPage() {
   // Get user permissions for trades
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.trades?.edit;
+  const canViewTrades = userPermissions?.trades?.view;
 
   const fetchTrades = useCallback(
     async (targetPage = 1, append = false) => {
@@ -269,6 +272,17 @@ export default function TradeManagementPage() {
       );
     }
   };
+
+  // Check if user has permission to view trades
+  if (userPermissions && !canViewTrades) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   return (
     <div className='w-full overflow-y-auto'>

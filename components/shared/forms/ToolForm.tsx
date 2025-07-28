@@ -11,7 +11,7 @@ import { apiService, Service } from '@/lib/api';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { v4 as uuidv4 } from 'uuid';
 import * as yup from 'yup';
@@ -72,6 +72,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
   // Service dropdown states
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
 
   const {
     control,
@@ -90,8 +91,8 @@ const ToolForm: React.FC<ToolFormProps> = ({
   });
 
   // Update form state when initialValues change (for switching between create/edit modes)
-  useEffect(() => {
-    if (initialValues) {
+  const initializeForm = useCallback(() => {
+    if (isEdit && initialValues) {
       // Edit mode - populate with existing data
       reset({
         name: initialValues.name || '',
@@ -100,7 +101,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
         services:
           initialValues.services?.map(s => s.toString()).filter(Boolean) || [],
       });
-    } else {
+    } else if (!isEdit) {
       // Create mode - reset to empty form
       reset({
         name: '',
@@ -109,7 +110,38 @@ const ToolForm: React.FC<ToolFormProps> = ({
         services: [],
       });
     }
-  }, [initialValues, reset]);
+  }, [isEdit, initialValues, reset]);
+
+  useEffect(() => {
+    // Only initialize once when component mounts or when switching between create/edit modes
+    if (!isFormInitialized) {
+      initializeForm();
+      setIsFormInitialized(true);
+    }
+  }, [isFormInitialized, initializeForm]);
+
+  // Handle mode switching (create to edit or vice versa)
+  useEffect(() => {
+    // Only reset when switching modes, not during normal data entry
+    if (isFormInitialized) {
+      const currentMode = isEdit ? 'edit' : 'create';
+      const hasInitialValues = !!initialValues;
+
+      // If switching from create to edit mode with data, or edit to create mode
+      if (
+        (currentMode === 'edit' && hasInitialValues) ||
+        (currentMode === 'create' && !hasInitialValues)
+      ) {
+        // Add a small delay to ensure we're not in the middle of user input
+        const timer = setTimeout(() => {
+          initializeForm();
+        }, 100);
+
+        return () => clearTimeout(timer);
+      }
+    }
+    return undefined;
+  }, [isEdit, initialValues, isFormInitialized, initializeForm]);
 
   // Handle photo change with upload
   const handlePhotoChange = async (file: File | null) => {

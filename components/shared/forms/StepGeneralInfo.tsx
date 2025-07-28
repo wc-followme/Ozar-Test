@@ -62,8 +62,14 @@ const generalInfoSchema = yup.object({
     .string()
     .email(STEP_MESSAGES.EMAIL_INVALID)
     .required(STEP_MESSAGES.EMAIL_REQUIRED),
-  phone: yup.string().required(STEP_MESSAGES.PHONE_REQUIRED),
-  budget: yup.string().required(STEP_MESSAGES.BUDGET_REQUIRED),
+  phone: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+    .required(STEP_MESSAGES.PHONE_REQUIRED),
+  budget: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Budget must contain only numbers')
+    .required(STEP_MESSAGES.BUDGET_REQUIRED),
   contractor: yup.string(),
   address: yup.string().required(STEP_MESSAGES.ADDRESS_REQUIRED),
 });
@@ -313,6 +319,40 @@ export function StepGeneralInfo({
                           placeholder={STEP_MESSAGES.ENTER_PHONE_NUMBER}
                           className='input-field'
                           {...field}
+                          onKeyDown={e => {
+                            // Only allow numbers, backspace, delete, tab, escape, enter
+                            const allowedKeys = [
+                              'Backspace',
+                              'Delete',
+                              'Tab',
+                              'Escape',
+                              'Enter',
+                              'ArrowLeft',
+                              'ArrowRight',
+                              'ArrowUp',
+                              'ArrowDown',
+                              'Home',
+                              'End',
+                            ];
+
+                            // Allow if it's an allowed key
+                            if (allowedKeys.includes(e.key)) {
+                              return;
+                            }
+
+                            // Allow if it's a number
+                            if (/^[0-9]$/.test(e.key)) {
+                              return;
+                            }
+
+                            // Prevent all other keys
+                            e.preventDefault();
+                          }}
+                          onChange={e => {
+                            // Remove any non-numeric characters from the input
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -335,6 +375,40 @@ export function StepGeneralInfo({
                           placeholder={STEP_MESSAGES.ENTER_BUDGET}
                           className='input-field'
                           {...field}
+                          onKeyDown={e => {
+                            // Only allow numbers, backspace, delete, tab, escape, enter
+                            const allowedKeys = [
+                              'Backspace',
+                              'Delete',
+                              'Tab',
+                              'Escape',
+                              'Enter',
+                              'ArrowLeft',
+                              'ArrowRight',
+                              'ArrowUp',
+                              'ArrowDown',
+                              'Home',
+                              'End',
+                            ];
+
+                            // Allow if it's an allowed key
+                            if (allowedKeys.includes(e.key)) {
+                              return;
+                            }
+
+                            // Allow if it's a number
+                            if (/^[0-9]$/.test(e.key)) {
+                              return;
+                            }
+
+                            // Prevent all other keys
+                            e.preventDefault();
+                          }}
+                          onChange={e => {
+                            // Remove any non-numeric characters from the input
+                            const value = e.target.value.replace(/[^0-9]/g, '');
+                            field.onChange(value);
+                          }}
                         />
                       </FormControl>
                       <FormMessage />

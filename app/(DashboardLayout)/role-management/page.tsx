@@ -2,10 +2,12 @@
 
 import { HelmetIcon } from '@/components/icons/HelmetIcon';
 import { RoleCard } from '@/components/shared/cards/RoleCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { roleIconOptions } from '@/constants/sidebar-items';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -31,18 +33,26 @@ interface MenuOption {
   }>;
 }
 
-const menuOptions: MenuOption[] = [
-  {
-    label: ROLE_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-  },
-  {
-    label: ROLE_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-  },
-];
+const getMenuOptions = (isDefault: boolean): MenuOption[] => {
+  const options: MenuOption[] = [
+    {
+      label: ROLE_MESSAGES.EDIT_MENU,
+      action: ACTIONS.EDIT,
+      icon: Edit2,
+    },
+  ];
+
+  // Only show delete option if role is not default
+  if (!isDefault) {
+    options.push({
+      label: ROLE_MESSAGES.DELETE_MENU,
+      action: ACTIONS.DELETE,
+      icon: Trash,
+    });
+  }
+
+  return options;
+};
 
 // Adapter for icons that expect className instead of size/color
 const IconAdapter = (IconComp: any) => {
@@ -74,6 +84,7 @@ const RoleManagement = () => {
   // Get user permissions for roles
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.roles?.edit;
+  const canViewRoles = userPermissions?.roles?.view;
 
   const fetchRoles = useCallback(
     async (targetPage = 1, append = false) => {
@@ -195,6 +206,17 @@ const RoleManagement = () => {
   // Ensure icon options is always an array and has label property
   const safeIconOptions = Array.isArray(roleIconOptions) ? roleIconOptions : [];
 
+  // Check if user has permission to view roles
+  if (userPermissions && !canViewRoles) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
     <section className=''>
       <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
@@ -236,7 +258,14 @@ const RoleManagement = () => {
               </div>
             ) : (
               roles.map(
-                ({ uuid, icon, name, description, total_permissions }) => {
+                ({
+                  uuid,
+                  icon,
+                  name,
+                  description,
+                  total_permissions,
+                  is_default,
+                }) => {
                   // Use the icon component directly if it matches the expected signature
                   const iconOptionRaw = safeIconOptions.find(
                     (opt: any) => opt.value === icon
@@ -253,7 +282,7 @@ const RoleManagement = () => {
                   return (
                     <div key={uuid}>
                       <RoleCard
-                        menuOptions={menuOptions}
+                        menuOptions={getMenuOptions(is_default ?? false)}
                         iconSrc={iconOption.icon}
                         iconBgColor={iconOption.color + '26'}
                         title={name}

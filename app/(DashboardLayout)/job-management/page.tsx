@@ -5,6 +5,7 @@ import NoDataFound from '@/components/shared/common/NoDataFound';
 import { FlagHookIcon } from '@/components/icons/FalgHookIcon';
 import { JobCard } from '@/components/shared/cards/JobCard';
 import { StatsCard } from '@/components/shared/cards/StatsCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import ComingSoon from '@/components/shared/common/ComingSoon';
 import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import SideSheet from '@/components/shared/common/SideSheet';
@@ -23,6 +24,7 @@ import {
   PAGINATION,
   ROUTES,
 } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -36,6 +38,7 @@ import { DollarSign } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
+
 export default function JobManagement() {
   // Destructure constants for better readability
   const { ACTIVE, INACTIVE } = CommonStatus;
@@ -69,6 +72,7 @@ export default function JobManagement() {
   const userPermissions = getUserPermissionsFromStorage();
 
   const canEdit = userPermissions?.jobs?.edit;
+  const canViewJobs = userPermissions?.jobs?.view;
 
   // Helper function to generate home-owner link
   const generateHomeOwnerLink = (jobUuid: string) =>
@@ -106,7 +110,12 @@ export default function JobManagement() {
     async (tab: string, targetPage = 1, append = false) => {
       try {
         if (targetPage === 1) {
-          setLoading(true);
+          // Only use loading for initial page load, use tabLoading for tab changes
+          if (isInitialMount.current) {
+            setLoading(true);
+          } else {
+            setTabLoading(true);
+          }
         } else {
           setTabLoading(true);
         }
@@ -201,19 +210,52 @@ export default function JobManagement() {
         setHasMore(false);
       } finally {
         if (targetPage === 1) {
-          setLoading(false);
+          // Only use loading for initial page load, use tabLoading for tab changes
+          if (isInitialMount.current) {
+            setLoading(false);
+            isInitialMount.current = false;
+          } else {
+            setTabLoading(false);
+          }
         } else {
           setTabLoading(false);
         }
       }
     },
-    [showErrorToast, handleAuthError]
+    [
+      showErrorToast,
+      handleAuthError,
+      JOBS_LIMIT,
+      ACTIVE,
+      INACTIVE,
+      NEW_LEADS,
+      ALL,
+      DONE,
+      NEW_LEADS_TAB,
+      INFO,
+      ONGOING_JOB,
+      WAITING_ON_CLIENT,
+      ARCHIVE,
+      CLOSED,
+    ]
   );
 
-  // Effect to fetch filter counts on mount
+  // Effect to fetch filter counts on mount only
   useEffect(() => {
     fetchFilterCounts();
-  }, [fetchFilterCounts]);
+  }, []); // Empty dependency array - only run on mount
+
+  // Fallback effect to ensure loading is turned off after a timeout
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        isInitialMount.current = false;
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
 
   // Effect to fetch jobs when selected tab changes
   useEffect(() => {
@@ -231,12 +273,7 @@ export default function JobManagement() {
     setHasMore(true);
     setJobs([]);
     fetchJobsByTab(selectedTab, 1, false);
-
-    // Mark that initial mount is complete
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-    }
-  }, [selectedTab, fetchJobsByTab]);
+  }, [selectedTab]); // Remove fetchJobsByTab from dependencies
 
   // Infinite scroll
   useEffect(() => {
@@ -330,6 +367,7 @@ export default function JobManagement() {
         }
         if (job_boxes_step?.length === 0) {
           setIsOpen(false);
+          setGeneratedLink('');
           fetchJobsByTab(selectedTab, 1, false);
           fetchFilterCounts();
         }
@@ -384,6 +422,7 @@ export default function JobManagement() {
       bgColor: 'bg-[#F58B1E1A]',
     },
   ];
+  // Only show full page skeleton on initial load
   if (loading) {
     return <JobManagementPageSkeleton />;
   }
@@ -435,6 +474,17 @@ export default function JobManagement() {
       ))}
     </div>
   );
+
+  // Check if user has permission to view jobs
+  if (userPermissions && !canViewJobs) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.JOB_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.JOB_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.JOB_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   return (
     <div className=''>
@@ -562,10 +612,10 @@ export default function JobManagement() {
             )}
           </div>
           <TabsContent value={NEW_LEADS_TAB} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+            {jobs.length === 0 && (loading || tabLoading) ? (
+              // Show skeleton for initial loading or tab loading
               <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading ? (
+            ) : jobs.length === 0 && !loading && !tabLoading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
@@ -595,10 +645,10 @@ export default function JobManagement() {
             <NoDataFound buttonText='Create Job' />
           </TabsContent>
           <TabsContent value={CLOSED} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+            {jobs.length === 0 && (loading || tabLoading) ? (
+              // Show skeleton for initial loading or tab loading
               <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading ? (
+            ) : jobs.length === 0 && !loading && !tabLoading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
@@ -617,10 +667,10 @@ export default function JobManagement() {
             )}
           </TabsContent>
           <TabsContent value={ARCHIVE} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+            {jobs.length === 0 && (loading || tabLoading) ? (
+              // Show skeleton for initial loading or tab loading
               <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading ? (
+            ) : jobs.length === 0 && !loading && !tabLoading ? (
               <NoDataFound
                 description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
                 buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
@@ -646,9 +696,11 @@ export default function JobManagement() {
         onOpenChange={open => {
           setIsOpen(open);
           if (!open) {
+            if (generatedLink) {
+              fetchJobsByTab(selectedTab, 1, false);
+              fetchFilterCounts();
+            }
             setGeneratedLink(''); // Clear generated link when opening form
-            fetchJobsByTab(selectedTab, 1, false);
-            fetchFilterCounts();
           }
         }}
         title={JOB_MESSAGES.ADD_JOB_TITLE}

@@ -1,14 +1,20 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { CompanyInfoForm } from '@/components/shared/forms/CompanyinfoForm';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateCompanyRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,6 +40,21 @@ export default function AddCompanyPage() {
 
   // Destructure constants for cleaner code
   const { ACTIVE } = CommonStatus;
+
+  // Get user permissions for companies
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateCompany = userPermissions?.companies?.assign_user;
+
+  // Check if user has permission to create companies
+  if (userPermissions && !canCreateCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {

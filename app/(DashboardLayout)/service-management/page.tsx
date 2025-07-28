@@ -1,5 +1,6 @@
 'use client';
 import { InfoCard } from '@/components/shared/cards/InfoCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
@@ -8,6 +9,7 @@ import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -66,6 +68,7 @@ export default function ServiceManagementPage() {
   // Get user permissions for services
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.services?.edit;
+  const canViewServices = userPermissions?.services?.view;
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
@@ -280,6 +283,17 @@ export default function ServiceManagementPage() {
       );
     }
   };
+
+  // Check if user has permission to view services
+  if (userPermissions && !canViewServices) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   return (
     <div className='w-full overflow-y-auto'>

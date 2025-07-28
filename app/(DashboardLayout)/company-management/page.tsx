@@ -1,11 +1,13 @@
 'use client';
 
 import { CompanyCard } from '@/components/shared/cards/CompanyCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import CompanyCardSkeleton from '@/components/shared/skeleton/CompanyCardSkeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, Company, FetchCompaniesResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -53,6 +55,7 @@ export default function CompanyManagement() {
   // Get user permissions for companies
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.companies?.assign_user;
+  const canViewCompany = userPermissions?.companies?.view;
 
   // Fetch companies
   useEffect(() => {
@@ -202,6 +205,17 @@ export default function CompanyManagement() {
   // Show navigation loading state
   if (isNavigating) {
     return <LoadingComponent variant='fullscreen' text='Loading form...' />;
+  }
+
+  // Check if user has permission to view companies
+  if (userPermissions && !canViewCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
   }
 
   return (

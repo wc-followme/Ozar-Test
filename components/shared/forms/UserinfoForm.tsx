@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  FormErrors,
   Role,
   UserFormData,
   UserInitialData,
@@ -25,12 +24,36 @@ import {
 } from '@/components/ui/select';
 import { COUNTRY_CODES } from '@/constants/common';
 import { cn } from '@/lib/utils';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
 import { Calendar } from 'iconsax-react';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import LoadingComponent from '../common/LoadingComponent';
 import SelectField from '../common/SelectField';
+
+// Validation schema
+const userFormSchema = yup.object({
+  role_id: yup.string().required(USER_MESSAGES.ROLE_REQUIRED),
+  name: yup.string().required(USER_MESSAGES.FULL_NAME_REQUIRED),
+  designation: yup.string().required(USER_MESSAGES.DESIGNATION_REQUIRED),
+  date_of_joining: yup.date().required(USER_MESSAGES.DATE_REQUIRED),
+  email: yup
+    .string()
+    .email('Please enter a valid email address')
+    .required(USER_MESSAGES.EMAIL_REQUIRED),
+  phone: yup.string().required(USER_MESSAGES.PHONE_REQUIRED),
+  country_code: yup.string().required(),
+  preferred_communication_method: yup
+    .string()
+    .required(USER_MESSAGES.COMMUNICATION_REQUIRED),
+  address: yup.string().required(USER_MESSAGES.ADDRESS_REQUIRED),
+  city: yup.string().required(USER_MESSAGES.CITY_REQUIRED),
+  pincode: yup.string().required(USER_MESSAGES.PIN_CODE_REQUIRED),
+  password: yup.string().optional(),
+});
 
 interface UserInfoFormProps {
   roles: Role[];
@@ -54,75 +77,102 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
     initialData,
     isEditMode,
   }) => {
-    const [date, setDate] = useState<Date>();
-    const [roleId, setRoleId] = useState('');
-    const [fullName, setFullName] = useState('');
-    const [designation, setDesignation] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
-    const [country, setCountry] = useState('us');
-    const [communication, setCommunication] = useState('');
-    const [address, setAddress] = useState('');
-    const [city, setCity] = useState('');
-    const [pinCode, setPinCode] = useState('');
-    const [password, setPassword] = useState('');
-    const [errors, setErrors] = useState<FormErrors>({});
     const [isInitialized, setIsInitialized] = useState(false);
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
+
+    const {
+      control,
+      handleSubmit,
+      setValue,
+      formState: { errors },
+      reset,
+    } = useForm({
+      resolver: yupResolver(userFormSchema),
+      defaultValues: {
+        role_id: '',
+        name: '',
+        designation: '',
+        date_of_joining: undefined as any,
+        email: '',
+        phone: '',
+        country_code: 'us',
+        preferred_communication_method: '',
+        address: '',
+        city: '',
+        pincode: '',
+        password: '',
+      },
+    });
 
     // Initialize form with initial data
     const initializeForm = useCallback(() => {
       if (isEditMode && initialData && !isInitialized) {
+        const {
+          role_id,
+          name,
+          designation,
+          email,
+          country_code,
+          phone_number,
+          preferred_communication_method,
+          address,
+          city,
+          pincode,
+          date_of_joining,
+        } = initialData;
+
         // Set role ID
-        if (initialData.role_id) {
-          setRoleId(String(initialData.role_id));
+        if (role_id) {
+          setValue('role_id', String(role_id));
         }
 
         // Set other fields
-        setFullName(initialData.name || '');
-        setDesignation(initialData.designation || '');
-        setEmail(initialData.email || '');
+        setValue('name', name || '');
+        setValue('designation', designation || '');
+        setValue('email', email || '');
 
         // Handle phone number and country code
-        if (initialData.country_code && initialData.phone_number) {
+        if (country_code && phone_number) {
           // Separate fields available
-          const countryKey = COUNTRY_CODES.getCountryFromCode(
-            initialData.country_code
-          );
-          setCountry(countryKey);
-          setPhone(initialData.phone_number);
-        } else if (initialData.phone_number) {
+          const countryKey = COUNTRY_CODES.getCountryFromCode(country_code);
+          setValue('country_code', countryKey);
+          setValue('phone', phone_number);
+        } else if (phone_number) {
           // Combined phone number - extract country code
-          const phoneStr = initialData.phone_number;
+          const phoneStr = phone_number;
           const matchedEntry = Object.entries(COUNTRY_CODES.MAP).find(
             ([, code]) => phoneStr.startsWith(code)
           );
           if (matchedEntry) {
             const [countryKey, code] = matchedEntry;
-            setCountry(countryKey);
-            setPhone(phoneStr.substring(code.length));
+            setValue('country_code', countryKey);
+            setValue('phone', phoneStr.substring(code.length));
           } else {
             // Default to US if no country code found
-            setCountry('us');
-            setPhone(phoneStr);
+            setValue('country_code', 'us');
+            setValue('phone', phoneStr);
           }
         }
 
         // Set communication method
-        if (initialData.preferred_communication_method) {
-          setCommunication(initialData.preferred_communication_method);
+        if (preferred_communication_method) {
+          setValue(
+            'preferred_communication_method',
+            preferred_communication_method
+          );
         }
 
-        setAddress(initialData.address || '');
-        setCity(initialData.city || '');
-        setPinCode(initialData.pincode || '');
+        setValue('address', address || '');
+        setValue('city', city || '');
+        setValue('pincode', pincode || '');
 
-        if (initialData.date_of_joining) {
-          setDate(new Date(initialData.date_of_joining));
+        if (date_of_joining) {
+          setValue('date_of_joining', new Date(date_of_joining));
         }
 
         setIsInitialized(true);
       }
-    }, [isEditMode, initialData, isInitialized]);
+    }, [isEditMode, initialData, isInitialized, setValue]);
 
     // Initialize form when component mounts or when initialData changes
     useEffect(() => {
@@ -150,81 +200,54 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
       return undefined;
     }, [isEditMode, initialData, isInitialized, initializeForm]);
 
-    const validate = (): boolean => {
-      const newErrors: FormErrors = {};
-      if (!roleId) newErrors.roleCategory = USER_MESSAGES.ROLE_REQUIRED;
-      if (!fullName) newErrors.fullName = USER_MESSAGES.FULL_NAME_REQUIRED;
-      if (!designation)
-        newErrors.designation = USER_MESSAGES.DESIGNATION_REQUIRED;
-      if (!date) newErrors.date = USER_MESSAGES.DATE_REQUIRED;
-      if (!email) newErrors.email = USER_MESSAGES.EMAIL_REQUIRED;
-      if (!phone) newErrors.phone = USER_MESSAGES.PHONE_REQUIRED;
-      // Password validation - only in edit mode and only if it's provided
-      if (isEditMode && password && password.length < 6) {
-        newErrors.password = 'Password must be at least 6 characters long';
-      }
-      if (!communication)
-        newErrors.communication = USER_MESSAGES.COMMUNICATION_REQUIRED;
-      if (!address) newErrors.address = USER_MESSAGES.ADDRESS_REQUIRED;
-      if (!city) newErrors.city = USER_MESSAGES.CITY_REQUIRED;
-      if (!pinCode) newErrors.pinCode = USER_MESSAGES.PIN_CODE_REQUIRED;
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
+    const onFormSubmit = useCallback(
+      (data: any) => {
+        const {
+          role_id,
+          name,
+          email,
+          country_code,
+          phone,
+          designation,
+          preferred_communication_method,
+          address,
+          city,
+          pincode,
+          date_of_joining,
+          password,
+        } = data;
 
-    const handleSubmit = useCallback(
-      (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (validate()) {
-          const payload: UserFormData = {
-            role_id: Number(roleId),
-            name: fullName,
-            email,
-            country_code: COUNTRY_CODES.getCodeFromCountry(country),
-            phone_number: phone,
-            designation,
-            preferred_communication_method: communication,
-            address,
-            city,
-            pincode: pinCode,
-          };
+        const payload: UserFormData = {
+          role_id: Number(role_id),
+          name,
+          email,
+          country_code: COUNTRY_CODES.getCodeFromCountry(country_code),
+          phone_number: phone,
+          designation,
+          preferred_communication_method,
+          address,
+          city,
+          pincode,
+        };
 
-          // Add profile picture URL only if provided
-          if (imageUrl) {
-            payload.profile_picture_url = imageUrl;
-          }
-
-          // Add date only if it's provided
-          if (date) {
-            payload.date_of_joining = date.toISOString().split('T')[0];
-          }
-
-          // Add password only if provided (edit mode only)
-          if (isEditMode && password) {
-            payload.password = password;
-          }
-
-          onSubmit(payload);
+        // Add profile picture URL only if provided
+        if (imageUrl) {
+          payload.profile_picture_url = imageUrl;
         }
+
+        // Add date only if it's provided
+        if (date_of_joining) {
+          payload.date_of_joining = date_of_joining.toISOString().split('T')[0];
+        }
+
+        // Add password only if provided (edit mode only)
+        if (isEditMode && password) {
+          payload.password = password;
+        }
+
+        onSubmit(payload);
       },
-      [
-        validate,
-        roleId,
-        fullName,
-        email,
-        country,
-        phone,
-        designation,
-        communication,
-        address,
-        city,
-        pinCode,
-        imageUrl,
-        date,
-        isEditMode,
-        password,
-        onSubmit,
-      ]
+      [imageUrl, isEditMode, onSubmit]
     );
 
     const handleCancel = useCallback((): void => {
@@ -232,21 +255,9 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
         onCancel();
       } else {
         // Fallback: reset form fields if no onCancel provided
-        setRoleId('');
-        setFullName('');
-        setDesignation('');
-        setDate(undefined);
-        setEmail('');
-        setPhone('');
-        setCountry('us');
-        setCommunication('');
-        setAddress('');
-        setCity('');
-        setPinCode('');
-        setPassword('');
-        setErrors({});
+        reset();
       }
-    }, [onCancel]);
+    }, [onCancel, reset]);
 
     // Don't render form until data is loaded in edit mode
     if (isEditMode && !isInitialized && initialData) {
@@ -256,27 +267,33 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
     return (
       <form
         className='space-y-2 md:space-y-6'
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmit(onFormSubmit)}
         noValidate
       >
         {/* Role Dropdown */}
         <div className='space-y-2'>
-          <SelectField
-            label={USER_MESSAGES.ROLE_LABEL}
-            value={roleId}
-            onValueChange={setRoleId}
-            options={roles.map(({ id, name, status }) => ({
-              value: String(id),
-              label: status === 'INACTIVE' ? `${name} (Deactivated)` : name,
-              disabled: status === 'INACTIVE',
-            }))}
-            placeholder={
-              loadingRoles
-                ? USER_MESSAGES.LOADING_ROLES
-                : USER_MESSAGES.SELECT_ROLE
-            }
-            error={errors.roleCategory || ''}
-            className=''
+          <Controller
+            name='role_id'
+            control={control}
+            render={({ field }) => (
+              <SelectField
+                label={USER_MESSAGES.ROLE_LABEL}
+                value={field.value}
+                onValueChange={field.onChange}
+                options={roles.map(({ id, name, status }) => ({
+                  value: String(id),
+                  label: status === 'INACTIVE' ? `${name} (Deactivated)` : name,
+                  disabled: status === 'INACTIVE',
+                }))}
+                placeholder={
+                  loadingRoles
+                    ? USER_MESSAGES.LOADING_ROLES
+                    : USER_MESSAGES.SELECT_ROLE
+                }
+                error={errors.role_id?.message || ''}
+                className=''
+              />
+            )}
           />
         </div>
         {/* First Row - Full Name, Designation, Date of Joining */}
@@ -285,105 +302,132 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
             <Label htmlFor='full-name' className='field-label'>
               {USER_MESSAGES.FULL_NAME_LABEL}
             </Label>
-            <Input
-              id='full-name'
-              placeholder={USER_MESSAGES.ENTER_FULL_NAME}
-              value={fullName}
-              onChange={e => setFullName(e.target.value)}
-              className={cn(
-                'input-field',
-                errors.fullName
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
+            <Controller
+              name='name'
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id='full-name'
+                  placeholder={USER_MESSAGES.ENTER_FULL_NAME}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    'input-field',
+                    errors.name
+                      ? 'border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                />
               )}
             />
-            <FormErrorMessage message={errors.fullName || ''} />
+            <FormErrorMessage message={errors.name?.message || ''} />
           </div>
           <div className='space-y-2'>
             <Label htmlFor='designation' className='field-label'>
               {USER_MESSAGES.DESIGNATION_LABEL}
             </Label>
-            <Input
-              id='designation'
-              placeholder={USER_MESSAGES.ENTER_JOB_TITLE}
-              value={designation}
-              onChange={e => setDesignation(e.target.value)}
-              className={cn(
-                'input-field',
-                errors.designation
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
+            <Controller
+              name='designation'
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id='designation'
+                  placeholder={USER_MESSAGES.ENTER_JOB_TITLE}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    'input-field',
+                    errors.designation
+                      ? 'border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                />
               )}
             />
-            <FormErrorMessage message={errors.designation || ''} />
+            <FormErrorMessage message={errors.designation?.message || ''} />
           </div>
           <div className='space-y-2'>
             <Label htmlFor='date' className='field-label'>
               {USER_MESSAGES.DATE_OF_JOINING_LABEL}
             </Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant='outline'
-                  className={cn(
-                    'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
-                    !date && 'text-muted-foreground',
-                    errors.date
-                      ? 'border-[var(--warning)]'
-                      : 'border-[var(--border-dark)]'
-                  )}
-                >
-                  {date ? (
-                    format(date, 'PPP')
-                  ) : (
-                    <span>{USER_MESSAGES.SELECT_DATE}</span>
-                  )}
-                  <Calendar className='ml-auto !h-6 !w-6' color='#24338C' />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                className='w-auto p-0 bg-[var(--card-background)]'
-                align='start'
-              >
-                <CalendarComponent
-                  mode='single'
-                  selected={date}
-                  onSelect={setDate}
-                  disabled={(date: Date) =>
-                    date > new Date() || date < new Date('1900-01-01')
-                  }
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-            <FormErrorMessage message={errors.date || ''} />
+            <Controller
+              name='date_of_joining'
+              control={control}
+              render={({ field }) => (
+                <Popover open={datePickerOpen} onOpenChange={setDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      className={cn(
+                        'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                        !field.value && 'text-muted-foreground',
+                        errors.date_of_joining
+                          ? 'border-[var(--warning)]'
+                          : 'border-[var(--border-dark)]'
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, 'PPP')
+                      ) : (
+                        <span>{USER_MESSAGES.SELECT_DATE}</span>
+                      )}
+                      <Calendar className='ml-auto !h-6 !w-6' color='#24338C' />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className='w-auto p-0 bg-[var(--card-background)]'
+                    align='start'
+                  >
+                    <CalendarComponent
+                      mode='single'
+                      selected={field.value}
+                      onSelect={date => {
+                        field.onChange(date);
+                        setDatePickerOpen(false); // Close popover after selection
+                      }}
+                      disabled={(date: Date) =>
+                        date > new Date() || date < new Date('1900-01-01')
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
+            />
+            <FormErrorMessage message={errors.date_of_joining?.message || ''} />
           </div>
         </div>
         {/* Second Row - Email, Phone, Communication, Password (edit mode only) */}
         <div
           className={cn(
             'grid grid-cols-1 sm:grid-cols-2 gap-4',
-            isEditMode ? 'xl:grid-cols-4' : 'xl:grid-cols-3'
+            isEditMode ? 'xl:grid-cols-3' : 'xl:grid-cols-3'
           )}
         >
           <div className='space-y-2'>
             <Label htmlFor='email' className='field-label'>
               {USER_MESSAGES.EMAIL_LABEL}
             </Label>
-            <Input
-              id='email'
-              type='email'
-              placeholder={USER_MESSAGES.ENTER_EMAIL}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className={cn(
-                'input-field',
-                errors.email
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
+            <Controller
+              name='email'
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id='email'
+                  type='email'
+                  placeholder={USER_MESSAGES.ENTER_EMAIL}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    'input-field',
+                    errors.email
+                      ? 'border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                />
               )}
             />
-            <FormErrorMessage message={errors.email || ''} />
+            <FormErrorMessage message={errors.email?.message || ''} />
           </div>
           <div className='space-y-2'>
             <Label
@@ -393,61 +437,78 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
               {USER_MESSAGES.PHONE_LABEL}
             </Label>
             <div className='flex'>
-              <Select
-                value={country}
-                onValueChange={value => {
-                  setCountry(value);
-                }}
-              >
-                <SelectTrigger
-                  className={cn(
-                    'w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
-                    errors.phone
-                      ? 'border-[var(--warning)]'
-                      : 'border-[var(--border-dark)]'
-                  )}
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                  {COUNTRY_CODES.LIST.map(country => (
-                    <SelectItem key={country.key} value={country.key}>
-                      <div className='flex items-center gap-2'>
-                        <span>{country.flag}</span>
-                        <span>{country.code}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                id='phone'
-                placeholder={USER_MESSAGES.ENTER_NUMBER}
-                value={phone}
-                onChange={e => setPhone(e.target.value)}
-                className={cn(
-                  'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
-                  errors.phone
-                    ? 'border-[var(--warning)]'
-                    : 'border-[var(--border-dark)]'
+              <Controller
+                name='country_code'
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      className={cn(
+                        'w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
+                        errors.phone
+                          ? 'border-[var(--warning)]'
+                          : 'border-[var(--border-dark)]'
+                      )}
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
+                      {COUNTRY_CODES.LIST.map(country => (
+                        <SelectItem key={country.key} value={country.key}>
+                          <div className='flex items-center gap-2'>
+                            <span>{country.flag}</span>
+                            <span>{country.code}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              <Controller
+                name='phone'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='phone'
+                    placeholder={USER_MESSAGES.ENTER_NUMBER}
+                    value={field.value}
+                    onChange={field.onChange}
+                    className={cn(
+                      'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
+                      errors.phone
+                        ? 'border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
                 )}
               />
             </div>
-            <FormErrorMessage message={errors.phone || ''} />
+            <FormErrorMessage message={errors.phone?.message || ''} />
           </div>
           <div className='space-y-2'>
-            <SelectField
-              label={USER_MESSAGES.COMMUNICATION_LABEL}
-              value={communication}
-              onValueChange={setCommunication}
-              options={[
-                { value: 'email', label: USER_MESSAGES.EMAIL_OPTION },
-                { value: 'phone', label: USER_MESSAGES.PHONE_OPTION },
-                { value: 'sms', label: USER_MESSAGES.SMS_OPTION },
-              ]}
-              placeholder={USER_MESSAGES.SELECT_COMMUNICATION}
-              error={errors.communication || ''}
-              className=''
+            <Controller
+              name='preferred_communication_method'
+              control={control}
+              render={({ field }) => {
+                const communicationOptions = [
+                  { value: 'email', label: USER_MESSAGES.EMAIL_OPTION },
+                  { value: 'phone', label: USER_MESSAGES.PHONE_OPTION },
+                  { value: 'sms', label: USER_MESSAGES.SMS_OPTION },
+                ];
+
+                return (
+                  <SelectField
+                    label={USER_MESSAGES.COMMUNICATION_LABEL}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    options={communicationOptions}
+                    placeholder={USER_MESSAGES.SELECT_COMMUNICATION}
+                    error={errors.preferred_communication_method?.message || ''}
+                    className=''
+                  />
+                );
+              }}
             />
           </div>
           {/* Password field - only shown in edit mode */}
@@ -459,20 +520,26 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   {USER_MESSAGES.PASSWORD_OPTIONAL_HINT}
                 </span>
               </Label>
-              <Input
-                id='password'
-                type='password'
-                placeholder={USER_MESSAGES.ENTER_PASSWORD_OPTIONAL}
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className={cn(
-                  'input-field',
-                  errors.password
-                    ? '!border-[var(--warning)]'
-                    : '!border-[var(--border-dark)]'
+              <Controller
+                name='password'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='password'
+                    type='password'
+                    placeholder={USER_MESSAGES.ENTER_PASSWORD_OPTIONAL}
+                    value={field.value}
+                    onChange={field.onChange}
+                    className={cn(
+                      'input-field',
+                      errors.password
+                        ? '!border-[var(--warning)]'
+                        : '!border-[var(--border-dark)]'
+                    )}
+                  />
                 )}
               />
-              <FormErrorMessage message={errors.password || ''} />
+              <FormErrorMessage message={errors.password?.message || ''} />
             </div>
           )}
         </div>
@@ -481,19 +548,25 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
           <Label htmlFor='address' className='field-label'>
             {USER_MESSAGES.ADDRESS_LABEL}
           </Label>
-          <Input
-            id='address'
-            placeholder={USER_MESSAGES.ENTER_ADDRESS}
-            value={address}
-            onChange={e => setAddress(e.target.value)}
-            className={cn(
-              'input-field',
-              errors.address
-                ? 'border-[var(--warning)]'
-                : 'border-[var(--border-dark)]'
+          <Controller
+            name='address'
+            control={control}
+            render={({ field }) => (
+              <Input
+                id='address'
+                placeholder={USER_MESSAGES.ENTER_ADDRESS}
+                value={field.value}
+                onChange={field.onChange}
+                className={cn(
+                  'input-field',
+                  errors.address
+                    ? 'border-[var(--warning)]'
+                    : 'border-[var(--border-dark)]'
+                )}
+              />
             )}
           />
-          <FormErrorMessage message={errors.address || ''} />
+          <FormErrorMessage message={errors.address?.message || ''} />
         </div>
         {/* Fourth Row - City, Pin Code */}
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
@@ -501,37 +574,49 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
             <Label htmlFor='city' className='field-label'>
               {USER_MESSAGES.CITY_LABEL}
             </Label>
-            <Input
-              id='city'
-              placeholder={USER_MESSAGES.ENTER_CITY}
-              value={city}
-              onChange={e => setCity(e.target.value)}
-              className={cn(
-                'input-field',
-                errors.city
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
+            <Controller
+              name='city'
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id='city'
+                  placeholder={USER_MESSAGES.ENTER_CITY}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    'input-field',
+                    errors.city
+                      ? 'border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                />
               )}
             />
-            <FormErrorMessage message={errors.city || ''} />
+            <FormErrorMessage message={errors.city?.message || ''} />
           </div>
           <div className='space-y-2'>
             <Label htmlFor='pin-code' className='field-label'>
               {USER_MESSAGES.PIN_CODE_LABEL}
             </Label>
-            <Input
-              id='pin-code'
-              placeholder={USER_MESSAGES.ENTER_PIN_CODE}
-              value={pinCode}
-              onChange={e => setPinCode(e.target.value)}
-              className={cn(
-                'input-field',
-                errors.pinCode
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
+            <Controller
+              name='pincode'
+              control={control}
+              render={({ field }) => (
+                <Input
+                  id='pin-code'
+                  placeholder={USER_MESSAGES.ENTER_PIN_CODE}
+                  value={field.value}
+                  onChange={field.onChange}
+                  className={cn(
+                    'input-field',
+                    errors.pincode
+                      ? 'border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                />
               )}
             />
-            <FormErrorMessage message={errors.pinCode || ''} />
+            <FormErrorMessage message={errors.pincode?.message || ''} />
           </div>
         </div>
         <div className='pt-4 flex items-center justify-end gap-3'>

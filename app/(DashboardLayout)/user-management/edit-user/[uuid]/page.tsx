@@ -1,12 +1,14 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
 import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
   UpdateUserRequest,
@@ -15,7 +17,11 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -49,6 +55,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   const { ROLES_DROPDOWN_LIMIT } = PAGINATION;
 
   const resolvedParams = React.use(params);
+
+  // Get user permissions for users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditUser = userPermissions?.users?.create; // Use create permission for edit as well
 
   // State for all accordions' switches
   const [accordions, setAccordions] = useState(() =>
@@ -509,6 +519,17 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       setFormLoading(false);
     }
   };
+
+  // Check if user has permission to edit users
+  if (userPermissions && !canEditUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_EDIT_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   if (loading) {
     return <LoadingComponent variant='fullscreen' />;

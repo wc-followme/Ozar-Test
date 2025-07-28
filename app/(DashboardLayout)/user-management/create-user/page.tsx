@@ -1,14 +1,20 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -83,6 +89,21 @@ export default function AddUserPage() {
     };
     fetchRoles();
   }, [handleAuthError]);
+
+  // Get user permissions for users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateUser = userPermissions?.users?.create;
+
+  // Check if user has permission to create users
+  if (userPermissions && !canCreateUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {

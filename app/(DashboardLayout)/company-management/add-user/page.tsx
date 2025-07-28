@@ -1,15 +1,21 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -241,6 +247,21 @@ export default function AddCompanyUserPage() {
     }
   };
 
+  // Get user permissions for users and companies
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateUser = userPermissions?.users?.create;
+
+  // Check if user has permission to create users
+  if (userPermissions && !canCreateUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
     <div className=''>
       <div className=''>
@@ -254,18 +275,12 @@ export default function AddCompanyUserPage() {
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
+            <TabsList className='grid w-full max-w-[164px] grid-cols-1 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
                 {USER_MESSAGES.INFO_TAB}
-              </TabsTrigger>
-              <TabsTrigger
-                value='permissions'
-                className='px-8 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
-              >
-                {USER_MESSAGES.SETTINGS_TAB}
               </TabsTrigger>
             </TabsList>
 
@@ -302,12 +317,6 @@ export default function AddCompanyUserPage() {
                     />
                   )}
                 </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value='permissions' className='pt-8'>
-              <div className='text-center py-10 text-gray-500'>
-                {USER_MESSAGES.PERMISSIONS_TAB} management coming soon...
               </div>
             </TabsContent>
           </Tabs>

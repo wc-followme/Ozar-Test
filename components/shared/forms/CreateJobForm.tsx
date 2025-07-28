@@ -72,7 +72,10 @@ const createJobSchema = yup.object({
     .string()
     .email(JOB_MESSAGES.EMAIL_REQUIRED)
     .required(JOB_MESSAGES.EMAIL_REQUIRED),
-  client_phone_number: yup.string().required(JOB_MESSAGES.PHONE_REQUIRED),
+  client_phone_number: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+    .required(JOB_MESSAGES.PHONE_REQUIRED),
   job_privacy: yup
     .mixed<JobType>()
     .oneOf([JOB_TYPE.PUBLIC, JOB_TYPE.PRIVATE])
@@ -312,6 +315,40 @@ export function CreateJobForm({
                     placeholder={JOB_MESSAGES.ENTER_PHONE}
                     className='input-field'
                     disabled={userSelected}
+                    onKeyDown={e => {
+                      // Only allow numbers, backspace, delete, tab, escape, enter
+                      const allowedKeys = [
+                        'Backspace',
+                        'Delete',
+                        'Tab',
+                        'Escape',
+                        'Enter',
+                        'ArrowLeft',
+                        'ArrowRight',
+                        'ArrowUp',
+                        'ArrowDown',
+                        'Home',
+                        'End',
+                      ];
+
+                      // Allow if it's an allowed key
+                      if (allowedKeys.includes(e.key)) {
+                        return;
+                      }
+
+                      // Allow if it's a number
+                      if (/^[0-9]$/.test(e.key)) {
+                        return;
+                      }
+
+                      // Prevent all other keys
+                      e.preventDefault();
+                    }}
+                    onChange={e => {
+                      // Remove any non-numeric characters from the input
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      field.onChange(value);
+                    }}
                   />
                 )}
               />

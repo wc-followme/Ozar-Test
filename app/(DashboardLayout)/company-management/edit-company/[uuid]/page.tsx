@@ -1,19 +1,24 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
 import { ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
   GetCompanyResponse,
   UpdateCompanyRequest,
 } from '@/lib/api';
-
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
@@ -65,6 +70,10 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [imageDeleted, setImageDeleted] = useState(false);
+
+  // Get user permissions for companies
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditCompany = userPermissions?.companies?.assign_user;
 
   const isCompanyApiResponse = (obj: unknown): obj is GetCompanyResponse => {
     return (
@@ -281,6 +290,17 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
 
   if (loading) {
     return <LoadingComponent variant='page' />;
+  }
+
+  // Check if user has permission to edit companies
+  if (userPermissions && !canEditCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_EDIT_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
   }
 
   if (!company) {
