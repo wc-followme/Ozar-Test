@@ -46,7 +46,7 @@ export default function LoginPageContent() {
     <section className='h-full bg-[#FFFFFF]'>
       <div className='flex flex-col h-screen max-h-[100dvh] lg:flex-row mx-auto py-4 xl:py-[38px] px-4 md:px-[30px] gap-3 xl:gap-6'>
         <div className='flex-1 h-full xl:max-w-[676px] flex flex-col items-center justify-center bg-white gap-3 xl:gap-6'>
-          <div className='w-full space-y-4 xl:space-y-8 flex flex-column items-center justify-center flex-auto bg-[#F5F7FA] rounded-[30px]'>
+          <div className='w-full space-y-4 xl:space-y-8 flex flex-column items-center justify-center flex-auto bg-[#F5F7FA] rounded-[30px] shadow-lg sm:shadow-none'>
             <div className='max-w-[412px] w-full px-4'>
               {/* Logo */}
               <Image

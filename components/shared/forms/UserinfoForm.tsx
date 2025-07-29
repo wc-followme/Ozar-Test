@@ -322,7 +322,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
             />
             <FormErrorMessage message={errors.name?.message || ''} />
           </div>
-          <div className='space-y-2'>
+          <div className='sm:space-y-2 space-y-1'>
             <Label htmlFor='designation' className='field-label'>
               {USER_MESSAGES.DESIGNATION_LABEL}
             </Label>
@@ -622,14 +622,14 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
         <div className='pt-4 flex items-center justify-end gap-3'>
           <Button
             type='button'
-            className='btn-secondary !px-4 md:!px-8'
+            className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             onClick={handleCancel}
           >
             {USER_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
-            className='btn-primary !px-4 md:!px-8'
+            className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             disabled={loading}
           >
             {isEditMode

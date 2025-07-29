@@ -159,6 +159,9 @@ const config: Config = {
           },
         },
       },
+      boxShadow: {
+        custom: '0px 2px 8px 0px #0000001A',
+      },
     },
   },
   plugins: [

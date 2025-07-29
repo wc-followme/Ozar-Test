@@ -227,12 +227,12 @@ export default function UserManagement() {
   }
 
   return (
-    <div className='w-full overflow-y-auto'>
+    <div className='w-full'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between mb-4 xl:mb-8'>
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
         <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>{USER_MESSAGES.USER_MANAGEMENT_TITLE}</h2>
-          <div className='flex items-center gap-2 lg:gap-4 justify-end'>
+          <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end'>
             <SelectField
               value={filter}
               onValueChange={setFilter}
@@ -244,17 +244,17 @@ export default function UserManagement() {
                 })),
               ]}
               placeholder={USER_MESSAGES.ALL_USERS}
-              className='w-40'
-              triggerClassName='bg-[var(--white-background)] rounded-[30px] border-2 border-[var(--border-dark)] h-[42px]'
+              className='w-full sm:w-40'
+              triggerClassName='bg-[var(--white-background)] rounded-[30px] border-2 border-[var(--border-dark)] h-[42px] shadow-sm sm:shadow-none'
               optionClassName='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
             />
             {canEdit && (
               <button
                 onClick={handleCreateUser}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 disabled={loading}
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
                 </span>
@@ -265,7 +265,7 @@ export default function UserManagement() {
       </div>
       {/* Initial Loading State */}
       {users.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
           {[...Array(8)].map((_, i) => (
             <UserCardSkeleton key={i} />
           ))}
@@ -283,7 +283,7 @@ export default function UserManagement() {
               />
             </div>
           ) : (
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
               {users.map(
                 ({
                   uuid,

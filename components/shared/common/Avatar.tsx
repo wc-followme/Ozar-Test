@@ -18,6 +18,7 @@ export const AVATAR_COLORS = [
 export interface AvatarProps {
   name: string;
   image?: string;
+  placeholderImage?: string;
   height?: number | string;
   width?: number | string;
   className?: string;
@@ -49,6 +50,7 @@ export function getRandomAvatarColor(
 export const Avatar: React.FC<AvatarProps> = ({
   name,
   image,
+  placeholderImage,
   height = 80,
   width = 80,
   className = '',
@@ -56,6 +58,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   style = {},
 }) => {
   const [imgError, setImgError] = useState(false);
+  const [placeholderError, setPlaceholderError] = useState(false);
   const color = useMemo(
     () => getRandomAvatarColor(name, avatarColor),
     [name, avatarColor]
@@ -85,26 +88,28 @@ export const Avatar: React.FC<AvatarProps> = ({
             color: color.color ?? '#222',
           }}
         />
-      ) : (
+      ) : placeholderImage && !placeholderError ? (
         <AvatarImage
-          src='/images/img-placeholder-sm.png'
+          src={placeholderImage}
           alt='placeholder'
           className='rounded-[10px] object-cover text-6 font-bold'
+          onError={() => setPlaceholderError(true)}
           style={{
             background: color.bg ?? '#ccc',
             color: color.color ?? '#222',
           }}
         />
+      ) : (
+        <AvatarFallback
+          className='rounded-[10px] object-cover text-6 font-bold'
+          style={{
+            background: color.bg ?? '#ccc',
+            color: color.color ?? '#222',
+          }}
+        >
+          {getInitials(name)}
+        </AvatarFallback>
       )}
-      <AvatarFallback
-        className='rounded-[10px] object-cover text-6 font-bold'
-        style={{
-          background: color.bg ?? '#ccc',
-          color: color.color ?? '#222',
-        }}
-      >
-        {getInitials(name)}
-      </AvatarFallback>
     </RadixAvatar>
   );
 };

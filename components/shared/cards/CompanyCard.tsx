@@ -115,7 +115,7 @@ export function CompanyCard({
 
   return (
     <div
-      className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] hover:shadow-lg px-4 py-[18px] transition-shadow duration-200 cursor-pointer'
+      className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] hover:shadow-2xl sm:hover:shadow-lg px-4 py-[18px] transition-all duration-300 cursor-pointer shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'
       onClick={handleCardClick}
     >
       {/* Header with Avatar, User Info and Menu */}

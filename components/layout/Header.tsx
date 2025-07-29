@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/lib/auth-context';
 import { HambergerMenu, Key, UserOctagon } from 'iconsax-react';
 import Image from 'next/image';
-import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/utils';
 import { Search } from '../icons/Search';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import Dropdown from '../shared/common/Dropdown';
+import EmployeesDropdown, {
+  Employee,
+} from '../shared/common/EmployeesDropdown';
 import SideSheet from '../shared/common/SideSheet';
 import { Input } from '../ui/input';
 import { SidebarMobile } from './SidebarMobile';
@@ -28,6 +30,14 @@ export function Header() {
   const lastScrollY = useRef(0);
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<
+    Employee | undefined
+  >({
+    id: '1',
+    name: 'Virtual Homes',
+    icon: '/images/company-management/company-img-1.png',
+    color: '#8B5CF6',
+  });
 
   useEffect(() => {
     const handleScroll = () => {
@@ -75,10 +85,12 @@ export function Header() {
           </Button>
           <SidebarMobile open={sideSheetOpen} onOpenChange={setSideSheetOpen} />
         </div>
-        <div className='flex items-center space-x-4 mr-auto'>
-          <Link href='/' className='text-base md:text-2xl font-bold'>
-            Virtual Homes
-          </Link>
+        <div className='flex items-center w-fit flex-auto'>
+          <EmployeesDropdown
+            selectedEmployee={selectedEmployee}
+            onSelect={setSelectedEmployee}
+            placeholder='Select Company'
+          />
         </div>
         <div className='flex items-center gap-4 md:gap-6'>
           <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-green-500 hidden md:flex'>
