@@ -154,7 +154,7 @@ export default function TradeForm({
       onSubmit={handleSubmit(onFormSubmit)}
       className='space-y-4 sm:space-y-6 w-full max-w-xl'
     >
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label htmlFor='category' className='field-label text-sm sm:text-base'>
           {TRADE_MESSAGES.CATEGORY_LABEL}
         </Label>
@@ -191,7 +191,7 @@ export default function TradeForm({
           }}
         />
       </div>
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label htmlFor='tradeName' className='field-label text-sm sm:text-base'>
           {TRADE_MESSAGES.TRADE_NAME_LABEL}
         </Label>
@@ -218,7 +218,7 @@ export default function TradeForm({
         <Button
           type='button'
           variant='outline'
-          className='btn-secondary !px-4 md:!px-8'
+          className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           onClick={onCancel}
           disabled={loading}
         >
@@ -226,7 +226,7 @@ export default function TradeForm({
         </Button>
         <Button
           type='submit'
-          className='btn-primary !px-4 md:!px-8'
+          className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={loading}
         >
           {loading

@@ -157,8 +157,9 @@ export default function AddCompanyPage() {
         <div className=''>
           <div className='flex items-start flex-col xl:flex-row gap-4 md:gap-6'>
             {/* Left Column - Upload Photo */}
-            <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 relative'>
+            <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 relative shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <h2 className='text-lg font-bold mb-4'>
+                {' '}
                 {COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
               </h2>
               <PhotoUploadField
@@ -167,6 +168,7 @@ export default function AddCompanyPage() {
                 label={COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
                 text={COMPANY_MESSAGES.UPLOAD_PHOTO_TEXT}
                 cardHeight='h-[265px]'
+                className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
               />
               {uploading && (
                 <div className='text-xs mt-2'>{COMPANY_MESSAGES.UPLOADING}</div>
@@ -174,7 +176,7 @@ export default function AddCompanyPage() {
             </div>
 
             {/* Right Column - Form Fields */}
-            <div className='flex-1 w-full bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+            <div className='flex-1 w-full bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <CompanyInfoForm
                 imageUrl={fileKey}
                 onSubmit={handleCreateCompany}

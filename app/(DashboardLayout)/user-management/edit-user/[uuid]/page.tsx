@@ -538,13 +538,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         </div> */}
 
         {/* Main Content */}
-        <div className='bg-[var(--white-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+        <div className='bg-[var(--white-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <Tabs
             value={selectedTab}
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
@@ -575,7 +575,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                         ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') + fileKey
                         : ''
                     }
-                    className='h-[250px]'
+                    className='h-[250px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                   />
                   {uploading && (
                     <div className='text-xs mt-2'>
@@ -616,47 +616,51 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                       const { title, stripes } = accordion;
                       const accessLevel = calculateAccessLevel(stripes);
                       return (
-                        <CompanyManagementAddUser
+                        <div
                           key={title + idx}
-                          title={title}
-                          badgeLabel={accessLevel}
-                          stripes={
-                            Array.isArray(stripes) &&
-                            Array.isArray(
-                              ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes
-                            )
-                              ? ACCESS_CONTROL_ACCORDIONS_DATA[
-                                  idx
-                                ]?.stripes.map((stripe, sIdx) => ({
-                                  title: stripe.title,
-                                  description: stripe.description,
-                                  checked:
-                                    typeof stripes?.[sIdx] === 'boolean'
-                                      ? stripes[sIdx]
-                                      : false,
-                                  onToggle: () => handleToggle(idx, sIdx),
-                                }))
-                              : []
-                          }
-                          open={openAccordionIdx === idx}
-                          onOpenChange={open =>
-                            setOpenAccordionIdx(open ? idx : -1)
-                          }
-                        />
+                          className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
+                        >
+                          <CompanyManagementAddUser
+                            title={title}
+                            badgeLabel={accessLevel}
+                            stripes={
+                              Array.isArray(stripes) &&
+                              Array.isArray(
+                                ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes
+                              )
+                                ? ACCESS_CONTROL_ACCORDIONS_DATA[
+                                    idx
+                                  ]?.stripes.map((stripe, sIdx) => ({
+                                    title: stripe.title,
+                                    description: stripe.description,
+                                    checked:
+                                      typeof stripes?.[sIdx] === 'boolean'
+                                        ? stripes[sIdx]
+                                        : false,
+                                    onToggle: () => handleToggle(idx, sIdx),
+                                  }))
+                                : []
+                            }
+                            open={openAccordionIdx === idx}
+                            onOpenChange={open =>
+                              setOpenAccordionIdx(open ? idx : -1)
+                            }
+                          />
+                        </div>
                       );
                     })}
                   </div>
-                  <div className='flex justify-end gap-6 mt-8'>
+                  <div className='flex justify-end sm:gap-6 gap-4 mt-8'>
                     <Link
                       href={USER_MANAGEMENT}
-                      className='btn-secondary !px-4 md:!px-8'
+                      className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     >
                       Cancel
                     </Link>
                     <Button
                       onClick={handleUpdatePermissions}
                       disabled={formLoading}
-                      className='btn-primary !px-4 md:!px-8'
+                      className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     >
                       {formLoading ? 'Updating...' : 'Update'}
                     </Button>

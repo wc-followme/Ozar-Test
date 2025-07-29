@@ -198,7 +198,10 @@ const ToolForm: React.FC<ToolFormProps> = ({
 
   return (
     <div className='p-0 w-full'>
-      <form className='space-y-6' onSubmit={handleSubmit(handleSubmitForm)}>
+      <form
+        className='space-y-4 md:space-y-6'
+        onSubmit={handleSubmit(handleSubmitForm)}
+      >
         {/* General Error */}
         {/* {errors.general && (
           <div className='p-3 bg-red-50 border border-red-200 rounded-md'>
@@ -252,7 +255,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
         />
 
         {/* Tool Name */}
-        <div className='space-y-2'>
+        <div className='space-y-1 md:space-y-2'>
           <Label htmlFor='tool-name' className='field-label'>
             {TOOL_MESSAGES.TOOL_NAME_LABEL}
           </Label>
@@ -277,7 +280,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
         </div>
 
         {/* Manufacturer */}
-        <div className='space-y-2'>
+        <div className='space-y-1 md:space-y-2'>
           <Label htmlFor='manufacturer' className='field-label'>
             {TOOL_MESSAGES.MANUFACTURER_LABEL}
           </Label>
@@ -302,7 +305,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
         </div>
 
         {/* Quantity */}
-        <div className='space-y-2'>
+        <div className='space-y-1 md:space-y-2'>
           <Label htmlFor='quantity' className='field-label'>
             {TOOL_MESSAGES.QUANTITY_LABEL}
           </Label>
@@ -332,20 +335,20 @@ const ToolForm: React.FC<ToolFormProps> = ({
         </div>
 
         {/* Form Actions */}
-        <div className='flex items-center justify-end space-x-3 pt-6'>
+        <div className='flex items-center justify-end space-x-3 pt-4'>
           <Button
             type='button'
             variant='outline'
             onClick={onCancel}
             disabled={loading}
-            className='btn-secondary'
+            className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {TOOL_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
             disabled={loading || uploading}
-            className='btn-primary'
+            className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {loading
               ? isEdit

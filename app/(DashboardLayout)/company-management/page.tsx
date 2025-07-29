@@ -205,7 +205,7 @@ export default function CompanyManagement() {
   }
 
   return (
-    <div className='w-full overflow-y-auto pb-4'>
+    <div className='w-full pb-4'>
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
         <div className='flex items-center justify-between w-full'>
@@ -216,9 +216,9 @@ export default function CompanyManagement() {
             {canEdit && (
               <button
                 onClick={handleCreateCompany}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
                 </span>

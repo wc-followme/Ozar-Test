@@ -819,26 +819,21 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
         </div>
 
         {/* Form Actions */}
-        <div className='flex sm:items-center justify-end gap-2 sm:gap-4 pt-4 sm:pt-6'>
+        <div className='flex justify-end gap-3 pt-4'>
           <Button
             type='button'
             variant='outline'
             onClick={handleCancel}
-            disabled={loading}
-            className='btn-secondary !px-4 md:!px-8'
+            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
-            {COMPANY_MESSAGES.CANCEL_BUTTON}
+            Cancel
           </Button>
           <Button
             type='submit'
             disabled={loading}
-            className='btn-primary !px-4 md:!px-8'
+            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
-            {loading
-              ? 'Creating...'
-              : isEditMode
-                ? COMPANY_MESSAGES.UPDATE_BUTTON
-                : COMPANY_MESSAGES.CREATE_BUTTON}
+            {loading ? 'Submitting...' : isEditMode ? 'Update' : 'Create'}
           </Button>
         </div>
       </form>

@@ -78,7 +78,7 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   const showMenu = filteredMenuOptions.length > 0;
 
   return (
-    <div className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] w-full p-[10px] flex items-center gap-4 min-h-[64px] hover:shadow-md transition-shadow duration-200'>
+    <div className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] w-full p-[10px] flex items-center gap-4 min-h-[64px] hover:shadow-2xl sm:hover:shadow-md transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
       {/* Avatar */}
       <Avatar
         name={tradeName}

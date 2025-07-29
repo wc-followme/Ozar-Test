@@ -384,7 +384,8 @@ export default function JobManagement() {
       bgColor: 'bg-[#F58B1E1A]',
     },
   ];
-  if (loading) {
+  // Show full page skeleton only on initial load
+  if (loading && isInitialMount.current) {
     return <JobManagementPageSkeleton />;
   }
 
@@ -439,7 +440,7 @@ export default function JobManagement() {
   return (
     <div className=''>
       {/* Stats Cards */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 md:gap-6 sm:gap-4 gap-2 mb-8'>
+      <div className='grid grid-cols-2 lg:grid-cols-4 md:gap-6 sm:gap-4 gap-2 mb-8'>
         {stats.map(stat => {
           // Destructure stat data for cleaner code
           const { id, icon, value, label, iconColor, bgColor } = stat;
@@ -478,17 +479,21 @@ export default function JobManagement() {
                 buttonWidthDesktop: canEdit ? 200 : 0, // Auto width button + gap + safety margin
               }}
             >
-              <TabsList className='flex w-fit bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal justify-start max-w-full overflow-hidden'>
+              <TabsList className='flex w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full overflow-hidden shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
                 <TabsTrigger
                   value={NEW_LEADS_TAB}
-                  className='px-8  py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
-                  New Leads
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === NEW_LEADS_TAB ? 'bg-[var(--badge-bg)] text-white' : 'bg-transparent text-limebrand'}`}
-                  >
-                    {filterCounts.new_leads}
-                  </Badge>
+                  <span className='flex items-center gap-2'>
+                    <span className='text-sm sm:text-sm xl:text-base'>
+                      New Leads
+                    </span>
+                    <Badge
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === NEW_LEADS_TAB ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
+                    >
+                      {filterCounts.new_leads}
+                    </Badge>
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value={INFO}
@@ -527,43 +532,50 @@ export default function JobManagement() {
 
                 <TabsTrigger
                   value={ARCHIVE}
-                  className='px-8  py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
-                  Archived
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === ARCHIVE ? 'bg-graybrand text-white' : 'bg-transparent text-graybrand'}`}
-                  >
-                    {filterCounts.archived}
-                  </Badge>
+                  <span className='flex items-center gap-2'>
+                    <span className='text-sm sm:text-sm xl:text-base'>
+                      Archived
+                    </span>
+                    <Badge
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === ARCHIVE ? 'bg-graybrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-graybrand'}`}
+                    >
+                      {filterCounts.archived}
+                    </Badge>
+                  </span>
                 </TabsTrigger>
                 <TabsTrigger
                   value={CLOSED}
-                  className=' px-8  py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal hover:bg-gray-100 data-[state=active]:hover:bg-[var(--primary)]'
                 >
-                  Closed
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === CLOSED ? 'bg-greenbrand text-white' : 'bg-transparent text-greenbrand'}`}
-                  >
-                    {filterCounts.closed || 0}
-                  </Badge>
+                  <span className='flex items-center gap-2'>
+                    <span className='text-sm sm:text-sm xl:text-base'>
+                      Closed
+                    </span>
+                    <Badge
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === CLOSED ? 'bg-greenbrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-greenbrand'}`}
+                    >
+                      {filterCounts.closed || 0}
+                    </Badge>
+                  </span>
                 </TabsTrigger>
               </TabsList>
             </DynamicScrollArea>
             {canEdit && (
               <button
                 onClick={() => setIsOpen(true)}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-8 text-base text-center !h-12 sm:!h-12 !w-12 sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-8 text-base text-center !h-12 sm:!h-12 !w-12 sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto w-14 h-14 sm:w-auto sm:h-12 shadow-2xl sm:shadow-none hover:shadow-3xl sm:hover:shadow-none shadow-[0_8px_25px_-5px_rgba(0,0,0,0.3)] sm:shadow-none hover:shadow-[0_12px_35px_-8px_rgba(0,0,0,0.4)] sm:hover:shadow-none'
               >
-                <Add size='18' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline text-base'>
                   {JOB_MESSAGES.ADD_JOB_BUTTON}
                 </span>
               </button>
             )}
           </div>
-          <TabsContent value={NEW_LEADS_TAB} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+          <TabsContent value={NEW_LEADS_TAB} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
             ) : jobs.length === 0 && !loading ? (
               <NoDataFound
@@ -584,7 +596,7 @@ export default function JobManagement() {
             )}
           </TabsContent>
 
-          <TabsContent value={INFO} className='pt-8'>
+          <TabsContent value={INFO} className='pt-4 sm:pt-8'>
             <ComingSoon />
           </TabsContent>
 
@@ -594,9 +606,8 @@ export default function JobManagement() {
           <TabsContent value={WAITING_ON_CLIENT} className='p-8'>
             <NoDataFound buttonText='Create Job' />
           </TabsContent>
-          <TabsContent value={CLOSED} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+          <TabsContent value={CLOSED} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
             ) : jobs.length === 0 && !loading ? (
               <NoDataFound
@@ -616,9 +627,8 @@ export default function JobManagement() {
               </>
             )}
           </TabsContent>
-          <TabsContent value={ARCHIVE} className='pt-8'>
-            {jobs.length === 0 && loading ? (
-              // Initial loading state with skeleton cards
+          <TabsContent value={ARCHIVE} className='pt-4 sm:pt-8'>
+            {tabLoading || (loading && !isInitialMount.current) ? (
               <JobSkeletonGrid />
             ) : jobs.length === 0 && !loading ? (
               <NoDataFound

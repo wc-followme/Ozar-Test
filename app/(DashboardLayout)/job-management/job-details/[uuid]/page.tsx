@@ -213,7 +213,7 @@ export default function JobDetailsPage() {
   return (
     <div className=''>
       {/* Breadcrumb */}
-      <div className='flex flex-wrap items-start text-sm font-normal mb-1 w-full md:text-base md:mb-3'>
+      <div className='flex flex-wrap flex-col sm:flex-row gap-2 items-start text-sm font-normal mb-1 w-full md:text-base md:mb-3'>
         <Breadcrumb items={breadcrumbData} className='flex-1' />
         {/* 3-dots menu */}
         {isClient && (
@@ -255,7 +255,7 @@ export default function JobDetailsPage() {
         )}
       </div>
       {/* Card */}
-      <div className='bg-[var(--card-background)] rounded-[20px] p-4 md:p-6 flex flex-col md:flex-row md:justify-between border border-[var(--border-dark)] max-w-full gap-4 md:gap-0 relative'>
+      <div className='bg-[var(--card-background)] rounded-[20px] p-4 md:p-6 flex flex-col md:flex-row md:justify-between border border-[var(--border-dark)] max-w-full gap-4 md:gap-0 relative shadow-lg sm:shadow-none'>
         {status === INACTIVE && (
           <div className='absolute top-4 right-4 bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-medium'>
             {JOB_MESSAGES.ARCHIVED_STATUS}
@@ -278,7 +278,7 @@ export default function JobDetailsPage() {
         </div>
         {/* Details */}
         <div className='flex-1 px-0 md:px-6 w-full'>
-          <div className='grid grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 border-b border-[var(--border-dark)] pb-2 mb-3'>
+          <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 border-b border-[var(--border-dark)] pb-2 mb-3'>
             <div className='min-w-0 break-words'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.PROJECT_ID_LABEL}
@@ -325,7 +325,7 @@ export default function JobDetailsPage() {
               </div>
             </div>
           </div>
-          <div className='grid grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 items-start md:items-center mt-2'>
+          <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 items-start md:items-center mt-2'>
             <div className='min-w-0 break-words'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.CLIENT_NAME_LABEL}
@@ -361,7 +361,7 @@ export default function JobDetailsPage() {
           </div>
         </div>
         {/* Map Image */}
-        <div className='flex flex-row md:flex-col items-center md:items-end gap-2 mt-4 md:mt-0'>
+        <div className='flex justify-center gap-2 mt-4 md:mt-0'>
           <Image
             src={mapImage}
             alt='Map'
