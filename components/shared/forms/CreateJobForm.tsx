@@ -72,7 +72,10 @@ const createJobSchema = yup.object({
     .string()
     .email(JOB_MESSAGES.EMAIL_REQUIRED)
     .required(JOB_MESSAGES.EMAIL_REQUIRED),
-  client_phone_number: yup.string().required(JOB_MESSAGES.PHONE_REQUIRED),
+  client_phone_number: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+    .required(JOB_MESSAGES.PHONE_REQUIRED),
   job_privacy: yup
     .mixed<JobType>()
     .oneOf([JOB_TYPE.PUBLIC, JOB_TYPE.PRIVATE])
@@ -312,6 +315,40 @@ export function CreateJobForm({
                     placeholder={JOB_MESSAGES.ENTER_PHONE}
                     className='input-field'
                     disabled={userSelected}
+                    onKeyDown={e => {
+                      // Only allow numbers, backspace, delete, tab, escape, enter
+                      const allowedKeys = [
+                        'Backspace',
+                        'Delete',
+                        'Tab',
+                        'Escape',
+                        'Enter',
+                        'ArrowLeft',
+                        'ArrowRight',
+                        'ArrowUp',
+                        'ArrowDown',
+                        'Home',
+                        'End',
+                      ];
+
+                      // Allow if it's an allowed key
+                      if (allowedKeys.includes(e.key)) {
+                        return;
+                      }
+
+                      // Allow if it's a number
+                      if (/^[0-9]$/.test(e.key)) {
+                        return;
+                      }
+
+                      // Prevent all other keys
+                      e.preventDefault();
+                    }}
+                    onChange={e => {
+                      // Remove any non-numeric characters from the input
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      field.onChange(value);
+                    }}
                   />
                 )}
               />
@@ -499,7 +536,7 @@ export function CreateJobForm({
               <>
                 <Button
                   type='button'
-                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   onClick={() => {
                     if (generatedLink) {
                       window.open(generatedLink, '_blank');
@@ -509,7 +546,7 @@ export function CreateJobForm({
                   Continue Estimate
                 </Button>
                 <Button
-                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   type='button'
                   onClick={() => {
                     navigator.clipboard.writeText(generatedLink);
@@ -523,14 +560,14 @@ export function CreateJobForm({
               <>
                 <Button
                   type='button'
-                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   onClick={onCancel}
                 >
                   {JOB_MESSAGES.CANCEL_BUTTON}
                 </Button>
                 {defaultValues?.link && (
                   <Button
-                    className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                    className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     type='button'
                   >
                     Continue Estimate
@@ -538,7 +575,7 @@ export function CreateJobForm({
                 )}
                 <Button
                   type='submit'
-                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   disabled={isSubmitting}
                 >
                   {isSubmitting

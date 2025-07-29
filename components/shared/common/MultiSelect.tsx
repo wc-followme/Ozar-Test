@@ -69,12 +69,9 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   });
 
   return (
-    <div className='space-y-2 w-full'>
+    <div className='space-y-1 md:space-y-2 w-full'>
       {label && (
-        <Label
-          htmlFor={name}
-          className='text-[14px] font-semibold text-[var(--text-dark)]'
-        >
+        <Label htmlFor={name} className='field-label'>
           {label}
         </Label>
       )}

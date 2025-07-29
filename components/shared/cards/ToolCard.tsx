@@ -61,7 +61,7 @@ export default function ToolCard({
   const showMenu = filteredMenuOptions.length > 0;
 
   return (
-    <div className='bg-[var(--card-background)] hover:shadow-lg rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all'>
+    <div className='bg-[var(--card-background)] hover:shadow-2xl sm:hover:shadow-lg rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
       <div className='flex gap-3'>
         {/* Image */}
         <div className='w-[80px] h-[80px] rounded-[12px] overflow-hidden bg-[var(--border-light)] flex items-center justify-center flex-shrink-0'>

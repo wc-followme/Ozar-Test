@@ -1,20 +1,21 @@
 'use client';
 
 import ToolCard from '@/components/shared/cards/ToolCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Trash } from 'iconsax-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ToolCardSkeleton from '../../../components/shared/skeleton/ToolCardSkeleton';
 import { TOOL_MESSAGES } from './tool-messages';
@@ -44,6 +45,7 @@ export default function ToolsManagement() {
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.tools?.edit;
+  const canViewTools = userPermissions?.tools?.view;
 
   // Memoize menu options to prevent unnecessary re-renders
   const menuOptions = useMemo(
@@ -417,6 +419,17 @@ export default function ToolsManagement() {
     setSideSheetOpen(true);
   };
 
+  // Check if user has permission to view tools
+  if (userPermissions && !canViewTools) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   if (loading) {
     return (
       <div className='w-full'>
@@ -435,13 +448,21 @@ export default function ToolsManagement() {
   return (
     <div className='w-full'>
       {/* Header */}
-      <div className='flex items-center justify-between mb-8'>
-        <h2 className='page-title'>Tools Management</h2>
-        {canEdit && (
-          <Button onClick={handleOpenCreateForm} className='btn-primary'>
-            Create Tool
-          </Button>
-        )}
+      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
+        <div className='flex items-center justify-between w-full'>
+          <h1 className='page-title'>Tools Management</h1>
+          <div className='flex items-center gap-4 justify-end'>
+            {canEdit && (
+              <button
+                onClick={handleOpenCreateForm}
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+              >
+                <Add size='24' color='#fff' className='sm:hidden' />
+                <span className='hidden sm:inline'>Create Tool</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Initial Loading State */}

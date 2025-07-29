@@ -56,12 +56,8 @@ const SelectField: React.FC<SelectFieldProps> = ({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {label && (
-        <Label className='text-[14px] font-semibold text-[var(--text-dark)]'>
-          {label}
-        </Label>
-      )}
+    <div className={`sm:space-y-2 space-y-1 ${className}`}>
+      {label && <Label className='field-label'>{label}</Label>}
       <Select value={internalValue} onValueChange={handleValueChange}>
         <SelectTrigger
           className={`h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] ${triggerClassName}`}

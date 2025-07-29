@@ -56,21 +56,21 @@ const JobCardSkeleton: React.FC = () => (
 const JobManagementPageSkeleton: React.FC = () => (
   <div className=''>
     {/* Stats Cards Skeleton */}
-    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
+    <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
       {[...Array(4)].map((_, i) => (
         <Card
           key={i}
-          className='border-[1px] border-[var(--border-dark)] bg-[var(--card-background)] shadow-0 rounded-[20px] h-[107px]'
+          className='border-[1px] border-[var(--border-dark)] bg-[var(--card-background)] shadow-0 rounded-[20px]'
         >
-          <CardContent className='p-6'>
-            <div className='flex items-center justify-between'>
+          <CardContent className='sm:p-6 p-4'>
+            <div className='flex sm:flex-row sm:gap-4 gap-6 flex-col sm:items-center justify-between'>
               <div>
                 <Skeleton className='h-4 w-16 mb-4 mt-2 rounded bg-[var(--bg-skeleton)]'>
                   &nbsp;
                 </Skeleton>
                 <Skeleton className='h-3 w-24 rounded bg-[var(--bg-skeleton)]' />
               </div>
-              <div className='w-10 h-10 rounded-[16px] bg-[var(--bg-skeleton)] flex items-center justify-center'>
+              <div className='w-12 h-12 rounded-[16px] bg-[var(--bg-skeleton)] flex items-center justify-center mb-4'>
                 <Skeleton className='w-5 h-5 rounded bg-[#E0E2E5]' />
               </div>
             </div>
@@ -79,9 +79,9 @@ const JobManagementPageSkeleton: React.FC = () => (
       ))}
     </div>
     {/* Tabs and Create Job Button Skeleton */}
-    <div className='flex flex-row items-start lg:items-center gap-2 w-full mb-10'>
-      <Skeleton className='h-12 rounded-full bg-[var(--bg-skeleton)] w-full sm:w-1/2' />
-      <Skeleton className='w-12 h-12  sm:w-32 rounded-full shrink-0 bg-[var(--bg-skeleton)] ml-auto' />
+    <div className='flex flex-row items-start lg:items-center gap-2 w-full sm:mb-10 mb-6'>
+      <Skeleton className='h-16 sm:h-12 rounded-full bg-[var(--bg-skeleton)] w-full sm:w-1/2' />
+      <Skeleton className='w-14 h-14 sm:w-32 sm:h-12 rounded-full shrink-0 bg-[var(--bg-skeleton)] fixed sm:static bottom-6 right-6 z-50 sm:z-auto ml-auto' />
     </div>
     {/* Jobs Grid Skeleton */}
     <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>

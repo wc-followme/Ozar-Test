@@ -196,6 +196,29 @@ body {
   .scroll-smooth {
     scroll-behavior: smooth;
   }
+
+  /* Custom scrollbar for employees dropdown */
+  .employees-dropdown-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #3b82f6 transparent;
+  }
+
+  .employees-dropdown-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .employees-dropdown-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .employees-dropdown-scrollbar::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 3px;
+  }
+
+  .employees-dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #2563eb;
+  }
 }
 @layer base {
   * {

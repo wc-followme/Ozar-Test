@@ -1,11 +1,13 @@
 'use client';
 
 import { CompanyCard } from '@/components/shared/cards/CompanyCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import CompanyCardSkeleton from '@/components/shared/skeleton/CompanyCardSkeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, Company, FetchCompaniesResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -53,6 +55,7 @@ export default function CompanyManagement() {
   // Get user permissions for companies
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.companies?.assign_user;
+  const canViewCompany = userPermissions?.companies?.view;
 
   // Fetch companies
   useEffect(() => {
@@ -204,8 +207,19 @@ export default function CompanyManagement() {
     return <LoadingComponent variant='fullscreen' text='Loading form...' />;
   }
 
+  // Check if user has permission to view companies
+  if (userPermissions && !canViewCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
-    <div className='w-full overflow-y-auto pb-4'>
+    <div className='w-full pb-4'>
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
         <div className='flex items-center justify-between w-full'>
@@ -216,9 +230,9 @@ export default function CompanyManagement() {
             {canEdit && (
               <button
                 onClick={handleCreateCompany}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
                 </span>

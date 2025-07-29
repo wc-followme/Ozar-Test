@@ -1,5 +1,6 @@
 'use client';
 import { InfoCard } from '@/components/shared/cards/InfoCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
@@ -8,6 +9,7 @@ import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -66,6 +68,7 @@ export default function ServiceManagementPage() {
   // Get user permissions for services
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.services?.edit;
+  const canViewServices = userPermissions?.services?.view;
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
@@ -281,8 +284,19 @@ export default function ServiceManagementPage() {
     }
   };
 
+  // Check if user has permission to view services
+  if (userPermissions && !canViewServices) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
-    <div className='w-full overflow-y-auto'>
+    <div className='w-full'>
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
         <div className='flex items-center justify-between w-full'>
@@ -292,10 +306,10 @@ export default function ServiceManagementPage() {
           {canEdit && (
             <div className='flex justify-end'>
               <Button
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 onClick={() => setSideSheetOpen(true)}
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
                 </span>

@@ -1,14 +1,20 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { CompanyInfoForm } from '@/components/shared/forms/CompanyinfoForm';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateCompanyRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -34,6 +40,21 @@ export default function AddCompanyPage() {
 
   // Destructure constants for cleaner code
   const { ACTIVE } = CommonStatus;
+
+  // Get user permissions for companies
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateCompany = userPermissions?.companies?.assign_user;
+
+  // Check if user has permission to create companies
+  if (userPermissions && !canCreateCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -157,8 +178,9 @@ export default function AddCompanyPage() {
         <div className=''>
           <div className='flex items-start flex-col xl:flex-row gap-4 md:gap-6'>
             {/* Left Column - Upload Photo */}
-            <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 relative'>
+            <div className='w-full md:w-[412px] flex-shrink-0 bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 relative shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <h2 className='text-lg font-bold mb-4'>
+                {' '}
                 {COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
               </h2>
               <PhotoUploadField
@@ -167,6 +189,7 @@ export default function AddCompanyPage() {
                 label={COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
                 text={COMPANY_MESSAGES.UPLOAD_PHOTO_TEXT}
                 cardHeight='h-[265px]'
+                className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
               />
               {uploading && (
                 <div className='text-xs mt-2'>{COMPANY_MESSAGES.UPLOADING}</div>
@@ -174,7 +197,7 @@ export default function AddCompanyPage() {
             </div>
 
             {/* Right Column - Form Fields */}
-            <div className='flex-1 w-full bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+            <div className='flex-1 w-full bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <CompanyInfoForm
                 imageUrl={fileKey}
                 onSubmit={handleCreateCompany}

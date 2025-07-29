@@ -100,20 +100,19 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           )}
         </div>
         {/* Actions */}
-        <div className='flex gap-4 pt-2'>
+        <div className='flex justify-end gap-3 pt-4'>
           <Button
             type='button'
             variant='outline'
-            className='btn-secondary !px-4 md:!px-8'
             onClick={handleClose}
-            disabled={isSubmitting}
+            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {CATEGORY_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
-            className='btn-primary !px-4 md:!px-8'
             disabled={isSubmitting}
+            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {isSubmitting
               ? editingCategory

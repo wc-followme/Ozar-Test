@@ -1,12 +1,18 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { apiService } from '@/lib/api';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { CreateRoleFormData } from '@/lib/validations/role';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
@@ -41,6 +47,10 @@ const EditRolePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const uuid = params['uuid'] as string;
+
+  // Get user permissions for roles
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditRole = userPermissions?.roles?.edit;
 
   const breadcrumbData: BreadcrumbItem[] = [
     { name: ROLE_MESSAGES.ROLE_MANAGEMENT_BREADCRUMB, href: ROLE_MANAGEMENT },
@@ -133,6 +143,17 @@ const EditRolePage = () => {
       setIsSubmitting(false);
     }
   };
+
+  // Check if user has permission to edit roles
+  if (userPermissions && !canEditRole) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.ROLE_EDIT_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   if (loading) return <LoadingComponent variant='fullscreen' />;
   if (error) return <div className='p-8 text-red-500'>{error}</div>;

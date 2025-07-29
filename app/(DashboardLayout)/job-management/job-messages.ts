@@ -64,6 +64,10 @@ export const JOB_MESSAGES = {
   // Menu Options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  CLOSE_JOB_MENU: 'Close job',
+  ADD_EMPLOYEE_MENU: 'Add Employee',
+  MOVE_TO_ARCHIVE_MENU: 'Move to Archive',
+  SETTINGS_MENU: 'Settings',
 
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',

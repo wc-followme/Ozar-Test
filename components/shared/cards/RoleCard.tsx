@@ -87,12 +87,12 @@ export const RoleCard: React.FC<RoleCardProps> = ({
             const isLocalIcon = iconSrc && iconSrc.length === 1;
             if (isLocalIcon) {
               return React.createElement(iconSrc as any, {
-                className: 'w-[30px] h-[30px]',
+                className: '!w-[32px] !h-[32px]',
                 style: { color: iconColor || '#000000' },
               });
             } else {
               return React.createElement(iconSrc, {
-                size: 30,
+                size: 36,
                 color: iconColor || '#000000',
               });
             }
