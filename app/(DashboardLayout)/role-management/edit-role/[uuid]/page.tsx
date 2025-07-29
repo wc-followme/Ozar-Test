@@ -156,7 +156,7 @@ const EditRolePage = () => {
   }
 
   if (loading) return <LoadingComponent variant='fullscreen' />;
-  if (error) return <div className='p-8 text-red-500'>{error}</div>;
+  if (error) return <div className='p-8 text-[var(--warning)]'>{error}</div>;
 
   if (!initialValues) return null;
 

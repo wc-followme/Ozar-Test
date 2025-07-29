@@ -172,10 +172,10 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
               value={email}
               onChange={handleEmailChange}
               onBlur={() => handleBlur('email')}
-              className={`pl-12 h-12 border-2 focus:ring-green-500 border-[#E8EAED] bg-white rounded-[10px] text-sm md:text-base text-[#2d2d2d] !placeholder-[#C0C6CD] ${
+              className={`pl-12 h-12 border-2 focus:ring-[var(--secondary)] border-[#E8EAED] bg-white rounded-[10px] text-sm md:text-base text-[#2d2d2d] !placeholder-[#C0C6CD] ${
                 errors.email && touched.email
-                  ? 'border-red-500 focus:border-red-500'
-                  : 'focus:border-green-500'
+                  ? 'border-[var(--warning)] focus:border-[var(--warning)]'
+                  : 'focus:border-[var(--secondary)]'
               }`}
               disabled={isLoading}
               autoComplete='email'
@@ -209,10 +209,10 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
               value={password}
               onChange={handlePasswordChange}
               onBlur={() => handleBlur('password')}
-              className={`pl-12 pr-10 h-12 border-2 text-[#2d2d2d] text-sm md:text-base border-[#E8EAED] focus:ring-green-500 bg-white rounded-[10px] !placeholder-[#C0C6CD] ${
+              className={`pl-12 pr-10 h-12 border-2 text-[#2d2d2d] text-sm md:text-base border-[#E8EAED] focus:ring-[var(--secondary)] bg-white rounded-[10px] !placeholder-[#C0C6CD] ${
                 errors.password && touched.password
                   ? 'border-[var(--warning)]'
-                  : 'focus:border-green-500'
+                  : 'focus:border-[var(--secondary)]'
               }`}
               disabled={isLoading}
               autoComplete='current-password'

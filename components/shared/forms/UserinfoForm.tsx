@@ -291,7 +291,9 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                     : USER_MESSAGES.SELECT_ROLE
                 }
                 error={errors.role_id?.message || ''}
-                className=''
+                triggerClassName={
+                  errors.role_id ? '!border-[var(--warning)]' : ''
+                }
               />
             )}
           />
@@ -314,7 +316,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   className={cn(
                     'input-field',
                     errors.name
-                      ? 'border-[var(--warning)]'
+                      ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
                 />
@@ -338,7 +340,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   className={cn(
                     'input-field',
                     errors.designation
-                      ? 'border-[var(--warning)]'
+                      ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
                 />
@@ -362,7 +364,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                         'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
                         !field.value && 'text-muted-foreground',
                         errors.date_of_joining
-                          ? 'border-[var(--warning)]'
+                          ? '!border-[var(--warning)]'
                           : 'border-[var(--border-dark)]'
                       )}
                     >
@@ -421,7 +423,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   className={cn(
                     'input-field',
                     errors.email
-                      ? 'border-[var(--warning)]'
+                      ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
                 />
@@ -446,7 +448,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                       className={cn(
                         'w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
                         errors.phone
-                          ? 'border-[var(--warning)]'
+                          ? '!border-[var(--warning)]'
                           : 'border-[var(--border-dark)]'
                       )}
                     >
@@ -477,7 +479,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                     className={cn(
                       'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
                       errors.phone
-                        ? 'border-[var(--warning)]'
+                        ? '!border-[var(--warning)]'
                         : 'border-[var(--border-dark)]'
                     )}
                   />
@@ -505,7 +507,11 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                     options={communicationOptions}
                     placeholder={USER_MESSAGES.SELECT_COMMUNICATION}
                     error={errors.preferred_communication_method?.message || ''}
-                    className=''
+                    triggerClassName={
+                      errors.preferred_communication_method
+                        ? '!border-[var(--warning)]'
+                        : ''
+                    }
                   />
                 );
               }}
@@ -534,7 +540,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                       'input-field',
                       errors.password
                         ? '!border-[var(--warning)]'
-                        : '!border-[var(--border-dark)]'
+                        : 'border-[var(--border-dark)]'
                     )}
                   />
                 )}
@@ -560,7 +566,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                 className={cn(
                   'input-field',
                   errors.address
-                    ? 'border-[var(--warning)]'
+                    ? '!border-[var(--warning)]'
                     : 'border-[var(--border-dark)]'
                 )}
               />
@@ -586,7 +592,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   className={cn(
                     'input-field',
                     errors.city
-                      ? 'border-[var(--warning)]'
+                      ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
                 />
@@ -610,7 +616,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                   className={cn(
                     'input-field',
                     errors.pincode
-                      ? 'border-[var(--warning)]'
+                      ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
                 />

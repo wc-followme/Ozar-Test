@@ -538,7 +538,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   if (!user) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center text-red-500'>
+        <div className='text-center text-[var(--warning)]'>
           {USER_MESSAGES.USER_NOT_FOUND}
         </div>
       </div>

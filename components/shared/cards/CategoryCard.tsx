@@ -94,7 +94,7 @@ export function CategoryCard({
 
   return (
     <>
-      <Card className='flex flex-col items-start gap-4 p-6 bg-[var(--card-background)] h-full rounded-[24px] border border-[var(--border-dark)] hover:shadow-2xl sm:hover:shadow-lg transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
+      <Card className='flex flex-col items-start gap-4 p-6 bg-[var(--card-background)] h-full rounded-[24px] border border-[var(--border-dark)] hover:shadow-card-hover transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
         <div className='flex items-start justify-between w-full'>
           <div
             className={`flex items-center justify-center w-[60px] h-[60px] rounded-[16px] mb-2`}

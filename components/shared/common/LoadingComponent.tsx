@@ -19,7 +19,7 @@ const LoadingComponent: React.FC<LoadingComponentProps> = ({
 
   const spinner = (
     <div
-      className={`animate-spin rounded-full border-2 border-green-500 border-t-transparent ${sizeClasses[size]}`}
+      className={`animate-spin rounded-full border-2 border-[var(--secondary)] border-t-transparent ${sizeClasses[size]}`}
     ></div>
   );
 
