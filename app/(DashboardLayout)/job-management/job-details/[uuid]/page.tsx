@@ -2,15 +2,21 @@
 
 import { MoveBoxIcon } from '@/components/icons/MoveBoxIcon';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import Dropdown from '@/components/shared/common/Dropdown';
 import JobDetailsSkeleton from '@/components/shared/skeleton/JobDetailsSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, JobStatus, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { ClipboardClose, Setting2, UserAdd } from 'iconsax-react';
 import Image from 'next/image';
@@ -36,6 +42,11 @@ export default function JobDetailsPage() {
   const [isClient, setIsClient] = useState(false);
   const { showErrorToast, showSuccessToast } = useToast();
   const { handleAuthError } = useAuth();
+
+  // Get user permissions for jobs
+  const userPermissions = getUserPermissionsFromStorage();
+  const canArchive = userPermissions?.jobs?.archive;
+  const canViewJob = userPermissions?.jobs?.view;
 
   // Handle client-side only logic
   useEffect(() => {
@@ -177,38 +188,66 @@ export default function JobDetailsPage() {
   const categoryName =
     typeof category === 'string' ? category : (category as any)?.name || '-';
 
-  const dropdownMenuItems = [
-    {
-      label: 'Close job',
-      icon: ClipboardClose,
-      action: handleCloseClick,
-      className:
-        'text-sm px-3 py-2 rounded-md var(--text-dark) cursor-pointer transition-colors flex items-center gap-2',
-      disabled: closing || job_status === DONE,
-    },
-    {
-      label: 'Add Employee',
-      icon: UserAdd,
-      action: () => {},
-      className:
-        'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
-    },
-    {
-      label: 'Move to Archive',
-      icon: MoveBoxIcon,
-      action: handleArchiveClick,
-      className:
-        'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
-      disabled: archiving || status === INACTIVE,
-    },
-    {
-      label: 'Settings',
-      icon: Setting2,
-      action: () => {},
-      className:
-        'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
-    },
-  ];
+  // Filter menu items based on job status
+  const getFilteredMenuItems = () => {
+    const allMenuItems = [
+      {
+        label: JOB_MESSAGES.CLOSE_JOB_MENU,
+        icon: ClipboardClose,
+        action: handleCloseClick,
+        className:
+          'text-sm px-3 py-2 rounded-md var(--text-dark) cursor-pointer transition-colors flex items-center gap-2',
+        disabled: closing || job_status === DONE,
+      },
+      {
+        label: JOB_MESSAGES.ADD_EMPLOYEE_MENU,
+        icon: UserAdd,
+        action: () => {},
+        className:
+          'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
+      },
+      {
+        label: JOB_MESSAGES.MOVE_TO_ARCHIVE_MENU,
+        icon: MoveBoxIcon,
+        action: handleArchiveClick,
+        className:
+          'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
+        disabled: archiving || status === INACTIVE,
+      },
+      {
+        label: JOB_MESSAGES.SETTINGS_MENU,
+        icon: Setting2,
+        action: () => {},
+        className:
+          'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
+      },
+    ];
+
+    // Filter menu items based on permissions and job status
+    return allMenuItems.filter(item => {
+      // Check permissions first
+
+      if (item.label === JOB_MESSAGES.MOVE_TO_ARCHIVE_MENU) {
+        // Check both permissions and job status
+        return canArchive && status !== INACTIVE && job_status !== DONE;
+      }
+
+      return true;
+    });
+  };
+
+  const dropdownMenuItems = getFilteredMenuItems();
+
+  // Check if user has permission to view jobs
+  if (userPermissions && !canViewJob) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.JOB_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.JOB_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.JOB_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   return (
     <div className=''>

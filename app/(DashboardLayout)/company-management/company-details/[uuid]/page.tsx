@@ -2,6 +2,7 @@
 import { Search } from '@/components/icons/Search';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { UserCard } from '@/components/shared/cards/UserCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
   FetchUsersResponse,
@@ -20,6 +22,7 @@ import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
   formatDate,
+  getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { Edit2, Trash, UserAdd } from 'iconsax-react';
@@ -81,6 +84,11 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Get user permissions for companies and users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditCompany = userPermissions?.companies?.assign_user;
+  const canCreateUser = userPermissions?.users?.create;
+  const canViewCompany = userPermissions?.companies?.view;
   const isCompanyApiResponse = (obj: unknown): obj is GetCompanyResponse => {
     return (
       typeof obj === 'object' &&
@@ -363,8 +371,19 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     }
   };
 
-  if (loading) {
+  if (loading || userPermissions === null) {
+    // Show loading if permissions are still loading
     return <LoadingComponent variant='page' />;
+  }
+
+  if (!canViewCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
   }
 
   if (!company) {
@@ -416,63 +435,69 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
             </div>
 
             <div className='flex flex-row items-center gap-2 sm:gap-4'>
-              <Link href={`${COMPANY_MANAGEMENT}/edit-company/${company.uuid}`}>
-                <Button
-                  variant='outline'
-                  className='btn-secondary !h-9 text-sm w-auto shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+              {canEditCompany && (
+                <Link
+                  href={`${COMPANY_MANAGEMENT}/edit-company/${company.uuid}`}
                 >
-                  <Edit2
-                    size='28'
-                    color='currentColor'
-                    className='[&_path]:stroke-2'
-                  />
-                  <span className='text-[var(--text-dark)]'>
-                    {COMPANY_MESSAGES.EDIT_DETAILS_BUTTON}
+                  <Button
+                    variant='outline'
+                    className='btn-secondary !h-9 text-sm w-auto'
+                  >
+                    <Edit2
+                      size='28'
+                      color='currentColor'
+                      className='[&_path]:stroke-2'
+                    />
+                    <span className='text-[var(--text-dark)]'>
+                      {COMPANY_MESSAGES.EDIT_DETAILS_BUTTON}
+                    </span>
+                  </Button>
+                </Link>
+              )}
+              {canCreateUser && (
+                <Link
+                  className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full'
+                  href={`${ADD_USER}?company_id=${company.uuid}`}
+                >
+                  <UserAdd size='20' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {COMPANY_MESSAGES.ADD_USER_BUTTON}
                   </span>
-                </Button>
-              </Link>
-              <Link
-                className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
-                href={`${ADD_USER}?company_id=${company.uuid}`}
-              >
-                <UserAdd size='20' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {COMPANY_MESSAGES.ADD_USER_BUTTON}
-                </span>
-              </Link>
+                </Link>
+              )}
             </div>
           </div>
           {/* Info Row */}
-          <div className='flex flex-col sm:flex-row gap-3 md:gap-4 col-span-2 lg:col-span-1 flex-wrap'>
+          <div className='flex flex-col sm:flex-row gap-3 md:gap-4'>
             <div className='flex flex-col sm:flex-row sm:gap-6 gap-3 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
               <div>
-                <div className='text-[var(--text-secondary)] text-sm'>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
                   {COMPANY_MESSAGES.INDUSTRY_LABEL}
                 </div>
-                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
                   {COMPANY_MESSAGES.INDUSTRY_VALUE}
                 </div>
               </div>
               <div>
-                <div className='text-[var(--text-secondary)] text-sm'>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
                   {COMPANY_MESSAGES.CREATED_ON_LABEL}
                 </div>
-                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
                   {formatDate(company.created_at)}
                 </div>
               </div>
               <div>
-                <div className='text-[var(--text-secondary)] text-sm'>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
                   {COMPANY_MESSAGES.SUBSCRIPTION_ENDS_LABEL}
                 </div>
-                <div className='font-medium text-[var(--text-dark)] text-sm'>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
                   {formatDate(company.expiry_date)}
                 </div>
               </div>
             </div>
             {/* Status Toggle */}
             {!company.is_default && (
-              <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start shadow-lg sm:shadow-none'>
+              <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start'>
                 <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
                   {enabled
                     ? COMPANY_MESSAGES.ENABLE_LABEL
@@ -488,8 +513,6 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
             )}
           </div>
         </div>
-
-        {/* Tabs */}
       </div>
       {/* Main Content */}
       <div className='bg-[var(--white-background)] rounded-[16px] md:rounded-[20px] p-4 md:p-[28px] mt-4 min-h-[calc(100vh-370px)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>

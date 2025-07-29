@@ -22,7 +22,10 @@ import SelectField from '../common/SelectField';
 const optionalDetailsSchema = yup.object({
   typeOfProperty: yup.string().required(STEP_MESSAGES.PROPERTY_TYPE_REQUIRED),
   ageOfProperty: yup.string().required(STEP_MESSAGES.PROPERTY_AGE_REQUIRED),
-  approxSqft: yup.string().required(STEP_MESSAGES.SQUARE_FOOTAGE_REQUIRED),
+  approxSqft: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Square footage must contain only numbers')
+    .required(STEP_MESSAGES.SQUARE_FOOTAGE_REQUIRED),
   notificationStyle: yup
     .string()
     .required(STEP_MESSAGES.NOTIFICATION_STYLE_REQUIRED),
@@ -158,6 +161,40 @@ export function StepOptionalDetails({
                         placeholder={STEP_MESSAGES.APPROX_SQ_FT_PLACEHOLDER}
                         className='input-field'
                         {...field}
+                        onKeyDown={e => {
+                          // Only allow numbers, backspace, delete, tab, escape, enter
+                          const allowedKeys = [
+                            'Backspace',
+                            'Delete',
+                            'Tab',
+                            'Escape',
+                            'Enter',
+                            'ArrowLeft',
+                            'ArrowRight',
+                            'ArrowUp',
+                            'ArrowDown',
+                            'Home',
+                            'End',
+                          ];
+
+                          // Allow if it's an allowed key
+                          if (allowedKeys.includes(e.key)) {
+                            return;
+                          }
+
+                          // Allow if it's a number
+                          if (/^[0-9]$/.test(e.key)) {
+                            return;
+                          }
+
+                          // Prevent all other keys
+                          e.preventDefault();
+                        }}
+                        onChange={e => {
+                          // Remove any non-numeric characters from the input
+                          const value = e.target.value.replace(/[^0-9]/g, '');
+                          field.onChange(value);
+                        }}
                       />
                     </FormControl>
                     <FormMessage />

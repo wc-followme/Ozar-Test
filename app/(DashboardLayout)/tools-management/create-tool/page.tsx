@@ -1,13 +1,19 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
 import { ROUTES } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateToolRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,6 +31,10 @@ export default function CreateToolPage() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
+
+  // Get user permissions for tools
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateTool = userPermissions?.tools?.edit;
 
   const breadcrumbData: BreadcrumbItem[] = [
     { name: TOOL_MESSAGES.TOOL_MANAGEMENT_BREADCRUMB, href: TOOLS_MANAGEMENT },
@@ -108,6 +118,17 @@ export default function CreateToolPage() {
     setPhotoFile(null);
     setFileKey('');
   };
+
+  // Check if user has permission to create tools
+  if (userPermissions && !canCreateTool) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TOOL_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   return (
     <div className='w-full'>

@@ -7,6 +7,8 @@ import SelectField from '@/components/shared/common/SelectField';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 
+import AccessDenied from '@/components/shared/common/AccessDenied';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, FetchUsersResponse, User } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -36,6 +38,7 @@ export default function UserManagement() {
   // Get user permissions for users
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.users?.create;
+  const canViewUsers = userPermissions?.users?.view;
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
     return (
@@ -206,6 +209,17 @@ export default function UserManagement() {
       variant: 'destructive',
     },
   ];
+
+  // Check if user has permission to view users
+  if (userPermissions && !canViewUsers) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   // Show navigation loading state
   if (isNavigating) {

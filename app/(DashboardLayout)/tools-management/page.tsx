@@ -1,12 +1,14 @@
 'use client';
 
 import ToolCard from '@/components/shared/cards/ToolCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -43,6 +45,7 @@ export default function ToolsManagement() {
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.tools?.edit;
+  const canViewTools = userPermissions?.tools?.view;
 
   // Memoize menu options to prevent unnecessary re-renders
   const menuOptions = useMemo(
@@ -415,6 +418,17 @@ export default function ToolsManagement() {
     setOriginalToolAssets('');
     setSideSheetOpen(true);
   };
+
+  // Check if user has permission to view tools
+  if (userPermissions && !canViewTools) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   if (loading) {
     return (

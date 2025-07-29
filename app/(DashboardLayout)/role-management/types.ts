@@ -8,6 +8,7 @@ export interface Role {
   icon: string;
   status: 'ACTIVE' | 'INACTIVE';
   total_permissions?: number;
+  is_default?: boolean;
   created_at: string;
   updated_at: string;
 }
