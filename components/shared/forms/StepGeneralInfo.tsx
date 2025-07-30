@@ -197,7 +197,7 @@ export function StepGeneralInfo({
                           <PopoverTrigger asChild>
                             <Button
                               variant='outline'
-                              className='w-full h-12 px-4 pr-2 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] focus:border-green-500 focus:ring-green-500 justify-between font-normal'
+                              className='w-full h-12 px-4 pr-2 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] justify-between font-normal'
                             >
                               {field.value
                                 ? format(field.value, 'PPP')
@@ -248,7 +248,7 @@ export function StepGeneralInfo({
                           <PopoverTrigger asChild>
                             <Button
                               variant='outline'
-                              className='w-full h-12 px-4 pr-2 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] focus:border-green-500 focus:ring-green-500 justify-between font-normal'
+                              className='w-full h-12 px-4 pr-2 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] justify-between font-normal'
                             >
                               {field.value
                                 ? format(field.value, 'PPP')

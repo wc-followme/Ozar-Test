@@ -233,13 +233,13 @@ export function Header() {
           {renderCompanySection()}
         </div>
         <div className='flex items-center gap-4 md:gap-6'>
-          <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-green-500 hidden md:flex'>
+          <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-[var(--secondary)] hidden md:flex'>
             {/* Search Input */}
             <Input
               id='Search'
               type='Search'
               placeholder={HEADER_MESSAGES.SEARCH.PLACEHOLDER}
-              className='pl-4 h-12 text-[16px] border-0 focus:border-green-500 focus:ring-green-500 bg-transparent rounded-[10px] placeholder-[#C0C6CD] !placeholder-[var(--text-placeholder)]'
+              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] placeholder-[#C0C6CD] !placeholder-[var(--text-placeholder)]'
               required
             />
             {/* Type Selector */}
@@ -264,14 +264,17 @@ export function Header() {
               <Button
                 variant='ghost'
                 size='sm'
-                className='h-8 w-8 p-0 flex-shrink-0 self-center'
+                className='h-10 w-10 p-0 flex-shrink-0 self-center rounded-full hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 border-2 border-transparent hover:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)] focus:ring-offset-2'
               >
                 <Image
-                  src={user?.profile_picture_url || '/images/profile.jpg'}
+                  src={
+                    user?.profile_picture_url ||
+                    '/images/user-img-placeholder.png'
+                  }
                   alt='profile'
                   width={40}
                   height={40}
-                  className='h-full w-full rounded-full'
+                  className='h-full w-full rounded-full object-cover'
                 />
               </Button>
             }

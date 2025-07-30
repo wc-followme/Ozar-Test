@@ -225,7 +225,8 @@ const RoleManagement = () => {
           {canEdit && (
             <button
               onClick={handleCreateRole}
-              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+              disabled={loading}
             >
               <Add size='24' color='#fff' className='sm:hidden' />
               <span className='hidden sm:inline'>

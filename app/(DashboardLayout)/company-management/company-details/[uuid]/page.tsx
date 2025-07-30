@@ -623,7 +623,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                   placeholder={COMPANY_MESSAGES.SEARCH_PLACEHOLDER}
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
+                  className='h-12 border-2 border-[var(--border-dark)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
                 />
                 <Search className='absolute top-3 left-4' />
               </div>

@@ -225,7 +225,13 @@ export function CreateJobForm({
                     {...field}
                     id='client_name'
                     placeholder={JOB_MESSAGES.ENTER_JOB_NAME}
-                    className={cn('input-field', userLoading ? 'pr-10' : '')}
+                    className={cn(
+                      'input-field',
+                      userLoading ? 'pr-10' : '',
+                      errors.client_name
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     autoComplete='off'
                     ref={nameInputRef}
                     onChange={e => {
@@ -239,7 +245,7 @@ export function CreateJobForm({
                 )}
               />
               {errors.client_name && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_name.message}
                 </span>
               )}
@@ -287,13 +293,18 @@ export function CreateJobForm({
                     {...field}
                     id='client_email'
                     placeholder={JOB_MESSAGES.ENTER_EMAIL}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.client_email
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     disabled={userSelected}
                   />
                 )}
               />
               {errors.client_email && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_email.message}
                 </span>
               )}
@@ -313,7 +324,12 @@ export function CreateJobForm({
                     {...field}
                     id='client_phone_number'
                     placeholder={JOB_MESSAGES.ENTER_PHONE}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.client_phone_number
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     disabled={userSelected}
                     onKeyDown={e => {
                       // Only allow numbers, backspace, delete, tab, escape, enter
@@ -353,7 +369,7 @@ export function CreateJobForm({
                 )}
               />
               {errors.client_phone_number && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_phone_number.message}
                 </span>
               )}
@@ -374,7 +390,7 @@ export function CreateJobForm({
               )}
             />
             {errors.job_privacy && (
-              <span className='text-red-500 text-xs'>
+              <span className='text-[var(--warning)] text-xs'>
                 {errors.job_privacy.message}
               </span>
             )}
@@ -491,7 +507,7 @@ export function CreateJobForm({
               }}
             />
             {errors.job_boxes_step && (
-              <span className='text-red-500 text-xs'>
+              <span className='text-[var(--warning)] text-xs'>
                 {errors.job_boxes_step.message as string}
               </span>
             )}

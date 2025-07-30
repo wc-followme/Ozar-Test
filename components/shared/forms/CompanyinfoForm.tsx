@@ -377,7 +377,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_COMPANY_NAME}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.name
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -398,7 +403,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_TAGLINE}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.tagline
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -419,7 +429,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_ABOUT}
                     rows={3}
-                    className='border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                    className={cn(
+                      'border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                      errors.about
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -440,7 +455,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_EMAIL}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.email
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -462,7 +482,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                         className={cn(
                           'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
                           errors.phone_number
-                            ? 'border-[var(--warning)]'
+                            ? '!border-[var(--warning)]'
                             : 'border-[var(--border-dark)]'
                         )}
                       >
@@ -495,7 +515,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                       className={cn(
                         'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
                         errors.phone_number
-                          ? 'border-[var(--warning)]'
+                          ? '!border-[var(--warning)]'
                           : 'border-[var(--border-dark)]'
                       )}
                     />
@@ -519,7 +539,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder='Enter company address'
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.communication
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -540,7 +565,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_CITY}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.city
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -561,7 +591,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_PINCODE}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.pincode
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -582,7 +617,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                     value={field.value}
                     onChange={field.onChange}
                     placeholder={COMPANY_MESSAGES.ENTER_WEBSITE}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.website
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                   />
                 )}
               />
@@ -606,8 +646,11 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                       <Button
                         variant={'outline'}
                         className={cn(
-                          'w-full h-12 justify-between text-left font-normal border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px]',
-                          !field.value && 'text-muted-foreground'
+                          'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px]',
+                          !field.value && 'text-muted-foreground',
+                          errors.expiry_date
+                            ? '!border-[var(--warning)]'
+                            : 'border-[var(--border-dark)]'
                         )}
                       >
                         {field.value ? (
@@ -652,7 +695,14 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                 control={control}
                 render={({ field }) => (
                   <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger className='h-12 border-2 border-[var(--border-dark)] text-left bg-[var(--white-background)] rounded-[10px]'>
+                    <SelectTrigger
+                      className={cn(
+                        'h-12 border-2 text-left bg-[var(--white-background)] rounded-[10px]',
+                        errors.preferred_communication_method
+                          ? '!border-[var(--warning)]'
+                          : 'border-[var(--border-dark)]'
+                      )}
+                    >
                       <SelectValue
                         placeholder={
                           COMPANY_MESSAGES.SELECT_PREFERRED_COMMUNICATION
@@ -729,7 +779,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                               placeholder={
                                 COMPANY_MESSAGES.ENTER_CONTRACTOR_NAME
                               }
-                              className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                              className={cn(
+                                'h-12 border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                                errors.contractor_name
+                                  ? '!border-[var(--warning)]'
+                                  : 'border-[var(--border-dark)]'
+                              )}
                             />
                           )}
                         />
@@ -758,7 +813,12 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                               placeholder={
                                 COMPANY_MESSAGES.ENTER_CONTRACTOR_EMAIL
                               }
-                              className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                              className={cn(
+                                'h-12 border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                                errors.contractor_email
+                                  ? '!border-[var(--warning)]'
+                                  : 'border-[var(--border-dark)]'
+                              )}
                             />
                           )}
                         />
@@ -788,7 +848,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                                   className={cn(
                                     'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
                                     errors.contractor_phone
-                                      ? 'border-[var(--warning)]'
+                                      ? '!border-[var(--warning)]'
                                       : 'border-[var(--border-dark)]'
                                   )}
                                 >
@@ -826,7 +886,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                                 className={cn(
                                   'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
                                   errors.contractor_phone
-                                    ? 'border-[var(--warning)]'
+                                    ? '!border-[var(--warning)]'
                                     : 'border-[var(--border-dark)]'
                                 )}
                               />
@@ -846,19 +906,19 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
         </div>
 
         {/* Form Actions */}
-        <div className='flex justify-end gap-3 pt-4'>
+        <div className='pt-4 flex items-center justify-end gap-3'>
           <Button
             type='button'
             variant='outline'
             onClick={handleCancel}
-            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+            className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             Cancel
           </Button>
           <Button
             type='submit'
             disabled={loading}
-            className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+            className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {loading ? 'Submitting...' : isEditMode ? 'Update' : 'Create'}
           </Button>
