@@ -1,5 +1,5 @@
 'use client';
-import { sidebarItems, SIDEBAR_TITLES } from '@/constants/sidebar-items';
+import { SIDEBAR_TITLES, sidebarItems } from '@/constants/sidebar-items';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -11,7 +11,9 @@ export function MinimalSidebar() {
   const pathname = usePathname();
 
   // Show only home while loading to prevent flash
-  const minimalItems = sidebarItems.filter(menu_item => menu_item.title === SIDEBAR_TITLES.HOME);
+  const minimalItems = sidebarItems.filter(
+    menu_item => menu_item.title === SIDEBAR_TITLES.HOME
+  );
 
   return (
     <aside className='hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0 opacity-75'>
@@ -66,7 +68,7 @@ export function MinimalSidebar() {
                           : 'opacity-0 max-w-0'
                       )}
                     >
-                      {title}
+                      {title} sdfsd
                     </span>
                   </Link>
                 </li>

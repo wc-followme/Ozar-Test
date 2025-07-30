@@ -1,9 +1,9 @@
 'use client';
-import { 
-  sidebarItems, 
-  SIDEBAR_TITLES, 
-  PERMISSION_CATEGORIES, 
-  PERMISSION_ACTIONS 
+import {
+  PERMISSION_ACTIONS,
+  PERMISSION_CATEGORIES,
+  SIDEBAR_TITLES,
+  sidebarItems,
 } from '@/constants/sidebar-items';
 import { usePermissions } from '@/lib/permission-context';
 import { cn } from '@/lib/utils';
@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { ScrollArea } from '../ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 import { MinimalSidebar } from './MinimalSidebar';
 
 export function Sidebar() {
@@ -32,24 +33,50 @@ export function Sidebar() {
 
     switch (menu_item.title) {
       case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.CATEGORIES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.CATEGORIES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.ROLE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.ROLES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.ROLES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.USER_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.USERS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.USERS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.COMPANIES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.COMPANIES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.TRADE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.TRADES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.TRADES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.SERVICES, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.SERVICES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.MATERIALS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.MATERIALS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
-        return hasPermission(PERMISSION_CATEGORIES.TOOLS, PERMISSION_ACTIONS.VIEW);
+        return hasPermission(
+          PERMISSION_CATEGORIES.TOOLS,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.JOBS:
-        return hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) || 
-               hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT);
+        return (
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT)
+        );
       case SIDEBAR_TITLES.HOME:
         return true; // Always show home
       default:
@@ -97,27 +124,37 @@ export function Sidebar() {
               {filteredSidebarItems.map(
                 ({ menu_id, title, href, icon: Icon }) => (
                   <li key={menu_id}>
-                    <Link
-                      href={href}
-                      className={cn(
-                        'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                        pathname === href && 'bg-[var(--primary)] text-white'
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Link
+                          href={href}
+                          className={cn(
+                            'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
+                            pathname === href &&
+                              'bg-[var(--primary)] text-white'
+                          )}
+                        >
+                          <div className='stroke-[var(--text)] group-hover:text-white'>
+                            <Icon size='24' color='currentcolor' />
+                          </div>
+                          <span
+                            className={cn(
+                              'overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white',
+                              isOpen
+                                ? 'opacity-100 ml-2 max-w-[180px]'
+                                : 'opacity-0 max-w-0'
+                            )}
+                          >
+                            {title} sdf
+                          </span>
+                        </Link>
+                      </TooltipTrigger>
+                      {!isOpen && (
+                        <TooltipContent>
+                          <p>{title}</p>
+                        </TooltipContent>
                       )}
-                    >
-                      <div className='stroke-[var(--text)] group-hover:text-white'>
-                        <Icon size='24' color='currentcolor' />
-                      </div>
-                      <span
-                        className={cn(
-                          'overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white',
-                          isOpen
-                            ? 'opacity-100 ml-2 max-w-[180px]'
-                            : 'opacity-0 max-w-0'
-                        )}
-                      >
-                        {title}
-                      </span>
-                    </Link>
+                    </Tooltip>
                   </li>
                 )
               )}
