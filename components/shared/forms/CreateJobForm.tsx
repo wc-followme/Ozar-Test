@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { JOB_TYPE, JobType, ROLE_ID } from '@/constants/common';
+import { JOB_TYPE, JobType, ROLE_IDS } from '@/constants/common';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -143,7 +143,7 @@ export function CreateJobForm({
       try {
         const response = await apiService.getUsersDropdown({
           name: debouncedName,
-          role_id: ROLE_ID.JOB_USER,
+          role_id: ROLE_IDS.HOMEOWNER,
           page: 1,
           limit: 50,
         });

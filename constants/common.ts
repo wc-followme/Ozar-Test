@@ -14,6 +14,17 @@ export const PAGINATION = {
   TRADES_LIMIT: 32, // Limit for trade management
 } as const;
 
+// Role IDs for role-based access control
+export const ROLE_IDS = {
+  SUPER_ADMIN: 1,
+  ADMIN: 2,
+  CONTRACTOR: 3,
+  EMPLOYEE: 4,
+  HOMEOWNER: 5,
+  VENDOR: 6,
+  JOB_USER: 4, // Alias for EMPLOYEE
+} as const;
+
 // General App Constants
 export const APP_CONFIG = {
   SEARCH_DEBOUNCE_MS: 300,
@@ -209,12 +220,6 @@ export const JOB_TYPE = {
 
 export type JobType = (typeof JOB_TYPE)[keyof typeof JOB_TYPE];
 
-// ROLE_ID is the ID of the role in the database
-export const ROLE_ID = {
-  JOB_USER: 5,
-  CONTRACTOR: 3,
-} as const;
-
 export enum CommonStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -250,3 +255,22 @@ export const JOB_TABS = {
 // export const OTHER_CONSTANTS = {
 //   // Add new constants as needed
 // } as const;
+
+// Local Storage Keys
+export const STORAGE_KEYS = {
+  SELECTED_COMPANY: 'selected_company',
+  IS_AUTHENTICATED: 'isAuthenticated',
+  USER: 'user',
+  AUTH_TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'refresh_token',
+  DEVICE_ID: 'device_id',
+  USER_PERMISSIONS: 'user_permissions',
+  // Cookie keys (different from localStorage keys)
+  USER_DATA: 'user_data',
+  IS_AUTHENTICATED_COOKIE: 'is_authenticated',
+} as const;
+
+export const CUSTOM_EVENTS = {
+  COMPANY_CHANGED: 'company-changed',
+  STORAGE: 'storage',
+} as const;

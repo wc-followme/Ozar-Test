@@ -290,7 +290,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   // Filter users based on role
   const filteredUsers = users.filter(user => {
     if (filter === 'all') return true;
-    return user.role_id === parseInt(filter);
+    return user.role?.id === parseInt(filter);
   });
 
   // Menu options for user cards
