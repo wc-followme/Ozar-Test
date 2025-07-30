@@ -1,0 +1,222 @@
+'use client';
+
+import { Edit2 } from 'iconsax-react';
+import React, { useState } from 'react';
+import { Checkbox } from '../../ui/checkbox';
+import { Label } from '../../ui/label';
+
+interface Task {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+}
+
+interface TaskSection {
+  id: string;
+  title: string;
+  date: string;
+  tasks: Task[];
+}
+
+interface TodoComponentProps {
+  className?: string;
+}
+
+export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
+  const [taskSections, setTaskSections] = useState<TaskSection[]>([
+    {
+      id: 'today',
+      title: 'Today',
+      date: 'Today',
+      tasks: [
+        {
+          id: 'task-1',
+          title: 'Essential Tasks',
+          description: 'Get ready for the build.',
+          completed: true,
+        },
+      ],
+    },
+    {
+      id: 'tomorrow-1',
+      title: 'Tomorrow',
+      date: 'Tomorrow',
+      tasks: [
+        {
+          id: 'task-2',
+          title: 'Project Overview',
+          description: 'Confirm contractor availability.',
+          completed: false,
+        },
+        {
+          id: 'task-3',
+          title: 'Project Overview',
+          description: 'Schedule the site inspection.',
+          completed: false,
+        },
+        {
+          id: 'task-4',
+          title: 'Project Overview',
+          description: 'Order safety equipment.',
+          completed: false,
+        },
+        {
+          id: 'task-5',
+          title: 'Project Overview',
+          description: 'Prepare materials for the project.',
+          completed: false,
+        },
+      ],
+    },
+    {
+      id: 'tomorrow-2',
+      title: 'Tomorrow',
+      date: 'Tomorrow',
+      tasks: [
+        {
+          id: 'task-6',
+          title: 'Project Overview',
+          description: 'Confirm contractor availability.',
+          completed: false,
+        },
+        {
+          id: 'task-7',
+          title: 'Project Overview',
+          description: 'Schedule the site inspection.',
+          completed: false,
+        },
+        {
+          id: 'task-8',
+          title: 'Project Overview',
+          description: 'Order safety equipment.',
+          completed: false,
+        },
+        {
+          id: 'task-9',
+          title: 'Project Overview',
+          description: 'Prepare materials for the project.',
+          completed: false,
+        },
+      ],
+    },
+    {
+      id: 'future',
+      title: '20/03/2024',
+      date: '20/03/2024',
+      tasks: [
+        {
+          id: 'task-10',
+          title: 'Project Overview',
+          description: 'Confirm contractor availability.',
+          completed: false,
+        },
+        {
+          id: 'task-11',
+          title: 'Project Overview',
+          description: 'Schedule the site inspection.',
+          completed: false,
+        },
+      ],
+    },
+  ]);
+
+  const handleTaskToggle = (sectionId: string, taskId: string) => {
+    setTaskSections(prev =>
+      prev.map(section =>
+        section.id === sectionId
+          ? {
+              ...section,
+              tasks: section.tasks.map(task =>
+                task.id === taskId
+                  ? { ...task, completed: !task.completed }
+                  : task
+              ),
+            }
+          : section
+      )
+    );
+  };
+
+  const handleEditSection = (sectionId: string) => {
+    // Handle edit functionality
+    console.log('Edit section:', sectionId);
+  };
+
+  return (
+    <div className={`flex flex-col gap-3 ${className}`}>
+      {taskSections.map(section => (
+        <div key={section.id} className=' bg-[#F5F7FA] p-3 rounded-[10px]'>
+          {/* Section Header */}
+          <h4
+            className='text-gray-500 uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-4'
+            style={{ fontFamily: 'Inter' }}
+          >
+            {section.title}
+          </h4>
+          <div className='flex items-center gap-2 w-full mb-4'>
+            <div className='flex-1 mr-auto'>
+              <p
+                className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'
+                style={{ fontFamily: 'Inter' }}
+              >
+                Job Name Here
+              </p>
+              <p
+                className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'
+                style={{ fontFamily: 'Inter' }}
+              >
+                {section.tasks[0]?.title}
+              </p>
+            </div>
+            <button
+              onClick={() => handleEditSection(section.id)}
+              className='p-1 hover:bg-gray-100 rounded transition-colors'
+            >
+              <Edit2 size={20} color='#2D2D2D' className='text-gray-500' />
+            </button>
+          </div>
+
+          {/* Tasks */}
+          <div className='flex flex-col gap-4'>
+            {section.tasks.map((task, index) => (
+              <Label
+                key={task.id}
+                className='flex items-center gap-2 cursor-pointer'
+              >
+                <Checkbox
+                  id={task.id}
+                  className={`
+                     rounded-[6px] 
+                     border-2 
+                     border-[#BFBFBF]
+                     data-[state=checked]:bg-[--primary]
+                     data-[state=checked]:border-[var(--primary)]
+                     data-[state=checked]:text-white
+                     text-[#2D2D2D] 
+                     w-6 h-6
+                     flex items-center justify-center -mt-0.4
+                     ${task.completed ? 'bg-blue-600 border-blue-600' : ''}
+                   `}
+                  checked={task.completed}
+                  onCheckedChange={() => handleTaskToggle(section.id, task.id)}
+                />
+                <div className='flex-1'>
+                  <p
+                    className={`text-sm font-semibold ${
+                      task.completed
+                        ? 'text-[#2D2D2D] line-through'
+                        : 'text-[#2D2D2D]'
+                    }`}
+                  >
+                    {task.description}
+                  </p>
+                </div>
+              </Label>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};

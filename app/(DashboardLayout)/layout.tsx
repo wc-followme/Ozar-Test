@@ -4,6 +4,11 @@ import { PermissionProvider } from '@/lib/permission-context';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type React from 'react';
+import {
+  SideToolbar,
+  SideToolbarProvider,
+  defaultJobToolbarItems,
+} from '../../components/layout/SideToolbar';
 
 export default async function DashboardLayout({
   children,
@@ -26,9 +31,17 @@ export default async function DashboardLayout({
         <PermissionAwareSidebar />
         <div className='flex flex-col flex-1'>
           <Header />
-          <main className='rounded-t-[30px] p-4 md:p-6 bg-[var(--background)] flex-1'>
-            {children}
-          </main>
+          <div className='flex flex-1'>
+            <main className='rounded-t-[30px] p-4 md:p-6 bg-[var(--background)] flex-1'>
+              {children}
+            </main>
+            <SideToolbarProvider>
+              <SideToolbar
+                items={defaultJobToolbarItems}
+                className='sticky top-[200px]'
+              />
+            </SideToolbarProvider>
+          </div>
         </div>
       </div>
     </PermissionProvider>
