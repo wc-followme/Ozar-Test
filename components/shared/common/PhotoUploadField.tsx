@@ -136,7 +136,7 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({
             {onDeletePhoto && (
               <button
                 type='button'
-                className='px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm font-medium'
+                className='px-4 py-2 bg-[var(--warning)] text-white rounded-lg hover:bg-[var(--warning)] transition-colors text-sm font-medium'
                 onClick={e => {
                   e.stopPropagation();
                   onDeletePhoto();

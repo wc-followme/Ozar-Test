@@ -115,7 +115,7 @@ export function CompanyCard({
 
   return (
     <div
-      className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] hover:shadow-2xl sm:hover:shadow-lg px-4 py-[18px] transition-all duration-300 cursor-pointer shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'
+      className='bg-[var(--card-background)] rounded-[12px] border border-[var(--border-dark)] hover:shadow-card-hover px-4 py-[18px] transition-all duration-300 cursor-pointer shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'
       onClick={handleCardClick}
     >
       {/* Header with Avatar, User Info and Menu */}
@@ -217,7 +217,7 @@ export function CompanyCard({
               disabled={isToggling}
               className='
                 h-4 w-9 
-                data-[state=checked]:bg-green-500 
+                data-[state=checked]:bg-[var(--secondary)] 
                 data-[state=unchecked]:bg-gray-300
                 [&>span]:h-3 
                 [&>span]:w-3 

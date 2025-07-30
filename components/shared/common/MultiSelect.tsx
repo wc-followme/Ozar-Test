@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Popover,
@@ -8,7 +9,7 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Search } from 'lucide-react';
 import { useState } from 'react';
 import FormErrorMessage from './FormErrorMessage';
 
@@ -43,6 +44,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   getOptionValue = (option: any) => option.value,
 }: MultiSelectProps<OptionType>) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const isMobile = useIsMobile();
 
   const handleToggle = (optionValue: string) => {
@@ -51,6 +53,19 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
       : [...value, optionValue];
     onChange(newValue);
   };
+
+  // Handle popover open/close
+  const handlePopoverChange = (open: boolean) => {
+    setPopoverOpen(open);
+    if (!open) {
+      setSearchTerm(''); // Reset search when popover closes
+    }
+  };
+
+  // Filter options based on search term
+  const filteredOptions = options.filter(option =>
+    getOptionLabel(option).toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Show different number of tags based on screen size
   const maxTagsToShow = isMobile ? 1 : 3;
@@ -75,12 +90,12 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
           {label}
         </Label>
       )}
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <Popover open={popoverOpen} onOpenChange={handlePopoverChange}>
         <PopoverTrigger asChild>
           <Button
             type='button'
             className={cn(
-              'h-12 w-full flex items-center justify-between border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] px-3 py-2 min-h-[40px] shadow-none focus:border-green-500 focus:ring-green-500',
+              'h-12 w-full flex items-center justify-between border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] px-3 py-2 min-h-[40px] shadow-none focus:border-[var(--secondary)] focus:ring-[var(--secondary)]',
               error ? 'border-[var(--warning)]' : 'border-[var(--border-dark)]'
             )}
           >
@@ -109,6 +124,19 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
           </Button>
         </PopoverTrigger>
         <PopoverContent className='w-full bg-[var(--card-background)] min-w-[var(--radix-popover-trigger-width)] p-0 rounded-[12px] border border-[var(--border-dark)]'>
+          {/* Search Field */}
+          <div className='p-2 border-b border-[var(--border-dark)]'>
+            <div className='relative'>
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--primary)]' />
+              <Input
+                type='text'
+                placeholder='Search here...'
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className='pl-10 pr-3 h-8 border-0 focus:ring-0 focus:border-0 bg-transparent !placeholder-[var(--text-placeholder)]'
+              />
+            </div>
+          </div>
           <div
             className='max-h-48 overflow-y-auto'
             style={{
@@ -130,7 +158,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
             }}
           >
             <div className='py-2'>
-              {options.map(opt => {
+              {filteredOptions.map(opt => {
                 const optionValue = getOptionValue(opt);
                 return (
                   <label

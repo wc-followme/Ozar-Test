@@ -283,7 +283,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
                       errors.name
                         ? 'border-[var(--warning)]'
                         : 'border-[var(--border-dark)]',
-                      'focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                      'focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
                     )}
                     placeholder={ROLE_MESSAGES.ROLE_NAME_PLACEHOLDER}
                     disabled={isSubmitting}
@@ -356,19 +356,19 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
           </div>
 
           {/* Footer with action buttons */}
-          <div className='flex justify-end gap-3 pt-4'>
+          <div className='pt-4 flex items-center justify-end gap-3'>
             <Button
               type='button'
               variant='outline'
               onClick={handleCancel}
-              className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+              className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
               Cancel
             </Button>
             <Button
               type='submit'
               disabled={isSubmitting}
-              className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+              className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
               {submitButtonContent}
             </Button>

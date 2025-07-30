@@ -141,34 +141,36 @@ export const EmployeesDropdown: React.FC<EmployeesDropdownProps> = ({
           </div>
 
           {/* Scrollable List */}
-          <ScrollArea className='h-64 employees-dropdown-scrollbar'>
-            <div className='p-0 px-4'>
-              {filteredEmployees.map((employee, index) => (
-                <div
-                  key={employee.id}
-                  onClick={() => handleSelect(employee)}
-                  className={cn(
-                    'flex items-center gap-3 py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors',
-                    index !== filteredEmployees.length - 1 &&
-                      'border-b border-[var(--border-dark)]'
-                  )}
-                >
-                  <div className='w-8 h-6 rounded-lg flex items-center justify-center truncate'>
-                    <Image
-                      src={employee.icon}
-                      alt={employee.name}
-                      width={20}
-                      height={20}
-                      className='w-5 h-5'
-                    />
+          <div className='max-h-64 flex overflow-hidden relative'>
+            <ScrollArea className='h-auto employees-dropdown-scrollbar w-full'>
+              <div className='p-0 px-4'>
+                {filteredEmployees.map((employee, index) => (
+                  <div
+                    key={employee.id}
+                    onClick={() => handleSelect(employee)}
+                    className={cn(
+                      'flex items-center gap-3 py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors',
+                      index !== filteredEmployees.length - 1 &&
+                        'border-b border-[var(--border-dark)]'
+                    )}
+                  >
+                    <div className='w-8 h-6 rounded-lg flex items-center justify-center truncate'>
+                      <Image
+                        src={employee.icon}
+                        alt={employee.name}
+                        width={20}
+                        height={20}
+                        className='w-5 h-5'
+                      />
+                    </div>
+                    <span className='text-[var(--text-dark)] font-medium'>
+                      {employee.name}
+                    </span>
                   </div>
-                  <span className='text-[var(--text-dark)] font-medium'>
-                    {employee.name}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
         </div>
       )}
     </div>
