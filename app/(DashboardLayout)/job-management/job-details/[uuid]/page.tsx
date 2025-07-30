@@ -150,7 +150,9 @@ export default function JobDetailsPage() {
   if (!job) {
     return (
       <div className='flex items-center justify-center h-64'>
-        <div className='text-lg text-red-500'>{JOB_MESSAGES.JOB_NOT_FOUND}</div>
+        <div className='text-lg text-[var(--warning)]'>
+          {JOB_MESSAGES.JOB_NOT_FOUND}
+        </div>
       </div>
     );
   }
@@ -301,7 +303,7 @@ export default function JobDetailsPage() {
           </div>
         )}
         {job_status === DONE && (
-          <div className='absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium'>
+          <div className='absolute top-4 right-4 bg-[var(--secondary)] text-white px-3 py-1 rounded-full text-sm font-medium'>
             {JOB_MESSAGES.CLOSED_STATUS}
           </div>
         )}

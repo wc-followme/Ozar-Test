@@ -161,6 +161,7 @@ const config: Config = {
       },
       boxShadow: {
         custom: '0px 2px 8px 0px #0000001A',
+        'card-hover': 'rgba(0, 0, 0, 0.1) 0px 10px 50px',
       },
     },
   },

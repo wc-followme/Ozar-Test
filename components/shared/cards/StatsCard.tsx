@@ -34,7 +34,7 @@ export function StatsCard({
             <IconComp className='w-6 h-6 sm:w-5 sm:h-5' color='currentcolor' />
           </div>
         </div>
-        
+
         {/* Decorative line - mobile only */}
         <div className='mt-4 sm:hidden h-0.5 bg-gradient-to-r from-transparent via-gray-200 to-transparent rounded-full opacity-50' />
       </CardContent>
