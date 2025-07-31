@@ -123,19 +123,13 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
       {jobs.map(job => (
         <div key={job.id} className='bg-[#F5F7FA] p-3 rounded-[10px]'>
           {/* Job Header */}
-          <div className='space-y-1 mb-4'>
-            <h4
-              className='text-gray-500 uppercase font-medium text-[12px] leading-[100%] tracking-[0%]'
-              style={{ fontFamily: 'Inter' }}
-            >
+          <div className='space-y-2'>
+            <h4 className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%]'>
               {job.dateRange}
             </h4>
             <div className='flex items-center gap-2 w-full'>
               <div className='flex-1 mr-auto'>
-                <p
-                  className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'
-                  style={{ fontFamily: 'Inter' }}
-                >
+                <p className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'>
                   {job.jobName}
                 </p>
               </div>
@@ -143,12 +137,14 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
           </div>
 
           {/* Services */}
-          {job.services.map(service => (
-            <div key={service.id} className='space-y-4 mt-4'>
-              <h3
-                className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'
-                style={{ fontFamily: 'Inter' }}
-              >
+          {job.services.map((service, serviceIndex) => (
+            <div
+              key={service.id}
+              className={`space-y-4 ${
+                job.services.length === 1 ? 'mt-1' : 'mt-4'
+              }`}
+            >
+              <h3 className='text-[var(--text-dark)] font-medium text-base leading-[100%] tracking-[0%]'>
                 {service.name}
               </h3>
 

@@ -4,6 +4,8 @@ import { Edit2 } from 'iconsax-react';
 import React, { useState } from 'react';
 import { Checkbox } from '../../ui/checkbox';
 import { Label } from '../../ui/label';
+import { TodoForm } from '../forms/TodoForm';
+import SideSheet from './SideSheet';
 
 interface Task {
   id: string;
@@ -24,6 +26,9 @@ interface TodoComponentProps {
 }
 
 export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+
   const [taskSections, setTaskSections] = useState<TaskSection[]>([
     {
       id: 'today',
@@ -139,8 +144,22 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
   };
 
   const handleEditSection = (sectionId: string) => {
-    // Handle edit functionality
-    console.log('Edit section:', sectionId);
+    setEditingSectionId(sectionId);
+    setIsEditSheetOpen(true);
+  };
+
+  const handleFormSubmit = (data: any) => {
+    // Handle form submission for editing the section
+    console.log('Form submitted:', data);
+    console.log('Editing section:', editingSectionId);
+
+    // Here you would typically update the section data
+    // For now, just close the sidesheet
+    setIsEditSheetOpen(false);
+  };
+
+  const handleFormCancel = () => {
+    setIsEditSheetOpen(false);
   };
 
   return (
@@ -149,7 +168,7 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
         <div key={section.id} className=' bg-[#F5F7FA] p-3 rounded-[10px]'>
           {/* Section Header */}
           <h4
-            className='text-gray-500 uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-4'
+            className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-2'
             style={{ fontFamily: 'Inter' }}
           >
             {section.title}
@@ -217,6 +236,22 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
           </div>
         </div>
       ))}
+
+      {/* Edit Toolbar SideSheet */}
+      <SideSheet
+        title='Edit Todo'
+        open={isEditSheetOpen}
+        onOpenChange={setIsEditSheetOpen}
+        size='600px'
+      >
+        <div className='space-y-4'>
+          <TodoForm
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+            loading={false}
+          />
+        </div>
+      </SideSheet>
     </div>
   );
 };

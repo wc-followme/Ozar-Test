@@ -8,15 +8,11 @@ import { AppointmentForm } from '@/components/shared/forms/AppointmentsForm';
 import { TodoForm } from '@/components/shared/forms/TodoForm';
 import { cn } from '@/lib/utils';
 import { AddCircle } from 'iconsax-react';
-import {
-  Calendar,
-  Hammer,
-  Headphones,
-  LayoutGrid,
-  Package,
-  Settings,
-} from 'lucide-react';
 import React, { createContext, useContext, useState } from 'react';
+import { MaterialCheckListIcon } from '../icons/MaterialCheckListIcon';
+import { SupportIcon } from '../icons/SupportIcon';
+import { TodoListIcon } from '../icons/TodoListIcon';
+import { ToolListIcon } from '../icons/ToolListIcon';
 
 // Context for managing sidesheet state
 interface SideToolbarContextType {
@@ -133,18 +129,19 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
               <>
                 <React.Fragment key={item.id}>
                   {isOpen && activeItem === item.id && (
-                    <div className='h-full w-[320px] bg-white z-50'>
+                    <div
+                      className={`h-full w-[320px] bg-white z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}
+                    >
                       <div className='h-full flex flex-col'>
-                        {/* Header */}
                         <div className='flex items-center p-4 gap-4 border-b'>
                           <h2 className='text-lg font-semibold text-gray-900 mr-auto'>
                             {item.label}
                           </h2>
-                          {(activeItem === 'tasks' ||
-                            activeItem === 'appointments') && (
+                          {(activeItem === 'todoList' ||
+                            activeItem === 'appointmentList') && (
                             <button
                               onClick={
-                                activeItem === 'tasks'
+                                activeItem === 'todoList'
                                   ? handleAddTodoClick
                                   : handleAddAppointmentClick
                               }
@@ -175,64 +172,15 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
 
                         {/* Content */}
                         <div className='flex-1 p-4 overflow-y-auto'>
-                          {activeItem === 'tasks' && <TodoComponent />}
-                          {activeItem === 'appointments' && (
+                          {activeItem === 'todoList' && <TodoComponent />}
+                          {activeItem === 'appointmentList' && (
                             <AppointmentsComponent />
                           )}
-                          {activeItem === 'tools' && <TodoChecklistComponent />}
-                          {activeItem === 'communication' && (
-                            <div className='space-y-4'>
-                              <h3 className='text-lg font-semibold text-gray-900'>
-                                Communication Hub
-                              </h3>
-                              <div className='space-y-3'>
-                                <div className='p-4 bg-blue-50 rounded-lg'>
-                                  <h4 className='font-medium text-blue-900'>
-                                    Client Messages
-                                  </h4>
-                                  <p className='text-sm text-blue-700 mt-1'>
-                                    Manage all client communications
-                                  </p>
-                                </div>
-                                <div className='p-4 bg-green-50 rounded-lg'>
-                                  <h4 className='font-medium text-green-900'>
-                                    Team Chat
-                                  </h4>
-                                  <p className='text-sm text-green-700 mt-1'>
-                                    Internal team discussions
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
+                          {activeItem === 'toolChecklist' && (
+                            <TodoChecklistComponent />
                           )}
-
-                          {activeItem === 'inventory' && (
+                          {activeItem === 'materialChecklist' && (
                             <MaterialChecklistComponent />
-                          )}
-                          {activeItem === 'settings' && (
-                            <div className='space-y-4'>
-                              <h3 className='text-lg font-semibold text-gray-900'>
-                                Settings
-                              </h3>
-                              <div className='space-y-3'>
-                                <div className='p-4 bg-gray-50 rounded-lg'>
-                                  <h4 className='font-medium text-gray-900'>
-                                    Preferences
-                                  </h4>
-                                  <p className='text-sm text-gray-600 mt-1'>
-                                    Customize your workspace
-                                  </p>
-                                </div>
-                                <div className='p-4 bg-gray-50 rounded-lg'>
-                                  <h4 className='font-medium text-gray-900'>
-                                    Notifications
-                                  </h4>
-                                  <p className='text-sm text-gray-600 mt-1'>
-                                    Manage alert settings
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
                           )}
                         </div>
                       </div>
@@ -252,8 +200,8 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                     <button
                       onClick={() => handleItemClick(item.id)}
                       className={cn(
-                        'p-5 rounded-lg transition-all duration-200 hover:bg-gray-50 group relative',
-                        isActive && 'bg-green-100 text-green-600'
+                        'h-[60px] w-[60px] text-[var(--text-dark)] flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426] group relative',
+                        isActive && 'bg-[#34AD4426] text-[#34AD44]'
                       )}
                       title={item.label}
                     >
@@ -262,8 +210,8 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                         className={cn(
                           'transition-colors duration-200',
                           isActive
-                            ? 'text-green-600'
-                            : 'text-gray-600 group-hover:text-gray-800'
+                            ? 'text-[#34AD44]'
+                            : 'text-[var(--text-dark)] group-hover:text-[#34AD44]'
                         )}
                       />
 
@@ -312,33 +260,23 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
 // Default toolbar items for job management
 export const defaultJobToolbarItems: ToolbarItem[] = [
   {
-    id: 'tasks',
-    icon: LayoutGrid,
+    id: 'todoList',
+    icon: TodoListIcon,
     label: 'To do Lists',
   },
   {
-    id: 'appointments',
-    icon: Calendar,
+    id: 'appointmentList',
+    icon: SupportIcon,
     label: 'Appointments',
   },
   {
-    id: 'communication',
-    icon: Headphones,
-    label: 'Communication',
+    id: 'toolChecklist',
+    icon: ToolListIcon,
+    label: 'Tools Check List',
   },
   {
-    id: 'tools',
-    icon: Hammer,
-    label: 'Checklist',
-  },
-  {
-    id: 'inventory',
-    icon: Package,
-    label: 'Materials Checklist',
-  },
-  {
-    id: 'settings',
-    icon: Settings,
-    label: 'Settings',
+    id: 'materialChecklist',
+    icon: MaterialCheckListIcon,
+    label: 'Materials Check List',
   },
 ];

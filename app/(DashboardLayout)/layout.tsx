@@ -1,14 +1,10 @@
 import { Header } from '@/components/layout/Header';
 import { PermissionAwareSidebar } from '@/components/layout/PermissionAwareSidebar';
+import { SideToolbarWrapper } from '@/components/layout/SideToolbarWrapper';
 import { PermissionProvider } from '@/lib/permission-context';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type React from 'react';
-import {
-  SideToolbar,
-  SideToolbarProvider,
-  defaultJobToolbarItems,
-} from '../../components/layout/SideToolbar';
 
 export default async function DashboardLayout({
   children,
@@ -35,12 +31,7 @@ export default async function DashboardLayout({
             <main className='rounded-t-[30px] p-4 md:p-6 bg-[var(--background)] flex-1'>
               {children}
             </main>
-            <SideToolbarProvider>
-              <SideToolbar
-                items={defaultJobToolbarItems}
-                className='sticky top-[200px]'
-              />
-            </SideToolbarProvider>
+            <SideToolbarWrapper />
           </div>
         </div>
       </div>

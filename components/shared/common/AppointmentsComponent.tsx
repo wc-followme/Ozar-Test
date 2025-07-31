@@ -1,11 +1,13 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { IconMapPin2 } from '@tabler/icons-react';
-import { Edit2 } from 'iconsax-react';
-import { Calendar, MoreVertical, Trash2 } from 'lucide-react';
+import { Edit2, TickCircle, Trash } from 'iconsax-react';
+import { MoreVertical } from 'lucide-react';
 import React, { useState } from 'react';
 import Dropdown from '../common/Dropdown';
+import { AppointmentForm } from '../forms/AppointmentsForm';
+import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import SideSheet from './SideSheet';
 
 interface Appointment {
   id: string;
@@ -28,6 +30,14 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(
     'appointment-2'
   );
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<
+    string | null
+  >(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingAppointmentId, setDeletingAppointmentId] = useState<
+    string | null
+  >(null);
   const [appointments] = useState<Appointment[]>([
     {
       id: 'appointment-1',
@@ -97,53 +107,71 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   // Dropdown menu options
   const menuOptions = [
     {
+      id: 'completed',
+      label: 'Completed',
+      icon: TickCircle,
+      action: 'completed',
+    },
+    {
       id: 'edit',
-      label: 'Edit Appointment',
+      label: 'Edit',
       icon: Edit2,
       action: 'edit',
     },
     {
-      id: 'view-details',
-      label: 'View Details',
-      icon: Calendar,
-      action: 'view-details',
-    },
-    {
-      id: 'view-location',
-      label: 'View Location',
-      icon: IconMapPin2,
-      action: 'view-location',
-    },
-    {
       id: 'delete',
-      label: 'Delete Appointment',
-      icon: Trash2,
+      label: 'Delete',
+      icon: Trash,
       action: 'delete',
-      className: 'text-red-600',
     },
   ];
 
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
+      case 'completed':
+        console.log('Mark appointment as completed:', appointmentId);
+        // TODO: Implement mark as completed functionality
+        break;
       case 'edit':
-        console.log('Edit appointment:', appointmentId);
-        // TODO: Implement edit functionality
-        break;
-      case 'view-details':
-        console.log('View details for appointment:', appointmentId);
-        // TODO: Implement view details functionality
-        break;
-      case 'view-location':
-        console.log('View location for appointment:', appointmentId);
-        // TODO: Implement view location functionality
+        setEditingAppointmentId(appointmentId);
+        setIsEditSheetOpen(true);
         break;
       case 'delete':
-        console.log('Delete appointment:', appointmentId);
-        // TODO: Implement delete functionality with confirmation
+        setDeletingAppointmentId(appointmentId);
+        setIsDeleteModalOpen(true);
         break;
       default:
         console.log('Unknown action:', action);
     }
+  };
+
+  const handleFormSubmit = (data: any) => {
+    // Handle form submission for editing the appointment
+    console.log('Form submitted:', data);
+    console.log('Editing appointment:', editingAppointmentId);
+
+    // Here you would typically update the appointment data
+    // For now, just close the sidesheet
+    setIsEditSheetOpen(false);
+  };
+
+  const handleFormCancel = () => {
+    setIsEditSheetOpen(false);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingAppointmentId) {
+      // Remove the appointment from the state
+      // For now, just log the deletion
+      console.log('Deleting appointment:', deletingAppointmentId);
+    }
+    setIsDeleteModalOpen(false);
+    setDeletingAppointmentId(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingAppointmentId(null);
   };
 
   return (
@@ -161,7 +189,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
             <div className='flex justify-between items-center'>
               <div className='flex-1'>
                 <div className='flex items-center gap-2 mb-2'>
-                  <span className='text-sm font-medium text-gray-600'>
+                  <span className='text-xs font-medium text-[var(--text-secondary)]'>
                     {appointment.date}
                   </span>
                 </div>
@@ -239,6 +267,31 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
           </div>
         );
       })}
+
+      {/* Edit Appointment SideSheet */}
+      <SideSheet
+        title='Edit Appointment'
+        open={isEditSheetOpen}
+        onOpenChange={setIsEditSheetOpen}
+        size='600px'
+      >
+        <div className='space-y-4'>
+          <AppointmentForm
+            onSubmit={handleFormSubmit}
+            onCancel={handleFormCancel}
+            loading={false}
+          />
+        </div>
+      </SideSheet>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen}
+        title='Archive Appointment'
+        subtitle={`Are you sure you want to Archive this appointment? This action cannot be undone.`}
+        onCancel={handleDeleteCancel}
+        onDelete={handleDeleteConfirm}
+      />
     </div>
   );
 };

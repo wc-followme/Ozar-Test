@@ -182,19 +182,13 @@ export const MaterialChecklistComponent: React.FC<
       {jobs.map(job => (
         <div key={job.id} className='bg-[#F5F7FA] p-3 rounded-[10px]'>
           {/* Job Header */}
-          <div className='space-y-1 mb-4'>
-            <h4
-              className='text-gray-500 uppercase font-medium text-[12px] leading-[100%] tracking-[0%]'
-              style={{ fontFamily: 'Inter' }}
-            >
+          <div className='space-y-1 mb-1'>
+            <h4 className='text-gray-500 uppercase font-normal text-[12px] leading-[100%] tracking-[0%] mb-2'>
               {job.dateRange}
             </h4>
             <div className='flex items-center gap-2 w-full'>
               <div className='flex-1 mr-auto'>
-                <p
-                  className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'
-                  style={{ fontFamily: 'Inter' }}
-                >
+                <p className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px]'>
                   {job.jobName}
                 </p>
               </div>
@@ -216,12 +210,20 @@ export const MaterialChecklistComponent: React.FC<
                 {service.materials.map((material, index) => (
                   <div
                     key={material.id}
-                    className='bg-white rounded-lg p-3 border border-gray-200'
+                    className={`bg-white rounded-lg p-3 border ${
+                      isQuantityInsufficient(
+                        material.required,
+                        material.available
+                      )
+                        ? 'border-[#D4323226]'
+                        : 'border-transparent'
+                    }`}
                   >
-                    <Label className='flex items-start gap-3 cursor-pointer'>
-                      <Checkbox
-                        id={material.id}
-                        className={`
+                    <Label className='flex flex-col items-start gap-3 cursor-pointer'>
+                      <div className='flex items-start gap-3'>
+                        <Checkbox
+                          id={material.id}
+                          className={`
                           rounded-[6px]
                           border-2
                           border-[#BFBFBF]
@@ -233,40 +235,45 @@ export const MaterialChecklistComponent: React.FC<
                           flex items-center justify-center -mt-0.4
                           ${material.checked ? 'bg-blue-600 border-blue-600' : ''}
                         `}
-                        checked={material.checked}
-                        onCheckedChange={() =>
-                          handleMaterialToggle(job.id, service.id, material.id)
-                        }
-                      />
-                      <div className='flex-1 space-y-1'>
-                        <p
-                          className={`text-[16px] font-semibold ${
-                            material.checked
-                              ? 'text-[#2D2D2D] line-through'
-                              : 'text-[#2D2D2D]'
-                          }`}
-                        >
-                          {material.name}
-                        </p>
-                        <p className='text-[12px] text-gray-600'>
-                          {material.category} • {material.dimensions}
-                        </p>
-                        <p
-                          className={`text-[14px] font-medium ${
-                            isQuantityInsufficient(
-                              material.required,
-                              material.available
+                          checked={material.checked}
+                          onCheckedChange={() =>
+                            handleMaterialToggle(
+                              job.id,
+                              service.id,
+                              material.id
                             )
-                              ? 'text-red-600'
-                              : 'text-[#2D2D2D]'
-                          }`}
-                        >
-                          {material.required.toString().padStart(2, '0')}{' '}
-                          Required /{' '}
-                          {material.available.toString().padStart(2, '0')}{' '}
-                          Available
-                        </p>
+                          }
+                        />
+                        <div className='flex-1 space-y-1'>
+                          <p
+                            className={`text-[14px] font-normal mb-2 ${
+                              material.checked
+                                ? 'text-[#2D2D2D] line-through'
+                                : 'text-[#2D2D2D]'
+                            }`}
+                          >
+                            {material.name}
+                          </p>
+                          <p className='text-xs font-normal text-[var(--text-secondary)]'>
+                            {material.category} • {material.dimensions}
+                          </p>
+                        </div>
                       </div>
+
+                      <p
+                        className={`text-[14px] font-normal w-full text-right border-t border-[#E8EAED] pt-2 ${
+                          isQuantityInsufficient(
+                            material.required,
+                            material.available
+                          )
+                            ? 'text-[var(--warning)]'
+                            : 'text-[#2D2D2D]'
+                        }`}
+                      >
+                        {material.required.toString().padStart(2, '0')} Required
+                        / {material.available.toString().padStart(2, '0')}{' '}
+                        Available
+                      </p>
                     </Label>
                   </div>
                 ))}
