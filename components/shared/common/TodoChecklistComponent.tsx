@@ -121,7 +121,7 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {jobs.map(job => (
-        <div key={job.id} className='bg-[#F5F7FA] p-3 rounded-[10px]'>
+        <div key={job.id} className='bg-[var(--background)] p-3 rounded-[10px]'>
           {/* Job Header */}
           <div className='space-y-2'>
             <h4 className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%]'>
@@ -129,7 +129,7 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
             </h4>
             <div className='flex items-center gap-2 w-full'>
               <div className='flex-1 mr-auto'>
-                <p className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'>
+                <p className='text-[var(--text-dark)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'>
                   {job.jobName}
                 </p>
               </div>
@@ -164,7 +164,7 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
                         data-[state=checked]:bg-[--primary]
                         data-[state=checked]:border-[var(--primary)]
                         data-[state=checked]:text-white
-                        text-[#2D2D2D]
+                        text-[var(--text-dark)]
                         w-6 h-6
                         flex items-center justify-center -mt-0.4
                         ${tool.checked ? 'bg-blue-600 border-blue-600' : ''}
@@ -178,8 +178,8 @@ export const TodoChecklistComponent: React.FC<TodoChecklistComponentProps> = ({
                       <p
                         className={`text-sm font-semibold ${
                           tool.checked
-                            ? 'text-[#2D2D2D] line-through'
-                            : 'text-[#2D2D2D]'
+                            ? 'text-[var(--text-dark)] line-through'
+                            : 'text-[var(--text-dark)]'
                         }`}
                       >
                         {tool.name}

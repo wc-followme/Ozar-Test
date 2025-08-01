@@ -13,11 +13,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock } from 'iconsax-react';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
+import MultiSelect from '../common/MultiSelect';
 
 // Validation schema
 const appointmentFormSchema = yup.object({
@@ -28,6 +29,10 @@ const appointmentFormSchema = yup.object({
   ends: yup.string().required('End time is required'),
   address: yup.string().required('Address is required'),
   notes: yup.string().optional(),
+  employees: yup
+    .array()
+    .of(yup.string())
+    .min(1, 'At least one employee is required'),
 });
 
 interface AppointmentFormData {
@@ -38,6 +43,7 @@ interface AppointmentFormData {
   ends: string;
   address: string;
   notes: string;
+  employees: string[];
 }
 
 interface AppointmentFormProps {
@@ -45,6 +51,35 @@ interface AppointmentFormProps {
   onCancel: () => void;
   loading?: boolean;
 }
+
+// Mock employees data
+const mockEmployees = [
+  {
+    value: '1',
+    label: 'John Doe',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '2',
+    label: 'Jane Smith',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '3',
+    label: 'Mike Johnson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '4',
+    label: 'Sarah Wilson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '5',
+    label: 'David Brown',
+    image: '/images/profile.jpg',
+  },
+];
 
 // Mock time options
 const timeOptions = [
@@ -92,6 +127,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const {
     control,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     resolver: yupResolver(appointmentFormSchema),
@@ -103,8 +140,15 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       ends: '',
       address: '',
       notes: '',
+      employees: [],
     },
   });
+
+  const selectedEmployees = watch('employees');
+
+  const handleEmployeeChange = (value: string[]) => {
+    setValue('employees', value);
+  };
 
   const handleFormSubmit = (data: AppointmentFormData) => {
     onSubmit(data);
@@ -143,7 +187,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           />
           <FormErrorMessage message={errors.agenda?.message || ''} />
         </div>
-
+        <div className='space-y-2'>
+          <Label htmlFor='employees' className='field-label'>
+            Select Employees
+          </Label>
+          <MultiSelect
+            options={mockEmployees}
+            value={selectedEmployees}
+            onChange={handleEmployeeChange}
+            placeholder='Select employees'
+            error={errors.employees?.message || ''}
+          />
+        </div>
         {/* Appointment with & Date */}
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
           {/* Appointment with */}

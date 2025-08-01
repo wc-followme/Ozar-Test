@@ -180,15 +180,15 @@ export const MaterialChecklistComponent: React.FC<
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {jobs.map(job => (
-        <div key={job.id} className='bg-[#F5F7FA] p-3 rounded-[10px]'>
+        <div key={job.id} className='bg-[var(--background)] p-3 rounded-[10px]'>
           {/* Job Header */}
           <div className='space-y-1 mb-1'>
-            <h4 className='text-gray-500 uppercase font-normal text-[12px] leading-[100%] tracking-[0%] mb-2'>
+            <h4 className='text-[var(--text-secondary)] uppercase font-normal text-[12px] leading-[100%] tracking-[0%] mb-2'>
               {job.dateRange}
             </h4>
             <div className='flex items-center gap-2 w-full'>
               <div className='flex-1 mr-auto'>
-                <p className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px]'>
+                <p className='text-[var(--text-dark)] font-medium text-[14px] leading-[22px] tracking-[0px]'>
                   {job.jobName}
                 </p>
               </div>
@@ -210,7 +210,7 @@ export const MaterialChecklistComponent: React.FC<
                 {service.materials.map((material, index) => (
                   <div
                     key={material.id}
-                    className={`bg-white rounded-lg p-3 border ${
+                    className={`bg-[var(--white-background)] rounded-lg p-3 border ${
                       isQuantityInsufficient(
                         material.required,
                         material.available
@@ -230,7 +230,7 @@ export const MaterialChecklistComponent: React.FC<
                           data-[state=checked]:bg-[--primary]
                           data-[state=checked]:border-[var(--primary)]
                           data-[state=checked]:text-white
-                          text-[#2D2D2D]
+                          text-[var(--text-dark)]
                           w-6 h-6
                           flex items-center justify-center -mt-0.4
                           ${material.checked ? 'bg-blue-600 border-blue-600' : ''}
@@ -246,29 +246,31 @@ export const MaterialChecklistComponent: React.FC<
                         />
                         <div className='flex-1 space-y-1'>
                           <p
-                            className={`text-[14px] font-normal mb-2 ${
-                              material.checked
-                                ? 'text-[#2D2D2D] line-through'
-                                : 'text-[#2D2D2D]'
+                            className={`text-[14px] font-normal mb-2 text-[var(--text-dark)] ${
+                              material.checked ? ' line-through' : ''
                             }`}
                           >
                             {material.name}
                           </p>
-                          <p className='text-xs font-normal text-[var(--text-secondary)]'>
+                          <p
+                            className={`text-xs font-normal text-[var(--text-secondary)] ${
+                              material.checked ? 'line-through' : ''
+                            }`}
+                          >
                             {material.category} • {material.dimensions}
                           </p>
                         </div>
                       </div>
 
                       <p
-                        className={`text-[14px] font-normal w-full text-right border-t border-[#E8EAED] pt-2 ${
+                        className={`text-[14px] font-normal w-full text-right border-t border-[var(--border-dark)] pt-2 ${
                           isQuantityInsufficient(
                             material.required,
                             material.available
                           )
                             ? 'text-[var(--warning)]'
-                            : 'text-[#2D2D2D]'
-                        }`}
+                            : 'text-[var(--text-dark)]'
+                        } ${material.checked ? 'line-through' : ''}`}
                       >
                         {material.required.toString().padStart(2, '0')} Required
                         / {material.available.toString().padStart(2, '0')}{' '}

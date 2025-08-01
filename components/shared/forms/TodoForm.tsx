@@ -60,10 +60,31 @@ const mockJobs = [
 ];
 
 const mockEmployees = [
-  { value: 'emp-1', label: 'Esther Howard' },
-  { value: 'emp-2', label: 'Jenny Wilson' },
-  { value: 'emp-3', label: 'John Doe' },
-  { value: 'emp-4', label: 'Jane Smith' },
+  {
+    value: '1',
+    label: 'John Doe',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '2',
+    label: 'Jane Smith',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '3',
+    label: 'Mike Johnson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '4',
+    label: 'Sarah Wilson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '5',
+    label: 'David Brown',
+    image: '/images/profile.jpg',
+  },
 ];
 
 export const TodoForm: React.FC<TodoFormProps> = ({

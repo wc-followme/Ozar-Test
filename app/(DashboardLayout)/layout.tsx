@@ -28,7 +28,7 @@ export default async function DashboardLayout({
         <div className='flex flex-col flex-1'>
           <Header />
           <div className='flex flex-1'>
-            <main className='rounded-t-[30px] p-4 md:p-6 bg-[var(--background)] flex-1'>
+            <main className='rounded-t-[30px] p-4 md:p-6 md:pb-0 bg-[var(--background)] flex-1'>
               {children}
             </main>
             <SideToolbarWrapper />

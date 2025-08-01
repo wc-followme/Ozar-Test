@@ -182,7 +182,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         return (
           <div
             key={appointment.id}
-            className='bg-[#F5F7FA] p-3 rounded-[10px]'
+            className='bg-[var(--background)] p-3 rounded-[10px]'
             onClick={() => handleAppointmentClick(appointment.id)}
           >
             {/* Basic Info - Always Visible */}
@@ -193,10 +193,12 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                     {appointment.date}
                   </span>
                 </div>
-                <h3 className='text-base font-semibold text-gray-900 mb-1'>
+                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
                   {appointment.title}
                 </h3>
-                <p className='text-sm text-gray-600'>{appointment.timeRange}</p>
+                <p className='text-sm text-[var(--text-dark)]'>
+                  {appointment.timeRange}
+                </p>
               </div>
               <Dropdown
                 menuOptions={menuOptions}
@@ -205,12 +207,12 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                   <Button
                     variant='ghost'
                     size='icon'
-                    className='h-8 w-8 p-0 hover:bg-gray-200 mt-auto mb-auto'
+                    className='h-8 w-8 p-0 mt-auto mb-auto'
                     onClick={e => e.stopPropagation()}
                   >
                     <MoreVertical
                       size={24}
-                      className='text-gray-500 !w-5 !h-5'
+                      className='text-[var(--text-dark)] !w-5 !h-5'
                     />
                   </Button>
                 }
@@ -222,21 +224,21 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
             {isExpanded && (
               <div className='mt-4 space-y-2'>
                 {/* Appointment Details */}
-                <div className='border-t border-gray-200 pt-2'>
+                <div className='border-t border-[var(--border-dark)] pt-2'>
                   <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                     <div>
-                      <p className='text-[12px] font-medium text-[#818181] leading-[100%] tracking-[0%] mb-1'>
+                      <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
                         Appointment with
                       </p>
-                      <p className='text-[14px] font-medium text-[#2D2D2D] leading-[22px] tracking-[0px]'>
+                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
                         {appointment.appointmentWith}
                       </p>
                     </div>
                     <div>
-                      <p className='text-[12px] font-medium text-[#818181] leading-[100%] tracking-[0%] mb-1'>
+                      <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
                         Date
                       </p>
-                      <p className='text-[14px] font-medium text-[#2D2D2D] leading-[22px] tracking-[0px]'>
+                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
                         {appointment.appointmentDate}
                       </p>
                     </div>
@@ -244,21 +246,21 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                 </div>
 
                 {/* Address */}
-                <div className='border-t border-gray-200 pt-2'>
-                  <p className='text-[12px] font-medium text-[#818181] leading-[100%] tracking-[0%] mb-1'>
+                <div className='border-t border-[var(--border-dark)] pt-2'>
+                  <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
                     Address
                   </p>
-                  <p className='text-[14px] font-medium text-[#2D2D2D] leading-[22px] tracking-[0px]'>
+                  <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
                     {appointment.address}
                   </p>
                 </div>
 
                 {/* Notes */}
-                <div className='border-t border-gray-200 pt-2'>
-                  <p className='text-[12px] font-medium text-[#818181] leading-[100%] tracking-[0%] mb-1'>
+                <div className='border-t border-[var(--border-dark)] pt-2'>
+                  <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
                     Notes
                   </p>
-                  <p className='text-[14px] font-medium text-[#2D2D2D] leading-[22px] tracking-[0px]'>
+                  <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
                     {appointment.notes}
                   </p>
                 </div>

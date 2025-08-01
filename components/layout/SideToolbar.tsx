@@ -7,12 +7,13 @@ import { TodoComponent } from '@/components/shared/common/TodoComponent';
 import { AppointmentForm } from '@/components/shared/forms/AppointmentsForm';
 import { TodoForm } from '@/components/shared/forms/TodoForm';
 import { cn } from '@/lib/utils';
-import { AddCircle } from 'iconsax-react';
+import { AddCircle, Setting4 } from 'iconsax-react';
 import React, { createContext, useContext, useState } from 'react';
 import { MaterialCheckListIcon } from '../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../icons/SupportIcon';
 import { TodoListIcon } from '../icons/TodoListIcon';
 import { ToolListIcon } from '../icons/ToolListIcon';
+import FloatingActionButtonWrapper from '../shared/common/FloatingActionButtonWrapper';
 
 // Context for managing sidesheet state
 interface SideToolbarContextType {
@@ -34,7 +35,11 @@ export const useSideToolbar = () => {
 
 interface ToolbarItem {
   id: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: React.ComponentType<{
+    size?: number;
+    className?: string;
+    color?: string;
+  }>;
   label: string;
 }
 
@@ -98,7 +103,6 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   };
 
   const handleTodoFormSubmit = (data: any) => {
-    console.log('Todo form submitted:', data);
     // Handle form submission here
     setShowTodoForm(false);
   };
@@ -122,112 +126,119 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
       {/* Vertical blue line */}
 
       {/* Toolbar container */}
-      <div className='bg-white h-full flex flex-col justify-start'>
-        <div className='flex max-h-[calc(100vh_-_85px)] overflow-auto'>
+      <div className='bg-transparent h-full flex flex-col justify-start'>
+        <div className='flex h-full max-h-[calc(100vh_-_85px)] overflow-auto'>
           {items.map(item => {
             return (
-              <>
-                <React.Fragment key={item.id}>
-                  {isOpen && activeItem === item.id && (
-                    <div
-                      className={`h-full w-[320px] bg-white z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}
-                    >
-                      <div className='h-full flex flex-col'>
-                        <div className='flex items-center p-4 gap-4 border-b'>
-                          <h2 className='text-lg font-semibold text-gray-900 mr-auto'>
-                            {item.label}
-                          </h2>
-                          {(activeItem === 'todoList' ||
-                            activeItem === 'appointmentList') && (
-                            <button
-                              onClick={
-                                activeItem === 'todoList'
-                                  ? handleAddTodoClick
-                                  : handleAddAppointmentClick
-                              }
-                              className='ml-auto p-1 hover:bg-gray-100 rounded transition-colors'
-                            >
-                              <AddCircle size='20' color='#34AD44' />
-                            </button>
-                          )}
+              <React.Fragment key={item.id}>
+                {isOpen && activeItem === item.id && (
+                  <div
+                    className={`h-full w-[320px] bg-transparent z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}
+                  >
+                    <div className='h-full flex flex-col'>
+                      <div className='flex items-center p-4 gap-4 border-b'>
+                        <h2 className='text-lg font-semibold text-[var(--text-dark)] mr-auto'>
+                          {item.label}
+                        </h2>
+                        {(activeItem === 'todoList' ||
+                          activeItem === 'appointmentList') && (
                           <button
-                            onClick={() => setIsOpen(false)}
-                            className='hover:bg-gray-100 rounded-md transition-colors p-0'
+                            onClick={
+                              activeItem === 'todoList'
+                                ? handleAddTodoClick
+                                : handleAddAppointmentClick
+                            }
+                            className='ml-auto p-1 rounded transition-colors'
                           >
-                            <svg
-                              className='w-5 h-5'
-                              fill='none'
-                              stroke='currentColor'
-                              viewBox='0 0 24 24'
-                            >
-                              <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth={2}
-                                d='M6 18L18 6M6 6l12 12'
-                              />
-                            </svg>
+                            <AddCircle size='20' color='#34AD44' />
                           </button>
-                        </div>
+                        )}
+                        <button
+                          onClick={() => setIsOpen(false)}
+                          className='rounded-md transition-colors p-0'
+                        >
+                          <svg
+                            className='w-5 h-5'
+                            fill='none'
+                            stroke='currentColor'
+                            viewBox='0 0 24 24'
+                          >
+                            <path
+                              strokeLinecap='round'
+                              strokeLinejoin='round'
+                              strokeWidth={2}
+                              d='M6 18L18 6M6 6l12 12'
+                            />
+                          </svg>
+                        </button>
+                      </div>
 
-                        {/* Content */}
-                        <div className='flex-1 p-4 overflow-y-auto'>
-                          {activeItem === 'todoList' && <TodoComponent />}
-                          {activeItem === 'appointmentList' && (
-                            <AppointmentsComponent />
-                          )}
-                          {activeItem === 'toolChecklist' && (
-                            <TodoChecklistComponent />
-                          )}
-                          {activeItem === 'materialChecklist' && (
-                            <MaterialChecklistComponent />
-                          )}
-                        </div>
+                      {/* Content */}
+                      <div className='flex-1 p-4 overflow-y-auto'>
+                        {activeItem === 'todoList' && <TodoComponent />}
+                        {activeItem === 'appointmentList' && (
+                          <AppointmentsComponent />
+                        )}
+                        {activeItem === 'toolChecklist' && (
+                          <TodoChecklistComponent />
+                        )}
+                        {activeItem === 'materialChecklist' && (
+                          <MaterialChecklistComponent />
+                        )}
                       </div>
                     </div>
-                  )}
-                </React.Fragment>
-              </>
+                  </div>
+                )}
+              </React.Fragment>
             );
           })}
-          <div className='flex flex-col space-y-2 p-[10px]'>
+          <div className='hidden lg:flex flex-col space-y-2 p-[10px] h-full'>
             {items.map(item => {
               const Icon = item.icon;
               const isActive = activeItem === item.id;
               return (
-                <>
-                  <React.Fragment key={item.id}>
-                    <button
-                      onClick={() => handleItemClick(item.id)}
+                <React.Fragment key={item.id}>
+                  <button
+                    onClick={() => handleItemClick(item.id)}
+                    className={cn(
+                      'h-[60px] w-[60px] text-[var(--text-dark)] flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426] group relative',
+                      isActive && 'bg-[#34AD4426] text-[#34AD44]',
+                      item.id === 'settings' && 'mt-auto'
+                    )}
+                    title={item.label}
+                  >
+                    <Icon
+                      size={24}
                       className={cn(
-                        'h-[60px] w-[60px] text-[var(--text-dark)] flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426] group relative',
-                        isActive && 'bg-[#34AD4426] text-[#34AD44]'
+                        'transition-colors duration-200',
+                        isActive
+                          ? 'text-[#34AD44]'
+                          : 'text-[var(--text-dark)] group-hover:text-[#34AD44]'
                       )}
-                      title={item.label}
-                    >
-                      <Icon
-                        size={24}
-                        className={cn(
-                          'transition-colors duration-200',
-                          isActive
-                            ? 'text-[#34AD44]'
-                            : 'text-[var(--text-dark)] group-hover:text-[#34AD44]'
-                        )}
-                      />
-
-                      {/* Active indicator */}
-                      {isActive && (
-                        <div className='absolute inset-0 bg-green-100 rounded-lg opacity-20'></div>
-                      )}
-                    </button>
-                  </React.Fragment>
-                </>
+                      color={isActive ? '#34AD44' : 'var(--text-dark)'}
+                    />
+                  </button>
+                </React.Fragment>
               );
             })}
+            <button
+              className={
+                'h-[60px] w-[60px] text-[var(--text-dark)] !mt-auto flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426]'
+              }
+            >
+              <Setting4
+                size={24}
+                className={cn('transition-colors duration-200')}
+                color={'var(--text-dark)'}
+              />
+            </button>
           </div>
         </div>
       </div>
-
+      {/* Floating Action Button - Only visible on tablet and mobile */}
+      <div className='block lg:hidden'>
+        <FloatingActionButtonWrapper />
+      </div>
       {/* TodoForm SideSheet */}
       <SideSheet
         title='Add To Do List'

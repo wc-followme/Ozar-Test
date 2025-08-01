@@ -16,6 +16,7 @@ import FormErrorMessage from './FormErrorMessage';
 export interface MultiSelectOption {
   value: string;
   label: string;
+  image?: string;
 }
 
 interface MultiSelectProps<OptionType = MultiSelectOption> {
@@ -28,6 +29,7 @@ interface MultiSelectProps<OptionType = MultiSelectOption> {
   name?: string;
   getOptionLabel?: (option: OptionType) => string;
   getOptionValue?: (option: OptionType) => string;
+  getOptionImage?: (option: OptionType) => string | undefined;
   maxHeight?: number;
   maxSelectedItems?: number;
 }
@@ -42,6 +44,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   name,
   getOptionLabel = (option: any) => option.label,
   getOptionValue = (option: any) => option.value,
+  getOptionImage = (option: any) => option.image,
 }: MultiSelectProps<OptionType>) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,17 +108,25 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
               )}
               {displayTags.map(tag => {
                 const opt = options.find(o => getOptionValue(o) === tag);
+                const imageUrl = opt ? getOptionImage(opt) : undefined;
                 return (
                   <span
                     key={tag}
-                    className='bg-[#00A8BF26] text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium'
+                    className={`bg-[#00A8BF26] text-[var(--text-dark)] rounded-full ${imageUrl ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
                   >
+                    {imageUrl && (
+                      <img
+                        src={imageUrl}
+                        alt={opt ? getOptionLabel(opt) : tag}
+                        className='w-5 h-5 rounded-full object-cover'
+                      />
+                    )}
                     {opt ? getOptionLabel(opt) : tag}
                   </span>
                 );
               })}
               {moreCount > 0 && value.length > maxTagsToShow && (
-                <span className='bg-[#00A8BF26] text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium'>
+                <span className='bg-[#00A8BF26] text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium flex items-center gap-2'>
                   +{moreCount} more
                 </span>
               )}
@@ -170,6 +181,13 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                       onCheckedChange={() => handleToggle(optionValue)}
                       className='rounded-[6px] border-2 border-[#BFBFBF] data-[state=checked]:bg-[--primary] data-[state=checked]:border-[--primary] data-[state=checked]:text-white text-white w-6 h-6 flex items-base justify-center mt-0.5'
                     />
+                    {getOptionImage(opt) && (
+                      <img
+                        src={getOptionImage(opt)}
+                        alt={getOptionLabel(opt)}
+                        className='w-6 h-6 rounded-full object-cover'
+                      />
+                    )}
                     <span>{getOptionLabel(opt)}</span>
                   </label>
                 );

@@ -165,12 +165,12 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
       {taskSections.map(section => (
-        <div key={section.id} className=' bg-[#F5F7FA] p-3 rounded-[10px]'>
+        <div
+          key={section.id}
+          className=' bg-[var(--background)] p-3 rounded-[10px]'
+        >
           {/* Section Header */}
-          <h4
-            className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-2'
-            style={{ fontFamily: 'Inter' }}
-          >
+          <h4 className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-2'>
             {section.title}
           </h4>
           <div className='flex items-center gap-2 w-full mb-4'>
@@ -192,7 +192,11 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
               onClick={() => handleEditSection(section.id)}
               className='p-1 hover:bg-gray-100 rounded transition-colors'
             >
-              <Edit2 size={20} color='#2D2D2D' className='text-gray-500' />
+              <Edit2
+                size={20}
+                color='var(--text-dark)'
+                className='text-gray-500'
+              />
             </button>
           </div>
 
@@ -212,7 +216,7 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                      data-[state=checked]:bg-[--primary]
                      data-[state=checked]:border-[var(--primary)]
                      data-[state=checked]:text-white
-                     text-[#2D2D2D] 
+                     text-[var(--text-dark)] 
                      w-6 h-6
                      flex items-center justify-center -mt-0.4
                      ${task.completed ? 'bg-blue-600 border-blue-600' : ''}
@@ -222,10 +226,8 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                 />
                 <div className='flex-1'>
                   <p
-                    className={`text-sm font-semibold ${
-                      task.completed
-                        ? 'text-[#2D2D2D] line-through'
-                        : 'text-[#2D2D2D]'
+                    className={`text-sm font-semibold text-[var(--text-dark)] ${
+                      task.completed ? 'line-through' : ''
                     }`}
                   >
                     {task.description}
