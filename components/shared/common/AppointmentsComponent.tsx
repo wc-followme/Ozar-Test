@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
 import React, { useState } from 'react';
@@ -108,35 +109,35 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const menuOptions = [
     {
       id: 'completed',
-      label: 'Completed',
+      label: CATEGORY_MESSAGES.COMPLETED_MENU,
       icon: TickCircle,
-      action: 'completed',
+      action: ACTIONS.COMPLETED,
     },
     {
       id: 'edit',
-      label: 'Edit',
+      label: CATEGORY_MESSAGES.EDIT_MENU,
       icon: Edit2,
-      action: 'edit',
+      action: ACTIONS.EDIT,
     },
     {
       id: 'delete',
-      label: 'Delete',
+      label: CATEGORY_MESSAGES.DELETE_MENU,
       icon: Trash,
-      action: 'delete',
+      action: ACTIONS.DELETE,
     },
   ];
 
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
-      case 'completed':
+      case ACTIONS.COMPLETED:
         console.log('Mark appointment as completed:', appointmentId);
         // TODO: Implement mark as completed functionality
         break;
-      case 'edit':
+      case ACTIONS.EDIT:
         setEditingAppointmentId(appointmentId);
         setIsEditSheetOpen(true);
         break;
-      case 'delete':
+      case ACTIONS.DELETE:
         setDeletingAppointmentId(appointmentId);
         setIsDeleteModalOpen(true);
         break;
@@ -176,99 +177,108 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {appointments.map(appointment => {
-        const isExpanded = expandedAppointment === appointment.id;
+      {appointments.map(
+        ({
+          id: appointmentId,
+          date,
+          title,
+          timeRange,
+          appointmentWith,
+          appointmentDate,
+          address,
+          notes,
+        }) => {
+          const isExpanded = expandedAppointment === appointmentId;
 
-        return (
-          <div
-            key={appointment.id}
-            className='bg-[var(--background)] p-3 rounded-[10px]'
-            onClick={() => handleAppointmentClick(appointment.id)}
-          >
-            {/* Basic Info - Always Visible */}
-            <div className='flex justify-between items-center'>
-              <div className='flex-1'>
-                <div className='flex items-center gap-2 mb-2'>
-                  <span className='text-xs font-medium text-[var(--text-secondary)]'>
-                    {appointment.date}
-                  </span>
+          return (
+            <div
+              key={appointmentId}
+              className='bg-[var(--background)] p-3 rounded-[10px]'
+              onClick={() => handleAppointmentClick(appointmentId)}
+            >
+              {/* Basic Info - Always Visible */}
+              <div className='flex justify-between items-center'>
+                <div className='flex-1'>
+                  <div className='flex items-center gap-2 mb-2'>
+                    <span className='text-xs font-medium text-[var(--text-secondary)]'>
+                      {date}
+                    </span>
+                  </div>
+                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
+                    {title}
+                  </h3>
+                  <p className='text-sm text-[var(--text-dark)]'>{timeRange}</p>
                 </div>
-                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
-                  {appointment.title}
-                </h3>
-                <p className='text-sm text-[var(--text-dark)]'>
-                  {appointment.timeRange}
-                </p>
+                <Dropdown
+                  menuOptions={menuOptions}
+                  onAction={action => handleMenuAction(action, appointmentId)}
+                  trigger={
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      className='h-8 w-8 p-0 mt-auto mb-auto'
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <MoreVertical
+                        size={24}
+                        className='text-[var(--text-dark)] !w-5 !h-5'
+                      />
+                    </Button>
+                  }
+                  align='end'
+                />
               </div>
-              <Dropdown
-                menuOptions={menuOptions}
-                onAction={action => handleMenuAction(action, appointment.id)}
-                trigger={
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    className='h-8 w-8 p-0 mt-auto mb-auto'
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <MoreVertical
-                      size={24}
-                      className='text-[var(--text-dark)] !w-5 !h-5'
-                    />
-                  </Button>
-                }
-                align='end'
-              />
-            </div>
 
-            {/* Expanded Details */}
-            {isExpanded && (
-              <div className='mt-4 space-y-2'>
-                {/* Appointment Details */}
-                <div className='border-t border-[var(--border-dark)] pt-2'>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                    <div>
-                      <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                        Appointment with
-                      </p>
-                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                        {appointment.appointmentWith}
-                      </p>
-                    </div>
-                    <div>
-                      <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                        Date
-                      </p>
-                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                        {appointment.appointmentDate}
-                      </p>
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className='mt-4 space-y-2'>
+                  {/* Appointment Details */}
+                  <div className='border-t border-[var(--border-dark)] pt-2'>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                      <div>
+                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
+                          Appointment with
+                        </p>
+                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                          {appointmentWith}
+                        </p>
+                      </div>
+                      <div>
+                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
+                          Date
+                        </p>
+                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                          {appointmentDate}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Address */}
-                <div className='border-t border-[var(--border-dark)] pt-2'>
-                  <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
-                    Address
-                  </p>
-                  <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                    {appointment.address}
-                  </p>
-                </div>
+                  {/* Address */}
+                  <div className='border-t border-[var(--border-dark)] pt-2'>
+                    <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                      Address
+                    </p>
+                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                      {address}
+                    </p>
+                  </div>
 
-                {/* Notes */}
-                <div className='border-t border-[var(--border-dark)] pt-2'>
-                  <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                    Notes
-                  </p>
-                  <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                    {appointment.notes}
-                  </p>
+                  {/* Notes */}
+                  <div className='border-t border-[var(--border-dark)] pt-2'>
+                    <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
+                      Notes
+                    </p>
+                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                      {notes}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+              )}
+            </div>
+          );
+        }
+      )}
 
       {/* Edit Appointment SideSheet */}
       <SideSheet

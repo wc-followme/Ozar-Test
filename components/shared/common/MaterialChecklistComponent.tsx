@@ -179,51 +179,58 @@ export const MaterialChecklistComponent: React.FC<
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {jobs.map(job => (
-        <div key={job.id} className='bg-[var(--background)] p-3 rounded-[10px]'>
+      {jobs.map(({ id: jobId, dateRange, jobName, services }) => (
+        <div key={jobId} className='bg-[var(--background)] p-3 rounded-[10px]'>
           {/* Job Header */}
           <div className='space-y-1 mb-1'>
             <h4 className='text-[var(--text-secondary)] uppercase font-normal text-[12px] leading-[100%] tracking-[0%] mb-2'>
-              {job.dateRange}
+              {dateRange}
             </h4>
             <div className='flex items-center gap-2 w-full'>
               <div className='flex-1 mr-auto'>
                 <p className='text-[var(--text-dark)] font-medium text-[14px] leading-[22px] tracking-[0px]'>
-                  {job.jobName}
+                  {jobName}
                 </p>
               </div>
             </div>
           </div>
 
           {/* Services */}
-          {job.services.map(service => (
-            <div key={service.id} className='space-y-4'>
-              <h3
-                className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'
-                style={{ fontFamily: 'Inter' }}
+          {services.map(
+            ({ id: serviceId, name: serviceName, materials }, serviceIndex) => (
+              <div
+                key={serviceId}
+                className={`space-y-4 ${serviceIndex > 0 ? 'mt-4' : ''}`}
               >
-                {service.name}
-              </h3>
+                <h3 className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'>
+                  {serviceName}
+                </h3>
 
-              {/* Materials */}
-              <div className='flex flex-col gap-3'>
-                {service.materials.map((material, index) => (
-                  <div
-                    key={material.id}
-                    className={`bg-[var(--white-background)] rounded-lg p-3 border ${
-                      isQuantityInsufficient(
-                        material.required,
-                        material.available
-                      )
-                        ? 'border-[#D4323226]'
-                        : 'border-transparent'
-                    }`}
-                  >
-                    <Label className='flex flex-col items-start gap-3 cursor-pointer'>
-                      <div className='flex items-start gap-3'>
-                        <Checkbox
-                          id={material.id}
-                          className={`
+                {/* Materials */}
+                <div className='flex flex-col gap-3'>
+                  {materials.map(
+                    ({
+                      id: materialId,
+                      name: materialName,
+                      category,
+                      dimensions,
+                      required,
+                      available,
+                      checked,
+                    }) => (
+                      <div
+                        key={materialId}
+                        className={`bg-[var(--white-background)] rounded-lg p-3 border ${
+                          isQuantityInsufficient(required, available)
+                            ? 'border-[#D4323226]'
+                            : 'border-transparent'
+                        }`}
+                      >
+                        <Label className='flex flex-col items-start gap-3 cursor-pointer'>
+                          <div className='flex items-start gap-3'>
+                            <Checkbox
+                              id={materialId}
+                              className={`
                           rounded-[6px]
                           border-2
                           border-[#BFBFBF]
@@ -233,55 +240,53 @@ export const MaterialChecklistComponent: React.FC<
                           text-[var(--text-dark)]
                           w-6 h-6
                           flex items-center justify-center -mt-0.4
-                          ${material.checked ? 'bg-blue-600 border-blue-600' : ''}
+                          ${checked ? 'bg-blue-600 border-blue-600' : ''}
                         `}
-                          checked={material.checked}
-                          onCheckedChange={() =>
-                            handleMaterialToggle(
-                              job.id,
-                              service.id,
-                              material.id
-                            )
-                          }
-                        />
-                        <div className='flex-1 space-y-1'>
-                          <p
-                            className={`text-[14px] font-normal mb-2 text-[var(--text-dark)] ${
-                              material.checked ? ' line-through' : ''
-                            }`}
-                          >
-                            {material.name}
-                          </p>
-                          <p
-                            className={`text-xs font-normal text-[var(--text-secondary)] ${
-                              material.checked ? 'line-through' : ''
-                            }`}
-                          >
-                            {material.category} • {material.dimensions}
-                          </p>
-                        </div>
-                      </div>
+                              checked={checked}
+                              onCheckedChange={() =>
+                                handleMaterialToggle(
+                                  jobId,
+                                  serviceId,
+                                  materialId
+                                )
+                              }
+                            />
+                            <div className='flex-1 space-y-1'>
+                              <p
+                                className={`text-[14px] font-normal mb-2 text-[var(--text-dark)] ${
+                                  checked ? ' line-through' : ''
+                                }`}
+                              >
+                                {materialName}
+                              </p>
+                              <p
+                                className={`text-xs font-normal text-[var(--text-secondary)] ${
+                                  checked ? 'line-through' : ''
+                                }`}
+                              >
+                                {category} • {dimensions}
+                              </p>
+                            </div>
+                          </div>
 
-                      <p
-                        className={`text-[14px] font-normal w-full text-right border-t border-[var(--border-dark)] pt-2 ${
-                          isQuantityInsufficient(
-                            material.required,
-                            material.available
-                          )
-                            ? 'text-[var(--warning)]'
-                            : 'text-[var(--text-dark)]'
-                        } ${material.checked ? 'line-through' : ''}`}
-                      >
-                        {material.required.toString().padStart(2, '0')} Required
-                        / {material.available.toString().padStart(2, '0')}{' '}
-                        Available
-                      </p>
-                    </Label>
-                  </div>
-                ))}
+                          <p
+                            className={`text-[14px] font-normal w-full text-right border-t border-[var(--border-dark)] pt-2 ${
+                              isQuantityInsufficient(required, available)
+                                ? 'text-[var(--warning)]'
+                                : 'text-[var(--text-dark)]'
+                            } ${checked ? 'line-through' : ''}`}
+                          >
+                            {required.toString().padStart(2, '0')} Required /{' '}
+                            {available.toString().padStart(2, '0')} Available
+                          </p>
+                        </Label>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          )}
         </div>
       ))}
     </div>

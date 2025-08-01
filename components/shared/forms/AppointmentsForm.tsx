@@ -10,29 +10,34 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { APPOINTMENT_MESSAGES, MOCK_EMPLOYEES } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
-import { Calendar, Clock } from 'iconsax-react';
+import { Calendar } from 'iconsax-react';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
+import { TimePicker } from '../common/TimePicker';
 
 // Validation schema
 const appointmentFormSchema = yup.object({
-  agenda: yup.string().required('Agenda is required'),
-  appointmentWith: yup.string().required('Appointment with is required'),
-  date: yup.date().required('Date is required'),
-  starts: yup.string().required('Start time is required'),
-  ends: yup.string().required('End time is required'),
-  address: yup.string().required('Address is required'),
-  notes: yup.string().optional(),
+  agenda: yup.string().required(APPOINTMENT_MESSAGES.AGENDA_REQUIRED),
+  appointmentWith: yup
+    .string()
+    .required(APPOINTMENT_MESSAGES.APPOINTMENT_WITH_REQUIRED),
+  date: yup.date().required(APPOINTMENT_MESSAGES.DATE_REQUIRED),
+  starts: yup.string().required(APPOINTMENT_MESSAGES.STARTS_REQUIRED),
+  ends: yup.string().required(APPOINTMENT_MESSAGES.ENDS_REQUIRED),
+  address: yup.string().required(APPOINTMENT_MESSAGES.ADDRESS_REQUIRED),
+  notes: yup.string().optional().default(''),
   employees: yup
     .array()
-    .of(yup.string())
-    .min(1, 'At least one employee is required'),
+    .of(yup.string().required())
+    .min(1, APPOINTMENT_MESSAGES.EMPLOYEES_REQUIRED)
+    .default([]),
 });
 
 interface AppointmentFormData {
@@ -52,77 +57,12 @@ interface AppointmentFormProps {
   loading?: boolean;
 }
 
-// Mock employees data
-const mockEmployees = [
-  {
-    value: '1',
-    label: 'John Doe',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '2',
-    label: 'Jane Smith',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '3',
-    label: 'Mike Johnson',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '4',
-    label: 'Sarah Wilson',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '5',
-    label: 'David Brown',
-    image: '/images/profile.jpg',
-  },
-];
-
-// Mock time options
-const timeOptions = [
-  '09:00 AM',
-  '09:30 AM',
-  '10:00 AM',
-  '10:30 AM',
-  '11:00 AM',
-  '11:30 AM',
-  '12:00 PM',
-  '12:30 PM',
-  '01:00 PM',
-  '01:30 PM',
-  '02:00 PM',
-  '02:30 PM',
-  '03:00 PM',
-  '03:30 PM',
-  '04:00 PM',
-  '04:30 PM',
-  '05:00 PM',
-  '05:30 PM',
-  '06:00 PM',
-  '06:30 PM',
-  '07:00 PM',
-  '07:30 PM',
-  '08:00 PM',
-  '08:30 PM',
-  '09:00 PM',
-  '09:30 PM',
-  '10:00 PM',
-  '10:30 PM',
-  '11:00 PM',
-  '11:30 PM',
-];
-
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [startsTimeOpen, setStartsTimeOpen] = useState(false);
-  const [endsTimeOpen, setEndsTimeOpen] = useState(false);
 
   const {
     control,
@@ -164,7 +104,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         {/* Agenda */}
         <div className='space-y-2'>
           <Label htmlFor='agenda' className='field-label'>
-            Agenda
+            {APPOINTMENT_MESSAGES.AGENDA_LABEL}
           </Label>
           <Controller
             name='agenda'
@@ -172,7 +112,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             render={({ field }) => (
               <Input
                 id='agenda'
-                placeholder='Enter Title'
+                placeholder={APPOINTMENT_MESSAGES.AGENDA_PLACEHOLDER}
                 value={field.value}
                 onChange={field.onChange}
                 className={cn(
@@ -189,13 +129,13 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         </div>
         <div className='space-y-2'>
           <Label htmlFor='employees' className='field-label'>
-            Select Employees
+            {APPOINTMENT_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={mockEmployees}
+            options={MOCK_EMPLOYEES}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder='Select employees'
+            placeholder={APPOINTMENT_MESSAGES.EMPLOYEES_PLACEHOLDER}
             error={errors.employees?.message || ''}
           />
         </div>
@@ -204,7 +144,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           {/* Appointment with */}
           <div className='space-y-2'>
             <Label htmlFor='appointmentWith' className='field-label'>
-              Appointment with
+              {APPOINTMENT_MESSAGES.APPOINTMENT_WITH_LABEL}
             </Label>
             <Controller
               name='appointmentWith'
@@ -212,7 +152,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
               render={({ field }) => (
                 <Input
                   id='appointmentWith'
-                  placeholder='Enter Name'
+                  placeholder={
+                    APPOINTMENT_MESSAGES.APPOINTMENT_WITH_PLACEHOLDER
+                  }
                   value={field.value}
                   onChange={field.onChange}
                   className={cn(
@@ -231,7 +173,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           {/* Date */}
           <div className='space-y-2'>
             <Label htmlFor='date' className='field-label'>
-              Date
+              {APPOINTMENT_MESSAGES.DATE_LABEL}
             </Label>
             <Controller
               name='date'
@@ -252,7 +194,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       {field.value ? (
                         format(field.value, 'PPP')
                       ) : (
-                        <span>Select Date</span>
+                        <span>{APPOINTMENT_MESSAGES.DATE_PLACEHOLDER}</span>
                       )}
                       <Calendar className='ml-auto !h-6 !w-6' color='#24338C' />
                     </Button>
@@ -283,55 +225,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           {/* Starts */}
           <div className='space-y-2'>
             <Label htmlFor='starts' className='field-label'>
-              Starts
+              {APPOINTMENT_MESSAGES.STARTS_LABEL}
             </Label>
             <Controller
               name='starts'
               control={control}
               render={({ field }) => (
-                <Popover open={startsTimeOpen} onOpenChange={setStartsTimeOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant='outline'
-                      className={cn(
-                        'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
-                        !field.value && 'text-muted-foreground',
-                        errors.starts
-                          ? '!border-[var(--warning)]'
-                          : 'border-[var(--border-dark)]'
-                      )}
-                    >
-                      {field.value || <span>Select Time</span>}
-                      <Clock className='ml-auto !h-6 !w-6' color='#24338C' />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className='w-[200px] p-0 bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60'
-                    align='start'
-                  >
-                    <div
-                      className='p-2 max-h-60 overflow-y-auto'
-                      style={{
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#d1d5db #f3f4f6',
-                      }}
-                    >
-                      {timeOptions.map(time => (
-                        <button
-                          key={time}
-                          type='button'
-                          className='w-full text-left px-3 py-2 text-sm hover:bg-[var(--select-option)] rounded-[5px] transition-colors'
-                          onClick={() => {
-                            field.onChange(time);
-                            setStartsTimeOpen(false);
-                          }}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <TimePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={APPOINTMENT_MESSAGES.STARTS_PLACEHOLDER}
+                  error={!!errors.starts}
+                  disabled={loading}
+                />
               )}
             />
             <FormErrorMessage message={errors.starts?.message || ''} />
@@ -340,55 +246,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           {/* Ends */}
           <div className='space-y-2'>
             <Label htmlFor='ends' className='field-label'>
-              Ends
+              {APPOINTMENT_MESSAGES.ENDS_LABEL}
             </Label>
             <Controller
               name='ends'
               control={control}
               render={({ field }) => (
-                <Popover open={endsTimeOpen} onOpenChange={setEndsTimeOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant='outline'
-                      className={cn(
-                        'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
-                        !field.value && 'text-muted-foreground',
-                        errors.ends
-                          ? '!border-[var(--warning)]'
-                          : 'border-[var(--border-dark)]'
-                      )}
-                    >
-                      {field.value || <span>Select Time</span>}
-                      <Clock className='ml-auto !h-6 !w-6' color='#24338C' />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className='w-[200px] p-0 bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60'
-                    align='start'
-                  >
-                    <div
-                      className='p-2 max-h-60 overflow-y-auto'
-                      style={{
-                        scrollbarWidth: 'thin',
-                        scrollbarColor: '#d1d5db #f3f4f6',
-                      }}
-                    >
-                      {timeOptions.map(time => (
-                        <button
-                          key={time}
-                          type='button'
-                          className='w-full text-left px-3 py-2 text-sm hover:bg-[var(--select-option)] rounded-[5px] transition-colors'
-                          onClick={() => {
-                            field.onChange(time);
-                            setEndsTimeOpen(false);
-                          }}
-                        >
-                          {time}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
+                <TimePicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder={APPOINTMENT_MESSAGES.ENDS_PLACEHOLDER}
+                  error={!!errors.ends}
+                  disabled={loading}
+                />
               )}
             />
             <FormErrorMessage message={errors.ends?.message || ''} />
@@ -398,7 +268,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         {/* Address */}
         <div className='space-y-2'>
           <Label htmlFor='address' className='field-label'>
-            Address
+            {APPOINTMENT_MESSAGES.ADDRESS_LABEL}
           </Label>
           <Controller
             name='address'
@@ -406,7 +276,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             render={({ field }) => (
               <Input
                 id='address'
-                placeholder='Enter Address'
+                placeholder={APPOINTMENT_MESSAGES.ADDRESS_PLACEHOLDER}
                 value={field.value}
                 onChange={field.onChange}
                 className={cn(
@@ -425,7 +295,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         {/* Notes */}
         <div className='space-y-2'>
           <Label htmlFor='notes' className='field-label'>
-            Notes
+            {APPOINTMENT_MESSAGES.NOTES_LABEL}
           </Label>
           <Controller
             name='notes'
@@ -433,7 +303,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             render={({ field }) => (
               <Textarea
                 id='notes'
-                placeholder='Enter Notes'
+                placeholder={APPOINTMENT_MESSAGES.NOTES_PLACEHOLDER}
                 value={field.value}
                 onChange={field.onChange}
                 className={cn(
@@ -457,14 +327,16 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             onClick={onCancel}
             disabled={loading}
           >
-            Cancel
+            {APPOINTMENT_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save'}
+            {loading
+              ? APPOINTMENT_MESSAGES.SAVING_BUTTON
+              : APPOINTMENT_MESSAGES.SAVE_BUTTON}
           </Button>
         </div>
       </form>

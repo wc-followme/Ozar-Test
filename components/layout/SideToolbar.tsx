@@ -2,11 +2,11 @@
 import { AppointmentsComponent } from '@/components/shared/common/AppointmentsComponent';
 import { MaterialChecklistComponent } from '@/components/shared/common/MaterialChecklistComponent';
 import SideSheet from '@/components/shared/common/SideSheet';
-import { TodoChecklistComponent } from '@/components/shared/common/TodoChecklistComponent';
 import { TodoComponent } from '@/components/shared/common/TodoComponent';
 import { AppointmentForm } from '@/components/shared/forms/AppointmentsForm';
 import { TodoForm } from '@/components/shared/forms/TodoForm';
 import { cn } from '@/lib/utils';
+import { IconX } from '@tabler/icons-react';
 import { AddCircle, Setting4 } from 'iconsax-react';
 import React, { createContext, useContext, useState } from 'react';
 import { MaterialCheckListIcon } from '../icons/MaterialCheckListIcon';
@@ -14,6 +14,7 @@ import { SupportIcon } from '../icons/SupportIcon';
 import { TodoListIcon } from '../icons/TodoListIcon';
 import { ToolListIcon } from '../icons/ToolListIcon';
 import FloatingActionButtonWrapper from '../shared/common/FloatingActionButtonWrapper';
+import { ToolsChecklistComponent } from '../shared/common/ToolsChecklistComponent';
 
 // Context for managing sidesheet state
 interface SideToolbarContextType {
@@ -136,7 +137,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                     className={`h-full w-[320px] bg-transparent z-50 ${isOpen ? 'translate-x-0' : 'translate-x-full'} transition-transform duration-300 ease-in-out`}
                   >
                     <div className='h-full flex flex-col'>
-                      <div className='flex items-center p-4 gap-4 border-b'>
+                      <div className='flex items-center p-4 gap-2 border-b'>
                         <h2 className='text-lg font-semibold text-[var(--text-dark)] mr-auto'>
                           {item.label}
                         </h2>
@@ -157,19 +158,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                           onClick={() => setIsOpen(false)}
                           className='rounded-md transition-colors p-0'
                         >
-                          <svg
-                            className='w-5 h-5'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                          >
-                            <path
-                              strokeLinecap='round'
-                              strokeLinejoin='round'
-                              strokeWidth={2}
-                              d='M6 18L18 6M6 6l12 12'
-                            />
-                          </svg>
+                          <IconX size='20' color='var(--text-dark)' />
                         </button>
                       </div>
 
@@ -180,7 +169,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                           <AppointmentsComponent />
                         )}
                         {activeItem === 'toolChecklist' && (
-                          <TodoChecklistComponent />
+                          <ToolsChecklistComponent />
                         )}
                         {activeItem === 'materialChecklist' && (
                           <MaterialChecklistComponent />

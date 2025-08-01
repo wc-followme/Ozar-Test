@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { MOCK_EMPLOYEES, MOCK_JOBS, TODO_MESSAGES } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
@@ -28,14 +29,15 @@ import MultiSelect from '../common/MultiSelect';
 
 // Validation schema
 const todoFormSchema = yup.object({
-  job: yup.string().required('Job is required'),
-  date: yup.date().required('Date is required'),
-  employees: yup.array().min(1, 'At least one employee must be selected'),
-  title: yup.string().required('Title is required'),
+  job: yup.string().required(TODO_MESSAGES.JOB_REQUIRED),
+  date: yup.date().required(TODO_MESSAGES.DATE_REQUIRED),
+  employees: yup.array().min(1, TODO_MESSAGES.EMPLOYEES_REQUIRED).default([]),
+  title: yup.string().required(TODO_MESSAGES.TITLE_REQUIRED),
   listItems: yup
     .array()
-    .of(yup.string().required('List item cannot be empty'))
-    .min(1, 'At least one list item is required'),
+    .of(yup.string().required(TODO_MESSAGES.LIST_ITEM_REQUIRED))
+    .min(1, TODO_MESSAGES.LIST_ITEMS_REQUIRED)
+    .default(['']),
 });
 
 interface TodoFormData {
@@ -51,41 +53,6 @@ interface TodoFormProps {
   onCancel: () => void;
   loading?: boolean;
 }
-
-// Mock data - replace with actual data from your API
-const mockJobs = [
-  { value: 'job-1', label: 'Kitchen Renovation' },
-  { value: 'job-2', label: 'Bathroom Remodel' },
-  { value: 'job-3', label: 'Living Room Painting' },
-];
-
-const mockEmployees = [
-  {
-    value: '1',
-    label: 'John Doe',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '2',
-    label: 'Jane Smith',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '3',
-    label: 'Mike Johnson',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '4',
-    label: 'Sarah Wilson',
-    image: '/images/profile.jpg',
-  },
-  {
-    value: '5',
-    label: 'David Brown',
-    image: '/images/profile.jpg',
-  },
-];
 
 export const TodoForm: React.FC<TodoFormProps> = ({
   onSubmit,
@@ -150,7 +117,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           {/* Job Selection */}
           <div className='space-y-2'>
             <Label htmlFor='job' className='field-label'>
-              Job
+              {TODO_MESSAGES.JOB_LABEL}
             </Label>
             <Controller
               name='job'
@@ -165,16 +132,16 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                         : 'border-[var(--border-dark)]'
                     )}
                   >
-                    <SelectValue placeholder='Select Job' />
+                    <SelectValue placeholder={TODO_MESSAGES.JOB_PLACEHOLDER} />
                   </SelectTrigger>
                   <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                    {mockJobs.map(job => (
+                    {MOCK_JOBS.map(({ value, label }) => (
                       <SelectItem
-                        key={job.value}
-                        value={job.value}
+                        key={value}
+                        value={value}
                         className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
                       >
-                        {job.label}
+                        {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -187,7 +154,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           {/* Date Selection */}
           <div className='space-y-2'>
             <Label htmlFor='date' className='field-label'>
-              Date
+              {TODO_MESSAGES.DATE_LABEL}
             </Label>
             <Controller
               name='date'
@@ -208,7 +175,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                       {field.value ? (
                         format(field.value, 'PPP')
                       ) : (
-                        <span>Select Date</span>
+                        <span>{TODO_MESSAGES.DATE_PLACEHOLDER}</span>
                       )}
                       <Calendar className='ml-auto !h-6 !w-6' color='#24338C' />
                     </Button>
@@ -237,13 +204,13 @@ export const TodoForm: React.FC<TodoFormProps> = ({
         {/* Employee Selection */}
         <div className='space-y-2'>
           <Label htmlFor='employees' className='field-label'>
-            Select Employees
+            {TODO_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={mockEmployees}
+            options={MOCK_EMPLOYEES}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder='Select employees'
+            placeholder={TODO_MESSAGES.EMPLOYEES_PLACEHOLDER}
             error={errors.employees?.message || ''}
           />
         </div>
@@ -251,7 +218,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
         {/* Title */}
         <div className='space-y-2'>
           <Label htmlFor='title' className='field-label'>
-            Title
+            {TODO_MESSAGES.TITLE_LABEL}
           </Label>
           <Controller
             name='title'
@@ -259,7 +226,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
             render={({ field }) => (
               <Input
                 id='title'
-                placeholder='Enter Title'
+                placeholder={TODO_MESSAGES.TITLE_PLACEHOLDER}
                 value={field.value}
                 onChange={field.onChange}
                 className={cn(
@@ -278,13 +245,15 @@ export const TodoForm: React.FC<TodoFormProps> = ({
         {/* List Items */}
         <div className='space-y-4'>
           <div className='flex items-center justify-between'>
-            <Label className='field-label'>List Item</Label>
+            <Label className='field-label'>
+              {TODO_MESSAGES.LIST_ITEM_LABEL}
+            </Label>
             <button
               type='button'
               onClick={addListItem}
               className='text-[#34AD44] hover:text-[var(--primary-dark)] text-sm font-semibold transition-colors'
             >
-              + Add Another
+              {TODO_MESSAGES.ADD_ANOTHER_BUTTON}
             </button>
           </div>
 
@@ -297,7 +266,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                   render={({ field }) => (
                     <Input
                       id={`list-item-${index}`}
-                      placeholder='Enter Item'
+                      placeholder={TODO_MESSAGES.LIST_ITEM_PLACEHOLDER}
                       value={field.value}
                       onChange={field.onChange}
                       className={cn(
@@ -333,14 +302,14 @@ export const TodoForm: React.FC<TodoFormProps> = ({
             onClick={onCancel}
             disabled={loading}
           >
-            Cancel
+            {TODO_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save'}
+            {loading ? TODO_MESSAGES.SAVING_BUTTON : TODO_MESSAGES.SAVE_BUTTON}
           </Button>
         </div>
       </form>

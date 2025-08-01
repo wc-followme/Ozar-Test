@@ -1,5 +1,6 @@
 'use client';
 
+import { TODO_MESSAGES } from '@/constants/common';
 import { Edit2 } from 'iconsax-react';
 import React, { useState } from 'react';
 import { Checkbox } from '../../ui/checkbox';
@@ -164,14 +165,14 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {taskSections.map(section => (
+      {taskSections.map(({ id: sectionId, title, tasks }) => (
         <div
-          key={section.id}
+          key={sectionId}
           className=' bg-[var(--background)] p-3 rounded-[10px]'
         >
           {/* Section Header */}
           <h4 className='text-[var(--text-secondary)] uppercase font-medium text-[12px] leading-[100%] tracking-[0%] mb-2'>
-            {section.title}
+            {title}
           </h4>
           <div className='flex items-center gap-2 w-full mb-4'>
             <div className='flex-1 mr-auto'>
@@ -179,17 +180,17 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                 className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'
                 style={{ fontFamily: 'Inter' }}
               >
-                Job Name Here
+                {TODO_MESSAGES.JOB_NAME_PLACEHOLDER}
               </p>
               <p
                 className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'
                 style={{ fontFamily: 'Inter' }}
               >
-                {section.tasks[0]?.title}
+                {tasks[0]?.title}
               </p>
             </div>
             <button
-              onClick={() => handleEditSection(section.id)}
+              onClick={() => handleEditSection(sectionId)}
               className='p-1 hover:bg-gray-100 rounded transition-colors'
             >
               <Edit2
@@ -202,13 +203,13 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
 
           {/* Tasks */}
           <div className='flex flex-col gap-4'>
-            {section.tasks.map((task, index) => (
+            {tasks.map(({ id: taskId, description, completed }) => (
               <Label
-                key={task.id}
+                key={taskId}
                 className='flex items-center gap-2 cursor-pointer'
               >
                 <Checkbox
-                  id={task.id}
+                  id={taskId}
                   className={`
                      rounded-[6px] 
                      border-2 
@@ -219,18 +220,18 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                      text-[var(--text-dark)] 
                      w-6 h-6
                      flex items-center justify-center -mt-0.4
-                     ${task.completed ? 'bg-blue-600 border-blue-600' : ''}
+                     ${completed ? 'bg-blue-600 border-blue-600' : ''}
                    `}
-                  checked={task.completed}
-                  onCheckedChange={() => handleTaskToggle(section.id, task.id)}
+                  checked={completed}
+                  onCheckedChange={() => handleTaskToggle(sectionId, taskId)}
                 />
                 <div className='flex-1'>
                   <p
                     className={`text-sm font-semibold text-[var(--text-dark)] ${
-                      task.completed ? 'line-through' : ''
+                      completed ? 'line-through' : ''
                     }`}
                   >
-                    {task.description}
+                    {description}
                   </p>
                 </div>
               </Label>
@@ -241,7 +242,7 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
 
       {/* Edit Toolbar SideSheet */}
       <SideSheet
-        title='Edit Todo'
+        title={TODO_MESSAGES.EDIT_TODO_TITLE}
         open={isEditSheetOpen}
         onOpenChange={setIsEditSheetOpen}
         size='600px'

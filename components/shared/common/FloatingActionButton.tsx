@@ -1,5 +1,6 @@
 'use client';
 
+import { IconCategoryPlus, IconX } from '@tabler/icons-react';
 import { Add, AddCircle } from 'iconsax-react';
 import React, { useState } from 'react';
 import { MaterialCheckListIcon } from '../../icons/MaterialCheckListIcon';
@@ -12,8 +13,8 @@ import { TodoForm } from '../forms/TodoForm';
 import { AppointmentsComponent } from './AppointmentsComponent';
 import { MaterialChecklistComponent } from './MaterialChecklistComponent';
 import SideSheet from './SideSheet';
-import { TodoChecklistComponent } from './TodoChecklistComponent';
 import { TodoComponent } from './TodoComponent';
+import { ToolsChecklistComponent } from './ToolsChecklistComponent';
 
 interface ToolbarItem {
   id: string;
@@ -141,26 +142,17 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           className={`fabTrigger h-14 w-14 rounded-full shadow-lg bg-[var(--secondary)] ${isActive ? 'active' : ''}`}
           onClick={handleToggle}
         >
-          <svg
-            className='chat-bubble h-full w-full'
-            width='80'
-            height='80'
-            viewBox='0 0 100 100'
-          >
-            <g className='bubble'>
-              <path
-                className='line line1'
-                d='M 30.7873,85.113394 30.7873,46.556405 C 30.7873,41.101961 36.826342,35.342 40.898074,35.342 H 59.113981 C 63.73287,35.342 69.29995,40.103201 69.29995,46.784744'
-              />
-              <path
-                className='line line2'
-                d='M 13.461999,65.039335 H 58.028684 C 63.483128,65.039335 69.243089,59.000293 69.243089,54.928561 V 45.605853 C 69.243089,40.986964 65.02087,35.419884 58.339327,35.419884'
-              />
-            </g>
-            <circle className='circle circle1' r='1.9' cy='50.7' cx='42.5' />
-            <circle className='circle circle2' cx='49.9' cy='50.7' r='1.9' />
-            <circle className='circle circle3' r='1.9' cy='50.7' cx='57.3' />
-          </svg>
+          <div className='relative h-full w-full flex items-center justify-center'>
+            {/* Category Plus Icon - fades out when active */}
+            <div className={`category-plus-icon ${isActive ? 'fade-out' : ''}`}>
+              <IconCategoryPlus size={32} color='#fff' />
+            </div>
+
+            {/* Close Icon (X) - fades in when active */}
+            <div className={`close-icon ${isActive ? 'fade-in' : ''}`}>
+              <IconX size={32} color='#fff' />
+            </div>
+          </div>
         </div>
 
         <div className='fabList'>
@@ -184,7 +176,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
             );
           })}
           <button
-            className={`fabButton ${isActive ? 'active' : ''}`}
+            className={`fabButton ${isActive ? 'active' : ''} sm:hidden`}
             data-tooltip='Jobs'
             onClick={handleJobClick}
           >
@@ -226,7 +218,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
               <div className='flex-1 py-4 overflow-y-auto'>
                 {activeItem === 'todoList' && <TodoComponent />}
                 {activeItem === 'appointmentList' && <AppointmentsComponent />}
-                {activeItem === 'toolChecklist' && <TodoChecklistComponent />}
+                {activeItem === 'toolChecklist' && <ToolsChecklistComponent />}
                 {activeItem === 'materialChecklist' && (
                   <MaterialChecklistComponent />
                 )}
