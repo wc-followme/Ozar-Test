@@ -137,28 +137,25 @@ export const ToolsChecklistComponent: React.FC<
           </div>
 
           {/* Services */}
-          {services.map(
-            ({ id: serviceId, name: serviceName, tools }, serviceIndex) => (
-              <div
-                key={serviceId}
-                className={`space-y-4 ${
-                  services.length === 1 ? 'mt-1' : 'mt-4'
-                }`}
-              >
-                <h3 className='text-[var(--text-dark)] font-medium text-base leading-[100%] tracking-[0%]'>
-                  {serviceName}
-                </h3>
+          {services.map(({ id: serviceId, name: serviceName, tools }) => (
+            <div
+              key={serviceId}
+              className={`space-y-4 ${services.length === 1 ? 'mt-1' : 'mt-4'}`}
+            >
+              <h3 className='text-[var(--text-dark)] font-medium text-base leading-[100%] tracking-[0%]'>
+                {serviceName}
+              </h3>
 
-                {/* Tools */}
-                <div className='flex flex-col gap-4'>
-                  {tools.map(({ id: toolId, name: toolName, checked }) => (
-                    <Label
-                      key={toolId}
-                      className='flex items-center gap-2 cursor-pointer'
-                    >
-                      <Checkbox
-                        id={toolId}
-                        className={`
+              {/* Tools */}
+              <div className='flex flex-col gap-4'>
+                {tools.map(({ id: toolId, name: toolName, checked }) => (
+                  <Label
+                    key={toolId}
+                    className='flex items-center gap-2 cursor-pointer'
+                  >
+                    <Checkbox
+                      id={toolId}
+                      className={`
                         rounded-[6px]
                         border-2
                         border-[#BFBFBF]
@@ -170,28 +167,27 @@ export const ToolsChecklistComponent: React.FC<
                         flex items-center justify-center -mt-0.4
                         ${checked ? 'bg-blue-600 border-blue-600' : ''}
                       `}
-                        checked={checked}
-                        onCheckedChange={() =>
-                          handleToolToggle(jobId, serviceId, toolId)
-                        }
-                      />
-                      <div className='flex-1'>
-                        <p
-                          className={`text-sm font-semibold ${
-                            checked
-                              ? 'text-[var(--text-dark)] line-through'
-                              : 'text-[var(--text-dark)]'
-                          }`}
-                        >
-                          {toolName}
-                        </p>
-                      </div>
-                    </Label>
-                  ))}
-                </div>
+                      checked={checked}
+                      onCheckedChange={() =>
+                        handleToolToggle(jobId, serviceId, toolId)
+                      }
+                    />
+                    <div className='flex-1'>
+                      <p
+                        className={`text-sm font-semibold ${
+                          checked
+                            ? 'text-[var(--text-dark)] line-through'
+                            : 'text-[var(--text-dark)]'
+                        }`}
+                      >
+                        {toolName}
+                      </p>
+                    </div>
+                  </Label>
+                ))}
               </div>
-            )
-          )}
+            </div>
+          ))}
         </div>
       ))}
     </div>

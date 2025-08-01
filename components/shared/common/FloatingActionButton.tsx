@@ -7,6 +7,7 @@ import { MaterialCheckListIcon } from '../../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../../icons/SupportIcon';
 import { TodoListIcon } from '../../icons/TodoListIcon';
 import { ToolListIcon } from '../../icons/ToolListIcon';
+import { Button } from '../../ui/button';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { CreateJobForm } from '../forms/CreateJobForm';
 import { TodoForm } from '../forms/TodoForm';
@@ -38,12 +39,10 @@ const toolbarItems: ToolbarItem[] = [
 ];
 
 interface FloatingActionButtonProps {
-  onToolbarClick?: () => void;
   toolbarItems?: ToolbarItem[];
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
-  onToolbarClick,
   toolbarItems: externalToolbarItems,
 }) => {
   const [isActive, setIsActive] = useState(false);
@@ -64,22 +63,21 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   };
 
   const handleToolbarClick = (itemId: string) => {
-    console.log('Opening component for:', itemId);
     setActiveItem(itemId);
     setIsToolbarOpen(true);
     setIsActive(false);
   };
 
-  const handleItemClick = (itemId: string) => {
-    setActiveItem(itemId);
-  };
-
   const handleAddTodoClick = () => {
     setShowTodoForm(true);
+    setIsActive(false);
+    setIsToolbarOpen(false);
   };
 
   const handleAddAppointmentClick = () => {
     setShowAppointmentForm(true);
+    setIsActive(false);
+    setIsToolbarOpen(false);
   };
 
   const handleTodoFormSubmit = (data: any) => {
@@ -103,6 +101,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const handleJobClick = () => {
     setShowJobSheet(true);
     setIsActive(false);
+    setIsToolbarOpen(false);
   };
 
   const handleCreateJobSubmit = (data: any) => {
@@ -138,22 +137,22 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
       {/* FAB Widget */}
       <div className={`fabWidget ${isActive ? 'active' : ''}`}>
-        <div
-          className={`fabTrigger h-14 w-14 rounded-full shadow-lg bg-[var(--secondary)] ${isActive ? 'active' : ''}`}
+        <Button
+          className={`fabTrigger h-14 w-14 rounded-full shadow-lg !bg-[var(--secondary)] ${isActive ? 'active' : ''}`}
           onClick={handleToggle}
         >
           <div className='relative h-full w-full flex items-center justify-center'>
             {/* Category Plus Icon - fades out when active */}
             <div className={`category-plus-icon ${isActive ? 'fade-out' : ''}`}>
-              <IconCategoryPlus size={32} color='#fff' />
+              <IconCategoryPlus size={32} color='#fff' className='!h-8 !w-8' />
             </div>
 
             {/* Close Icon (X) - fades in when active */}
             <div className={`close-icon ${isActive ? 'fade-in' : ''}`}>
-              <IconX size={32} color='#fff' />
+              <IconX size={32} color='#fff' className='!h-8 !w-8' />
             </div>
           </div>
-        </div>
+        </Button>
 
         <div className='fabList'>
           {/* Toolbar Items */}

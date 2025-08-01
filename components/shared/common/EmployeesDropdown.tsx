@@ -104,11 +104,11 @@ export const EmployeesDropdown: React.FC<EmployeesDropdownProps> = ({
         variant='outline'
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'inline-flex items-center gap-2 border-0 p-0 max-w-[160px] sm:max-w-none'
+          'inline-flex items-center gap-2 border-0 p-0 max-w-[140px] sm:max-w-none'
         )}
       >
         {selectedEmployee ? (
-          <span className='text-[var(--text-dark)] text-lg sm:text-2xl font-bold truncate'>
+          <span className='text-[var(--text-dark)] text-base sm:text-[18px] font-bold truncate'>
             {selectedEmployee.name}
           </span>
         ) : (
@@ -125,7 +125,7 @@ export const EmployeesDropdown: React.FC<EmployeesDropdownProps> = ({
       </Button>
 
       {isOpen && (
-        <div className='absolute top-full left-0 mt-1 bg-[var(--card-background)] border border-[var(--border-dark)] rounded-lg shadow-boxShadow z-50 min-w-[260px]'>
+        <div className='absolute top-full -left-[50px] sm:left-0 mt-1 bg-[var(--card-background)] border border-[var(--border-dark)] rounded-lg shadow-boxShadow z-50 min-w-[260px]'>
           {/* Search Field */}
           <div className='p-3 border-b border-[var(--border-dark)]'>
             <div className='relative'>

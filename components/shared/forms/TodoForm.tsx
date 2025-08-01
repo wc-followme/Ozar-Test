@@ -68,7 +68,6 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     setValue,
     watch,
     formState: { errors },
-    reset,
   } = useForm<TodoFormData>({
     resolver: yupResolver(todoFormSchema),
     defaultValues: {
@@ -258,7 +257,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           </div>
 
           <div className='space-y-3'>
-            {watchedListItems?.map((item, index) => (
+            {watchedListItems?.map((_, index) => (
               <div key={index} className='flex items-center gap-3'>
                 <Controller
                   name={`listItems.${index}`}

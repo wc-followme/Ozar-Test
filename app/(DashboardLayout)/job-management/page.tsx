@@ -2,7 +2,6 @@
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 
-import { FlagHookIcon } from '@/components/icons/FalgHookIcon';
 import { JobCard } from '@/components/shared/cards/JobCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import ComingSoon from '@/components/shared/common/ComingSoon';
@@ -31,9 +30,6 @@ import {
   extractApiSuccessMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { IconFlag } from '@tabler/icons-react';
-import { Profile2User } from 'iconsax-react';
-import { DollarSign } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
@@ -387,40 +383,6 @@ export default function JobManagement() {
     }
   };
 
-  const stats = [
-    {
-      id: 'active-projects',
-      icon: FlagHookIcon,
-      value: '24',
-      label: 'Active Projects',
-      iconColor: 'text-[#EBB402]',
-      bgColor: 'bg-[#EBB4021A]',
-    },
-    {
-      id: 'completed',
-      icon: IconFlag,
-      value: '18',
-      label: 'Completed',
-      iconColor: 'text-[#00A8BF]',
-      bgColor: 'bg-[#1A57BF1A]',
-    },
-    {
-      id: 'revenue',
-      icon: DollarSign,
-      value: '$2.4M',
-      label: 'Revenue',
-      iconColor: 'text-[#90C91D]',
-      bgColor: 'bg-[#31A31D1A]',
-    },
-    {
-      id: 'team-member',
-      icon: Profile2User,
-      value: '32',
-      label: 'Team Member',
-      iconColor: 'text-[#F58B1E]',
-      bgColor: 'bg-[#F58B1E1A]',
-    },
-  ];
   // Only show full page skeleton on initial load
   if (loading) {
     return <JobManagementPageSkeleton />;

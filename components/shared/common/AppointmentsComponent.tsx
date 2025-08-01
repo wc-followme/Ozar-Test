@@ -32,9 +32,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     'appointment-2'
   );
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-  const [editingAppointmentId, setEditingAppointmentId] = useState<
-    string | null
-  >(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<
     string | null
@@ -100,11 +97,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     );
   };
 
-  const handleMoreOptions = (e: React.MouseEvent, appointmentId: string) => {
-    e.stopPropagation();
-    console.log('More options for appointment:', appointmentId);
-  };
-
   // Dropdown menu options
   const menuOptions = [
     {
@@ -130,11 +122,9 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
       case ACTIONS.COMPLETED:
-        console.log('Mark appointment as completed:', appointmentId);
         // TODO: Implement mark as completed functionality
         break;
       case ACTIONS.EDIT:
-        setEditingAppointmentId(appointmentId);
         setIsEditSheetOpen(true);
         break;
       case ACTIONS.DELETE:
@@ -142,15 +132,10 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         setIsDeleteModalOpen(true);
         break;
       default:
-        console.log('Unknown action:', action);
     }
   };
 
-  const handleFormSubmit = (data: any) => {
-    // Handle form submission for editing the appointment
-    console.log('Form submitted:', data);
-    console.log('Editing appointment:', editingAppointmentId);
-
+  const handleFormSubmit = () => {
     // Here you would typically update the appointment data
     // For now, just close the sidesheet
     setIsEditSheetOpen(false);
@@ -163,8 +148,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const handleDeleteConfirm = () => {
     if (deletingAppointmentId) {
       // Remove the appointment from the state
-      // For now, just log the deletion
-      console.log('Deleting appointment:', deletingAppointmentId);
     }
     setIsDeleteModalOpen(false);
     setDeletingAppointmentId(null);

@@ -38,7 +38,6 @@ export function PermissionProvider({
       const userPermissions = await preloadPermissions();
       setPermissions(userPermissions);
     } catch (error) {
-      console.error('Failed to load permissions:', error);
       setPermissions(null);
     } finally {
       setIsLoading(false);

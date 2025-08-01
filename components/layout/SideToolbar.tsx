@@ -103,7 +103,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
     setShowAppointmentForm(true);
   };
 
-  const handleTodoFormSubmit = (data: any) => {
+  const handleTodoFormSubmit = () => {
     // Handle form submission here
     setShowTodoForm(false);
   };
@@ -112,8 +112,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
     setShowTodoForm(false);
   };
 
-  const handleAppointmentFormSubmit = (data: any) => {
-    console.log('Appointment form submitted:', data);
+  const handleAppointmentFormSubmit = () => {
     // Handle form submission here
     setShowAppointmentForm(false);
   };

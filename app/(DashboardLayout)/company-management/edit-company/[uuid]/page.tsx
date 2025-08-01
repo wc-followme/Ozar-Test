@@ -154,7 +154,7 @@ export default function EditCompanyPage({ params }: EditCompanyPageProps) {
       await uploadFileToPresignedUrl(presignedData['uploadUrl'], file);
       setFileKey(presignedData['fileKey'] || '');
       setImageDeleted(false); // Reset deleted state when new image is uploaded
-    } catch (err: unknown) {
+    } catch (_: unknown) {
       showErrorToast(COMPANY_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
     } finally {

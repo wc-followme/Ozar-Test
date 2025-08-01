@@ -28,7 +28,6 @@ interface TodoComponentProps {
 
 export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
 
   const [taskSections, setTaskSections] = useState<TaskSection[]>([
     {
@@ -144,16 +143,12 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
     );
   };
 
-  const handleEditSection = (sectionId: string) => {
-    setEditingSectionId(sectionId);
+  const handleEditSection = (_: string) => {
     setIsEditSheetOpen(true);
   };
 
-  const handleFormSubmit = (data: any) => {
+  const handleFormSubmit = () => {
     // Handle form submission for editing the section
-    console.log('Form submitted:', data);
-    console.log('Editing section:', editingSectionId);
-
     // Here you would typically update the section data
     // For now, just close the sidesheet
     setIsEditSheetOpen(false);
