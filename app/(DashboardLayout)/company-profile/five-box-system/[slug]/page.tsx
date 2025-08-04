@@ -11,6 +11,7 @@ import {
   CreateQuestionForm,
   QuestionFormData,
 } from '@/components/shared/forms/CreateQuestionForm';
+import CategoryComponent from '@/components/Templates/CategoryComponent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
@@ -35,6 +36,83 @@ const DynamicBoxPage = ({ params }: PageProps) => {
       answer: string;
     }>
   >([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
+
+  // Category data based on the image
+  const categoryData = [
+    {
+      id: 'full-home-build',
+      name: 'Full Home Build/Addition',
+      description:
+        'Start a new home from scratch or add a room, floor, or extension to your existing space.',
+      icon: 'home',
+      color: '#10B981',
+      bgColor: '#10B9811A',
+    },
+    {
+      id: 'interior',
+      name: 'Interior',
+      description:
+        'Renovate or upgrade interiors like kitchen, bathroom, living room, or complete home redesign.',
+      icon: 'paint',
+      color: '#3B82F6',
+      bgColor: '#3B82F61A',
+    },
+    {
+      id: 'exterior',
+      name: 'Exterior',
+      description:
+        'Enhance outdoor spaces including roofing, siding, painting, landscaping, or fencing work.',
+      icon: 'crane',
+      color: '#F97316',
+      bgColor: '#F973161A',
+    },
+    {
+      id: 'single-multi-trade',
+      name: 'Single/Multi Trade',
+      description:
+        'Get help with one or more specific trades like plumbing, electrical, flooring, or carpentry.',
+      icon: 'tool',
+      color: '#EAB308',
+      bgColor: '#EAB3081A',
+    },
+    {
+      id: 'repair',
+      name: 'Repair',
+      description:
+        'Fix issues like leaks, cracks, broken fixtures, or any small-scale home damage.',
+      icon: 'skrew',
+      color: '#06B6D4',
+      bgColor: '#06B6D41A',
+    },
+    {
+      id: 'landscaping',
+      name: 'Landscaping',
+      description:
+        'Design and maintain outdoor spaces including gardens, lawns, and hardscaping.',
+      icon: 'home',
+      color: '#059669',
+      bgColor: '#0596691A',
+    },
+    {
+      id: 'electrical',
+      name: 'Electrical Work',
+      description:
+        'Install, repair, or upgrade electrical systems, wiring, and fixtures.',
+      icon: 'tool',
+      color: '#DC2626',
+      bgColor: '#DC26261A',
+    },
+    {
+      id: 'plumbing',
+      name: 'Plumbing',
+      description:
+        'Install, repair, or maintain plumbing systems, pipes, and fixtures.',
+      icon: 'crane',
+      color: '#2563EB',
+      bgColor: '#2563EB1A',
+    },
+  ];
 
   // Generate form fields from the actual configuration
   const formFields = useMemo(() => {
@@ -54,8 +132,11 @@ const DynamicBoxPage = ({ params }: PageProps) => {
     return fieldStates.filter(field => field.enabled).map(field => field.id);
   }, [fieldStates]);
 
-  // If slug doesn't match any config, show 404
-  if (!config) {
+  // Special handling for pages that don't use DynamicForm (category and estimation)
+  if (slug === 'category' || slug === 'estimation') {
+    // These pages don't need config, so we handle them separately
+  } else if (!config) {
+    // If slug doesn't match any config, show 404
     return (
       <div className='flex flex-col items-center justify-center min-h-[400px]'>
         <h1 className='text-2xl font-bold text-gray-900 mb-4'>Box Not Found</h1>
@@ -72,11 +153,18 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   const breadcrumbData: BreadcrumbItem[] = [
     { name: 'Company Profile', href: '/company-profile' },
     { name: '5-box system', href: '/company-profile/five-box-system' },
-    { name: config.title },
+    {
+      name:
+        slug === 'category'
+          ? 'Category'
+          : slug === 'estimation'
+            ? 'Estimate'
+            : config?.title || 'Unknown',
+    },
   ];
 
   const handleSave = (data: Record<string, any>) => {
-    console.log('Saving form data for', config.title, ':', data);
+    console.log('Saving form data for', config?.title, ':', data);
     // Here you would make an API call to save the data
   };
 
@@ -121,22 +209,179 @@ const DynamicBoxPage = ({ params }: PageProps) => {
     console.log(`Field ${fieldId} ${enabled ? 'enabled' : 'disabled'}`);
   };
 
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+  };
+
+  const handleCategorySave = () => {
+    console.log('Selected category:', selectedCategory);
+    // Here you would make an API call to save the selected category
+  };
+
+  const handleAddRoom = () => {
+    console.log('Add Room clicked');
+    // Here you would handle adding a room
+  };
+
+  const handleAddFromTemplate = () => {
+    console.log('Add From Template clicked');
+    // Here you would handle adding from template
+  };
+
+  // Special handling for category page
+  if (slug === 'category') {
+    return (
+      <section className=''>
+        {/* Breadcrumb */}
+        <div className='mb-6'>
+          <Breadcrumb items={breadcrumbData} />
+        </div>
+
+        <CategoryComponent
+          categoryData={categoryData}
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+        />
+      </section>
+    );
+  }
+
+  // Special handling for estimate page
+  if (slug === 'estimation') {
+    return (
+      <section className=''>
+        {/* Breadcrumb */}
+        <div className='mb-6'>
+          <Breadcrumb items={breadcrumbData} />
+        </div>
+
+        {/* Estimate Empty State */}
+        <div className='p-4 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
+          <div className='flex flex-col items-center justify-center min-h-[60vh] text-center'>
+            {/* Icon */}
+            <div className='mb-4 md:mb-8'>
+              <div className='w-32 h-32 md:w-40 md:h-40 bg-gray-100 rounded-full flex items-center justify-center'>
+                <svg
+                  className='w-16 h-16 md:w-20 md:h-20 text-gray-400'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={1.5}
+                    d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
+                  />
+                  <text
+                    x='12'
+                    y='16'
+                    textAnchor='middle'
+                    className='text-xs font-bold fill-current'
+                  >
+                    ??
+                  </text>
+                </svg>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 className='text-xl md:text-2xl font-bold text-[var(--text-dark)] mb-2'>
+              Nothing Here Yet
+            </h2>
+
+            {/* Description */}
+            <p className='text-base md:text-lg text-[var(--text-secondary)] mb-8 max-w-md'>
+              You haven't created any estimate yet. Start by adding your first
+              one to organize your estimate.
+            </p>
+
+            {/* Action Buttons */}
+            <div className='flex flex-col sm:flex-row gap-4 mb-8'>
+              <Button
+                onClick={handleAddRoom}
+                className='btn-primary flex items-center gap-2'
+              >
+                <svg
+                  className='w-5 h-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z'
+                  />
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z'
+                  />
+                </svg>
+                Add Room
+              </Button>
+
+              <Button
+                onClick={handleAddFromTemplate}
+                variant='outline'
+                className='flex items-center gap-2'
+              >
+                <svg
+                  className='w-5 h-5'
+                  fill='none'
+                  stroke='currentColor'
+                  viewBox='0 0 24 24'
+                >
+                  <path
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    strokeWidth={2}
+                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
+                  />
+                </svg>
+                Add From Template
+              </Button>
+            </div>
+          </div>
+
+          {/* Previous Button */}
+          <div className='flex justify-start'>
+            <Button
+              variant='outline'
+              onClick={handleBack}
+              className='btn-secondary'
+            >
+              Previous
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Regular form handling for other pages
   return (
     <section className=''>
       {/* Breadcrumb */}
-      <div className='mb-6 flex items-center'>
-        <Breadcrumb items={breadcrumbData} />
-        <Button className='btn-primary ml-auto' onClick={handleAddQuestion}>
+      <div className='mb-6 flex flex-wrap gap-4 items-center'>
+        <Breadcrumb items={breadcrumbData} className='flex-1' />
+        <Button
+          className='btn-primary ml-auto shrink-0'
+          onClick={handleAddQuestion}
+        >
           Add Question
         </Button>
       </div>
 
       {/* Left Column - Form */}
-      <div className='p-10 rounded-[20px] bg-[var(--card-background)]'>
+      <div className='p-4 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
         <div className='flex gap-4 items-start'>
           <div className='flex-1'>
             <DynamicForm
-              config={config}
+              config={config!}
               onSave={handleSave}
               onCancel={handleBack}
               showHeader={true}

@@ -1,15 +1,31 @@
 'use client';
 
 import SelectField from '@/components/shared/common/SelectField';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useState } from 'react';
 
 export interface FormFieldOption {
   value: string;
   label: string;
+  id?: string;
+  name?: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  bgColor?: string;
 }
 
 export interface FormField {
@@ -25,10 +41,12 @@ export interface FormField {
     | 'textarea'
     | 'select'
     | 'time'
-    | 'timerange';
+    | 'timerange'
+    | 'category-selector';
   placeholder: string;
   required?: boolean;
   options?: FormFieldOption[];
+  className?: string;
   validation?: {
     pattern?: string;
     min?: number;
@@ -74,6 +92,9 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [datePickerOpen, setDatePickerOpen] = useState<Record<string, boolean>>(
+    {}
+  );
 
   const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -160,7 +181,8 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
       <div
         key={field.name}
         className={
-          field.type === 'textarea'
+          field.className ||
+          (field.type === 'textarea'
             ? 'md:col-span-6'
             : field.type === 'select'
               ? field.name === 'preferredContactMethod'
@@ -168,7 +190,15 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 : field.name === 'bhk' || field.name === 'floor'
                   ? 'md:col-span-6'
                   : 'md:col-span-3'
-              : 'col-span-2'
+              : field.type === 'date' || field.type === 'time'
+                ? 'md:col-span-3'
+                : field.type === 'timerange'
+                  ? 'md:col-span-6'
+                  : field.type === 'category-selector'
+                    ? 'md:col-span-6'
+                    : field.name === 'projectName'
+                      ? 'md:col-span-6'
+                      : 'md:col-span-3')
         }
       >
         {field.type === 'select' ? (
@@ -199,6 +229,66 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               required={field.required}
             />
           </div>
+        ) : field.type === 'date' ? (
+          <div>
+            {field.label && (
+              <Label htmlFor={field.name} className='text-sm font-medium'>
+                {field.label}
+                {field.required && <span className='text-red-500 ml-1'>*</span>}
+              </Label>
+            )}
+            <Popover
+              open={datePickerOpen[field.name] || false}
+              onOpenChange={open =>
+                setDatePickerOpen(prev => ({ ...prev, [field.name]: open }))
+              }
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  variant={'outline'}
+                  className={cn(
+                    'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] mt-2',
+                    !formData[field.name] && 'text-muted-foreground',
+                    hasError ? '!border-red-500' : 'border-[var(--border-dark)]'
+                  )}
+                >
+                  {formData[field.name] ? (
+                    format(new Date(formData[field.name]), 'PPP')
+                  ) : (
+                    <span className='flex-1'>{field.placeholder}</span>
+                  )}
+                  <IconsaxCalendar
+                    className='ml-2 !h-6 !w-6'
+                    color='var(--primary)'
+                  />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className='w-auto p-0 bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
+                align='start'
+              >
+                <Calendar
+                  mode='single'
+                  selected={
+                    formData[field.name]
+                      ? new Date(formData[field.name])
+                      : undefined
+                  }
+                  onSelect={date => {
+                    handleInputChange(field.name, date);
+                    setDatePickerOpen(prev => ({
+                      ...prev,
+                      [field.name]: false,
+                    }));
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {hasError && (
+              <p className='text-red-500 text-xs mt-1'>{errors[field.name]}</p>
+            )}
+          </div>
         ) : field.type === 'time' ? (
           <div>
             {field.label && (
@@ -217,8 +307,53 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
               required={field.required}
             />
           </div>
+        ) : field.type === 'category-selector' ? (
+          <div className='w-full'>
+            {field.label && (
+              <Label className='text-sm font-medium mb-4 block'>
+                {field.label}
+                {field.required && <span className='text-red-500 ml-1'>*</span>}
+              </Label>
+            )}
+            <div className='w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+              {field.options?.map(option => {
+                const isSelected = formData[field.name] === option.id;
+                return (
+                  <div
+                    key={option.id}
+                    className={`flex flex-col items-start border border-[var(--border-dark)] rounded-2xl bg-[var(--card-background)] p-4 sm:p-6 cursor-pointer transition-all duration-150 hover:shadow-md ${
+                      isSelected
+                        ? 'bg-[var(--card-hover)] shadow-green-100 border-[var(--primary)]'
+                        : ''
+                    }`}
+                    onClick={() => handleInputChange(field.name, option.id)}
+                  >
+                    <div
+                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
+                      style={{
+                        background: option.bgColor || '#EBB4021A',
+                        color: option.color || '#EBB402',
+                      }}
+                    >
+                      {/* Icon placeholder - you can add actual icons here */}
+                      <div className='w-4 h-4 sm:w-5 sm:h-5 bg-current rounded-sm'></div>
+                    </div>
+                    <div className='font-bold text-sm sm:text-base mb-2 text-[var(--text-dark)]'>
+                      {option.name || option.label}
+                    </div>
+                    <div className='text-[var(--text-secondary)] text-sm sm:text-base font-normal leading-snug'>
+                      {option.description || ''}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {hasError && (
+              <p className='text-red-500 text-xs mt-1'>{errors[field.name]}</p>
+            )}
+          </div>
         ) : field.type === 'timerange' ? (
-          <div className='md:col-span-2'>
+          <div>
             {field.label && (
               <Label className='text-sm font-medium'>
                 {field.label}
@@ -327,12 +462,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     <Card className={`border-0 ${className}`}>
       {showHeader && (
         <CardHeader
-          className={`p-0 mb-10 ${titleAlignment === 'left' ? 'text-left' : 'text-center'}`}
+          className={`p-0 mb-6 lg:mb-10 ${titleAlignment === 'left' ? 'text-left' : 'text-center'}`}
         >
-          <CardTitle className='text-[30px] font-bold text-[var(--text-dark)]'>
+          <CardTitle className='text-2xl lg:text-[30px] font-bold text-[var(--text-dark)]'>
             {config.title}
           </CardTitle>
-          <p className='text-[18px] text-[var(--text-secondary)] mt-2'>
+          <p className='text-base lg:text-[18px] text-[var(--text-secondary)] mt-2'>
             {config.description}
           </p>
         </CardHeader>

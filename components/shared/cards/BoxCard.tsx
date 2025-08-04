@@ -24,6 +24,7 @@ export interface BoxCardProps {
   id: string;
   number: string;
   color: string;
+  textColor?: string;
   title: string;
   description?: string;
   enabled: boolean;
@@ -38,6 +39,7 @@ export const BoxCard: React.FC<BoxCardProps> = ({
   id,
   number,
   color,
+  textColor = '#FFFFFF',
   title,
   description = 'General information and details.',
   enabled,
@@ -105,15 +107,15 @@ export const BoxCard: React.FC<BoxCardProps> = ({
 
   return (
     <div
-      className='bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover px-4 py-[18px] transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+      className='bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover p-6 transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
       onClick={handleCardClick}
     >
       {/* Header with Digit Circle and Menu */}
       <div className='flex items-start justify-between mb-4'>
         {/* Digit Circle */}
         <div
-          className='w-[60px] h-[60px] rounded-2xl flex items-center justify-center text-white font-bold text-lg'
-          style={{ backgroundColor: color }}
+          className='w-[60px] h-[60px] rounded-2xl flex items-center justify-center font-bold text-lg'
+          style={{ backgroundColor: color, color: textColor }}
         >
           {number}
         </div>
@@ -143,7 +145,7 @@ export const BoxCard: React.FC<BoxCardProps> = ({
       </div>
 
       {/* Content */}
-      <div className='flex flex-col gap-2 h-auto mb-2'>
+      <div className='flex flex-col gap-2 h-auto mb-4'>
         {/* Title */}
         <h3 className='font-bold text-[var(--text-dark)] text-sm md:text-base'>
           {title}

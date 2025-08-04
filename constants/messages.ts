@@ -73,3 +73,57 @@ export const ACCESS_DENIED_MESSAGES = {
     'You do not have permission to view category details.',
   CATEGORY_DETAILS_REDIRECT_TEXT: 'Go to Category Management',
 };
+
+// Project Information Messages
+export const PROJECT_MESSAGES = {
+  // Form Labels
+  PROJECT_NAME_LABEL: 'Project Name',
+  PROJECT_START_DATE_LABEL: 'Project Start Date',
+  PROJECT_FINISH_DATE_LABEL: 'Project Finish Date',
+  OWNER_PRESENCE_LABEL: 'Owner Presence',
+  WEEKEND_WORK_LABEL: 'Weekend Work',
+  DAILY_WORK_TIMING_LABEL: 'Daily Work Timing',
+  BUDGET_LABEL: 'Your Budget',
+  PREFERRED_CONTRACTOR_LABEL: 'Preferred Contractor',
+
+  // Placeholders
+  PROJECT_NAME_PLACEHOLDER: 'Name Your Project',
+  SELECT_START_DATE: 'Select Date',
+  SELECT_FINISH_DATE: 'Select Date',
+  SELECT_OWNER_PRESENCE: 'Select option',
+  SELECT_WEEKEND_WORK: 'Select option',
+  START_TIME_PLACEHOLDER: 'Start Time',
+  END_TIME_PLACEHOLDER: 'End Time',
+  BUDGET_PLACEHOLDER: 'Enter your Budget',
+  SELECT_CONTRACTOR: 'Select contractor',
+
+  // Options
+  YES_OPTION: 'Yes',
+  NO_OPTION: 'No',
+  ANY_CONTRACTOR: 'Any',
+  SPECIFIC_CONTRACTOR: 'Specific Contractor',
+
+  // Validation Messages
+  PROJECT_NAME_REQUIRED: 'Project name is required',
+  START_DATE_REQUIRED: 'Project start date is required',
+  FINISH_DATE_REQUIRED: 'Project finish date is required',
+  OWNER_PRESENCE_REQUIRED: 'Owner presence is required',
+  WEEKEND_WORK_REQUIRED: 'Weekend work preference is required',
+  DAILY_WORK_TIMING_REQUIRED: 'Daily work timing is required',
+  BUDGET_REQUIRED: 'Budget is required',
+  PREFERRED_CONTRACTOR_REQUIRED: 'Preferred contractor is required',
+
+  // Form Title and Description
+  FORM_TITLE: 'Project Information',
+  FORM_DESCRIPTION:
+    'Tell us more about your project goals and constraints so we can plan efficiently and connect you with the right professionals.',
+
+  // Success Messages
+  FORM_SAVED_SUCCESS: 'Project information saved successfully',
+  FORM_UPDATED_SUCCESS: 'Project information updated successfully',
+
+  // Error Messages
+  FORM_SAVE_ERROR: 'Failed to save project information',
+  FORM_LOAD_ERROR: 'Failed to load project information',
+  VALIDATION_ERROR: 'Please check the form for errors',
+};

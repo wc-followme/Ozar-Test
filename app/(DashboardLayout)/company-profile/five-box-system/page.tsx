@@ -29,7 +29,8 @@ const FiveBoxSystem = () => {
     {
       id: '01',
       number: '01',
-      color: '#10B981', // Green
+      color: '#34AD4426', // Green
+      textColor: '#34AD44', // Dark green text
       title: 'General Information',
       description:
         'Includes name, email, phone number, and basic contact details.',
@@ -39,7 +40,8 @@ const FiveBoxSystem = () => {
     {
       id: '02',
       number: '02',
-      color: '#3B82F6', // Blue
+      color: '#1A57BF1A', // Blue
+      textColor: '#1A57BF', // Dark blue text
       title: 'Property Information',
       description: 'Includes home size, number of BHKs, and floor count.',
       enabled: true,
@@ -48,7 +50,8 @@ const FiveBoxSystem = () => {
     {
       id: '03',
       number: '03',
-      color: '#06B6D4', // Light blue/cyan
+      color: '#00A8BF26', // Light blue/cyan
+      textColor: '#00A8BF', // Dark cyan text
       title: 'Project Information',
       description:
         'Includes work type (interior, exterior, etc.) and service scope.',
@@ -58,7 +61,8 @@ const FiveBoxSystem = () => {
     {
       id: '04',
       number: '04',
-      color: '#EAB308', // Yellow/light green
+      color: '#90C91D26', // Yellow/light green
+      textColor: '#90C91D', // Dark yellow/green text
       title: 'Category',
       description: 'Includes project name, location, and key contacts.',
       enabled: true,
@@ -67,7 +71,8 @@ const FiveBoxSystem = () => {
     {
       id: '05',
       number: '05',
-      color: '#EF4444', // Red/pink
+      color: '#D4323226', // Red/pink
+      textColor: '#D43232', // Dark red text
       title: 'Estimation',
       description: 'Includes pricing based on size, scope, and type of work.',
       enabled: true,
@@ -132,6 +137,7 @@ const FiveBoxSystem = () => {
             id={box.id}
             number={box.number}
             color={box.color}
+            textColor={box.textColor}
             title={box.title}
             description={box.description}
             enabled={box.enabled}

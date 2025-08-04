@@ -1,3 +1,4 @@
+import { PROJECT_MESSAGES } from '@/constants/messages';
 import { FormConfig } from './DynamicForm';
 
 export const formConfigs: Record<string, FormConfig> = {
@@ -19,6 +20,7 @@ export const formConfigs: Record<string, FormConfig> = {
           minLength: 2,
           maxLength: 50,
         },
+        className: 'md:col-span-6', // Full width
       },
       {
         name: 'email',
@@ -29,6 +31,7 @@ export const formConfigs: Record<string, FormConfig> = {
         validation: {
           pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
         },
+        className: 'md:col-span-3', // Half width (left column)
       },
       {
         name: 'phoneNumber',
@@ -39,6 +42,7 @@ export const formConfigs: Record<string, FormConfig> = {
         validation: {
           pattern: '^[+]?[0-9\\s\\-\\(\\)]{10,}$',
         },
+        className: 'md:col-span-3', // Half width (right column)
       },
       {
         name: 'address',
@@ -50,6 +54,7 @@ export const formConfigs: Record<string, FormConfig> = {
           minLength: 10,
           maxLength: 200,
         },
+        className: 'md:col-span-6', // Full width
       },
       {
         name: 'preferredContactMethod',
@@ -62,6 +67,7 @@ export const formConfigs: Record<string, FormConfig> = {
           { value: 'email', label: 'Email' },
           { value: 'text', label: 'Text' },
         ],
+        className: 'md:col-span-3', // Half width (left column)
       },
       {
         name: 'bestTimeToContact',
@@ -73,6 +79,7 @@ export const formConfigs: Record<string, FormConfig> = {
           startTime: 'bestTimeToContactStart',
           endTime: 'bestTimeToContactEnd',
         },
+        className: 'md:col-span-3', // Half width (right column)
       },
       {
         name: 'animalsInHome',
@@ -84,6 +91,7 @@ export const formConfigs: Record<string, FormConfig> = {
           { value: 'yes', label: 'Yes' },
           { value: 'no', label: 'No' },
         ],
+        className: 'md:col-span-3', // Half width (left column)
       },
       {
         name: 'petType',
@@ -98,6 +106,7 @@ export const formConfigs: Record<string, FormConfig> = {
           { value: 'fish', label: 'Fish' },
           { value: 'other', label: 'Other' },
         ],
+        className: 'md:col-span-3', // Half width (right column)
       },
     ],
   },
@@ -202,184 +211,88 @@ export const formConfigs: Record<string, FormConfig> = {
     id: '03',
     number: '03',
     color: '#06B6D4',
-    title: 'Project Information',
-    description:
-      'Includes work type (interior, exterior, etc.) and service scope.',
+    title: PROJECT_MESSAGES.FORM_TITLE,
+    description: PROJECT_MESSAGES.FORM_DESCRIPTION,
     fields: [
       {
-        name: 'workType',
-        label: 'Work Type',
+        name: 'projectName',
+        label: PROJECT_MESSAGES.PROJECT_NAME_LABEL,
         type: 'text',
-        placeholder: 'e.g., Interior, Exterior, etc.',
+        placeholder: PROJECT_MESSAGES.PROJECT_NAME_PLACEHOLDER,
         required: true,
         validation: {
           minLength: 3,
-          maxLength: 50,
+          maxLength: 100,
         },
       },
       {
-        name: 'serviceScope',
-        label: 'Service Scope',
-        type: 'textarea',
-        placeholder: 'Describe the scope of work',
+        name: 'projectStartDate',
+        label: PROJECT_MESSAGES.PROJECT_START_DATE_LABEL,
+        type: 'date',
+        placeholder: PROJECT_MESSAGES.SELECT_START_DATE,
+        required: true,
+      },
+      {
+        name: 'projectFinishDate',
+        label: PROJECT_MESSAGES.PROJECT_FINISH_DATE_LABEL,
+        type: 'date',
+        placeholder: PROJECT_MESSAGES.SELECT_FINISH_DATE,
+        required: true,
+      },
+      {
+        name: 'ownerPresence',
+        label: PROJECT_MESSAGES.OWNER_PRESENCE_LABEL,
+        type: 'select',
+        placeholder: PROJECT_MESSAGES.SELECT_OWNER_PRESENCE,
+        required: true,
+        options: [
+          { value: 'yes', label: PROJECT_MESSAGES.YES_OPTION },
+          { value: 'no', label: PROJECT_MESSAGES.NO_OPTION },
+        ],
+      },
+      {
+        name: 'weekendWork',
+        label: PROJECT_MESSAGES.WEEKEND_WORK_LABEL,
+        type: 'select',
+        placeholder: PROJECT_MESSAGES.SELECT_WEEKEND_WORK,
+        required: true,
+        options: [
+          { value: 'yes', label: PROJECT_MESSAGES.YES_OPTION },
+          { value: 'no', label: PROJECT_MESSAGES.NO_OPTION },
+        ],
+      },
+      {
+        name: 'dailyWorkTiming',
+        label: PROJECT_MESSAGES.DAILY_WORK_TIMING_LABEL,
+        type: 'timerange',
+        placeholder: PROJECT_MESSAGES.START_TIME_PLACEHOLDER,
         required: true,
         validation: {
-          minLength: 10,
-          maxLength: 500,
-        },
-      },
-      {
-        name: 'projectDuration',
-        label: 'Project Duration',
-        type: 'text',
-        placeholder: 'e.g., 3 months',
-        required: true,
-        validation: {
-          minLength: 2,
-          maxLength: 50,
-        },
-      },
-      {
-        name: 'specialRequirements',
-        label: 'Special Requirements',
-        type: 'textarea',
-        placeholder: 'Any special requirements',
-        validation: {
-          maxLength: 300,
+          startTime: 'dailyWorkTimingStart',
+          endTime: 'dailyWorkTimingEnd',
         },
       },
       {
         name: 'budget',
-        label: 'Budget Range',
+        label: PROJECT_MESSAGES.BUDGET_LABEL,
         type: 'text',
-        placeholder: 'Enter budget range',
+        placeholder: PROJECT_MESSAGES.BUDGET_PLACEHOLDER,
         required: true,
         validation: {
           minLength: 3,
           maxLength: 50,
         },
       },
-    ],
-  },
-  category: {
-    id: '04',
-    number: '04',
-    color: '#EAB308',
-    title: 'Category',
-    description: 'Includes project name, location, and key contacts.',
-    fields: [
       {
-        name: 'projectName',
-        label: 'Project Name',
-        type: 'text',
-        placeholder: 'Enter project name',
+        name: 'preferredContractor',
+        label: PROJECT_MESSAGES.PREFERRED_CONTRACTOR_LABEL,
+        type: 'select',
+        placeholder: PROJECT_MESSAGES.SELECT_CONTRACTOR,
         required: true,
-        validation: {
-          minLength: 3,
-          maxLength: 100,
-        },
-      },
-      {
-        name: 'projectLocation',
-        label: 'Project Location',
-        type: 'text',
-        placeholder: 'Enter project location',
-        required: true,
-        validation: {
-          minLength: 5,
-          maxLength: 100,
-        },
-      },
-      {
-        name: 'clientName',
-        label: 'Client Name',
-        type: 'text',
-        placeholder: 'Enter client name',
-        required: true,
-        validation: {
-          minLength: 2,
-          maxLength: 50,
-        },
-      },
-      {
-        name: 'clientContact',
-        label: 'Client Contact',
-        type: 'tel',
-        placeholder: 'Enter client contact',
-        required: true,
-        validation: {
-          pattern: '^[+]?[0-9\\s\\-\\(\\)]{10,}$',
-        },
-      },
-      {
-        name: 'startDate',
-        label: 'Start Date',
-        type: 'date',
-        placeholder: 'Select start date',
-        required: true,
-      },
-    ],
-  },
-  estimation: {
-    id: '05',
-    number: '05',
-    color: '#EF4444',
-    title: 'Estimation',
-    description: 'Includes pricing based on size, scope, and type of work.',
-    fields: [
-      {
-        name: 'basePrice',
-        label: 'Base Price',
-        type: 'number',
-        placeholder: 'Enter base price',
-        required: true,
-        validation: {
-          min: 0,
-          max: 1000000,
-        },
-      },
-      {
-        name: 'additionalCosts',
-        label: 'Additional Costs',
-        type: 'number',
-        placeholder: 'Enter additional costs',
-        validation: {
-          min: 0,
-          max: 500000,
-        },
-      },
-      {
-        name: 'totalAmount',
-        label: 'Total Amount',
-        type: 'number',
-        placeholder: 'Total amount',
-        required: true,
-        validation: {
-          min: 0,
-          max: 2000000,
-        },
-      },
-      {
-        name: 'paymentTerms',
-        label: 'Payment Terms',
-        type: 'textarea',
-        placeholder: 'Enter payment terms',
-        required: true,
-        validation: {
-          minLength: 10,
-          maxLength: 200,
-        },
-      },
-      {
-        name: 'validityPeriod',
-        label: 'Quotation Validity',
-        type: 'text',
-        placeholder: 'e.g., 30 days',
-        required: true,
-        validation: {
-          minLength: 3,
-          maxLength: 50,
-        },
+        options: [
+          { value: 'any', label: PROJECT_MESSAGES.ANY_CONTRACTOR },
+          { value: 'specific', label: PROJECT_MESSAGES.SPECIFIC_CONTRACTOR },
+        ],
       },
     ],
   },
