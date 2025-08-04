@@ -93,7 +93,7 @@ export function PermissionAwareSidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          'hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0 z-[99]',
+          'hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0 z-[49]',
           isOpen && 'min-w-[276px]'
         )}
       >

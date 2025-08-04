@@ -64,7 +64,7 @@ export function formatDate(dateString: string): string {
     const year = date.getFullYear().toString();
 
     return `${day}/${month}/${year}`;
-  } catch (error) {
+  } catch (_) {
     return dateString; // Return original string if parsing fails
   }
 }
@@ -88,7 +88,7 @@ export function formatDateTime(dateString: string): string {
     const minutes = date.getMinutes().toString().padStart(2, '0');
 
     return `${day}/${month}/${year} ${hours}:${minutes}`;
-  } catch (error) {
+  } catch (_) {
     return dateString; // Return original string if parsing fails
   }
 }

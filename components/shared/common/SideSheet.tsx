@@ -61,7 +61,7 @@ export default function SideSheet({
           <Button
             variant='ghost'
             onClick={() => onOpenChange(false)} // ✅ This now works
-            className='ml-auto !mt-0 p-0'
+            className='ml-auto !mt-0 p-0 h-auto'
           >
             <CloseCircle size='24' className='!h-6 !w-6' color='#818181' />
           </Button>

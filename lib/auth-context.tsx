@@ -77,9 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       error?.status === 401 ||
       (error instanceof Error && error.message?.includes('401'))
     ) {
-      console.log('🔑 Authentication error detected, logging out user');
-
-      // Clear auth data immediately
       clearAuthData();
 
       // Redirect to login page
@@ -172,10 +169,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setCookie('auth_token', access_token);
         setCookie('refresh_token', refresh_token);
 
-        console.log(
-          '✅ Authentication data stored in both localStorage and cookies'
-        );
-
         // --- Fetch and securely store user permissions ---
         try {
           const permissionsRes = await apiService.getMyPermissions();
@@ -185,7 +178,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             );
             localStorage.setItem('user_permissions', encrypted);
             setCookie('user_permissions', encrypted);
-            console.log('🔒 User permissions encrypted and stored');
           }
         } catch (permErr) {
           console.error('Failed to fetch/store user permissions:', permErr);
@@ -237,7 +229,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await apiService.logout();
-    } catch (e) {
+    } catch (_) {
       // Ignore API errors, always clear local state
     }
 
@@ -272,7 +264,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await logout();
         return false;
       }
-    } catch (err) {
+    } catch (_) {
       await logout();
       return false;
     }

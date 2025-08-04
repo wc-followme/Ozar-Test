@@ -65,7 +65,7 @@ export default function CreateToolPage() {
       const { uploadUrl, fileKey: presignedFileKey } = data;
       await uploadFileToPresignedUrl(uploadUrl, file);
       setFileKey(presignedFileKey || '');
-    } catch (_err: unknown) {
+    } catch (_: unknown) {
       showErrorToast(TOOL_MESSAGES.CREATE_ERROR);
       setPhotoFile(null);
       setFileKey('');

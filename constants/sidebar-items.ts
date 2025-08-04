@@ -24,7 +24,7 @@ export const SIDEBAR_TITLES = {
   HOME: 'Home',
   JOBS: 'Jobs',
   ROLE_MANAGEMENT: 'Role Management',
-  USER_MANAGEMENT: 'User Management',
+  USER_MANAGEMENT: 'Employee Management',
   COMPANY_MANAGEMENT: 'Company Management',
   CATEGORY_MANAGEMENT: 'Category Management',
   TRADE_MANAGEMENT: 'Trade Management',
