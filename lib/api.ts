@@ -631,7 +631,7 @@ class ApiService {
         }
 
         return data;
-      } catch (error) {
+      } catch (error: any) {
         if (error instanceof TypeError) {
           // Network error
           throw {

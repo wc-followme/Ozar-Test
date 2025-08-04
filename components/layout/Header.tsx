@@ -109,18 +109,37 @@ export function Header() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const { scrollY: currentScrollY } = window;
-      if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
-        // Scrolling down
-        setShowHeader(false);
+      // Only apply scroll behavior on tablet and smaller screens (lg breakpoint and below)
+      if (window.innerWidth < 1024) {
+        const currentScrollY = window.scrollY;
+        if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
+          // Scrolling down
+          setShowHeader(false);
+        } else {
+          // Scrolling up
+          setShowHeader(true);
+        }
+        lastScrollY.current = currentScrollY;
       } else {
-        // Scrolling up
+        // On desktop (lg and above), always show header
         setShowHeader(true);
       }
-      lastScrollY.current = currentScrollY;
     };
+
+    // Also handle resize to update behavior when screen size changes
+    const handleResize = () => {
+      if (window.innerWidth >= 1024) {
+        setShowHeader(true);
+      }
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   const handleMenuAction = (action: string) => {

@@ -265,7 +265,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     try {
       await apiService.logout();
-    } catch (e) {
+    } catch (_) {
       // Ignore API errors, always clear local state
     }
 
@@ -301,7 +301,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await logout();
         return false;
       }
-    } catch (err) {
+    } catch (_) {
       await logout();
       return false;
     }

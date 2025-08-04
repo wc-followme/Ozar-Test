@@ -63,6 +63,20 @@ export const ACTIONS = {
   CUSTOMIZE: 'customize',
   ASSIGN_USER: 'assign_user',
   HISTORY: 'history',
+  COMPLETED: 'completed',
+} as const;
+
+// Menu labels for different categories
+export const CATEGORY_MESSAGES = {
+  EDIT_MENU: 'Edit',
+  DELETE_MENU: 'Delete',
+  COMPLETED_MENU: 'Completed',
+  ARCHIVE_MENU: 'Archive',
+  VIEW_MENU: 'View',
+  CREATE_MENU: 'Create',
+  CUSTOMIZE_MENU: 'Customize',
+  ASSIGN_USER_MENU: 'Assign User',
+  HISTORY_MENU: 'History',
 } as const;
 
 // Country codes and phone number related constants
@@ -248,6 +262,113 @@ export const JOB_TABS = {
   ARCHIVE: 'archive',
   CLOSED: 'closed',
 } as const;
+
+// Appointment form constants
+export const APPOINTMENT_MESSAGES = {
+  AGENDA_LABEL: 'Agenda',
+  AGENDA_PLACEHOLDER: 'Enter Title',
+  AGENDA_REQUIRED: 'Agenda is required',
+
+  EMPLOYEES_LABEL: 'Select Employees',
+  EMPLOYEES_PLACEHOLDER: 'Select employees',
+  EMPLOYEES_REQUIRED: 'At least one employee is required',
+
+  APPOINTMENT_WITH_LABEL: 'Appointment with',
+  APPOINTMENT_WITH_PLACEHOLDER: 'Enter Name',
+  APPOINTMENT_WITH_REQUIRED: 'Appointment with is required',
+
+  DATE_LABEL: 'Date',
+  DATE_PLACEHOLDER: 'Select Date',
+  DATE_REQUIRED: 'Date is required',
+
+  STARTS_LABEL: 'Starts',
+  STARTS_PLACEHOLDER: 'Select Time',
+  STARTS_REQUIRED: 'Start time is required',
+
+  ENDS_LABEL: 'Ends',
+  ENDS_PLACEHOLDER: 'Select Time',
+  ENDS_REQUIRED: 'End time is required',
+
+  ADDRESS_LABEL: 'Address',
+  ADDRESS_PLACEHOLDER: 'Enter Address',
+  ADDRESS_REQUIRED: 'Address is required',
+
+  NOTES_LABEL: 'Notes',
+  NOTES_PLACEHOLDER: 'Enter Notes',
+
+  CANCEL_BUTTON: 'Cancel',
+  SAVE_BUTTON: 'Save',
+  SAVING_BUTTON: 'Saving...',
+} as const;
+
+// Mock employees data
+export const MOCK_EMPLOYEES = [
+  {
+    value: '1',
+    label: 'John Doe',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '2',
+    label: 'Jane Smith',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '3',
+    label: 'Mike Johnson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '4',
+    label: 'Sarah Wilson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '5',
+    label: 'David Brown',
+    image: '/images/profile.jpg',
+  },
+];
+
+// Todo form constants
+export const TODO_MESSAGES = {
+  JOB_LABEL: 'Job',
+  JOB_PLACEHOLDER: 'Select Job',
+  JOB_REQUIRED: 'Job is required',
+
+  DATE_LABEL: 'Date',
+  DATE_PLACEHOLDER: 'Select Date',
+  DATE_REQUIRED: 'Date is required',
+
+  EMPLOYEES_LABEL: 'Select Employees',
+  EMPLOYEES_PLACEHOLDER: 'Select employees',
+  EMPLOYEES_REQUIRED: 'At least one employee must be selected',
+
+  TITLE_LABEL: 'Title',
+  TITLE_PLACEHOLDER: 'Enter Title',
+  TITLE_REQUIRED: 'Title is required',
+
+  LIST_ITEM_LABEL: 'List Item',
+  LIST_ITEM_PLACEHOLDER: 'Enter Item',
+  LIST_ITEM_REQUIRED: 'List item cannot be empty',
+  LIST_ITEMS_REQUIRED: 'At least one list item is required',
+
+  ADD_ANOTHER_BUTTON: '+ Add Another',
+
+  CANCEL_BUTTON: 'Cancel',
+  SAVE_BUTTON: 'Save',
+  SAVING_BUTTON: 'Saving...',
+
+  EDIT_TODO_TITLE: 'Edit Todo',
+  JOB_NAME_PLACEHOLDER: 'Job Name Here',
+} as const;
+
+// Mock jobs data
+export const MOCK_JOBS = [
+  { value: 'job-1', label: 'Kitchen Renovation' },
+  { value: 'job-2', label: 'Bathroom Remodel' },
+  { value: 'job-3', label: 'Living Room Painting' },
+];
 
 // Future constants can be added here
 // export const OTHER_CONSTANTS = {

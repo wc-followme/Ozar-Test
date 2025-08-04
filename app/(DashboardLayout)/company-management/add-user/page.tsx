@@ -100,7 +100,6 @@ export default function AddCompanyUserPage() {
           typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
 
         if (isNaN(numericId) || typeof numericId !== 'number') {
-          console.error('Could not convert ID to number:', rawId);
           showErrorToast(USER_MESSAGES.USER_NOT_FOUND_ERROR);
           return;
         }

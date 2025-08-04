@@ -25,7 +25,6 @@ export async function preloadPermissions(): Promise<UserPermissions | null> {
       permissionCache = permissions;
       resolve(permissions);
     } catch (error) {
-      console.error('Failed to load permissions:', error);
       permissionCache = null;
       resolve(null);
     } finally {

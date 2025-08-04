@@ -81,7 +81,7 @@ export const USER_MESSAGES = {
   REMOVE_PHOTO_ARIA: 'Remove photo',
 
   // Page Titles and Headers
-  USER_MANAGEMENT_TITLE: 'Admin / User Management',
+  USER_MANAGEMENT_TITLE: 'Employee Management',
   ADD_USER_TITLE: 'Add User',
   EDIT_USER_TITLE: 'Edit',
 
