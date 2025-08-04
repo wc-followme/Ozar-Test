@@ -83,7 +83,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({
         <Button
           variant='outline'
           className={cn(
-            'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+            'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] hover:!bg-[var(--white-background)]',
             !value && 'text-muted-foreground',
             error ? '!border-[var(--warning)]' : 'border-[var(--border-dark)]',
             className

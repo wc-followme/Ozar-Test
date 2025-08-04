@@ -118,9 +118,9 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   const formFields = useMemo(() => {
     if (!config) return [];
 
-    return config.fields.map(field => ({
-      id: field.name,
-      label: field.label,
+    return config.fields.map(({ name, label }) => ({
+      id: name,
+      label: label,
       enabled: true, // Start with all fields enabled
     }));
   }, [config]);
@@ -129,7 +129,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
 
   // Get enabled field names for the DynamicForm
   const enabledFieldNames = useMemo(() => {
-    return fieldStates.filter(field => field.enabled).map(field => field.id);
+    return fieldStates.filter(({ enabled }) => enabled).map(({ id }) => id);
   }, [fieldStates]);
 
   // Special handling for pages that don't use DynamicForm (category and estimation)
@@ -377,9 +377,9 @@ const DynamicBoxPage = ({ params }: PageProps) => {
       </div>
 
       {/* Left Column - Form */}
-      <div className='p-4 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
-        <div className='flex gap-4 items-start'>
-          <div className='flex-1'>
+      <div className='p-5 sm:p-6 lg:p-8 xl:p-10 rounded-[20px] bg-[var(--card-background)]'>
+        <div className='flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-6 items-start'>
+          <div className='flex-1 w-full'>
             <DynamicForm
               config={config!}
               onSave={handleSave}
@@ -391,20 +391,18 @@ const DynamicBoxPage = ({ params }: PageProps) => {
             />
           </div>
           {questions.length > 0 && (
-            <div className='w-[420px] shrink-0 pl-4 border-l border-[var(--border-dark)] max-h-[calc(100dvh_-_350px)] overflow-y-auto'>
+            <div className='w-full lg:w-[280px] xl:w-[420px] lg:shrink-0 h-auto lg:pl-4 lg:border-l lg:border-[var(--border-dark)] lg:max-h-[calc(100dvh_-_280px)] overflow-y-auto mt-6 lg:mt-0 pt-6 lg:pt-0 border-t lg:border-t-0 border-[var(--border-dark)]'>
               <div className='space-y-3'>
-                {questions.map(question => (
-                  <div key={question.id} className='space-y-3'>
-                    <h3 className='text-[14px] font-semibold text-[var(--text-dark)]'>
-                      {question.text}
+                {questions.map(({ id, text, answer }) => (
+                  <div key={id} className='space-y-3'>
+                    <h3 className='text-sm sm:text-[14px] font-semibold text-[var(--text-dark)]'>
+                      {text}
                     </h3>
                     <Textarea
                       placeholder='Type you answer here..'
-                      value={question.answer}
-                      onChange={e =>
-                        handleAnswerChange(question.id, e.target.value)
-                      }
-                      className='min-h-[100px] resize-none input-field'
+                      value={answer}
+                      onChange={e => handleAnswerChange(id, e.target.value)}
+                      className='min-h-[80px] sm:min-h-[100px] resize-none input-field'
                     />
                   </div>
                 ))}
@@ -413,8 +411,11 @@ const DynamicBoxPage = ({ params }: PageProps) => {
           )}
         </div>
 
-        <div className='flex justify-end mt-6'>
-          <Button className='btn-secondary' onClick={handleManageFields}>
+        <div className='flex justify-end mt-4 sm:mt-6'>
+          <Button
+            className='btn-secondary text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2'
+            onClick={handleManageFields}
+          >
             Manage Fields
           </Button>
         </div>
@@ -430,7 +431,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
         <CreateQuestionForm
           onSave={handleQuestionSave}
           onCancel={handleQuestionCancel}
-          existingQuestions={questions.map(q => q.text)}
+          existingQuestions={questions.map(({ text }) => text)}
         />
       </SideSheet>
 

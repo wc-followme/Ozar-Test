@@ -32,7 +32,7 @@ export const FieldManagementSwitch: React.FC<FieldManagementSwitchProps> = ({
       {localFields.map(field => (
         <div
           key={field.id}
-          className='flex items-center justify-between p-4 bg-[#F5F7FA] rounded-[10px] '
+          className='flex items-center justify-between p-4 bg-[var(--background)] rounded-[10px] '
         >
           <span className='text-base font-medium text-[var(--text-dark)]'>
             {field.label}

@@ -1,6 +1,7 @@
 'use client';
 
 import SelectField from '@/components/shared/common/SelectField';
+import { TimePicker } from '@/components/shared/common/TimePicker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,9 +164,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     let isValid = true;
 
     config.fields.forEach(field => {
-      const error = validateField(field, formData[field.name]);
+      const { name } = field;
+      const error = validateField(field, formData[name]);
       if (error) {
-        newErrors[field.name] = error;
+        newErrors[name] = error;
         isValid = false;
       }
     });
@@ -174,88 +176,97 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
     return isValid;
   };
 
-  const renderField = (field: FormField) => {
-    const hasError = !!errors[field.name];
+  const renderField = ({
+    name,
+    label,
+    type,
+    placeholder,
+    required,
+    options,
+    className,
+    validation,
+  }: FormField) => {
+    const hasError = !!errors[name];
 
     return (
       <div
-        key={field.name}
+        key={name}
         className={
-          field.className ||
-          (field.type === 'textarea'
+          className ||
+          (type === 'textarea'
             ? 'md:col-span-6'
-            : field.type === 'select'
-              ? field.name === 'preferredContactMethod'
+            : type === 'select'
+              ? name === 'preferredContactMethod'
                 ? 'md:col-span-4'
-                : field.name === 'bhk' || field.name === 'floor'
+                : name === 'bhk' || name === 'floor'
                   ? 'md:col-span-6'
                   : 'md:col-span-3'
-              : field.type === 'date' || field.type === 'time'
+              : type === 'date' || type === 'time'
                 ? 'md:col-span-3'
-                : field.type === 'timerange'
+                : type === 'timerange'
                   ? 'md:col-span-6'
-                  : field.type === 'category-selector'
+                  : type === 'category-selector'
                     ? 'md:col-span-6'
-                    : field.name === 'projectName'
+                    : name === 'projectName'
                       ? 'md:col-span-6'
                       : 'md:col-span-3')
         }
       >
-        {field.type === 'select' ? (
+        {type === 'select' ? (
           <SelectField
-            label={field.label}
-            value={formData[field.name] || ''}
-            onValueChange={value => handleInputChange(field.name, value)}
-            options={field.options || []}
-            placeholder={field.placeholder}
-            {...(hasError && { error: errors[field.name] })}
+            label={label}
+            value={formData[name] || ''}
+            onValueChange={value => handleInputChange(name, value)}
+            options={options || []}
+            placeholder={placeholder}
+            {...(hasError && { error: errors[name] })}
             className=''
           />
-        ) : field.type === 'textarea' ? (
+        ) : type === 'textarea' ? (
           <div>
-            {field.label && (
-              <Label htmlFor={field.name} className='text-sm font-medium'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+            {label && (
+              <Label htmlFor={name} className='text-sm font-medium'>
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <Textarea
-              id={field.name}
-              placeholder={field.placeholder}
-              value={formData[field.name] || ''}
-              onChange={e => handleInputChange(field.name, e.target.value)}
+              id={name}
+              placeholder={placeholder}
+              value={formData[name] || ''}
+              onChange={e => handleInputChange(name, e.target.value)}
               className={`mt-1 input-field ${hasError ? 'border-red-500' : ''}`}
               rows={3}
-              required={field.required}
+              required={required}
             />
           </div>
-        ) : field.type === 'date' ? (
+        ) : type === 'date' ? (
           <div>
-            {field.label && (
-              <Label htmlFor={field.name} className='text-sm font-medium'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+            {label && (
+              <Label htmlFor={name} className='text-sm font-medium'>
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <Popover
-              open={datePickerOpen[field.name] || false}
+              open={datePickerOpen[name] || false}
               onOpenChange={open =>
-                setDatePickerOpen(prev => ({ ...prev, [field.name]: open }))
+                setDatePickerOpen(prev => ({ ...prev, [name]: open }))
               }
             >
               <PopoverTrigger asChild>
                 <Button
                   variant={'outline'}
                   className={cn(
-                    'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] mt-2',
-                    !formData[field.name] && 'text-muted-foreground',
+                    'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] mt-2 hover:!bg-[var(--white-background)]',
+                    !formData[name] && 'text-muted-foreground',
                     hasError ? '!border-red-500' : 'border-[var(--border-dark)]'
                   )}
                 >
-                  {formData[field.name] ? (
-                    format(new Date(formData[field.name]), 'PPP')
+                  {formData[name] ? (
+                    format(new Date(formData[name]), 'PPP')
                   ) : (
-                    <span className='flex-1'>{field.placeholder}</span>
+                    <span className='flex-1'>{placeholder}</span>
                   )}
                   <IconsaxCalendar
                     className='ml-2 !h-6 !w-6'
@@ -270,187 +281,156 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 <Calendar
                   mode='single'
                   selected={
-                    formData[field.name]
-                      ? new Date(formData[field.name])
-                      : undefined
+                    formData[name] ? new Date(formData[name]) : undefined
                   }
                   onSelect={date => {
-                    handleInputChange(field.name, date);
+                    handleInputChange(name, date);
                     setDatePickerOpen(prev => ({
                       ...prev,
-                      [field.name]: false,
+                      [name]: false,
                     }));
                   }}
                   initialFocus
+                  classNames={{
+                    day_selected:
+                      'bg-[var(--secondary)] text-white hover:bg-[var(--secondary)] hover:text-white focus:bg-[var(--secondary)] focus:text-white',
+                    day_today:
+                      'bg-[var(--secondary)]/20 text-[var(--text-dark)] hover:bg-[var(--secondary)]/30',
+                  }}
                 />
               </PopoverContent>
             </Popover>
             {hasError && (
-              <p className='text-red-500 text-xs mt-1'>{errors[field.name]}</p>
+              <p className='text-red-500 text-xs mt-1'>{errors[name]}</p>
             )}
           </div>
-        ) : field.type === 'time' ? (
+        ) : type === 'time' ? (
           <div>
-            {field.label && (
-              <Label htmlFor={field.name} className='text-sm font-medium'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+            {label && (
+              <Label htmlFor={name} className='text-sm font-medium'>
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <Input
-              id={field.name}
+              id={name}
               type='time'
-              placeholder={field.placeholder}
-              value={formData[field.name] || ''}
-              onChange={e => handleInputChange(field.name, e.target.value)}
+              placeholder={placeholder}
+              value={formData[name] || ''}
+              onChange={e => handleInputChange(name, e.target.value)}
               className={`mt-1 input-field ${hasError ? 'border-red-500' : ''}`}
-              required={field.required}
+              required={required}
             />
           </div>
-        ) : field.type === 'category-selector' ? (
+        ) : type === 'category-selector' ? (
           <div className='w-full'>
-            {field.label && (
+            {label && (
               <Label className='text-sm font-medium mb-4 block'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <div className='w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
-              {field.options?.map(option => {
-                const isSelected = formData[field.name] === option.id;
-                return (
-                  <div
-                    key={option.id}
-                    className={`flex flex-col items-start border border-[var(--border-dark)] rounded-2xl bg-[var(--card-background)] p-4 sm:p-6 cursor-pointer transition-all duration-150 hover:shadow-md ${
-                      isSelected
-                        ? 'bg-[var(--card-hover)] shadow-green-100 border-[var(--primary)]'
-                        : ''
-                    }`}
-                    onClick={() => handleInputChange(field.name, option.id)}
-                  >
+              {options?.map(
+                ({
+                  id,
+                  name: optionName,
+                  label,
+                  description,
+                  bgColor,
+                  color,
+                }) => {
+                  const isSelected = formData[name] === id;
+                  return (
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
-                      style={{
-                        background: option.bgColor || '#EBB4021A',
-                        color: option.color || '#EBB402',
-                      }}
+                      key={id}
+                      className={`flex flex-col items-start border border-[var(--border-dark)] rounded-2xl bg-[var(--card-background)] p-4 sm:p-6 cursor-pointer transition-all duration-150 hover:shadow-md ${
+                        isSelected
+                          ? 'bg-[var(--card-hover)] shadow-green-100 border-[var(--primary)]'
+                          : ''
+                      }`}
+                      onClick={() => handleInputChange(name, id)}
                     >
-                      {/* Icon placeholder - you can add actual icons here */}
-                      <div className='w-4 h-4 sm:w-5 sm:h-5 bg-current rounded-sm'></div>
+                      <div
+                        className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
+                        style={{
+                          background: bgColor || '#EBB4021A',
+                          color: color || '#EBB402',
+                        }}
+                      >
+                        {/* Icon placeholder - you can add actual icons here */}
+                        <div className='w-4 h-4 sm:w-5 sm:h-5 bg-current rounded-sm'></div>
+                      </div>
+                      <div className='font-bold text-sm sm:text-base mb-2 text-[var(--text-dark)]'>
+                        {optionName || label}
+                      </div>
+                      <div className='text-[var(--text-secondary)] text-sm sm:text-base font-normal leading-snug'>
+                        {description || ''}
+                      </div>
                     </div>
-                    <div className='font-bold text-sm sm:text-base mb-2 text-[var(--text-dark)]'>
-                      {option.name || option.label}
-                    </div>
-                    <div className='text-[var(--text-secondary)] text-sm sm:text-base font-normal leading-snug'>
-                      {option.description || ''}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                }
+              )}
             </div>
             {hasError && (
-              <p className='text-red-500 text-xs mt-1'>{errors[field.name]}</p>
+              <p className='text-red-500 text-xs mt-1'>{errors[name]}</p>
             )}
           </div>
-        ) : field.type === 'timerange' ? (
+        ) : type === 'timerange' ? (
           <div>
-            {field.label && (
+            {label && (
               <Label className='text-sm font-medium'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <div className='flex gap-3 mt-2'>
-              <div className='flex-1 relative'>
-                <Input
-                  id={`${field.name}Start`}
-                  type='time'
-                  placeholder={field.placeholder}
-                  value={formData[field.validation?.startTime || ''] || ''}
-                  onChange={e =>
-                    handleInputChange(
-                      field.validation?.startTime || '',
-                      e.target.value
-                    )
+              <div className='flex-1'>
+                <TimePicker
+                  value={formData[validation?.startTime || ''] || ''}
+                  onChange={value =>
+                    handleInputChange(validation?.startTime || '', value)
                   }
-                  className={`input-field ${hasError ? 'border-red-500' : ''}`}
-                  required={field.required}
+                  placeholder={placeholder}
+                  error={hasError}
                 />
-                <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
-                  <svg
-                    width='16'
-                    height='16'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    className='text-blue-600'
-                  >
-                    <circle cx='12' cy='12' r='10' />
-                    <polyline points='12,6 12,12 16,14' />
-                  </svg>
-                </div>
               </div>
-              <div className='flex-1 relative'>
-                <Input
-                  id={`${field.name}End`}
-                  type='time'
-                  placeholder='End Time'
-                  value={formData[field.validation?.endTime || ''] || ''}
-                  onChange={e =>
-                    handleInputChange(
-                      field.validation?.endTime || '',
-                      e.target.value
-                    )
+              <div className='flex-1'>
+                <TimePicker
+                  value={formData[validation?.endTime || ''] || ''}
+                  onChange={value =>
+                    handleInputChange(validation?.endTime || '', value)
                   }
-                  className={`input-field ${hasError ? 'border-red-500' : ''}`}
-                  required={field.required}
+                  placeholder='End Time'
+                  error={hasError}
                 />
-                <div className='absolute right-3 top-1/2 transform -translate-y-1/2'>
-                  <svg
-                    width='16'
-                    height='16'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    stroke='currentColor'
-                    strokeWidth='2'
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    className='text-blue-600'
-                  >
-                    <circle cx='12' cy='12' r='10' />
-                    <polyline points='12,6 12,12 16,14' />
-                  </svg>
-                </div>
               </div>
             </div>
             {hasError && (
-              <p className='text-red-500 text-xs mt-1'>{errors[field.name]}</p>
+              <p className='text-red-500 text-xs mt-1'>{errors[name]}</p>
             )}
           </div>
         ) : (
           <div>
-            {field.label && (
-              <Label htmlFor={field.name} className='text-sm font-medium'>
-                {field.label}
-                {field.required && <span className='text-red-500 ml-1'>*</span>}
+            {label && (
+              <Label htmlFor={name} className='text-sm font-medium'>
+                {label}
+                {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
             <Input
-              id={field.name}
-              type={field.type}
-              placeholder={field.placeholder}
-              value={formData[field.name] || ''}
-              onChange={e => handleInputChange(field.name, e.target.value)}
+              id={name}
+              type={type}
+              placeholder={placeholder}
+              value={formData[name] || ''}
+              onChange={e => handleInputChange(name, e.target.value)}
               className={`mt-2 input-field ${hasError ? 'border-red-500' : ''}`}
-              required={field.required}
-              min={field.validation?.min}
-              max={field.validation?.max}
-              minLength={field.validation?.minLength}
-              maxLength={field.validation?.maxLength}
-              pattern={field.validation?.pattern}
+              required={required}
+              min={validation?.min}
+              max={validation?.max}
+              minLength={validation?.minLength}
+              maxLength={validation?.maxLength}
+              pattern={validation?.pattern}
             />
           </div>
         )}
@@ -464,7 +444,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         <CardHeader
           className={`p-0 mb-6 lg:mb-10 ${titleAlignment === 'left' ? 'text-left' : 'text-center'}`}
         >
-          <CardTitle className='text-2xl lg:text-[30px] font-bold text-[var(--text-dark)]'>
+          <CardTitle className='text-2xl mb-2 lg:text-[30px] font-bold text-[var(--text-dark)]'>
             {config.title}
           </CardTitle>
           <p className='text-base lg:text-[18px] text-[var(--text-secondary)] mt-2'>
@@ -473,10 +453,10 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         </CardHeader>
       )}
       <CardContent className='space-y-6 p-0'>
-        <div className='grid grid-cols-1 md:grid-cols-6 gap-6'>
+        <div className='grid grid-cols-1 md:grid-cols-6 gap-4 lg:gap-6'>
           {config.fields
             .filter(
-              field => !enabledFields || enabledFields.includes(field.name)
+              ({ name }) => !enabledFields || enabledFields.includes(name)
             )
             .map(renderField)}
         </div>

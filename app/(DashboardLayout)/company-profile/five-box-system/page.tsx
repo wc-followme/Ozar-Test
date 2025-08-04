@@ -131,23 +131,25 @@ const FiveBoxSystem = () => {
 
       {/* 5-box System Grid */}
       <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
-        {boxData.map(box => (
-          <BoxCard
-            key={box.id}
-            id={box.id}
-            number={box.number}
-            color={box.color}
-            textColor={box.textColor}
-            title={box.title}
-            description={box.description}
-            enabled={box.enabled}
-            menuOptions={getMenuOptions()}
-            onEdit={() => handleEdit(box.id)}
-            onDelete={() => handleDelete(box.id)}
-            onToggle={() => handleToggle(box.id)}
-            onClick={() => handleCardClick(box.id)}
-          />
-        ))}
+        {boxData.map(
+          ({ id, number, color, textColor, title, description, enabled }) => (
+            <BoxCard
+              key={id}
+              id={id}
+              number={number}
+              color={color}
+              textColor={textColor}
+              title={title}
+              description={description}
+              enabled={enabled}
+              menuOptions={getMenuOptions()}
+              onEdit={() => handleEdit(id)}
+              onDelete={() => handleDelete(id)}
+              onToggle={() => handleToggle(id)}
+              onClick={() => handleCardClick(id)}
+            />
+          )
+        )}
       </div>
     </section>
   );

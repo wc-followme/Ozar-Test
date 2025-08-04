@@ -52,75 +52,79 @@ const CompanyProfile = () => {
               </div>
 
               {/* Company Details */}
-              <div className='flex-1 min-w-0 pt-4 lg:pt-16'>
+              <div className='flex-1 min-w-0 pt-4 lg:pt-16 w-full'>
                 <div className='space-y-2'>
                   <h1 className='text-[var(--text-dark)] text-2xl font-bold leading-[18px] tracking-[0%]'>
                     Envision Construction
                   </h1>
-                  <p className='text-[var(--text-secondary)] text-base font-normal leading-[18px] tracking-[0%]'>
-                    Construction Company
-                  </p>
+                  <div className='flex flex-wrap items-end gap-2'>
+                    <div>
+                      <p className='text-[var(--text-secondary)] text-base font-normal leading-[18px] tracking-[0%] mb-2'>
+                        Construction Company
+                      </p>
 
-                  {/* Rating */}
-                  <div className='flex items-center gap-2'>
-                    <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
-                      4.0
-                    </span>
-                    <div className='flex items-center gap-1'>
-                      {[...Array(5)].map((_, index) => (
-                        <Star1
-                          key={index}
-                          size='16'
-                          color={index < 4 ? '#EBB402' : '#C0C6CD'}
-                          className={
-                            index < 4 ? 'fill-[#EBB402]' : 'fill-[#C0C6CD]'
-                          }
-                        />
-                      ))}
+                      {/* Rating */}
+                      <div className='flex items-center gap-2'>
+                        <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
+                          4.0
+                        </span>
+                        <div className='flex items-center gap-1'>
+                          {[...Array(5)].map((_, index) => (
+                            <Star1
+                              key={index}
+                              size='16'
+                              color={index < 4 ? '#EBB402' : '#C0C6CD'}
+                              className={
+                                index < 4 ? 'fill-[#EBB402]' : 'fill-[#C0C6CD]'
+                              }
+                            />
+                          ))}
+                        </div>
+                        <span className='text-gray-500 text-sm'>5 Reviews</span>
+                      </div>
                     </div>
-                    <span className='text-gray-500 text-sm'>5 Reviews</span>
+                    <div className='flex gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
+                      <Link
+                        href='/company-profile/five-box-system'
+                        className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
+                      >
+                        <DocumentText
+                          size='18'
+                          color='var(--text-dark)'
+                          className='[&_path]:!stroke-[2px]'
+                        />
+                        <span className='hidden sm:inline'>5-box system</span>
+                      </Link>
+
+                      <Button
+                        variant='secondary'
+                        className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
+                      >
+                        <IconShare
+                          size='18'
+                          color='var(--text-dark)'
+                          className='[&_path]:!stroke-[2px]'
+                        />
+                        <span className='hidden sm:inline'>Share</span>
+                      </Button>
+
+                      <Button
+                        variant='secondary'
+                        className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
+                      >
+                        <Edit2
+                          size='18'
+                          color='var(--text-dark)'
+                          className='[&_path]:!stroke-[2px]'
+                        />
+                        <span className='hidden sm:inline'>Edit Profile</span>
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className='flex  gap-3 w-full md:w-auto self-end justify-end mt-4 lg:mt-0'>
-                <Link
-                  href='/company-profile/five-box-system'
-                  className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                >
-                  <DocumentText
-                    size='18'
-                    color='var(--text-dark)'
-                    className='[&_path]:!stroke-[2px]'
-                  />
-                  <span className='hidden sm:inline'>5-box system</span>
-                </Link>
-
-                <Button
-                  variant='secondary'
-                  className='btn-secondary gap-1 !px-0 sm:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                >
-                  <IconShare
-                    size='18'
-                    color='var(--text-dark)'
-                    className='[&_path]:!stroke-[2px]'
-                  />
-                  <span className='hidden sm:inline'>Share</span>
-                </Button>
-
-                <Button
-                  variant='secondary'
-                  className='btn-secondary gap-1 !px-0 sm:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                >
-                  <Edit2
-                    size='18'
-                    color='var(--text-dark)'
-                    className='[&_path]:!stroke-[2px]'
-                  />
-                  <span className='hidden sm:inline'>Edit Profile</span>
-                </Button>
-              </div>
             </div>
           </Card>
         </div>
