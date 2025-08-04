@@ -11,9 +11,7 @@ pipeline {
             steps {
                 sshagent(credentials: ['envision-ssh-key']) {
                     sh """
-                    ssh -o StrictHostKeyChecking=no $EC2_USER_HOST << 'EOF'
-                        bash /home/ubuntu/scripts/frontend-deploy.sh
-                    EOF
+                        ssh -o StrictHostKeyChecking=no $EC2_USER_HOST 'bash /home/ubuntu/scripts/frontend-deploy.sh'
                     """
                 }
             }
@@ -27,7 +25,7 @@ pipeline {
 
                 slackSend(
                     channel: 'proj-envision',
-                    message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL} \n Web-Site URL: ${env.SITE_URL}",
+                    message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \nMore info at: ${env.BUILD_URL} \nWeb-Site URL: ${env.SITE_URL}",
                     color: color
                 )
             }
