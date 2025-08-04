@@ -5,7 +5,14 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  CUSTOM_EVENTS,
+  PAGINATION,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
 
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
@@ -18,7 +25,7 @@ import {
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
 import { MenuOption, Role, RoleApiResponse } from './types';
 import { USER_MESSAGES } from './user-messages';
@@ -31,6 +38,7 @@ export default function UserManagement() {
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const selectedCompanyRef = useRef<string | null>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const router = useRouter();
@@ -39,6 +47,12 @@ export default function UserManagement() {
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.users?.create;
   const canViewUsers = userPermissions?.users?.view;
+
+  // Initialize selectedCompany from localStorage
+  useEffect(() => {
+    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    selectedCompanyRef.current = currentCompany;
+  }, []);
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
     return (
@@ -74,12 +88,28 @@ export default function UserManagement() {
             }))
           );
         }
+
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const role_id = filter !== 'all' ? filter : '';
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
           role_id,
           status: CommonStatus.ACTIVE, // Only fetch active users
+          ...(companyId ? { company_id: companyId } : {}),
         });
         const newUsers = usersRes.data;
 
@@ -120,6 +150,42 @@ export default function UserManagement() {
     setUsers([]);
     fetchUsers(1, false);
   }, [fetchUsers]);
+
+  // Watch for changes in selected company and refetch users
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPage(1);
+      setHasMore(true);
+      setUsers([]);
+      // Call fetchUsers directly without dependency
+      fetchUsers(1, false);
+    };
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+
+    // Listen for custom company change events
+    const handleCompanyChange = () => {
+      const currentCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      if (currentCompany !== selectedCompanyRef.current) {
+        selectedCompanyRef.current = currentCompany;
+        handleStorageChange();
+      }
+    };
+
+    // Add custom event listener for company changes
+    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
+
+    return () => {
+      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChange
+      );
+    };
+  }, []); // Remove fetchUsers from dependencies
 
   // Infinite scroll
   useEffect(() => {
@@ -284,7 +350,7 @@ export default function UserManagement() {
             </div>
           ) : (
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
-              {users.map(
+              {users?.map(
                 ({
                   uuid,
                   name,

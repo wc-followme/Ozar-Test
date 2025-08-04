@@ -5,7 +5,12 @@ import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
-import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import {
+  CommonStatus,
+  PAGINATION,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -164,6 +169,8 @@ export default function AddUserPage() {
         throw new Error('Date of joining is required for user creation');
       }
 
+      // Get selected company from localStorage
+
       const payload: CreateUserRequest = {
         role_id,
         name,
@@ -178,7 +185,21 @@ export default function AddUserPage() {
         city,
         pincode,
         profile_picture_url: fileKey,
+        // company_id will be handled by backend based on current user's company
       };
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: number | undefined;
+
+      if (selectedCompany) {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id;
+      }
+
+      if (companyId) {
+        payload.company_id = companyId;
+      }
       const response = await apiService.createUser(payload);
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.CREATE_SUCCESS)

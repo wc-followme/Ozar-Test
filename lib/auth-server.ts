@@ -41,7 +41,6 @@ export async function getServerAuth(): Promise<{
       token: null,
     };
   } catch (error) {
-    console.error('Server auth check error:', error);
     return {
       isAuthenticated: false,
       user: null,

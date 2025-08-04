@@ -238,7 +238,7 @@ export default function ToolsManagement() {
           extractApiErrorMessage(message) || TOOL_MESSAGES.FETCH_ERROR
         );
       }
-    } catch (error) {
+    } catch (_) {
       showErrorToast(TOOL_MESSAGES.FETCH_ERROR);
     } finally {
       setEditLoading(false);

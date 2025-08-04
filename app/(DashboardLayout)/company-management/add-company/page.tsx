@@ -78,7 +78,7 @@ export default function AddCompanyPage() {
       });
       await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
       setFileKey(presigned.data['fileKey'] || '');
-    } catch (_err: unknown) {
+    } catch (_) {
       showErrorToast(COMPANY_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
       setFileKey('');

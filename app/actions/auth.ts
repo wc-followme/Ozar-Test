@@ -179,8 +179,6 @@ export async function serverLoginAction(_prevState: any, formData: FormData) {
       };
     }
   } catch (error: any) {
-    console.error('Server login error:', error);
-
     // Handle specific error cases
     if (error.status === 401) {
       return {
@@ -316,8 +314,6 @@ export async function htmlLoginAction(formData: FormData) {
       redirect(`/auth/login?${errorParams.toString()}`);
     }
   } catch (error: any) {
-    console.error('HTML login error:', error);
-
     // Handle specific error cases and redirect with error
     let errorMessage = 'An unexpected error occurred';
 
