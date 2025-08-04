@@ -16,13 +16,11 @@ export const PAGINATION = {
 
 // Role IDs for role-based access control
 export const ROLE_IDS = {
-  SUPER_ADMIN: 1,
-  ADMIN: 2,
-  CONTRACTOR: 3,
-  EMPLOYEE: 4,
-  HOMEOWNER: 5,
-  VENDOR: 6,
-  JOB_USER: 4, // Alias for EMPLOYEE
+  ADMIN: 1,
+  CONTRACTOR: 2,
+  EMPLOYEE: 3,
+  HOMEOWNER: 4,
+  VENDOR: 5,
 } as const;
 
 // General App Constants

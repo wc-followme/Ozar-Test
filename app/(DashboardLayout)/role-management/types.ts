@@ -29,6 +29,7 @@ export interface CreateRoleRequest {
   description: string;
   icon: string;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateRoleRequest {
@@ -72,4 +73,5 @@ export interface FetchRolesParams {
   search?: string;
   name?: string;
   status?: 'ACTIVE' | 'INACTIVE' | '';
+  company_id?: string | number;
 }

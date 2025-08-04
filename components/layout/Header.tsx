@@ -36,17 +36,16 @@ export function Header() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
 
-  // Fetch companies from API only for Admin and Super Admin users
+  // Fetch companies from API only for Admin users
   useEffect(() => {
     if (!user) return;
 
     const { role: userRole } = user;
     const { id: roleId } = userRole;
-    const isAdminOrSuperAdmin =
-      roleId === ROLE_IDS.SUPER_ADMIN || roleId === ROLE_IDS.ADMIN;
+    const isAdmin = roleId === ROLE_IDS.ADMIN;
 
-    // Only fetch companies if user is admin or super admin
-    if (isAdminOrSuperAdmin) {
+    // Only fetch companies if user is admin
+    if (isAdmin) {
       const fetchCompanies = async () => {
         try {
           setLoadingCompanies(true);
@@ -160,11 +159,10 @@ export function Header() {
     const { role, company } = user;
     const { id: userRoleId } = role;
     const { name: userCompany } = company;
-    const isAdminOrSuperAdmin =
-      userRoleId === ROLE_IDS.SUPER_ADMIN || userRoleId === ROLE_IDS.ADMIN;
+    const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
-    // Show loading state only for admin/super admin users while fetching companies
-    if (isAdminOrSuperAdmin && loadingCompanies) {
+    // Show loading state only for admin users while fetching companies
+    if (isAdmin && loadingCompanies) {
       return (
         <div className='flex items-center'>
           <span className='text-[var(--text-dark)] text-lg sm:text-2xl font-bold truncate'>
@@ -174,8 +172,8 @@ export function Header() {
       );
     }
 
-    // Super Admin and Admin users see the full dropdown
-    if (isAdminOrSuperAdmin) {
+    // Admin users see the full dropdown
+    if (isAdmin) {
       return (
         <CompanyDropdown
           companies={companies}
