@@ -3,9 +3,8 @@ pipeline {
 
     environment {
         EC2_USER_HOST = 'ubuntu@13.232.74.144'
+        SITE_URL = 'https://envision.webcluesstaging.com/'
     }
-
-    def url = 'https://envision.webcluesstaging.com/'
 
     stages {
         stage('Run Deployment Script on Staging EC2') {
@@ -23,14 +22,18 @@ pipeline {
 
     post {
         always {
-            slackSend(
-                channel: 'proj-envision',
-                message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL} \n Web-Site URL: ${url}",
-                color: COLOR_MAP[currentBuild.result]
-            )
+            script {
+                def color = ['SUCCESS': 'good', 'FAILURE': 'danger', 'UNSTABLE': 'warning'][currentBuild.result] ?: 'warning'
+
+                slackSend(
+                    channel: 'proj-envision',
+                    message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \n More info at: ${env.BUILD_URL} \n Web-Site URL: ${env.SITE_URL}",
+                    color: color
+                )
+            }
 
             emailext(
-                subject: "Build Succeeded: ${JOB_NAME}-Build# ${BUILD_NUMBER} ${currentBuild.result}",
+                subject: "Build Result: ${JOB_NAME}-Build# ${BUILD_NUMBER} ${currentBuild.result}",
                 body: "${currentBuild.result}: ${BUILD_URL}",
                 attachLog: true,
                 compressLog: true,
