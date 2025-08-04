@@ -1,5 +1,6 @@
 'use client';
 
+import { STORAGE_KEYS } from '@/constants/common';
 import { useRouter } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { ApiError, apiService, LoginResponse, User } from './api';
@@ -53,19 +54,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearAuthData = () => {
     setIsAuthenticated(false);
     setUser(null);
+
+    // Define localStorage keys to clear
+    const localStorageKeys = [
+      STORAGE_KEYS.IS_AUTHENTICATED,
+      STORAGE_KEYS.USER,
+      STORAGE_KEYS.AUTH_TOKEN,
+      STORAGE_KEYS.REFRESH_TOKEN,
+      STORAGE_KEYS.DEVICE_ID,
+      STORAGE_KEYS.USER_PERMISSIONS,
+    ];
+
     // Clear localStorage
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('device_id');
-    localStorage.removeItem('user_permissions');
+    localStorageKeys.forEach(key => localStorage.removeItem(key));
+
     // Clear cookies
-    deleteCookie('is_authenticated');
-    deleteCookie('user_data');
-    deleteCookie('auth_token');
-    deleteCookie('refresh_token');
-    deleteCookie('user_permissions');
+    const cookieKeys = [
+      STORAGE_KEYS.IS_AUTHENTICATED_COOKIE,
+      STORAGE_KEYS.USER_DATA,
+      STORAGE_KEYS.AUTH_TOKEN,
+      STORAGE_KEYS.REFRESH_TOKEN,
+      STORAGE_KEYS.USER_PERMISSIONS,
+    ];
+    cookieKeys.forEach(key => deleteCookie(key));
+
     // Clear permission cache
     clearPermissionCache();
   };
@@ -73,10 +85,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle authentication errors (401 Unauthorized)
   const handleAuthError = (error: any): boolean => {
     // Check if this is a 401 error
-    if (
-      error?.status === 401 ||
-      (error instanceof Error && error.message?.includes('401'))
-    ) {
+    const { status, message } = error || {};
+    const is401Error = status === 401 || (message && message.includes('401'));
+
+    if (is401Error) {
+      // Clear auth data immediately
       clearAuthData();
 
       // Redirect to login page
@@ -93,13 +106,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkAuthStatus = () => {
       // Check both localStorage and cookies for backward compatibility
       const savedAuth =
-        localStorage.getItem('isAuthenticated') ||
-        getCookie('is_authenticated');
-      const savedUser = localStorage.getItem('user') || getCookie('user_data');
+        localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED) ||
+        getCookie(STORAGE_KEYS.IS_AUTHENTICATED_COOKIE);
+      const savedUser =
+        localStorage.getItem(STORAGE_KEYS.USER) ||
+        getCookie(STORAGE_KEYS.USER_DATA);
       const token =
-        localStorage.getItem('auth_token') || getCookie('auth_token');
+        localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+        getCookie(STORAGE_KEYS.AUTH_TOKEN);
 
-      if (savedAuth === 'true' && savedUser && token) {
+      const isAuthenticated = savedAuth === 'true';
+      const hasUserData = savedUser && token;
+
+      if (isAuthenticated && hasUserData) {
         setIsAuthenticated(true);
         try {
           setUser(JSON.parse(savedUser));
@@ -129,27 +148,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refresh_token,
         } = response.data;
 
+        // Destructure login user data for cleaner transformation
+        const {
+          id,
+          uuid,
+          first_name,
+          last_name,
+          email: userEmail,
+          phone_number,
+          profile_image,
+          status,
+          created_at,
+          updated_at,
+          role,
+          company,
+        } = loginUserData;
+        const { id: role_id, uuid: role_uuid, name: role_name } = role;
+        const { uuid: company_uuid, name: company_name } = company;
         // Transform login user data to match User interface
         const userData: User = {
-          id: loginUserData.id,
-          uuid: '', // Login response doesn't include UUID
-          role_id: loginUserData.role_id,
-          company_id: '', // Not provided in login response
-          name: `${loginUserData.first_name} ${loginUserData.last_name}`.trim(),
-          email: loginUserData.email,
+          id,
+          uuid,
+          name: `${first_name} ${last_name}`.trim(),
+          email: userEmail,
           country_code: '', // Not provided in login response
-          phone_number: loginUserData.phone_number,
-          profile_picture_url: loginUserData.profile_image || '',
-          status: loginUserData.status,
-          created_at: loginUserData.created_at,
-          updated_at: loginUserData.updated_at,
+          phone_number,
+          profile_picture_url: profile_image || '',
+          status,
+          created_at,
+          updated_at,
           role: {
-            id: loginUserData.role_id,
-            name: '', // Not provided in login response
+            id: Number(role_id) || 0,
+            uuid: role_uuid,
+            name: role_name,
           },
           company: {
-            id: '',
-            name: '',
+            uuid: company_uuid,
+            name: company_name,
           },
         };
 
@@ -158,51 +193,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(userData);
 
         // Store in localStorage (for backward compatibility)
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('auth_token', access_token);
-        localStorage.setItem('refresh_token', refresh_token);
+        localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, 'true');
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
 
         // Store in cookies (for API access)
-        setCookie('is_authenticated', 'true');
-        setCookie('user_data', JSON.stringify(userData));
-        setCookie('auth_token', access_token);
-        setCookie('refresh_token', refresh_token);
+        setCookie(STORAGE_KEYS.IS_AUTHENTICATED_COOKIE, 'true');
+        setCookie(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+        setCookie(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        setCookie(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
 
         // --- Fetch and securely store user permissions ---
         try {
           const permissionsRes = await apiService.getMyPermissions();
           if (permissionsRes && permissionsRes.data) {
-            const encrypted = encryptData(
-              JSON.stringify(permissionsRes.data.permissions)
-            );
-            localStorage.setItem('user_permissions', encrypted);
-            setCookie('user_permissions', encrypted);
+            const { permissions } = permissionsRes.data;
+            const encrypted = encryptData(JSON.stringify(permissions));
+            localStorage.setItem(STORAGE_KEYS.USER_PERMISSIONS, encrypted);
+            setCookie(STORAGE_KEYS.USER_PERMISSIONS, encrypted);
           }
         } catch (permErr) {
-          console.error('Failed to fetch/store user permissions:', permErr);
+          // console.error('Failed to fetch/store user permissions:', permErr);
         }
 
         return { success: true };
       } else {
+        const { message } = response;
         return {
           success: false,
-          error: response.message || 'Login failed',
+          error: message || 'Login failed',
         };
       }
     } catch (error: unknown) {
       const apiError = error as ApiError;
+      const { status, message, errors } = apiError;
 
       // Handle specific error cases
-      if (apiError.status === 401) {
+      if (status === 401) {
         return {
           success: false,
           error: 'Invalid email or password',
         };
-      } else if (apiError.status === 422) {
+      } else if (status === 422) {
         // Validation errors
-        if (apiError.errors) {
-          const errorMessages = Object.values(apiError.errors).flat();
+        if (errors) {
+          const errorMessages = Object.values(errors).flat();
           return {
             success: false,
             error: errorMessages.join(', '),
@@ -210,9 +246,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         return {
           success: false,
-          error: apiError.message || 'Please check your input',
+          error: message || 'Please check your input',
         };
-      } else if (apiError.status === 0) {
+      } else if (status === 0) {
         return {
           success: false,
           error: 'Network error. Please check your connection.',
@@ -220,7 +256,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } else {
         return {
           success: false,
-          error: apiError.message || 'An unexpected error occurred',
+          error: message || 'An unexpected error occurred',
         };
       }
     }
@@ -243,7 +279,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshAccessToken = async (): Promise<boolean> => {
     try {
       const refreshToken =
-        localStorage.getItem('refresh_token') || getCookie('refresh_token');
+        localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) ||
+        getCookie(STORAGE_KEYS.REFRESH_TOKEN);
       if (!refreshToken) {
         await logout();
         return false;
@@ -254,10 +291,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { access_token, refresh_token: newRefreshToken } = response.data;
 
         // Update stored tokens
-        localStorage.setItem('auth_token', access_token);
-        localStorage.setItem('refresh_token', newRefreshToken);
-        setCookie('auth_token', access_token);
-        setCookie('refresh_token', newRefreshToken);
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+        setCookie(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        setCookie(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
 
         return true;
       } else {
@@ -292,5 +329,22 @@ export function useAuth() {
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+  const {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    isLoading,
+    refreshAccessToken,
+    handleAuthError,
+  } = context;
+  return {
+    isAuthenticated,
+    user,
+    login,
+    logout,
+    isLoading,
+    refreshAccessToken,
+    handleAuthError,
+  };
 }

@@ -26,6 +26,7 @@ interface LoginResponse {
     refresh_token: string;
     user: {
       id: number;
+      uuid: string;
       first_name: string;
       last_name: string;
       email: string;
@@ -36,8 +37,17 @@ interface LoginResponse {
       updated_at: string;
       created_by: number | null;
       updated_by: number | null;
-      role_id: number;
       device_token: string;
+      role: {
+        id?: number;
+        uuid: string;
+        name: string;
+      };
+      company: {
+        id?: number;
+        uuid: string;
+        name: string;
+      };
     };
   };
 }
@@ -69,6 +79,7 @@ interface CreateRoleRequest {
   icon: string;
   status?: 'ACTIVE' | 'INACTIVE';
   permissions?: any;
+  company_id?: string | number;
 }
 
 interface CreateRoleResponse {
@@ -89,8 +100,7 @@ interface CreateRoleResponse {
 export interface User {
   id: number;
   uuid: string;
-  role_id: number;
-  company_id: string;
+
   name: string;
   email: string;
   country_code: string;
@@ -106,11 +116,13 @@ export interface User {
   city?: string;
   pincode?: string;
   role: {
-    id: number;
+    id?: number | string; // Not provided in login response
+    uuid: string;
     name: string;
   };
   company: {
-    id: string;
+    id?: number | string;
+    uuid: string;
     name: string;
   };
 }
@@ -155,7 +167,7 @@ export interface CreateUserRequest {
   address: string;
   city: string;
   pincode: string;
-  company_id?: number; // Optional - for creating users within a specific company (numeric ID)
+  company_id?: number | string | undefined; // Optional - for creating users within a specific company (numeric ID)
 }
 
 export interface CreateUserResponse {
@@ -755,12 +767,14 @@ class ApiService {
     search = '',
     name = '',
     status = 'ACTIVE',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
     search?: string;
     name?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
+    company_id?: string | number;
   }) {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -768,6 +782,7 @@ class ApiService {
     if (search) params.append('search', search);
     if (name) params.append('name', name);
     if (status) params.append('status', status);
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/roles?${params.toString()}`, {
       headers: this.getRoleHeaders(),
     });
@@ -1591,6 +1606,12 @@ class ApiService {
   async deleteTool(uuid: string): Promise<DeleteToolResponse> {
     return this.makeRequest(`/tools/${uuid}`, {
       method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getCompaniesDropdown(): Promise<any> {
+    return this.makeRequest('/companies/dropdown', {
       headers: this.getRoleHeaders(),
     });
   }
