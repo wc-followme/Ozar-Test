@@ -15,7 +15,7 @@ export default function LoginPageContent() {
 
   // Get redirect param if present
   const redirectTo = searchParams.get('redirect');
-
+  console.log('asas', redirectTo);
   const handleLogin = async (email: string, password: string) => {
     const result = await login(email, password);
     if (result.success) {
@@ -35,6 +35,7 @@ export default function LoginPageContent() {
         }
       }, 500);
     } else {
+      console.log('result', result);
       showErrorToast(
         result.error || 'Invalid email or password. Please try again.'
       );

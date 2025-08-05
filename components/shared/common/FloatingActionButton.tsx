@@ -80,8 +80,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     setIsToolbarOpen(false);
   };
 
-  const handleTodoFormSubmit = (data: any) => {
-    console.log('Todo form submitted:', data);
+  const handleTodoFormSubmit = () => {
     setShowTodoForm(false);
   };
 
@@ -89,8 +88,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     setShowTodoForm(false);
   };
 
-  const handleAppointmentFormSubmit = (data: any) => {
-    console.log('Appointment form submitted:', data);
+  const handleAppointmentFormSubmit = () => {
     setShowAppointmentForm(false);
   };
 
@@ -104,8 +102,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     setIsToolbarOpen(false);
   };
 
-  const handleCreateJobSubmit = (data: any) => {
-    console.log('Create job form submitted:', data);
+  const handleCreateJobSubmit = () => {
     setShowJobSheet(false);
   };
 
