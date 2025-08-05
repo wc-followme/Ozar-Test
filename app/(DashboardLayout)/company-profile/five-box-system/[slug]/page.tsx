@@ -163,8 +163,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
     },
   ];
 
-  const handleSave = (data: Record<string, any>) => {
-    console.log('Saving form data for', config?.title, ':', data);
+  const handleSave = () => {
     // Here you would make an API call to save the data
   };
 
@@ -177,7 +176,6 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   };
 
   const handleQuestionSave = (questionData: QuestionFormData) => {
-    console.log('New question data:', questionData);
     // Replace the entire questions array with the new data
     const newQuestions = questionData.questions.map((question, index) => ({
       id: index + 1, // Reset IDs to be sequential
@@ -206,25 +204,17 @@ const DynamicBoxPage = ({ params }: PageProps) => {
     setFieldStates(prev =>
       prev.map(field => (field.id === fieldId ? { ...field, enabled } : field))
     );
-    console.log(`Field ${fieldId} ${enabled ? 'enabled' : 'disabled'}`);
   };
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
   };
 
-  const handleCategorySave = () => {
-    console.log('Selected category:', selectedCategory);
-    // Here you would make an API call to save the selected category
-  };
-
   const handleAddRoom = () => {
-    console.log('Add Room clicked');
     // Here you would handle adding a room
   };
 
   const handleAddFromTemplate = () => {
-    console.log('Add From Template clicked');
     // Here you would handle adding from template
   };
 
@@ -292,8 +282,8 @@ const DynamicBoxPage = ({ params }: PageProps) => {
 
             {/* Description */}
             <p className='text-base md:text-lg text-[var(--text-secondary)] mb-8 max-w-md'>
-              You haven't created any estimate yet. Start by adding your first
-              one to organize your estimate.
+              You haven&apos;t created any estimate yet. Start by adding your
+              first one to organize your estimate.
             </p>
 
             {/* Action Buttons */}

@@ -83,10 +83,7 @@ export interface DynamicFormProps {
 export const DynamicForm: React.FC<DynamicFormProps> = ({
   config,
   initialData = {},
-  onSave,
-  onCancel,
   showHeader = true,
-  showActions = true,
   className = '',
   enabledFields,
   titleAlignment = 'center',
@@ -110,70 +107,6 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
         [field]: '',
       }));
     }
-  };
-
-  const validateField = (field: FormField, value: any): string => {
-    if (field.type === 'timerange') {
-      const startTime = formData[field.validation?.startTime || ''];
-      const endTime = formData[field.validation?.endTime || ''];
-
-      if (field.required && (!startTime || !endTime)) {
-        return `${field.label} is required`;
-      }
-
-      if (startTime && endTime && startTime >= endTime) {
-        return 'End time must be after start time';
-      }
-
-      return '';
-    }
-
-    if (field.required && (!value || value.trim() === '')) {
-      return `${field.label} is required`;
-    }
-
-    if (value && field.validation) {
-      const { validation } = field;
-
-      if (validation.pattern && !new RegExp(validation.pattern).test(value)) {
-        return `${field.label} format is invalid`;
-      }
-
-      if (validation.minLength && value.length < validation.minLength) {
-        return `${field.label} must be at least ${validation.minLength} characters`;
-      }
-
-      if (validation.maxLength && value.length > validation.maxLength) {
-        return `${field.label} must be at most ${validation.maxLength} characters`;
-      }
-
-      if (validation.min && Number(value) < validation.min) {
-        return `${field.label} must be at least ${validation.min}`;
-      }
-
-      if (validation.max && Number(value) > validation.max) {
-        return `${field.label} must be at most ${validation.max}`;
-      }
-    }
-
-    return '';
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    let isValid = true;
-
-    config.fields.forEach(field => {
-      const { name } = field;
-      const error = validateField(field, formData[name]);
-      if (error) {
-        newErrors[name] = error;
-        isValid = false;
-      }
-    });
-
-    setErrors(newErrors);
-    return isValid;
   };
 
   const renderField = ({

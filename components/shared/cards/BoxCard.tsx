@@ -36,7 +36,6 @@ export interface BoxCardProps {
 }
 
 export const BoxCard: React.FC<BoxCardProps> = ({
-  id,
   number,
   color,
   textColor = '#FFFFFF',

@@ -55,7 +55,7 @@ export const CreateQuestionForm: React.FC<CreateQuestionFormProps> = ({
     const newErrors: Record<string, string> = {};
     let hasValidQuestion = false;
 
-    questions.forEach((question, index) => {
+    questions.forEach(question => {
       if (question.trim()) {
         hasValidQuestion = true;
       }

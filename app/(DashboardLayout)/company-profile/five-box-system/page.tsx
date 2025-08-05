@@ -112,12 +112,10 @@ const FiveBoxSystem = () => {
   };
 
   const handleDelete = (id: string) => {
-    console.log('Delete box:', id);
     setBoxData(prev => prev.filter(box => box.id !== id));
   };
 
   const handleToggle = (id: string) => {
-    console.log('Toggle box:', id);
     setBoxData(prev =>
       prev.map(box => (box.id === id ? { ...box, enabled: !box.enabled } : box))
     );

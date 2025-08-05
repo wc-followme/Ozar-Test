@@ -50,6 +50,8 @@ export function PermissionAwareSidebar() {
 
       return () => clearTimeout(timeoutId);
     }
+    // Return undefined when isOpen is false to satisfy TypeScript
+    return undefined;
   }, [isOpen]);
 
   // Show minimal sidebar while loading to prevent flash
