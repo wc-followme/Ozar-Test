@@ -7,7 +7,13 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import { CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import {
+  CommonStatus,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
@@ -230,6 +236,20 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Get selected company from localStorage for roles
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         // Fetch user details and roles in parallel
         const [userRes, rolesRes] = await Promise.all([
           apiService.getUserDetails(resolvedParams.uuid),
@@ -237,6 +257,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
             page: 1,
             limit: ROLES_DROPDOWN_LIMIT,
             status: '', // Fetch both active and inactive roles
+            ...(companyId ? { company_id: companyId } : {}),
           }),
         ]);
 
@@ -252,12 +273,36 @@ export default function EditUserPage({ params }: EditUserPageProps) {
 
         // Set roles data
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+        console.log(roleList);
+        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        let adminRoleId = null;
+        let adminRoleUuid = null; // Default fallback
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            // If current user is admin, use their role ID as reference
+            if (userData.role?.id) {
+              adminRoleId = userData.role.id;
+              adminRoleUuid = userData.role.uuid;
+            }
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+          }
+        }
         setRoles(
-          roleList.map(({ id, name, status }) => ({
-            id,
-            name,
-            status: status || ACTIVE,
-          }))
+          roleList
+            .map(({ uuid, name, status }: Role) => ({
+              uuid,
+              name,
+              status: status || 'ACTIVE',
+            }))
+            .filter(role => {
+              if (ROLE_IDS.ADMIN === adminRoleId) {
+                return role.uuid !== adminRoleUuid;
+              } else {
+                return true;
+              }
+            }) // Remove admin role using dynamic ID
         );
       } catch (err: unknown) {
         // Handle auth errors first (will redirect to login if 401)

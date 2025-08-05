@@ -7,7 +7,9 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
 import {
   CommonStatus,
+  CUSTOM_EVENTS,
   PAGINATION,
+  ROLE_IDS,
   ROUTES,
   STORAGE_KEYS,
 } from '@/constants/common';
@@ -22,7 +24,7 @@ import {
 } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Role, RoleApiResponse, UserFormData } from '../types';
 import { USER_MESSAGES } from '../user-messages';
 
@@ -44,6 +46,7 @@ export default function AddUserPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loadingRoles, setLoadingRoles] = useState<boolean>(true);
   const [formLoading, setFormLoading] = useState(false);
+  const selectedCompanyRef = useRef<string | null>(null);
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
@@ -65,35 +68,116 @@ export default function AddUserPage() {
     );
   };
 
+  // Initialize selectedCompany from localStorage
   useEffect(() => {
-    const fetchRoles = async () => {
-      setLoadingRoles(true);
-      try {
-        const rolesRes = await apiService.fetchRoles({
-          page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
-        });
-        const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
-        setRoles(
-          roleList.map(({ id, name, status }: Role) => ({
-            id,
-            name,
-            status: status || CommonStatus.ACTIVE,
-          }))
-        );
-      } catch (err: unknown) {
-        if (handleAuthError(err)) {
-          return; // Don't show toast if it's an auth error
+    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    selectedCompanyRef.current = currentCompany;
+  }, []);
+
+  const fetchRoles = async () => {
+    setLoadingRoles(true);
+    try {
+      // Get selected company from localStorage for roles
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          companyId = parsedCompany.id; // UUID from localStorage
+        } catch (error) {
+          companyId = undefined;
         }
-        // Error fetching roles - proceed with empty array
-        setRoles([]);
-      } finally {
-        setLoadingRoles(false);
       }
-    };
+
+      const rolesRes = await apiService.fetchRoles({
+        page: 1,
+        limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
+        status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
+        ...(companyId ? { company_id: companyId } : {}),
+      });
+      const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+
+      // Get current user data from localStorage to determine admin role ID
+      const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+      let adminRoleId = null;
+      let adminRoleUuid = null; // Default fallback
+      if (currentUser) {
+        try {
+          const userData = JSON.parse(currentUser);
+          // If current user is admin, use their role ID as reference
+          if (userData.role?.id) {
+            adminRoleId = userData.role.id;
+            adminRoleUuid = userData.role.uuid;
+          }
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+        }
+      }
+
+      setRoles(
+        roleList
+          .map(({ id, uuid, name, status }: Role) => ({
+            id: id || 0,
+            uuid,
+            name,
+            status: status || 'ACTIVE',
+          }))
+          .filter(role => {
+            if (ROLE_IDS.ADMIN === adminRoleId) {
+              return role.uuid !== adminRoleUuid;
+            } else {
+              return true;
+            }
+          }) // Remove admin role using dynamic ID
+      );
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+      // Error fetching roles - proceed with empty array
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  useEffect(() => {
     fetchRoles();
   }, [handleAuthError]);
+
+  // Watch for changes in selected company and refetch roles
+  useEffect(() => {
+    const handleStorageChange = () => {
+      fetchRoles();
+    };
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+
+    // Listen for custom company change events
+    const handleCompanyChange = () => {
+      const currentCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      if (currentCompany !== selectedCompanyRef.current) {
+        selectedCompanyRef.current = currentCompany;
+        handleStorageChange();
+      }
+    };
+
+    // Add custom event listener for company changes
+    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
+
+    return () => {
+      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChange
+      );
+    };
+  }, []); // Empty dependency array
 
   // Get user permissions for users
   const userPermissions = getUserPermissionsFromStorage();

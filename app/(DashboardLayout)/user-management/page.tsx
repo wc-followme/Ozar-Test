@@ -72,17 +72,32 @@ export default function UserManagement() {
       try {
         // Fetch roles only on first load
         if (targetPage === 1) {
+          // Get selected company from localStorage for roles
+          const selectedCompany = localStorage.getItem(
+            STORAGE_KEYS.SELECTED_COMPANY
+          );
+          let companyId: string | undefined;
+          if (selectedCompany) {
+            try {
+              const parsedCompany = JSON.parse(selectedCompany);
+              companyId = parsedCompany.id; // UUID from localStorage
+            } catch (error) {
+              companyId = undefined;
+            }
+          }
+
           const rolesRes = await apiService.fetchRoles({
             page: 1,
             limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
             status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
+            ...(companyId ? { company_id: companyId } : {}),
           });
           const roleList = isRoleApiResponse(rolesRes)
             ? rolesRes.data.data
             : [];
           setRoles(
-            roleList.map(({ id, name, status }) => ({
-              id,
+            roleList?.map(({ uuid, name, status }) => ({
+              uuid,
               name,
               status: status || CommonStatus.ACTIVE,
             }))
@@ -304,8 +319,8 @@ export default function UserManagement() {
               onValueChange={setFilter}
               options={[
                 { value: 'all', label: USER_MESSAGES.ALL_USERS },
-                ...roles.map(({ id, name }) => ({
-                  value: String(id),
+                ...roles.map(({ uuid, name }) => ({
+                  value: String(uuid),
                   label: name,
                 })),
               ]}
