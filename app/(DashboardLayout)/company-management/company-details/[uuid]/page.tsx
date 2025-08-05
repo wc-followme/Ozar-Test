@@ -9,7 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
@@ -186,14 +193,59 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     try {
       // Fetch roles only on first load
       if (targetPage === 1) {
+        // Get selected company from localStorage for roles
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const rolesRes = await apiService.fetchRoles({
           page: 1,
           limit: ROLES_DROPDOWN_LIMIT,
           status: ACTIVE, // Only fetch active roles for dropdown
+          ...(companyId ? { company_id: companyId } : {}),
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+
+        // Get current user data from localStorage to determine admin role ID
+        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        let adminRoleId = null;
+        let adminRoleUuid = null; // Default fallback
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            // If current user is admin, use their role ID as reference
+            if (userData.role?.id) {
+              adminRoleId = userData.role.id;
+              adminRoleUuid = userData.role.uuid;
+            }
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+          }
+        }
+
         setRoles(
-          roleList.map((role: Role) => ({ id: role.id, name: role.name }))
+          roleList
+            .map(({ uuid, name, status }: Role) => ({
+              uuid,
+              name,
+              status: status || 'ACTIVE',
+            }))
+            .filter(role => {
+              if (ROLE_IDS.ADMIN === adminRoleId) {
+                return role.uuid !== adminRoleUuid;
+              } else {
+                return true;
+              }
+            }) // Remove admin role using dynamic ID
         );
       }
 
@@ -633,7 +685,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 options={[
                   { value: 'all', label: USER_MESSAGES.ALL_USERS },
                   ...roles.map(role => ({
-                    value: String(role.id),
+                    value: role.uuid,
                     label: role.name,
                   })),
                 ]}
