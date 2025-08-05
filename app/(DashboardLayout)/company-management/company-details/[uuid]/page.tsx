@@ -63,7 +63,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   // Destructure constants for better readability
   const { ROLES_DROPDOWN_LIMIT, USERS_LIMIT } = PAGINATION;
   const { ACTIVE, INACTIVE } = CommonStatus;
-  const { EDIT, ARCHIVE } = ACTIONS;
+  const { EDIT, DELETE } = ACTIONS;
   const { COMPANY_MANAGEMENT, ADD_USER } = ROUTES;
 
   const resolvedParams = React.use(params);
@@ -90,6 +90,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
   // Get user permissions for companies and users
   const userPermissions = getUserPermissionsFromStorage();
@@ -128,8 +129,9 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         );
 
         if (isCompanyApiResponse(response)) {
-          setCompany(response.data);
-          setEnabled(response.data.status === 'ACTIVE');
+          const { data } = response;
+          setCompany(data);
+          setEnabled(data.status === 'ACTIVE');
         } else {
           throw new Error('Invalid response format');
         }
@@ -171,9 +173,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     if (selectedTab !== 'usermanagement') return;
 
     const handleScroll = () => {
+      const { innerHeight, scrollY } = window;
+      const { offsetHeight } = document.body;
       if (
-        window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 200 &&
+        innerHeight + scrollY >= offsetHeight - 200 &&
         !usersLoading &&
         hasMore
       ) {
@@ -191,27 +194,13 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
     setUsersLoading(true);
     try {
-      // Fetch roles only on first load
-      if (targetPage === 1) {
-        // Get selected company from localStorage for roles
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
-
+      // Fetch roles only once
+      if (!rolesLoaded) {
         const rolesRes = await apiService.fetchRoles({
           page: 1,
           limit: ROLES_DROPDOWN_LIMIT,
           status: ACTIVE, // Only fetch active roles for dropdown
-          ...(companyId ? { company_id: companyId } : {}),
+          company_id: resolvedParams.uuid, // Use company UUID from URL
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
 
@@ -247,6 +236,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               }
             }) // Remove admin role using dynamic ID
         );
+        setRolesLoaded(true);
       }
 
       const role_id = filter !== 'all' ? filter : '';
@@ -255,7 +245,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         page: targetPage,
         limit: USERS_LIMIT,
         role_id,
-        company_id: company.id, // Filter by current company
+        company_id: resolvedParams.uuid, // Use company UUID from URL
       };
       if (searchParam) {
         fetchParams.search = searchParam;
@@ -265,7 +255,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         status: ACTIVE, // Only fetch active users
       });
 
-      const newUsers = usersRes.data;
+      const { data: newUsers, pagination } = usersRes;
       setUsers(prev => {
         if (append) {
           // Filter out duplicates when appending to prevent duplicate keys
@@ -279,7 +269,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         }
       });
       setPage(targetPage);
-      setHasMore(usersRes.pagination.page < usersRes.pagination.totalPages);
+      setHasMore(pagination.page < pagination.totalPages);
     } catch (err: unknown) {
       if (handleAuthError(err)) {
         return;
@@ -295,15 +285,18 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   };
 
   // User status toggle handler - same as user-management page
-  const handleUserToggleStatus = async (id: number, currentStatus: boolean) => {
+  const handleUserToggleStatus = async (
+    uuid: string,
+    currentStatus: boolean
+  ) => {
     try {
-      const user = users.find(u => u.id === id);
+      const user = users.find(u => u.uuid === uuid);
       if (!user || !user.uuid)
         throw new Error(USER_MESSAGES.USER_NOT_FOUND_ERROR);
       const newStatus = currentStatus ? INACTIVE : ACTIVE;
       const response = await apiService.updateUserStatus(user.uuid, newStatus);
       setUsers(users =>
-        users.map(u => (u.id === id ? { ...u, status: newStatus } : u))
+        users.map(u => (u.uuid === uuid ? { ...u, status: newStatus } : u))
       );
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
@@ -340,10 +333,6 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   };
 
   // Filter users based on role
-  const filteredUsers = users.filter(user => {
-    if (filter === 'all') return true;
-    return user.role?.id === parseInt(filter);
-  });
 
   // Menu options for user cards
   const menuOptions: MenuOption[] = [
@@ -355,7 +344,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     },
     {
       label: USER_MESSAGES.ARCHIVE_BUTTON,
-      action: ARCHIVE,
+      action: DELETE,
       icon: Trash,
       variant: 'destructive',
     },
@@ -379,13 +368,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         return;
       }
 
-      const currentStatus = company.status;
+      const { status: currentStatus, uuid } = company;
       const newStatus = currentStatus === 'ACTIVE' ? INACTIVE : ACTIVE;
 
-      const response = await apiService.updateCompanyStatus(
-        company.uuid,
-        newStatus
-      );
+      const response = await apiService.updateCompanyStatus(uuid, newStatus);
 
       // Update local state
       setCompany(prev => (prev ? { ...prev, status: newStatus } : null));
@@ -624,9 +610,12 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                     {COMPANY_MESSAGES.ADDRESS_LABEL}
                   </div>
                   <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
-                    {company.city && company.pincode
-                      ? `${company.city}, ${company.pincode}`
-                      : COMPANY_MESSAGES.N_A_LABEL}
+                    {(() => {
+                      const { city, pincode } = company;
+                      return city && pincode
+                        ? `${city}, ${pincode}`
+                        : COMPANY_MESSAGES.N_A_LABEL;
+                    })()}
                   </div>
                 </div>
                 <div className='min-w-0'>
@@ -643,24 +632,27 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                     {COMPANY_MESSAGES.WEBSITE_LABEL}
                   </div>
                   <div className='flex items-center gap-1 text-[var(--text-dark)] text-sm font-medium break-words'>
-                    {company.website ? (
-                      <>
-                        <span className='truncate'>{company.website}</span>
-                        <Link
-                          href={
-                            company.website.startsWith('http')
-                              ? company.website
-                              : `https://${company.website}`
-                          }
-                          target='_blank'
-                          className='underline ml-1 flex-shrink-0'
-                        >
-                          ↗
-                        </Link>
-                      </>
-                    ) : (
-                      COMPANY_MESSAGES.N_A_LABEL
-                    )}
+                    {(() => {
+                      const { website } = company;
+                      return website ? (
+                        <>
+                          <span className='truncate'>{website}</span>
+                          <Link
+                            href={
+                              website.startsWith('http')
+                                ? website
+                                : `https://${website}`
+                            }
+                            target='_blank'
+                            className='underline ml-1 flex-shrink-0'
+                          >
+                            ↗
+                          </Link>
+                        </>
+                      ) : (
+                        COMPANY_MESSAGES.N_A_LABEL
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -705,7 +697,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 </div>
               ) : (
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4'>
-                  {filteredUsers.map(
+                  {users?.map(
                     ({
                       uuid,
                       name,
@@ -714,7 +706,6 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                       email,
                       profile_picture_url,
                       status,
-                      id,
                     }) => (
                       <UserCard
                         key={uuid} // Use uuid instead of id for unique keys
@@ -730,7 +721,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                         }
                         status={status === 'ACTIVE'}
                         onToggle={() =>
-                          handleUserToggleStatus(id, status === 'ACTIVE')
+                          handleUserToggleStatus(uuid, status === 'ACTIVE')
                         }
                         onDelete={() => handleDeleteUser(uuid)}
                         menuOptions={menuOptions}

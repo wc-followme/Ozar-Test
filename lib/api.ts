@@ -329,6 +329,7 @@ export interface CreateCategoryRequest {
   icon: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface CreateCategoryResponse {
@@ -343,6 +344,7 @@ export interface UpdateCategoryRequest {
   icon?: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateCategoryResponse {
@@ -1022,12 +1024,14 @@ class ApiService {
     search = '',
     name = '',
     status = 'ACTIVE',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
     search?: string;
     name?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
+    company_id?: string | number;
   }): Promise<FetchCategoriesResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1035,6 +1039,7 @@ class ApiService {
     if (search) params.append('search', search);
     if (name) params.append('name', name);
     if (status) params.append('status', status);
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/categories?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),

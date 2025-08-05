@@ -325,7 +325,7 @@ export default function AddCompanyUserPage() {
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-1 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
