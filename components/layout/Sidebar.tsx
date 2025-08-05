@@ -93,7 +93,8 @@ export function Sidebar() {
     <TooltipProvider>
       <aside
         className={cn(
-          'hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0'
+          'hidden lg:block transition-all duration-300 ease h-full bg-[var(--white-background)] sticky top-0',
+          isOpen ? 'w-[280px]' : 'w-[94px]'
         )}
       >
         <div className='flex flex-col h-screen max-h-[100dvh]'>
@@ -130,32 +131,43 @@ export function Sidebar() {
                 {filteredSidebarItems.map(
                   ({ menu_id, title, href, icon: Icon }) => (
                     <li key={menu_id}>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                          <Link
-                            href={href}
-                            className={cn(
-                              'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                              pathname === href &&
-                                'bg-[var(--primary)] text-white'
-                            )}
-                          >
-                            <div className='stroke-[var(--text)] group-hover:text-white'>
-                              <Icon size='24' color='currentcolor' />
-                            </div>
-                            <span
+                      {isOpen ? (
+                        // When sidebar is open, show link without tooltip
+                        <Link
+                          href={href}
+                          className={cn(
+                            'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
+                            pathname === href &&
+                              'bg-[var(--primary)] text-white'
+                          )}
+                        >
+                          <div className='stroke-[var(--text)] group-hover:text-white'>
+                            <Icon size='24' color='currentcolor' />
+                          </div>
+                          <span className='opacity-100 ml-2 max-w-[180px] overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white'>
+                            {title}
+                          </span>
+                        </Link>
+                      ) : (
+                        // When sidebar is collapsed, show link with tooltip
+                        <Tooltip delayDuration={100}>
+                          <TooltipTrigger asChild>
+                            <Link
+                              href={href}
                               className={cn(
-                                'overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white',
-                                isOpen
-                                  ? 'opacity-100 ml-2 max-w-[180px]'
-                                  : 'opacity-0 max-w-0'
+                                'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
+                                pathname === href &&
+                                  'bg-[var(--primary)] text-white'
                               )}
                             >
-                              {title}
-                            </span>
-                          </Link>
-                        </TooltipTrigger>
-                        {!isOpen && (
+                              <div className='stroke-[var(--text)] group-hover:text-white'>
+                                <Icon size='24' color='currentcolor' />
+                              </div>
+                              <span className='opacity-0 max-w-0 overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white'>
+                                {title}
+                              </span>
+                            </Link>
+                          </TooltipTrigger>
                           <TooltipContent
                             side='right'
                             sideOffset={8}
@@ -163,8 +175,8 @@ export function Sidebar() {
                           >
                             <p>{title}</p>
                           </TooltipContent>
-                        )}
-                      </Tooltip>
+                        </Tooltip>
+                      )}
                     </li>
                   )
                 )}

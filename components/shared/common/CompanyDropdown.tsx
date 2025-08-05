@@ -110,13 +110,13 @@ export const CompanyDropdown: React.FC<CompanyDropdownProps> = ({
           {/* Scrollable List */}
           <div className='max-h-64 flex overflow-hidden relative pb-2'>
             <ScrollArea className='h-auto employees-dropdown-scrollbar w-full'>
-              <div className='p-0 px-4'>
+              <div className='p-0'>
                 {filteredCompanies.map((company, index) => (
                   <div
                     key={company.id}
                     onClick={() => handleSelect(company)}
                     className={cn(
-                      'flex items-center gap-3 py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors',
+                      'flex items-center gap-3 py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors px-4',
                       index !== filteredCompanies.length - 1 &&
                         'border-b border-[var(--border-dark)]'
                     )}

@@ -176,13 +176,19 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   };
 
   const handleQuestionSave = (questionData: QuestionFormData) => {
-    // Replace the entire questions array with the new data
+    // Get the next available ID by finding the maximum existing ID
+    const maxId =
+      questions.length > 0 ? Math.max(...questions.map(q => q.id)) : 0;
+
+    // Create new questions with proper IDs
     const newQuestions = questionData.questions.map((question, index) => ({
-      id: index + 1, // Reset IDs to be sequential
+      id: maxId + index + 1, // Use sequential IDs starting from max existing ID + 1
       text: question,
       answer: '', // Reset answers for new questions
     }));
-    setQuestions(newQuestions);
+
+    // Add new questions to existing ones
+    setQuestions(prev => [...prev, ...newQuestions]);
     setIsQuestionSheetOpen(false);
   };
 
@@ -383,19 +389,31 @@ const DynamicBoxPage = ({ params }: PageProps) => {
           {questions.length > 0 && (
             <div className='w-full lg:w-[280px] xl:w-[420px] lg:shrink-0 h-auto lg:pl-4 lg:border-l lg:border-[var(--border-dark)] lg:max-h-[calc(100dvh_-_280px)] overflow-y-auto mt-6 lg:mt-0 pt-6 lg:pt-0 border-t lg:border-t-0 border-[var(--border-dark)]'>
               <div className='space-y-3'>
-                {questions.map(({ id, text, answer }) => (
-                  <div key={id} className='space-y-3'>
-                    <h3 className='text-sm sm:text-[14px] font-semibold text-[var(--text-dark)]'>
-                      {text}
-                    </h3>
-                    <Textarea
-                      placeholder='Type you answer here..'
-                      value={answer}
-                      onChange={e => handleAnswerChange(id, e.target.value)}
-                      className='min-h-[80px] sm:min-h-[100px] resize-none input-field'
-                    />
-                  </div>
-                ))}
+                {questions.map(question => {
+                  // Safety check to ensure question has required properties
+                  if (
+                    !question ||
+                    typeof question.id === 'undefined' ||
+                    !question.text
+                  ) {
+                    return null;
+                  }
+
+                  const { id, text, answer } = question;
+                  return (
+                    <div key={id} className='space-y-3'>
+                      <h3 className='text-sm sm:text-[14px] font-semibold text-[var(--text-dark)]'>
+                        {text}
+                      </h3>
+                      <Textarea
+                        placeholder='Type you answer here..'
+                        value={answer || ''}
+                        onChange={e => handleAnswerChange(id, e.target.value)}
+                        className='min-h-[80px] sm:min-h-[100px] resize-none input-field'
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
