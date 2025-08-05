@@ -35,7 +35,6 @@ pipeline {
           color: color
         )
       }
-
       emailext(
         subject: "Build Result: ${JOB_NAME}-Build# ${BUILD_NUMBER} ${currentBuild.result}",
         body: "${currentBuild.result}: ${BUILD_URL}",
