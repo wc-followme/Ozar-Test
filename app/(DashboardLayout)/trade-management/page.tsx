@@ -8,10 +8,16 @@ import TradeForm from '@/components/shared/forms/TradeForm';
 import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 
 import AccessDenied from '@/components/shared/common/AccessDenied';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -69,10 +75,25 @@ export default function TradeManagementPage() {
     async (targetPage = 1, append = false) => {
       setLoading(true);
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchTrades({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -131,13 +152,15 @@ export default function TradeManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of trades
-  useEffect(() => {
+  // Handle company changes
+  const refetchTrades = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setTrades([]);
     fetchTrades(1, false);
   }, [fetchTrades]);
+
+  useCompanyChange(refetchTrades);
 
   // Infinite scroll
   useEffect(() => {
@@ -209,6 +232,18 @@ export default function TradeManagementPage() {
   }) => {
     const { tradeName, category, tradeData } = data;
 
+    // Get selected company from localStorage
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    let companyId: string | undefined;
+    if (selectedCompany) {
+      try {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id; // UUID from localStorage
+      } catch (error) {
+        console.error('Error parsing selected company:', error);
+      }
+    }
+
     // Use the actual trade data from API response if available
     if (tradeData) {
       // Add the new trade to the beginning of the trades list
@@ -230,6 +265,7 @@ export default function TradeManagementPage() {
           name: cat.trim(),
           status: CommonStatus.ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new trade to the beginning of the trades list

@@ -1121,8 +1121,19 @@ class ApiService {
   }
 
   // Get categories dropdown
-  async getCategoriesDropdown(): Promise<any> {
-    return this.makeRequest('/categories/dropdown', {
+  async getCategoriesDropdown(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', String(params.company_id));
+    }
+
+    const url = queryParams.toString()
+      ? `/categories/dropdown?${queryParams.toString()}`
+      : '/categories/dropdown';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1185,6 +1196,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     category_id = '',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
@@ -1193,6 +1205,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     category_id?: string | number;
+    company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1202,6 +1215,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (category_id) params.append('category_id', String(category_id));
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/trades?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1216,6 +1230,7 @@ class ApiService {
     is_active: boolean;
     status: string;
     category_ids: string;
+    company_id?: string | number;
   }): Promise<any> {
     return this.makeRequest('/trades', {
       method: 'POST',
@@ -1242,6 +1257,7 @@ class ApiService {
       is_active: boolean;
       status: string;
       category_ids: string;
+      company_id?: string | number;
     }
   ): Promise<any> {
     return this.makeRequest(`/trades/${uuid}`, {
