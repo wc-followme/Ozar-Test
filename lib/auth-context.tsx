@@ -163,6 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role,
           company,
         } = loginUserData;
+        console.log('loginUserData', loginUserData);
         const { id: role_id, uuid: role_uuid, name: role_name } = role;
         const { uuid: company_uuid, name: company_name } = company;
         // Transform login user data to match User interface
