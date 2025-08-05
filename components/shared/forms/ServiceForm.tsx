@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { serviceFormSchema } from '@/lib/validations/service';
@@ -41,7 +42,24 @@ export default function ServiceForm({
     const fetchTrades = async () => {
       try {
         setLoadingTrades(true);
-        const response = await apiService.getTradesDropdown();
+
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            console.error('Error parsing selected company:', error);
+          }
+        }
+
+        const response = await apiService.getTradesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setTradesOption(response.data);
         }
@@ -87,6 +105,20 @@ export default function ServiceForm({
   const onFormSubmit = async (data: any) => {
     const { serviceName, trades = [] } = data;
     try {
+      // Get selected company from localStorage
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          companyId = parsedCompany.id; // UUID from localStorage
+        } catch (error) {
+          console.error('Error parsing selected company:', error);
+        }
+      }
+
       const payload = {
         name: serviceName,
         description: '', // You can add a description field to the form if needed
@@ -94,6 +126,7 @@ export default function ServiceForm({
         is_active: true,
         status: 'ACTIVE',
         trade_ids: trades.join(','),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       if (initialServiceUuid) {

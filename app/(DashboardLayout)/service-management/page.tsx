@@ -8,8 +8,14 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -76,10 +82,25 @@ export default function ServiceManagementPage() {
         setLoading(true);
       }
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchServices({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -140,13 +161,15 @@ export default function ServiceManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of services
-  useEffect(() => {
+  // Handle company changes
+  const refetchServices = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setServices([]);
     fetchServices(1, false);
   }, [fetchServices]);
+
+  useCompanyChange(refetchServices);
 
   // Infinite scroll
   useEffect(() => {
@@ -220,6 +243,18 @@ export default function ServiceManagementPage() {
   }) => {
     const { serviceName, trades, serviceData } = data;
 
+    // Get selected company from localStorage
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    let companyId: string | undefined;
+    if (selectedCompany) {
+      try {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id; // UUID from localStorage
+      } catch (error) {
+        console.error('Error parsing selected company:', error);
+      }
+    }
+
     // Use the actual service data from API response if available
     if (serviceData) {
       // Add the new service to the beginning of the services list
@@ -241,6 +276,7 @@ export default function ServiceManagementPage() {
           name: trade.trim(),
           status: ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new service to the beginning of the services list
