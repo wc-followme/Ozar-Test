@@ -484,6 +484,7 @@ export interface Tool {
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
   updated_at: string;
+  company_id?: string;
   services: Array<{
     id: number | string;
     name: string;
@@ -510,6 +511,7 @@ export interface CreateToolRequest {
   manufacturer: string;
   tool_assets: string;
   service_ids: string;
+  company_id?: string | number;
 }
 
 export interface CreateToolResponse {
@@ -525,6 +527,7 @@ export interface UpdateToolRequest {
   tool_assets?: string;
   service_ids?: string;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateToolResponse {

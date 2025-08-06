@@ -7,6 +7,7 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
 import { apiService, Service } from '@/lib/api';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import { cn } from '@/lib/utils';
@@ -186,12 +187,28 @@ const ToolForm: React.FC<ToolFormProps> = ({
     const loadServices = async () => {
       setLoadingServices(true);
       try {
-        const response = await apiService.getServicesDropdown();
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            companyId = undefined;
+          }
+        }
+
+        const response = await apiService.getServicesDropdown(
+          companyId ? { company_id: companyId } : undefined
+        );
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setServices(response.data);
         }
-      } catch (error) {
-        console.error('Error loading services:', error);
+      } catch {
+        // Silently fail if services fetch fails
         setServices([]);
       } finally {
         setLoadingServices(false);
