@@ -126,11 +126,11 @@ export default function CompanyManagement() {
 
   // Status toggle handler - updated to actually call API
   const handleToggleStatus = async (
-    id: number,
+    uuid: string,
     currentStatus: 'ACTIVE' | 'INACTIVE'
   ) => {
     try {
-      const company = companies.find(c => c.id === id);
+      const company = companies.find(c => c.uuid === uuid);
       if (!company || !company.uuid)
         throw new Error(COMPANY_MESSAGES.COMPANY_NOT_FOUND_ERROR);
 
@@ -265,7 +265,6 @@ export default function CompanyManagement() {
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
               {companies.map(
                 ({
-                  id,
                   name,
                   created_at,
                   expiry_date,
@@ -275,7 +274,7 @@ export default function CompanyManagement() {
                   uuid,
                 }) => (
                   <CompanyCard
-                    key={id}
+                    key={uuid}
                     name={name}
                     createdOn={formatDate(created_at)}
                     subsEnd={formatDate(expiry_date)}
@@ -285,7 +284,7 @@ export default function CompanyManagement() {
                         : ''
                     }
                     status={status === 'ACTIVE'}
-                    onToggle={() => handleToggleStatus(id, status)}
+                    onToggle={() => handleToggleStatus(uuid, status)}
                     menuOptions={menuOptions}
                     isDefault={is_default}
                     companyUuid={uuid}
