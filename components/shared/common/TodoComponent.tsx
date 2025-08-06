@@ -75,6 +75,10 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+    const [editingTodoList, setEditingTodoList] = useState<TodoList | null>(
+      null
+    );
+    const [editLoading, setEditLoading] = useState(false);
     const { showSuccessToast, showErrorToast } = useToast();
 
     // Fetch todo lists function
@@ -102,6 +106,26 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
         setError('Failed to fetch todo lists');
       } finally {
         setLoading(false);
+      }
+    };
+
+    // Fetch single todo list for editing
+    const fetchTodoListForEdit = async (todoUuid: string) => {
+      setEditLoading(true);
+      try {
+        const response = await apiService.fetchTodoListById(todoUuid);
+
+        if (response.statusCode === 200 && response.data) {
+          setEditingTodoList(response.data);
+          setIsEditSheetOpen(true);
+        } else {
+          showErrorToast('Failed to fetch todo list details');
+        }
+      } catch (error) {
+        console.error('Error fetching todo list for edit:', error);
+        showErrorToast('Failed to fetch todo list details');
+      } finally {
+        setEditLoading(false);
       }
     };
 
@@ -299,19 +323,31 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
       }
     };
 
-    const handleEditSection = (_: string) => {
-      setIsEditSheetOpen(true);
+    const handleEditSection = (sectionId: string) => {
+      // Find the todo list in the section
+      const section = taskSections.find(s => s.id === sectionId);
+      if (section && section.todos.length > 0) {
+        // For now, edit the first todo in the section
+        // In a real implementation, you might want to show a list of todos to choose from
+        const todoToEdit = section.todos[0];
+        if (todoToEdit) {
+          fetchTodoListForEdit(todoToEdit.uuid);
+        }
+      }
     };
 
     const handleFormSubmit = () => {
       // Handle form submission for editing the section
       // Here you would typically update the section data
-      // For now, just close the sidesheet
+      // For now, just close the sidesheet and refresh the data
       setIsEditSheetOpen(false);
+      setEditingTodoList(null);
+      fetchTodoLists(); // Refresh the data
     };
 
     const handleFormCancel = () => {
       setIsEditSheetOpen(false);
+      setEditingTodoList(null);
     };
 
     if (loading) {
@@ -443,17 +479,29 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
 
         {/* Edit Toolbar SideSheet */}
         <SideSheet
-          title={TODO_MESSAGES.EDIT_TODO_TITLE}
+          title={
+            editingTodoList ? 'Edit Todo List' : TODO_MESSAGES.EDIT_TODO_TITLE
+          }
           open={isEditSheetOpen}
           onOpenChange={setIsEditSheetOpen}
           size='600px'
         >
           <div className='space-y-4'>
-            <TodoForm
-              onSubmit={handleFormSubmit}
-              onCancel={handleFormCancel}
-              loading={false}
-            />
+            {editLoading ? (
+              <div className='flex items-center justify-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+                <span className='ml-2 text-[var(--text-secondary)]'>
+                  Loading todo list...
+                </span>
+              </div>
+            ) : (
+              <TodoForm
+                onSubmit={handleFormSubmit}
+                onCancel={handleFormCancel}
+                loading={false}
+                editingTodoList={editingTodoList}
+              />
+            )}
           </div>
         </SideSheet>
       </div>

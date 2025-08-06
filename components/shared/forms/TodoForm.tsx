@@ -95,12 +95,14 @@ interface TodoFormProps {
   onSubmit: (data: TodoFormData) => void;
   onCancel: () => void;
   loading?: boolean;
+  editingTodoList?: any; // Add this prop for editing mode
 }
 
 export const TodoForm: React.FC<TodoFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
+  editingTodoList,
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
@@ -117,6 +119,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<TodoFormData>({
     resolver: yupResolver(todoFormSchema),
@@ -130,6 +133,57 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   });
 
   const watchedListItems = watch('listItems');
+  const watchedJob = watch('job');
+  const watchedEmployees = watch('employees');
+
+  // Debug form values
+  useEffect(() => {
+    if (editingTodoList) {
+      console.log('Current form values:', {
+        job: watchedJob,
+        employees: watchedEmployees,
+        selectedEmployees,
+        jobsCount: jobs.length,
+        employeesCount: employees.length,
+      });
+    }
+  }, [
+    watchedJob,
+    watchedEmployees,
+    selectedEmployees,
+    jobs.length,
+    employees.length,
+    editingTodoList,
+  ]);
+
+  // Debug available jobs
+  useEffect(() => {
+    if (jobs.length > 0) {
+      console.log(
+        'Available jobs:',
+        jobs.map(job => ({
+          uuid: job.uuid,
+          project_name: job.project_name,
+          project_id: job.project_id,
+        }))
+      );
+    }
+  }, [jobs]);
+
+  // Reset form when editing mode changes
+  useEffect(() => {
+    if (!editingTodoList) {
+      // Reset form for create mode
+      reset({
+        job: '',
+        date: new Date(),
+        employees: [],
+        title: '',
+        listItems: [''],
+      });
+      setSelectedEmployees([]);
+    }
+  }, [editingTodoList, reset]);
 
   // Fetch jobs on component mount
   useEffect(() => {
@@ -244,6 +298,89 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     );
   }, [employees]);
 
+  // Handle prefilling the form if editing
+  useEffect(() => {
+    if (editingTodoList && jobs.length > 0 && employees.length > 0) {
+      console.log('Setting form values for editing:', {
+        job_id: editingTodoList.job_id,
+        job_uuid: editingTodoList.job_uuid,
+        employees: editingTodoList.employees,
+        title: editingTodoList.title,
+        date: editingTodoList.date,
+        items: editingTodoList.items,
+      });
+
+      // Add a small delay to ensure form is properly initialized
+      setTimeout(() => {
+        // Try both job_id and job_uuid
+        let jobUuid = editingTodoList.job_uuid || editingTodoList.job_id;
+
+        // Ensure jobUuid is a string
+        if (jobUuid !== null && jobUuid !== undefined) {
+          jobUuid = String(jobUuid);
+        }
+
+        // Check if job exists in available jobs
+        const jobExists = jobs.some(j => j.uuid === jobUuid);
+
+        // If job doesn't exist, try to find by project_name or other criteria
+        if (!jobExists && editingTodoList.project_name) {
+          const matchingJob = jobs.find(
+            j =>
+              j.project_name === editingTodoList.project_name ||
+              j.project_id === editingTodoList.project_id
+          );
+          if (matchingJob) {
+            jobUuid = matchingJob.uuid;
+            console.log('Found matching job by name:', matchingJob);
+          }
+        }
+
+        console.log('Attempting to set job:', {
+          jobUuid,
+          jobUuidType: typeof jobUuid,
+          availableJobUuids: jobs.map(j => j.uuid),
+          availableJobUuidTypes: jobs.map(j => typeof j.uuid),
+          jobExists: jobs.some(j => j.uuid === jobUuid),
+          jobExistsStrict: jobs.some(
+            j => j.uuid === jobUuid && typeof j.uuid === typeof jobUuid
+          ),
+        });
+
+        // Handle employees - they might be in different formats
+        let employeeUuids: string[] = [];
+        if (editingTodoList.user_uuids) {
+          employeeUuids = editingTodoList.user_uuids;
+        } else if (
+          editingTodoList.employees &&
+          Array.isArray(editingTodoList.employees)
+        ) {
+          employeeUuids = editingTodoList.employees.map(
+            (emp: any) => emp.user?.uuid || emp.uuid
+          );
+        }
+
+        // Reset form with all values at once
+        reset({
+          job: jobUuid,
+          date: new Date(editingTodoList.date),
+          employees: employeeUuids,
+          title: editingTodoList.title,
+          listItems: editingTodoList.items.map((item: any) => item.description),
+        });
+
+        setSelectedEmployees(employeeUuids);
+
+        console.log('Job value set to:', jobUuid);
+
+        // Check the field value after a short delay
+        setTimeout(() => {
+          console.log('Job field value after setting:', watchedJob);
+        }, 200);
+      }, 100);
+    }
+  }, [editingTodoList, jobs, employees, setValue, reset, watchedJob]);
+
   const addListItem = () => {
     const currentItems = watchedListItems || [];
     setValue('listItems', [...currentItems, '']);
@@ -275,23 +412,44 @@ export const TodoForm: React.FC<TodoFormProps> = ({
 
       console.log('Submitting todo list with payload:', payload);
 
-      // Call the API
-      const response = await apiService.createTodoList(payload);
+      let response;
+      if (editingTodoList) {
+        // Update existing todo list
+        console.log('Updating todo list:', editingTodoList.uuid);
+        response = await apiService.updateTodoList(
+          editingTodoList.uuid,
+          payload
+        );
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        console.log('Todo list created successfully:', response);
-        showSuccessToast('Todo list created successfully!');
-        // Call the original onSubmit with the form data
-        data.employees = selectedEmployees;
-        onSubmit(data);
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          console.log('Todo list updated successfully:', response);
+          showSuccessToast('Todo list updated successfully!');
+        } else {
+          console.error('Failed to update todo list:', response);
+          const errorMessage = response.message || 'Failed to update todo list';
+          setSubmitError(errorMessage);
+          showErrorToast(errorMessage);
+        }
       } else {
-        console.error('Failed to create todo list:', response);
-        const errorMessage = response.message || 'Failed to create todo list';
-        setSubmitError(errorMessage);
-        showErrorToast(errorMessage);
+        // Create new todo list
+        response = await apiService.createTodoList(payload);
+
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          console.log('Todo list created successfully:', response);
+          showSuccessToast('Todo list created successfully!');
+        } else {
+          console.error('Failed to create todo list:', response);
+          const errorMessage = response.message || 'Failed to create todo list';
+          setSubmitError(errorMessage);
+          showErrorToast(errorMessage);
+        }
       }
+
+      // Call the original onSubmit with the form data
+      data.employees = selectedEmployees;
+      onSubmit(data);
     } catch (error) {
-      console.error('Error creating todo list:', error);
+      console.error('Error submitting todo list:', error);
       const errorMessage =
         error instanceof Error ? error.message : 'An unexpected error occurred';
       setSubmitError(errorMessage);
@@ -537,7 +695,9 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           >
             {submitLoading
               ? TODO_MESSAGES.SAVING_BUTTON
-              : TODO_MESSAGES.SAVE_BUTTON}
+              : editingTodoList
+                ? 'Update Todo List'
+                : TODO_MESSAGES.SAVE_BUTTON}
           </Button>
         </div>
       </form>

@@ -1761,6 +1761,35 @@ class ApiService {
     });
   }
 
+  // Fetch single todo list by ID
+  async fetchTodoListById(uuid: string): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update todo list
+  async updateTodoList(
+    uuid: string,
+    payload: {
+      job_uuid: string;
+      title: string;
+      date: string;
+      user_uuids: string[];
+      items: Array<{ description: string }>;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Removed testConnection and all debug code
 }
 
