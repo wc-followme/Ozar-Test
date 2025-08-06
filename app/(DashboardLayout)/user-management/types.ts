@@ -2,13 +2,13 @@ import { Icon } from 'iconsax-react';
 
 // Role interface for dropdowns and API responses
 export interface Role {
-  id: number;
+  id?: number;
   name: string;
   description?: string;
   icon?: string;
   status?: 'ACTIVE' | 'INACTIVE';
   total_permissions?: number;
-  uuid?: string;
+  uuid: string;
 }
 
 // Role API response structure
@@ -91,6 +91,10 @@ export interface UserFormData {
 // User initial data for form (for edit mode)
 export interface UserInitialData {
   role_id?: number;
+  role?: {
+    uuid: string;
+    name?: string;
+  };
   name?: string;
   email?: string;
   country_code?: string;

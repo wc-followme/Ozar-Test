@@ -103,12 +103,10 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
         password: '',
       },
     });
-
     // Initialize form with initial data
     const initializeForm = useCallback(() => {
       if (isEditMode && initialData && !isInitialized) {
         const {
-          role_id,
           name,
           designation,
           email,
@@ -119,11 +117,11 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
           city,
           pincode,
           date_of_joining,
+          role,
         } = initialData;
-
         // Set role ID
-        if (role_id) {
-          setValue('role_id', String(role_id));
+        if (role) {
+          setValue('role_id', role.uuid);
         }
 
         // Set other fields
@@ -216,9 +214,8 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
           date_of_joining,
           password,
         } = data;
-
         const payload: UserFormData = {
-          role_id: Number(role_id),
+          role_id,
           name,
           email,
           country_code: COUNTRY_CODES.getCodeFromCountry(country_code),
@@ -280,8 +277,8 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                 label={USER_MESSAGES.ROLE_LABEL}
                 value={field.value}
                 onValueChange={field.onChange}
-                options={roles.map(({ id, name, status }) => ({
-                  value: String(id),
+                options={roles.map(({ uuid, name, status }) => ({
+                  value: String(uuid),
                   label: status === 'INACTIVE' ? `${name} (Deactivated)` : name,
                   disabled: status === 'INACTIVE',
                 }))}
@@ -294,6 +291,7 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                 triggerClassName={
                   errors.role_id ? '!border-[var(--warning)]' : ''
                 }
+                disabled={isEditMode || false}
               />
             )}
           />

@@ -9,10 +9,16 @@ import CategoryForm from '@/components/shared/forms/CategoryForm';
 import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { catIconOptions } from '@/constants/sidebar-items';
 import { STATUS_CODES } from '@/constants/status-codes';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import {
   apiService,
   Category,
@@ -98,10 +104,25 @@ const CategoryManagement = () => {
       }
 
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const res = await apiService.fetchCategories({
           page: targetPage,
           limit: PAGINATION.CATEGORIES_LIMIT,
           status: CommonStatus.ACTIVE, // Only fetch active categories
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -163,13 +184,15 @@ const CategoryManagement = () => {
     [handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of categories
-  useEffect(() => {
+  // Handle company changes
+  const refetchCategories = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setCategories([]);
     fetchCategories(1, false);
   }, [fetchCategories]);
+
+  useCompanyChange(refetchCategories);
 
   // Infinite scroll
   useEffect(() => {
@@ -281,6 +304,21 @@ const CategoryManagement = () => {
           icon,
         };
 
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            if (parsedCompany.id) {
+              updateData.company_id = parsedCompany.id;
+            }
+          } catch (error) {
+            console.error('Error parsing selected company:', error);
+          }
+        }
+
         const response = await apiService.updateCategory(uuid, updateData);
         if (
           response.statusCode === STATUS_CODES.OK ||
@@ -315,6 +353,21 @@ const CategoryManagement = () => {
           status: CommonStatus.ACTIVE, // Default to ACTIVE when creating
           is_default: false, // New categories are not default
         };
+
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            if (parsedCompany.id) {
+              categoryData.company_id = parsedCompany.id;
+            }
+          } catch (error) {
+            console.error('Error parsing selected company:', error);
+          }
+        }
 
         const response = await apiService.createCategory(categoryData);
         if (
@@ -441,7 +494,7 @@ const CategoryManagement = () => {
                 };
                 return (
                   <CategoryCard
-                    key={category.id || index}
+                    key={category.uuid || index}
                     name={category.name}
                     description={category.description}
                     iconSrc={props => {

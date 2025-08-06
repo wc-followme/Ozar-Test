@@ -8,8 +8,14 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import MaterialForm from '@/components/shared/forms/MaterialForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -72,12 +78,29 @@ export default function MaterialManagementPage() {
 
   const fetchMaterials = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchMaterials({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -137,13 +160,15 @@ export default function MaterialManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of materials
-  useEffect(() => {
+  // Handle company changes
+  const refetchMaterials = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setMaterials([]);
     fetchMaterials(1, false);
   }, [fetchMaterials]);
+
+  useCompanyChange(refetchMaterials);
 
   // Infinite scroll
   useEffect(() => {
@@ -217,6 +242,18 @@ export default function MaterialManagementPage() {
   }) => {
     const { materialName, services, materialData } = data;
 
+    // Get selected company from localStorage
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    let companyId: string | undefined;
+    if (selectedCompany) {
+      try {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id; // UUID from localStorage
+      } catch {
+        // Silently fail if company data is invalid
+      }
+    }
+
     // Use the actual material data from API response if available
     if (materialData) {
       // Add the new material to the beginning of the materials list
@@ -238,6 +275,7 @@ export default function MaterialManagementPage() {
           name: service.trim(),
           status: ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new material to the beginning of the materials list

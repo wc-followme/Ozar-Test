@@ -17,6 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { ROLE_IDS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
@@ -24,7 +25,6 @@ import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import { ROLE_ID } from '../../../constants/common';
 
 const generalInfoSchema = yup.object({
   fullName: yup.string().required(STEP_MESSAGES.FULL_NAME_REQUIRED),
@@ -110,7 +110,7 @@ export function StepGeneralInfo({
       try {
         setIsLoadingContractors(true);
         const response = await apiService.getUsersDropdown({
-          role_id: ROLE_ID.CONTRACTOR, // Contractor role
+          role_id: ROLE_IDS.CONTRACTOR, // Contractor role
           page: 1,
           limit: 50,
         });
