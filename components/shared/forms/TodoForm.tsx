@@ -161,8 +161,8 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           page: 1,
           limit: 50,
         });
-
-        if (response.statusCode === 200 && response.data) {
+        console.log('API Response:', response);
+        if (response.data) {
           console.log('API Response:', response);
           console.log('Response data:', response.data);
 
