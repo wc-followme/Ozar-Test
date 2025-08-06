@@ -851,7 +851,7 @@ class ApiService {
     role_id?: string | number;
     company_id?: string | number;
     search?: string;
-    status?: 'ACTIVE' | 'INACTIVE' | '';
+    status?: 'ACTIVE' | 'INACTIVE';
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -940,6 +940,29 @@ class ApiService {
     if (role_id) params.append('role_id', String(role_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
+    return this.makeRequest(`/users/dropdown?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  /**
+   * Get users dropdown for forms (simplified version)
+   */
+  async fetchUsersDropdown({
+    company_id,
+    page = 1,
+    limit = 10,
+  }: {
+    company_id: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('company_id', company_id);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),

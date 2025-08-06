@@ -10,7 +10,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { APPOINTMENT_MESSAGES, MOCK_EMPLOYEES } from '@/constants/common';
+import { APPOINTMENT_MESSAGES, STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
@@ -21,6 +22,15 @@ import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
 import { TimePicker } from '../common/TimePicker';
+
+interface Employee {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  profile_picture_url: string;
+  status: string;
+}
 
 // Validation schema
 const appointmentFormSchema = yup.object({
@@ -63,6 +73,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   loading = false,
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
 
   const {
     control,
@@ -85,6 +97,73 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   });
 
   const selectedEmployees = watch('employees');
+
+  // Fetch employees on component mount
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      setEmployeesLoading(true);
+      try {
+        // Get company ID from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        const companyId = selectedCompany
+          ? JSON.parse(selectedCompany)?.id
+          : null;
+
+        if (!companyId) {
+          console.warn(
+            'No company ID found in localStorage - employees will not be loaded'
+          );
+          setEmployees([]);
+          return;
+        }
+
+        const response = await apiService.fetchUsersDropdown({
+          company_id: companyId,
+          page: 1,
+          limit: 50,
+        });
+
+        if (response.statusCode === 200 && response.data) {
+          console.log('AppointmentsForm API Response:', response);
+          console.log('AppointmentsForm Response data:', response.data);
+
+          // The response structure is: { data: [...], total: 1, page: 1, limit: 50, totalPages: 1 }
+          let employeesData = [];
+          if (response.data && Array.isArray(response.data)) {
+            employeesData = response.data;
+          } else if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            employeesData = response.data.data;
+          }
+
+          const mappedEmployees = employeesData.map((employee: any) => ({
+            id: employee.id,
+            uuid: employee.uuid,
+            name: employee.name,
+            email: employee.email,
+            profile_picture_url:
+              employee.profile_picture_url || '/images/profile.jpg',
+            status: employee.status || 'ACTIVE',
+          }));
+
+          console.log('AppointmentsForm Mapped employees:', mappedEmployees);
+          setEmployees(mappedEmployees);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+        setEmployees([]);
+      } finally {
+        setEmployeesLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
 
   const handleEmployeeChange = (value: string[]) => {
     setValue('employees', value);
@@ -132,10 +211,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             {APPOINTMENT_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={MOCK_EMPLOYEES}
+            options={employees.map(employee => ({
+              value: employee.uuid,
+              label: employee.name,
+              image: employee.profile_picture_url || '/images/profile.jpg',
+            }))}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder={APPOINTMENT_MESSAGES.EMPLOYEES_PLACEHOLDER}
+            placeholder={
+              employeesLoading
+                ? 'Loading employees...'
+                : APPOINTMENT_MESSAGES.EMPLOYEES_PLACEHOLDER
+            }
             error={errors.employees?.message || ''}
           />
         </div>

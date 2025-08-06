@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MOCK_EMPLOYEES, TODO_MESSAGES } from '@/constants/common';
+import { STORAGE_KEYS, TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -49,6 +49,15 @@ interface Job {
   status: string;
 }
 
+interface Employee {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  profile_picture_url: string;
+  status: string;
+}
+
 interface TodoFormData {
   job: string;
   date: Date;
@@ -72,6 +81,8 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
 
   const {
     control,
@@ -123,6 +134,87 @@ export const TodoForm: React.FC<TodoFormProps> = ({
 
     fetchJobs();
   }, []);
+
+  // Fetch employees on component mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setEmployeesLoading(true);
+      try {
+        // Get company ID from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        const companyId = selectedCompany
+          ? JSON.parse(selectedCompany)?.id
+          : null;
+
+        if (!companyId) {
+          console.warn(
+            'No company ID found in localStorage - employees will not be loaded'
+          );
+          setEmployees([]);
+          return;
+        }
+
+        const response = await apiService.fetchUsersDropdown({
+          company_id: companyId,
+          page: 1,
+          limit: 50,
+        });
+
+        if (response.statusCode === 200 && response.data) {
+          console.log('API Response:', response);
+          console.log('Response data:', response.data);
+
+          // The response structure is: { data: [...], total: 1, page: 1, limit: 50, totalPages: 1 }
+          let employeesData = [];
+          if (response.data && Array.isArray(response.data)) {
+            employeesData = response.data;
+          } else if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            employeesData = response.data.data;
+          }
+
+          const mappedEmployees = employeesData.map((employee: any) => ({
+            id: employee.id,
+            uuid: employee.uuid,
+            name: employee.name,
+            email: employee.email,
+            profile_picture_url:
+              employee.profile_picture_url || '/images/profile.jpg',
+            status: employee.status || 'ACTIVE',
+          }));
+
+          console.log('Mapped employees:', mappedEmployees);
+          setEmployees(mappedEmployees);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+        setEmployees([]);
+      } finally {
+        setEmployeesLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  // Debug employees state
+  useEffect(() => {
+    console.log('Employees array length:', employees.length);
+    console.log('Employees data:', employees);
+    console.log(
+      'MultiSelect options:',
+      employees.map(employee => ({
+        value: employee.uuid,
+        label: employee.name,
+        image: employee.profile_picture_url || '/images/profile.jpg',
+      }))
+    );
+  }, [employees]);
 
   const addListItem = () => {
     const currentItems = watchedListItems || [];
@@ -259,10 +351,18 @@ export const TodoForm: React.FC<TodoFormProps> = ({
             {TODO_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={MOCK_EMPLOYEES}
+            options={employees.map(employee => ({
+              value: employee.uuid,
+              label: employee.name,
+              image: employee.profile_picture_url || '/images/profile.jpg',
+            }))}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder={TODO_MESSAGES.EMPLOYEES_PLACEHOLDER}
+            placeholder={
+              employeesLoading
+                ? 'Loading employees...'
+                : TODO_MESSAGES.EMPLOYEES_PLACEHOLDER
+            }
             error={errors.employees?.message || ''}
           />
         </div>
