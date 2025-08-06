@@ -2,13 +2,16 @@
 import { AppointmentsComponent } from '@/components/shared/common/AppointmentsComponent';
 import { MaterialChecklistComponent } from '@/components/shared/common/MaterialChecklistComponent';
 import SideSheet from '@/components/shared/common/SideSheet';
-import { TodoComponent } from '@/components/shared/common/TodoComponent';
+import {
+  TodoComponent,
+  TodoComponentRef,
+} from '@/components/shared/common/TodoComponent';
 import { AppointmentForm } from '@/components/shared/forms/AppointmentsForm';
 import { TodoForm } from '@/components/shared/forms/TodoForm';
 import { cn } from '@/lib/utils';
 import { IconX } from '@tabler/icons-react';
 import { AddCircle, Setting4 } from 'iconsax-react';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { MaterialCheckListIcon } from '../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../icons/SupportIcon';
 import { TodoListIcon } from '../icons/TodoListIcon';
@@ -88,6 +91,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [showTodoForm, setShowTodoForm] = useState(false);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+  const todoComponentRef = useRef<TodoComponentRef>(null);
   const { isOpen, setIsOpen } = useSideToolbar();
 
   const handleItemClick = (itemId: string) => {
@@ -106,6 +110,10 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   const handleTodoFormSubmit = () => {
     // Handle form submission here
     setShowTodoForm(false);
+    // Refresh the todo list after successful form submission
+    if (todoComponentRef.current) {
+      todoComponentRef.current.refresh();
+    }
   };
 
   const handleTodoFormCancel = () => {
@@ -163,7 +171,9 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
 
                       {/* Content */}
                       <div className='flex-1 p-4 overflow-y-auto'>
-                        {activeItem === 'todoList' && <TodoComponent />}
+                        {activeItem === 'todoList' && (
+                          <TodoComponent ref={todoComponentRef} />
+                        )}
                         {activeItem === 'appointmentList' && (
                           <AppointmentsComponent />
                         )}

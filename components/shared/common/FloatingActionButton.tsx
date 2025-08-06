@@ -2,7 +2,7 @@
 
 import { IconCategoryPlus, IconX } from '@tabler/icons-react';
 import { Add, AddCircle } from 'iconsax-react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MaterialCheckListIcon } from '../../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../../icons/SupportIcon';
 import { TodoListIcon } from '../../icons/TodoListIcon';
@@ -14,7 +14,7 @@ import { TodoForm } from '../forms/TodoForm';
 import { AppointmentsComponent } from './AppointmentsComponent';
 import { MaterialChecklistComponent } from './MaterialChecklistComponent';
 import SideSheet from './SideSheet';
-import { TodoComponent } from './TodoComponent';
+import { TodoComponent, TodoComponentRef } from './TodoComponent';
 import { ToolsChecklistComponent } from './ToolsChecklistComponent';
 
 interface ToolbarItem {
@@ -51,6 +51,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const [showTodoForm, setShowTodoForm] = useState(false);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const [showJobSheet, setShowJobSheet] = useState(false);
+  const todoComponentRef = useRef<TodoComponentRef>(null);
 
   const items = externalToolbarItems || toolbarItems;
 
@@ -82,6 +83,10 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   const handleTodoFormSubmit = () => {
     setShowTodoForm(false);
+    // Refresh the todo list after successful form submission
+    if (todoComponentRef.current) {
+      todoComponentRef.current.refresh();
+    }
   };
 
   const handleTodoFormCancel = () => {
@@ -212,7 +217,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
               </div>
 
               <div className='flex-1 py-4 overflow-y-auto'>
-                {activeItem === 'todoList' && <TodoComponent />}
+                {activeItem === 'todoList' && (
+                  <TodoComponent ref={todoComponentRef} />
+                )}
                 {activeItem === 'appointmentList' && <AppointmentsComponent />}
                 {activeItem === 'toolChecklist' && <ToolsChecklistComponent />}
                 {activeItem === 'materialChecklist' && (

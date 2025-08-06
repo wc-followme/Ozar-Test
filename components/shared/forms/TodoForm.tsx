@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -109,6 +110,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   const [employeesLoading, setEmployeesLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const {
     control,
@@ -278,18 +280,22 @@ export const TodoForm: React.FC<TodoFormProps> = ({
 
       if (response.statusCode === 200 || response.statusCode === 201) {
         console.log('Todo list created successfully:', response);
+        showSuccessToast('Todo list created successfully!');
         // Call the original onSubmit with the form data
         data.employees = selectedEmployees;
         onSubmit(data);
       } else {
         console.error('Failed to create todo list:', response);
-        setSubmitError(response.message || 'Failed to create todo list');
+        const errorMessage = response.message || 'Failed to create todo list';
+        setSubmitError(errorMessage);
+        showErrorToast(errorMessage);
       }
     } catch (error) {
       console.error('Error creating todo list:', error);
-      setSubmitError(
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      setSubmitError(errorMessage);
+      showErrorToast(errorMessage);
     } finally {
       setSubmitLoading(false);
     }
