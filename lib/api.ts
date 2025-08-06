@@ -1773,11 +1773,13 @@ class ApiService {
   async updateTodoList(
     uuid: string,
     payload: {
-      job_uuid: string;
       title: string;
       date: string;
       user_uuids: string[];
-      items: Array<{ description: string }>;
+      items: Array<{
+        uuid?: string; // Optional for new items
+        description: string;
+      }>;
     }
   ): Promise<any> {
     return this.makeRequest(`/todo-lists/${uuid}`, {

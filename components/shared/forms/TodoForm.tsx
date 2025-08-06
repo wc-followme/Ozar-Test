@@ -399,23 +399,54 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     setSubmitError(null);
 
     try {
-      // Prepare the payload for the API
-      const payload = {
-        job_uuid: data.job,
-        title: data.title,
-        date: format(data.date, 'yyyy-MM-dd'),
-        user_uuids: selectedEmployees,
-        items: data.listItems
-          .filter(item => item.trim() !== '') // Remove empty items
-          .map(item => ({ description: item.trim() })),
-      };
-
-      console.log('Submitting todo list with payload:', payload);
-
       let response;
       if (editingTodoList) {
         // Update existing todo list
         console.log('Updating todo list:', editingTodoList.uuid);
+
+        // Prepare items with UUID handling
+        const originalItems = editingTodoList.items || [];
+        console.log('Original items:', originalItems);
+        console.log('Form items:', data.listItems);
+
+        const items = data.listItems
+          .filter(item => item.trim() !== '') // Remove empty items
+          .map((item, index) => {
+            // Check if this position corresponds to an original item
+            const originalItem = originalItems[index];
+
+            if (originalItem && originalItem.uuid) {
+              // Existing item - include UUID
+              console.log(
+                `Item ${index}: Existing item with UUID ${originalItem.uuid}`
+              );
+              return {
+                uuid: originalItem.uuid,
+                description: item.trim(),
+              };
+            } else {
+              // New item - don't include UUID
+              console.log(`Item ${index}: New item without UUID`);
+              return {
+                description: item.trim(),
+              };
+            }
+          });
+
+        console.log('Final items array:', items);
+
+        // Prepare payload for update
+        const payload = {
+          title: data.title,
+          date: format(data.date, 'yyyy-MM-dd'),
+          user_uuids: selectedEmployees,
+          items: items,
+        };
+
+        console.log('Update payload:', payload);
+        console.log('Selected employees:', selectedEmployees);
+        console.log('Original employees:', editingTodoList.employees);
+
         response = await apiService.updateTodoList(
           editingTodoList.uuid,
           payload
@@ -432,6 +463,17 @@ export const TodoForm: React.FC<TodoFormProps> = ({
         }
       } else {
         // Create new todo list
+        const payload = {
+          job_uuid: data.job,
+          title: data.title,
+          date: format(data.date, 'yyyy-MM-dd'),
+          user_uuids: selectedEmployees,
+          items: data.listItems
+            .filter(item => item.trim() !== '') // Remove empty items
+            .map(item => ({ description: item.trim() })),
+        };
+
+        console.log('Create payload:', payload);
         response = await apiService.createTodoList(payload);
 
         if (response.statusCode === 200 || response.statusCode === 201) {
