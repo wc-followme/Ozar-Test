@@ -4,6 +4,11 @@ import { Calendar } from 'iconsax-react';
 import React from 'react';
 import { Label } from '../../ui/label';
 
+interface DragHandleProps {
+  listeners?: any;
+  attributes?: any;
+}
+
 interface Trade {
   id: string;
   name: string;
@@ -30,6 +35,7 @@ interface TradeListCardComponentProps {
   onClick?: () => void;
   className?: string;
   variant?: 'trade' | 'service';
+  dragHandleProps?: DragHandleProps;
 }
 
 export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
@@ -38,6 +44,7 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
   onClick,
   className = '',
   variant = 'trade',
+  dragHandleProps,
 }) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -60,12 +67,16 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
       onClick={onClick}
     >
       <div className='flex items-center'>
-        {/* Drag Handle */}
-        <div className='flex flex-col space-y-1 mr-4'>
+        {/* Drag Handle - Only this area is draggable */}
+        <div
+          className='flex flex-col space-y-1 mr-4 cursor-grab active:cursor-grabbing'
+          {...dragHandleProps?.listeners}
+          {...dragHandleProps?.attributes}
+        >
           <IconGripVertical size={24} color='var(--text-secondary)' />
         </div>
 
-        {/* Content Information */}
+        {/* Content Information - Clickable for navigation */}
         <div className='flex-1'>
           <div className='flex items-center space-x-4'>
             <div>
@@ -96,46 +107,45 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
           </div>
         </div>
 
-        {/* Cost Breakdown */}
-        <div className='flex space-x-6'>
+        <div className='grid grid-cols-3'>
           {isTrade ? (
             <>
-              <div className=''>
+              <div className='px-4'>
                 <Label className='field-label text-xs'>Labor Cost</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.laborCost)}
                 </p>
               </div>
-              <div className=''>
+              <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Material Cost</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.materialCost)}
                 </p>
               </div>
-              <div className=''>
+              <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Trade Total</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.tradeTotal)}
                 </p>
               </div>
             </>
           ) : (
             <>
-              <div className=''>
+              <div className='px-4'>
                 <Label className='field-label text-xs'>Line Total</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.lineTotal)}
                 </p>
               </div>
-              <div className=''>
+              <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Service Total</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.serviceTotal)}
                 </p>
               </div>
-              <div className=''>
+              <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Trade Total</Label>
-                <p className='text-sm font-semibold text-[var(--primary)]'>
+                <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.tradeTotal)}
                 </p>
               </div>

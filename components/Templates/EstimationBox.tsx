@@ -1,17 +1,16 @@
 'use client';
 
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
+import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
+import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
+import EstimationHeader from '@/components/shared/common/EstimationHeader';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-} from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import * as AccordionPrimitive from '@radix-ui/react-accordion';
-import { ArrowDown2, Edit2, Trash } from 'iconsax-react';
+import { Tool } from '@/components/shared/forms/estimation-types';
+import { Sortable } from '@/components/ui/sortable';
+import { SortableItem } from '@/components/ui/sortable-item';
 import { useState } from 'react';
+import NoDataFound from '../shared/common/NoDataFound';
 
 interface Material {
   id: string;
@@ -43,6 +42,7 @@ interface Service {
   serviceOptions: ServiceOption[];
   materials: Material[];
   finishes: Material[];
+  tools: Tool[];
 }
 
 interface Trade {
@@ -72,36 +72,74 @@ interface EstimationBoxProps {
 
 export default function EstimationBox({ onClose }: EstimationBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
-  const [roomName, setRoomName] = useState('Room');
-  const [expandedRooms, setExpandedRooms] = useState<string[]>(['room']);
+  const [editingRoomName, setEditingRoomName] = useState('');
+  const [expandedRooms, setExpandedRooms] = useState<string[]>([
+    'room-1',
+    'room-2',
+  ]);
   const [expandedTrades, setExpandedTrades] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [showAddService, setShowAddService] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('room');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('room-1');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteType, setDeleteType] = useState<
+    'room' | 'trade' | 'service' | null
+  >(null);
   const [rooms, setRooms] = useState<Room[]>([
     {
-      id: 'room',
-      name: 'Room',
+      id: 'room-1',
+      name: 'Home 1',
       total: 0.0,
-      isExpanded: true,
       trades: [],
+      isExpanded: true,
     },
   ]);
 
   const selectedRoom =
     rooms.find(room => room.id === selectedRoomId) || rooms[0];
-  const selectedTradeData = selectedRoom?.trades.find(
-    trade => trade.id === selectedTrade
-  );
-  const selectedServiceData = selectedTradeData?.serviceList.find(
-    service => service.id === selectedService
-  );
+
+  // Find the trade data across all rooms to handle cross-room trade selection
+  const selectedTradeData = selectedTrade
+    ? rooms
+        .flatMap(room => room.trades)
+        .find(trade => trade.id === selectedTrade)
+    : selectedRoom?.trades.find(trade => trade.id === selectedTrade);
+
+  const selectedServiceData =
+    selectedService && selectedTradeData
+      ? selectedTradeData.serviceList.find(
+          service => service.id === selectedService
+        )
+      : undefined;
 
   const handleAddRoom = () => {
+    // If no rooms exist, create the default Home 1 room
+    if (rooms.length === 0) {
+      const defaultRoom: Room = {
+        id: 'room-1',
+        name: 'Home 1',
+        total: 0.0,
+        isExpanded: true,
+        trades: [],
+      };
+
+      setRooms([defaultRoom]);
+      setExpandedRooms(['room-1']);
+      setSelectedRoomId('room-1');
+      setSelectedTrade(null);
+      setShowAddService(false);
+      setShowServiceForm(false);
+      setSelectedService(null);
+      return;
+    }
+
+    // Generate a unique ID using timestamp + random number to avoid conflicts
+    const uniqueId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newRoom: Room = {
-      id: `room-${Date.now()}`,
+      id: uniqueId,
       name: `Room ${rooms.length + 1}`,
       total: 0.0,
       isExpanded: true,
@@ -110,6 +148,13 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
 
     setRooms(prev => [...prev, newRoom]);
     setExpandedRooms(prev => [...prev, newRoom.id]);
+
+    // Automatically select the newly created room
+    setSelectedRoomId(newRoom.id);
+    setSelectedTrade(null);
+    setShowAddService(false);
+    setShowServiceForm(false);
+    setSelectedService(null);
   };
 
   const handleAccordionChange = (value: string[]) => {
@@ -121,8 +166,10 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
   };
 
   const handleAddTrade = () => {
+    // Generate a unique ID using timestamp + random number to avoid conflicts
+    const uniqueId = `trade-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newTrade: Trade = {
-      id: `trade-${Date.now()}`,
+      id: uniqueId,
       name: 'New Trade',
       services: 0,
       dateRange: '',
@@ -155,100 +202,21 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
   };
 
   const handleAddService = () => {
+    // Generate a unique ID using timestamp + random number to avoid conflicts
+    const uniqueId = `service-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newService: Service = {
-      id: `service-${Date.now()}`,
-      name: 'Install Shower',
-      description:
-        'Install a complete shower system, including fixtures, valves, and piping, to provide an efficient and leak-free showering experience.',
-      qty: 2,
-      rate: 100.0,
-      lineTotal: 480.0,
-      serviceTotal: 200.0,
-      tradeTotal: 680.0,
-      serviceOptions: [
-        {
-          id: 'option1',
-          name: 'Shower Option 1 Onyx',
-          tradeTotal: 480.0,
-        },
-        {
-          id: 'option2',
-          name: 'Shower Option 2 Tile Shower',
-          tradeTotal: 840.0,
-        },
-      ],
-      materials: [
-        {
-          id: 'material1',
-          name: 'Shut of valve',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 4,
-          unit: 'Sq. Feet',
-          description:
-            'Inline shut-off valve for isolating water supply to the shower system during maintenance or emergencies.',
-          rate: 25.0,
-          markup: 0.0,
-          lineTotal: 100.0,
-        },
-        {
-          id: 'material2',
-          name: 'Supply line',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 2,
-          unit: 'Sq. Feet',
-          description:
-            'Flexible supply lines for connecting shower fixtures to water supply.',
-          rate: 15.0,
-          markup: 0.0,
-          lineTotal: 30.0,
-        },
-        {
-          id: 'material3',
-          name: 'Drain pipe',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 1,
-          unit: 'Sq. Feet',
-          description: 'PVC drain pipe for proper water drainage from shower.',
-          rate: 20.0,
-          markup: 0.0,
-          lineTotal: 20.0,
-        },
-        {
-          id: 'material4',
-          name: 'Exhaust',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 1,
-          unit: 'Sq. Feet',
-          description: 'Ventilation exhaust fan for shower area.',
-          rate: 50.0,
-          markup: 0.0,
-          lineTotal: 50.0,
-        },
-      ],
-      finishes: [
-        {
-          id: 'finish1',
-          name: 'Tub',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 2,
-          unit: 'Sq. Feet',
-          description: 'Stylish bathroom tub with modern design.',
-          rate: 245.0,
-          markup: 0.0,
-          lineTotal: 490.0,
-        },
-        {
-          id: 'finish2',
-          name: 'Tub Faucet',
-          variant: 'Stylish Tile for Bathroom',
-          qty: 2,
-          unit: 'Sq. Feet',
-          description: 'Modern tub faucet with elegant finish.',
-          rate: 245.0,
-          markup: 0.0,
-          lineTotal: 490.0,
-        },
-      ],
+      id: uniqueId,
+      name: 'New Service',
+      description: '',
+      qty: 1,
+      rate: 0.0,
+      lineTotal: 0.0,
+      serviceTotal: 0.0,
+      tradeTotal: 0.0,
+      serviceOptions: [],
+      materials: [],
+      finishes: [],
+      tools: [],
     };
 
     if (selectedTrade) {
@@ -287,38 +255,96 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
     setShowAddService(true); // Set to true to show trade state
     setShowServiceForm(false); // Always go to trade view first
     setSelectedService(null); // Clear service selection
+
+    // Ensure the trade accordion is expanded
+    if (!expandedTrades.includes(tradeId)) {
+      setExpandedTrades(prev => [...prev, tradeId]);
+    }
   };
 
   const handleRoomSelect = (roomId: string) => {
     setSelectedRoomId(roomId);
+
+    // Always show room view when room is clicked
     setSelectedTrade(null);
     setShowAddService(false);
     setShowServiceForm(false);
     setSelectedService(null);
+
+    // Ensure the room is expanded
+    if (!expandedRooms.includes(roomId)) {
+      setExpandedRooms(prev => [...prev, roomId]);
+    }
   };
 
   const handleServiceSelect = (serviceId: string) => {
-    setSelectedService(serviceId);
-    setShowServiceForm(true);
-    setShowAddService(true); // Keep this true for service state
+    // Find which room and trade contains this service across ALL rooms
+    let foundRoom = null;
+    let foundTrade = null;
+
+    for (const room of rooms) {
+      const trade = room.trades.find(trade =>
+        trade.serviceList.some(service => service.id === serviceId)
+      );
+      if (trade) {
+        foundRoom = room;
+        foundTrade = trade;
+        break;
+      }
+    }
+
+    if (foundRoom && foundTrade) {
+      // Set the room that contains this service
+      setSelectedRoomId(foundRoom.id);
+
+      // Set the trade that contains this service
+      setSelectedTrade(foundTrade.id);
+
+      // Ensure the room and trade are expanded
+      if (!expandedRooms.includes(foundRoom.id)) {
+        setExpandedRooms(prev => [...prev, foundRoom.id]);
+      }
+      if (!expandedTrades.includes(foundTrade.id)) {
+        setExpandedTrades(prev => [...prev, foundTrade.id]);
+      }
+
+      // Set service and form states
+      setSelectedService(serviceId);
+      setShowServiceForm(true);
+      setShowAddService(true);
+    }
   };
 
   const handleEditClick = () => {
+    // Set the editing room name to the current selected room's name
+    setEditingRoomName(selectedRoom?.name || 'Room');
     setIsEditing(true);
   };
 
   const handleNameSave = () => {
-    setRooms(prev =>
-      prev.map(room =>
-        room.id === selectedRoomId ? { ...room, name: roomName } : room
-      )
-    );
+    if (editingRoomName.trim()) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? { ...room, name: editingRoomName.trim() }
+            : room
+        )
+      );
+    }
     setIsEditing(false);
   };
 
   const handleNameCancel = () => {
-    setRoomName(selectedRoom?.name || 'Room');
+    setEditingRoomName(selectedRoom?.name || 'Room');
     setIsEditing(false);
+  };
+
+  const handleRoomNameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleNameSave();
+    } else if (e.key === 'Escape') {
+      handleNameCancel();
+    }
   };
 
   const handleTradeNameChange = (newTradeName: string) => {
@@ -340,6 +366,393 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
     }
   };
 
+  const handleServiceNameChange = (newServiceName: string) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? { ...service, name: newServiceName }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleServiceUpdate = (updatedService: Service) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? updatedService
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleMaterialAdd = (newMaterial: any) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                materials: [...service.materials, newMaterial],
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleFinishAdd = (newFinish: any) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                finishes: [...service.finishes, newFinish],
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleMaterialUpdate = (materialId: string, updatedMaterial: any) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                materials: service.materials.map(material =>
+                                  material.id === materialId
+                                    ? updatedMaterial
+                                    : material
+                                ),
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleMaterialDelete = (materialId: string) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                materials: service.materials.filter(
+                                  material => material.id !== materialId
+                                ),
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleFinishUpdate = (finishId: string, updatedFinish: any) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                finishes: service.finishes.map(finish =>
+                                  finish.id === finishId
+                                    ? updatedFinish
+                                    : finish
+                                ),
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleFinishDelete = (finishId: string) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                finishes: service.finishes.filter(
+                                  finish => finish.id !== finishId
+                                ),
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleToolAdd = (newTool: Tool) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                tools: [...service.tools, newTool],
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleToolRemove = (toolId: string) => {
+    if (selectedTrade && selectedService) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                tools: service.tools.filter(
+                                  tool => tool.id !== toolId
+                                ),
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  // Delete handlers
+  const handleDeleteClick = () => {
+    if (showServiceForm && selectedService) {
+      setDeleteType('service');
+    } else if (showAddService && selectedTrade) {
+      setDeleteType('trade');
+    } else {
+      setDeleteType('room');
+    }
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deleteType === 'room') {
+      // Delete room
+      setRooms(prev => {
+        const filteredRooms = prev.filter(room => room.id !== selectedRoomId);
+        if (filteredRooms.length === 0) {
+          // If this was the last room, create a default room
+          const defaultRoom: Room = {
+            id: 'room-1',
+            name: 'Home 1',
+            total: 0.0,
+            trades: [],
+            isExpanded: true,
+          };
+          setSelectedRoomId('room-1');
+          return [defaultRoom];
+        } else {
+          // Select the first remaining room
+          if (filteredRooms.length > 0) {
+            setSelectedRoomId(filteredRooms[0]!.id);
+          }
+          return filteredRooms;
+        }
+      });
+      setSelectedTrade(null);
+      setShowAddService(false);
+      setShowServiceForm(false);
+      setSelectedService(null);
+    } else if (deleteType === 'trade' && selectedTrade) {
+      // Delete trade
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.filter(trade => trade.id !== selectedTrade),
+              }
+            : room
+        )
+      );
+      setSelectedTrade(null);
+      setShowAddService(false);
+      setShowServiceForm(false);
+      setSelectedService(null);
+    } else if (deleteType === 'service' && selectedService && selectedTrade) {
+      // Delete service
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.filter(
+                          service => service.id !== selectedService
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+      setSelectedService(null);
+      setShowServiceForm(false);
+    }
+    setShowDeleteModal(false);
+    setDeleteType(null);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+    setDeleteType(null);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -347,282 +760,149 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
     }).format(amount);
   };
 
-  return (
-    <div className='flex  bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] overflow-hidden'>
-      {/* Sidebar */}
-      <div className='bg-white border-r border-gray-200 w-80'>
-        <div className='p-4 border-b border-gray-200'>
-          <Button
-            className='btn-primary bg-opacity-10 w-full'
-            onClick={handleAddRoom}
-          >
-            + Add Room
-          </Button>
-        </div>
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
 
-        <div className='px-4'>
-          <Accordion
-            type='multiple'
-            value={expandedRooms}
-            onValueChange={handleAccordionChange}
-            className='w-full'
-          >
-            {rooms.map(room => (
-              <AccordionItem
-                key={room.id}
-                value={room.id}
-                className='border-none'
-              >
-                <AccordionPrimitive.Header className='flex'>
-                  <AccordionPrimitive.Trigger
-                    className='flex items-center justify-between p-2 rounded cursor-pointer transition-colors hover:no-underline hover:bg-gray-50 w-full'
-                    onClick={() => handleRoomSelect(room.id)}
-                  >
-                    <div className='flex items-center flex-1 min-w-0'>
-                      <ArrowDown2
-                        size={16}
-                        className={`mr-2 transition-transform duration-200 ${
-                          expandedRooms.includes(room.id) ? 'rotate-180' : ''
-                        }`}
-                        color='var(--text-dark)'
-                        strokeWidth={3}
-                      />
-                      <span className='font-medium text-sm truncate'>
-                        {room.name}
-                      </span>
-                      <span className='ml-auto text-sm font-semibold text-blue-600'>
-                        {formatCurrency(room.total)}
-                      </span>
-                    </div>
-                  </AccordionPrimitive.Trigger>
-                </AccordionPrimitive.Header>
-                <AccordionContent className='px-0'>
-                  {room.trades.length > 0 && (
-                    <div className='ml-6 mt-1'>
-                      <Accordion
-                        type='multiple'
-                        value={expandedTrades}
-                        onValueChange={handleTradeAccordionChange}
-                        className='w-full'
-                      >
-                        {room.trades.map(trade => (
-                          <AccordionItem
-                            key={trade.id}
-                            value={trade.id}
-                            className='border-none'
-                          >
-                            <AccordionPrimitive.Header className='flex'>
-                              <AccordionPrimitive.Trigger
-                                className={`flex items-center justify-between p-2 rounded cursor-pointer transition-colors hover:no-underline w-full ${
-                                  selectedTrade === trade.id
-                                    ? 'bg-blue-50 border border-blue-200'
-                                    : 'hover:bg-gray-50'
-                                }`}
-                                onClick={() => handleTradeSelect(trade.id)}
-                              >
-                                <div className='flex items-center flex-1 min-w-0'>
-                                  <ArrowDown2
-                                    size={16}
-                                    className={`mr-2 transition-transform duration-200 ${
-                                      expandedTrades.includes(trade.id)
-                                        ? 'rotate-180'
-                                        : ''
-                                    }`}
-                                    color='var(--text-dark)'
-                                  />
-                                  <span className='text-sm text-gray-600'>
-                                    {trade.name}
-                                  </span>
-                                  <span className='ml-auto text-sm font-semibold text-blue-600'>
-                                    {formatCurrency(trade.tradeTotal)}
-                                  </span>
-                                </div>
-                              </AccordionPrimitive.Trigger>
-                            </AccordionPrimitive.Header>
-                            <AccordionContent className='px-0'>
-                              {trade.serviceList.length > 0 && (
-                                <div className='ml-6 mt-1'>
-                                  {trade.serviceList.map(service => (
-                                    <div
-                                      key={service.id}
-                                      className={`flex items-center justify-between p-2 rounded cursor-pointer hover:bg-gray-50 ${
-                                        selectedService === service.id
-                                          ? 'bg-blue-50 border border-blue-200'
-                                          : ''
-                                      }`}
-                                      onClick={() =>
-                                        handleServiceSelect(service.id)
-                                      }
-                                    >
-                                      <span className='text-xs text-gray-500'>
-                                        {service.name}
-                                      </span>
-                                      <span className='text-xs font-semibold text-blue-600'>
-                                        {formatCurrency(service.tradeTotal)}
-                                      </span>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </AccordionContent>
-                          </AccordionItem>
-                        ))}
-                      </Accordion>
-                    </div>
-                  )}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </div>
-      </div>
+  // Reorder handlers for drag and drop
+  const handleTradeReorder = (reorderedTrades: Trade[]) => {
+    setRooms(prev =>
+      prev.map(room =>
+        room.id === selectedRoomId
+          ? {
+              ...room,
+              trades: reorderedTrades,
+            }
+          : room
+      )
+    );
+  };
+
+  const handleServiceReorder = (reorderedServices: Service[]) => {
+    if (selectedTrade) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === selectedTrade
+                    ? {
+                        ...trade,
+                        serviceList: reorderedServices,
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  return (
+    <div className='flex bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] overflow-hidden'>
+      {/* Sidebar */}
+      <EstimationBoxSidebar
+        isSidebarCollapsed={isSidebarCollapsed}
+        toggleSidebar={toggleSidebar}
+        handleAddRoom={handleAddRoom}
+        expandedRooms={expandedRooms}
+        handleAccordionChange={handleAccordionChange}
+        rooms={rooms}
+        handleRoomSelect={handleRoomSelect}
+        expandedTrades={expandedTrades}
+        handleTradeAccordionChange={handleTradeAccordionChange}
+        handleTradeSelect={handleTradeSelect}
+        selectedService={selectedService}
+        handleServiceSelect={handleServiceSelect}
+        formatCurrency={formatCurrency}
+      />
 
       {/* Main Content */}
-      <div className='flex-1 flex flex-col'>
+      <div className='flex-1 flex flex-col h-[calc(100vh_-_120px)]'>
         {/* Header */}
-        <div className='bg-white border-b border-gray-200 p-4 h-[75px]'>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center space-x-2'>
-              {!showAddService ? (
-                // Room view
-                isEditing ? (
-                  <div className='flex items-center space-x-2'>
-                    <input
-                      type='text'
-                      value={roomName}
-                      onChange={e => setRoomName(e.target.value)}
-                      className='text-xl font-semibold border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500'
-                      autoFocus
-                    />
-                    <Button
-                      size='sm'
-                      onClick={handleNameSave}
-                      className='bg-green-600 hover:bg-green-700 text-white'
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size='sm'
-                      variant='outline'
-                      onClick={handleNameCancel}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <>
-                    <h1 className='text-xl font-semibold'>
-                      {selectedRoom?.name}
-                    </h1>
-                    <Edit2
-                      size={14}
-                      color='var(--text-secondary)'
-                      className='cursor-pointer hover:text-blue-600'
-                      onClick={handleEditClick}
-                    />
-                  </>
-                )
-              ) : showServiceForm && selectedServiceData ? (
-                // Service view
-                <div>
-                  <h1 className='text-xl font-semibold'>
-                    {selectedServiceData.name}
-                  </h1>
-                  <p className='text-sm text-gray-500'>
-                    {selectedRoom?.name} / {selectedTradeData?.name} /{' '}
-                    {selectedServiceData.name}
-                  </p>
-                </div>
-              ) : (
-                // Trade view
-                selectedTradeData && (
-                  <div>
-                    <h1 className='text-xl font-semibold'>
-                      {selectedTradeData.name}
-                    </h1>
-                    <p className='text-sm text-gray-500'>
-                      in {selectedRoom?.name}
-                    </p>
-                  </div>
-                )
-              )}
-            </div>
-            <div className='flex items-center space-x-2'>
-              {!showAddService ? (
-                <Button
-                  className='btn-primary bg-opacity-10'
-                  onClick={handleAddTrade}
-                >
-                  + Add Trade
-                </Button>
-              ) : showServiceForm && selectedServiceData ? (
-                <Button
-                  className='btn-primary bg-opacity-10'
-                  onClick={() => {
-                    // Handle option template logic here
-                    console.log('Option Template clicked');
-                  }}
-                >
-                  Option Template
-                </Button>
-              ) : (
-                <Button
-                  className='btn-primary bg-opacity-10'
-                  onClick={handleAddService}
-                >
-                  + Add Service
-                </Button>
-              )}
-              <Button variant='ghost' size='sm' className=''>
-                <Trash
-                  className='!h-5 !w-5'
-                  size={24}
-                  color='var(--text-dark)'
-                />
-              </Button>
-            </div>
-          </div>
-        </div>
+        <EstimationHeader
+          showAddService={showAddService}
+          isEditing={isEditing}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
+          handleNameSave={handleNameSave}
+          handleRoomNameKeyDown={handleRoomNameKeyDown}
+          handleEditClick={handleEditClick}
+          selectedRoom={selectedRoom}
+          showServiceForm={showServiceForm}
+          selectedServiceData={selectedServiceData}
+          selectedTradeData={selectedTradeData}
+          handleAddTrade={handleAddTrade}
+          handleAddService={handleAddService}
+          onDeleteClick={handleDeleteClick}
+        />
 
         {/* Content Area */}
         <div className='flex-1 p-6 overflow-auto bg-[var(--background)]'>
           {!showAddService ? (
             // Room view - show trades list
             selectedRoom && selectedRoom.trades.length > 0 ? (
-              <div className='space-y-4'>
-                {selectedRoom.trades.map(trade => (
-                  <TradeListCardComponent
-                    key={trade.id}
-                    trade={trade}
-                    onClick={() => handleTradeSelect(trade.id)}
-                  />
-                ))}
-              </div>
+              <Sortable
+                items={selectedRoom.trades}
+                onReorder={handleTradeReorder}
+                idField='id'
+              >
+                <div className='space-y-4'>
+                  {selectedRoom.trades.map(trade => (
+                    <SortableItem key={trade.id} id={trade.id}>
+                      {dragHandleProps => (
+                        <TradeListCardComponent
+                          trade={trade}
+                          onClick={() => handleTradeSelect(trade.id)}
+                          dragHandleProps={dragHandleProps}
+                        />
+                      )}
+                    </SortableItem>
+                  ))}
+                </div>
+              </Sortable>
             ) : (
               <div className='text-center py-12'>
-                <p className='text-gray-500'>
-                  No trades added yet. Click "+ Add Trade" to get started.
-                </p>
+                <NoDataFound
+                  title='No trades added yet.'
+                  description='Click "+ Add Trade" to get started.'
+                />
               </div>
             )
           ) : showServiceForm && selectedService ? (
-            // Service form view
+            // Service form view - check if we have the data
             selectedServiceData ? (
               <EstimationServiceForm
                 service={selectedServiceData}
-                onServiceUpdate={updatedService => {
-                  console.log('Service updated:', updatedService);
-                }}
+                onServiceUpdate={handleServiceUpdate}
                 onAddMaterial={() => {
                   console.log('Add material clicked');
                 }}
                 onAddFinish={() => {
                   console.log('Add finish clicked');
                 }}
+                onServiceNameChange={handleServiceNameChange}
+                onMaterialAdd={handleMaterialAdd}
+                onFinishAdd={handleFinishAdd}
+                onMaterialUpdate={handleMaterialUpdate}
+                onMaterialDelete={handleMaterialDelete}
+                onFinishUpdate={handleFinishUpdate}
+                onFinishDelete={handleFinishDelete}
+                tools={selectedServiceData.tools}
+                onAddTool={handleToolAdd}
+                onRemoveTool={handleToolRemove}
+                roomName={selectedRoom?.name || 'Room'}
+                tradeName={selectedTradeData?.name || 'Trade'}
               />
             ) : (
+              // Service selected but data not found
               <div className='text-center py-12'>
-                <p className='text-gray-500'>Service not found.</p>
+                <NoDataFound
+                  title='No Service found.'
+                  description='Click "+ Add Service" to get started.'
+                />
               </div>
             )
           ) : selectedTrade ? (
@@ -636,13 +916,14 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
                 }}
                 onServiceSelect={serviceId => {
                   // Handle service selection logic here
-                  console.log('Service selected:', serviceId);
+                  handleServiceSelect(serviceId);
                 }}
                 onAddService={() => {
                   // Handle add service logic here
-                  console.log('Add service clicked');
+                  handleAddService();
                 }}
                 onTradeNameChange={handleTradeNameChange}
+                onServiceReorder={handleServiceReorder}
               />
             ) : (
               <div className='text-center py-12'>
@@ -652,6 +933,28 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
           ) : null}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        open={showDeleteModal}
+        title={
+          deleteType === 'room'
+            ? 'Delete Room'
+            : deleteType === 'trade'
+              ? 'Delete Trade'
+              : 'Delete Service'
+        }
+        subtitle={
+          deleteType === 'room'
+            ? `Are you sure you want to delete "${selectedRoom?.name}"? This will also delete all trades and services within this room.`
+            : deleteType === 'trade'
+              ? `Are you sure you want to delete "${selectedTradeData?.name}"? This will also delete all services within this trade.`
+              : `Are you sure you want to delete "${selectedServiceData?.name}"? This action cannot be undone.`
+        }
+        archiveButtonText={'Delete'}
+        onCancel={handleDeleteCancel}
+        onDelete={handleDeleteConfirm}
+      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/popover';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Trash } from 'iconsax-react';
 import { ChevronDown, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
@@ -56,6 +57,10 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
       ? value.filter(v => v !== optionValue)
       : [...value, optionValue];
     onChange(newValue);
+  };
+
+  const handleClearSelection = () => {
+    onChange([]);
   };
 
   // Handle popover open/close
@@ -128,17 +133,17 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
             <ChevronDown className='ml-2 w-5 h-5 text-gray-400' />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='w-full bg-[var(--card-background)] min-w-[var(--radix-popover-trigger-width)] p-0 rounded-[12px] border border-[var(--border-dark)]'>
+        <PopoverContent className='w-full bg-white min-w-[var(--radix-popover-trigger-width)] p-0 rounded-lg border border-[var(--border-dark)]'>
           {/* Search Field */}
           <div className='p-2 border-b border-[var(--border-dark)]'>
             <div className='relative'>
-              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[var(--primary)]' />
+              <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500' />
               <Input
                 type='text'
                 placeholder='Search here...'
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className='pl-10 pr-3 h-8 border-0 focus:ring-0 focus:border-0 bg-transparent !placeholder-[var(--text-placeholder)]'
+                className='pl-10 pr-3 h-8 border-0 focus:ring-0 focus:border-0 bg-transparent !placeholder-gray-400'
               />
             </div>
           </div>
@@ -168,30 +173,44 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                 return (
                   <label
                     key={optionValue}
-                    className='flex items-center gap-3 py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base border-b border-[var(--border-dark)] last-of-type:border-b-0 hover:bg-[var(--select-option)]'
+                    className='flex items-center justify-between py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base font-medium border-b border-gray-200 last-of-type:border-b-0 hover:bg-gray-50'
                   >
+                    <div className='flex items-center gap-3'>
+                      {getOptionImage(opt) && (
+                        <Image
+                          src={getOptionImage(opt) as string}
+                          alt={getOptionLabel(opt)}
+                          width={24}
+                          height={24}
+                          className='w-6 h-6 rounded-full object-cover'
+                          style={{ width: 24, height: 24 }}
+                          unoptimized
+                        />
+                      )}
+                      <span>{getOptionLabel(opt)}</span>
+                    </div>
                     <Checkbox
                       checked={value.includes(optionValue)}
                       onCheckedChange={() => handleToggle(optionValue)}
-                      className='rounded-[6px] border-2 border-[#BFBFBF] data-[state=checked]:bg-[--primary] data-[state=checked]:border-[--primary] data-[state=checked]:text-white text-white w-6 h-6 flex items-base justify-center mt-0.5'
+                      className='rounded-md border-2 border-[var(--dark-border-other)] data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)] data-[state=checked]:text-white text-white w-5 h-5 flex items-center justify-center'
                     />
-                    {getOptionImage(opt) && (
-                      <Image
-                        src={getOptionImage(opt) as string}
-                        alt={getOptionLabel(opt)}
-                        width={24}
-                        height={24}
-                        className='w-6 h-6 rounded-full object-cover'
-                        style={{ width: 24, height: 24 }}
-                        unoptimized
-                      />
-                    )}
-                    <span>{getOptionLabel(opt)}</span>
                   </label>
                 );
               })}
             </div>
           </div>
+          {/* Clear Selection Button */}
+          {value.length > 0 && (
+            <div className='py-2 px-4 border-t border-gray-200'>
+              <button
+                onClick={handleClearSelection}
+                className='flex items-center gap-2 text-[var(--warning)] text-sm font-medium w-full py-2'
+              >
+                <Trash className='!w-5 !h-5' color='var(--warning)' size={24} />
+                Clear Selection
+              </button>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
       <FormErrorMessage message={error || ''} />

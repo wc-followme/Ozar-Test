@@ -11,6 +11,7 @@ interface ConfirmDeleteModalProps {
   subtitle: string;
   onCancel: () => void;
   onDelete: () => void;
+  archiveButtonText?: string;
 }
 
 // Custom DialogContent without the close button
@@ -40,6 +41,7 @@ export function ConfirmDeleteModal({
   subtitle,
   onCancel,
   onDelete,
+  archiveButtonText,
 }: ConfirmDeleteModalProps) {
   return (
     <Dialog open={open} onOpenChange={onCancel}>
@@ -65,7 +67,7 @@ export function ConfirmDeleteModal({
             type='submit'
             className='h-[48px] px-6 md:px-12 bg-[var(--warning)] hover:bg-[var(--warning)] rounded-full font-semibold text-white'
           >
-            Archive
+            {archiveButtonText || 'Archive'}
           </Button>
         </div>
       </CustomDialogContent>

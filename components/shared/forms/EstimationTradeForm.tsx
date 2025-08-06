@@ -2,6 +2,7 @@
 
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import SelectField from '@/components/shared/common/SelectField';
+import { Service } from '@/components/shared/forms/estimation-types';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card } from '@/components/ui/card';
@@ -12,24 +13,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import { Sortable } from '@/components/ui/sortable';
+import { SortableItem } from '@/components/ui/sortable-item';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useEffect, useState } from 'react';
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  qty: number;
-  rate: number;
-  lineTotal: number;
-  serviceTotal: number;
-  tradeTotal: number;
-  serviceOptions: ServiceOption[];
-  materials: Material[];
-  finishes: Material[];
-}
 
 interface ServiceOption {
   id: string;
@@ -68,6 +57,7 @@ interface EstimationTradeFormProps {
   onServiceSelect?: (serviceId: string) => void;
   onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
+  onServiceReorder?: (reorderedServices: Service[]) => void;
 }
 
 export default function EstimationTradeForm({
@@ -76,6 +66,7 @@ export default function EstimationTradeForm({
   onServiceSelect,
   onAddService,
   onTradeNameChange,
+  onServiceReorder,
 }: EstimationTradeFormProps) {
   const [selectedTrade, setSelectedTrade] = useState(trade.name || 'Plumbing');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
@@ -142,21 +133,22 @@ export default function EstimationTradeForm({
                 className='mb-0'
               />
             </div>
-            <div className='col-span-2 mt-6'>
+            <div className='min-w-[240px] pt-7 ml-auto'>
               <div className='grid grid-cols-3 gap-4'>
-                <div>
+                <div className='px-4'>
                   <Label className='field-label'>Labor Cost</Label>
                   <p className='text-base font-semibold text-[var(--primary)] mt-1'>
+                    {' '}
                     {formatCurrency(trade.laborCost)}
                   </p>
                 </div>
-                <div>
+                <div className='border-l border-[var(--border-dark)] px-6'>
                   <Label className='field-label'>Material Cost</Label>
                   <p className='text-base font-semibold text-[var(--primary)] mt-1'>
                     {formatCurrency(trade.materialCost)}
                   </p>
                 </div>
-                <div>
+                <div className='border-l border-[var(--border-dark)] px-6'>
                   <Label className='field-label'>Trade Total</Label>
                   <p className='text-base font-semibold text-[var(--primary)] mt-1'>
                     {formatCurrency(trade.tradeTotal)}
@@ -252,21 +244,22 @@ export default function EstimationTradeForm({
             </div>
             <div className='flex-1 space-y-2'>
               <Label className='field-label'>Total Markup</Label>
-              <div className='flex'>
-                <div className='w-20'>
+              <div className='flex '>
+                <div className='w-[60px]'>
                   <SelectField
                     value={selectedCurrency}
                     onValueChange={setSelectedCurrency}
                     options={currencyOptions}
                     placeholder='$'
                     className='mb-0'
-                    triggerClassName='rounded-l-[10px] !border-r-0 rounded-r-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
+                    triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
                   />
                 </div>
                 <Input
                   type='text'
-                  value='00.00'
-                  className='flex-1 rounded-l-none border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
+                  value=''
+                  placeholder='00.00'
+                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
                 />
               </div>
             </div>
@@ -275,15 +268,29 @@ export default function EstimationTradeForm({
       </Card>
 
       {/* Services List */}
-      {trade.serviceList.map(service => (
-        <TradeListCardComponent
-          key={service.id}
-          service={service}
-          variant='service'
-          onClick={() => onServiceSelect?.(service.id)}
-          className='mb-4'
-        />
-      ))}
+      {trade.serviceList.length > 0 && (
+        <Sortable
+          items={trade.serviceList}
+          onReorder={onServiceReorder || (() => {})}
+          idField='id'
+        >
+          <div className='space-y-4'>
+            {trade.serviceList.map(service => (
+              <SortableItem key={service.id} id={service.id}>
+                {dragHandleProps => (
+                  <TradeListCardComponent
+                    service={service}
+                    variant='service'
+                    onClick={() => onServiceSelect?.(service.id)}
+                    className='mb-4'
+                    dragHandleProps={dragHandleProps}
+                  />
+                )}
+              </SortableItem>
+            ))}
+          </div>
+        </Sortable>
+      )}
     </div>
   );
 }
