@@ -1576,6 +1576,24 @@ class ApiService {
     });
   }
 
+  // Fetch jobs for dropdown (for todo form)
+  async fetchJobsDropdown(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.type) queryParams.append('type', params.type);
+    const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   async createTool(payload: CreateToolRequest): Promise<CreateToolResponse> {
     return this.makeRequest('/tools', {
       method: 'POST',

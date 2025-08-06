@@ -16,12 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MOCK_EMPLOYEES, MOCK_JOBS, TODO_MESSAGES } from '@/constants/common';
+import { MOCK_EMPLOYEES, TODO_MESSAGES } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
 import { Calendar, Trash } from 'iconsax-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
@@ -39,6 +40,14 @@ const todoFormSchema = yup.object({
     .min(1, TODO_MESSAGES.LIST_ITEMS_REQUIRED)
     .default(['']),
 });
+
+interface Job {
+  id: number;
+  uuid: string;
+  project_name: string;
+  project_id: string;
+  status: string;
+}
 
 interface TodoFormData {
   job: string;
@@ -61,6 +70,8 @@ export const TodoForm: React.FC<TodoFormProps> = ({
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
 
   const {
     control,
@@ -80,6 +91,38 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   });
 
   const watchedListItems = watch('listItems');
+
+  // Fetch jobs on component mount
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setJobsLoading(true);
+      try {
+        const response = await apiService.fetchJobsDropdown({
+          page: 1,
+          limit: 50,
+          type: 'ALL',
+        });
+
+        if (response.statusCode === 200 && response.data?.data) {
+          const jobsData = response.data.data.map((job: any) => ({
+            id: job.id,
+            uuid: job.uuid,
+            project_name: job.project_name,
+            project_id: job.project_id,
+            status: job.status,
+          }));
+          setJobs(jobsData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error);
+        setJobs([]);
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
 
   const addListItem = () => {
     const currentItems = watchedListItems || [];
@@ -134,15 +177,25 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     <SelectValue placeholder={TODO_MESSAGES.JOB_PLACEHOLDER} />
                   </SelectTrigger>
                   <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                    {MOCK_JOBS.map(({ value, label }) => (
-                      <SelectItem
-                        key={value}
-                        value={value}
-                        className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {jobsLoading ? (
+                      <div className='p-2 text-gray-500 text-sm'>
+                        Loading jobs...
+                      </div>
+                    ) : jobs.length > 0 ? (
+                      jobs.map(job => (
+                        <SelectItem
+                          key={job.uuid}
+                          value={job.uuid}
+                          className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
+                        >
+                          {job.project_name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className='p-2 text-gray-500 text-sm'>
+                        No jobs found
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               )}
