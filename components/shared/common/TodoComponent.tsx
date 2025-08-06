@@ -44,6 +44,7 @@ interface TodoList {
   status: string;
   created_at: string;
   updated_at: string;
+  project_name: string;
   items: TodoItem[];
   employees: TodoEmployee[];
   progressPercentage: number;
@@ -264,7 +265,7 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                     className='text-[var(--text-secondary)] font-medium text-[14px] leading-[22px] tracking-[0px] mb-1'
                     style={{ fontFamily: 'Inter' }}
                   >
-                    {TODO_MESSAGES.JOB_NAME_PLACEHOLDER}
+                    {todo.project_name}
                   </p>
                   <p
                     className='text-[var(--text-dark)] font-medium text-[16px] leading-[100%] tracking-[0%]'
@@ -272,18 +273,6 @@ export const TodoComponent: React.FC<TodoComponentProps> = ({ className }) => {
                   >
                     {todo.title}
                   </p>
-                  {/* Progress indicator */}
-                  <div className='flex items-center gap-2 mt-1'>
-                    <div className='flex-1 bg-gray-200 rounded-full h-2'>
-                      <div
-                        className='bg-blue-600 h-2 rounded-full transition-all duration-300'
-                        style={{ width: `${todo.progressPercentage}%` }}
-                      ></div>
-                    </div>
-                    <span className='text-xs text-gray-500'>
-                      {todo.completedItems}/{todo.totalItems}
-                    </span>
-                  </div>
                 </div>
                 <button
                   onClick={() => handleEditSection(sectionId)}
