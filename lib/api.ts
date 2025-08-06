@@ -1739,10 +1739,25 @@ class ApiService {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    
+
     return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update todo item completion status
+  async updateTodoItemCompletion(
+    itemUuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/items/${itemUuid}/set-completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ is_completed: isCompleted }),
     });
   }
 

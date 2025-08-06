@@ -1,5 +1,6 @@
 'use client';
 
+import { useToast } from '@/components/ui/use-toast';
 import { TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
@@ -73,6 +74,8 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
     const [taskSections, setTaskSections] = useState<TaskSection[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
+    const { showSuccessToast, showErrorToast } = useToast();
 
     // Fetch todo lists function
     const fetchTodoLists = async () => {
@@ -172,11 +175,28 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
       return sections;
     };
 
-    const handleTaskToggle = (
+    const handleTaskToggle = async (
       sectionId: string,
       todoId: string,
       itemId: string
     ) => {
+      // Find the current item to get its current completion status
+      const currentSection = taskSections.find(
+        section => section.id === sectionId
+      );
+      const currentTodo = currentSection?.todos.find(
+        todo => todo.uuid === todoId
+      );
+      const currentItem = currentTodo?.items.find(item => item.uuid === itemId);
+
+      if (!currentItem) return;
+
+      const newCompletionStatus = !currentItem.is_completed;
+
+      // Add item to updating state
+      setUpdatingItems(prev => new Set(prev).add(itemId));
+
+      // Optimistically update the UI
       setTaskSections(prev =>
         prev.map(section =>
           section.id === sectionId
@@ -188,7 +208,7 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
                         ...todo,
                         items: todo.items.map(item =>
                           item.uuid === itemId
-                            ? { ...item, is_completed: !item.is_completed }
+                            ? { ...item, is_completed: newCompletionStatus }
                             : item
                         ),
                       }
@@ -198,6 +218,85 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
             : section
         )
       );
+
+      try {
+        // Call the API to update the completion status
+        const response = await apiService.updateTodoItemCompletion(
+          itemId,
+          newCompletionStatus
+        );
+
+        if (response.statusCode !== 200 && response.statusCode !== 201) {
+          // If API call fails, revert the optimistic update
+          setTaskSections(prev =>
+            prev.map(section =>
+              section.id === sectionId
+                ? {
+                    ...section,
+                    todos: section.todos.map(todo =>
+                      todo.uuid === todoId
+                        ? {
+                            ...todo,
+                            items: todo.items.map(item =>
+                              item.uuid === itemId
+                                ? {
+                                    ...item,
+                                    is_completed: currentItem.is_completed,
+                                  }
+                                : item
+                            ),
+                          }
+                        : todo
+                    ),
+                  }
+                : section
+            )
+          );
+          console.error('Failed to update todo item completion:', response);
+          showErrorToast('Failed to update item completion status');
+        } else {
+          showSuccessToast(
+            newCompletionStatus
+              ? 'Item marked as completed'
+              : 'Item marked as incomplete'
+          );
+        }
+      } catch (error) {
+        // If API call fails, revert the optimistic update
+        setTaskSections(prev =>
+          prev.map(section =>
+            section.id === sectionId
+              ? {
+                  ...section,
+                  todos: section.todos.map(todo =>
+                    todo.uuid === todoId
+                      ? {
+                          ...todo,
+                          items: todo.items.map(item =>
+                            item.uuid === itemId
+                              ? {
+                                  ...item,
+                                  is_completed: currentItem.is_completed,
+                                }
+                              : item
+                          ),
+                        }
+                      : todo
+                  ),
+                }
+              : section
+          )
+        );
+        console.error('Error updating todo item completion:', error);
+        showErrorToast('Failed to update item completion status');
+      } finally {
+        // Remove item from updating state
+        setUpdatingItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }
     };
 
     const handleEditSection = (_: string) => {
@@ -307,18 +406,20 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
                       <Checkbox
                         id={item.uuid}
                         className={`
-                         rounded-[6px] 
-                         border-2 
-                         border-[#BFBFBF]
-                         data-[state=checked]:bg-[--primary]
-                         data-[state=checked]:border-[var(--primary)]
-                         data-[state=checked]:text-white
-                         text-[var(--text-dark)] 
-                         w-6 h-6
-                         flex items-center justify-center -mt-0.4
-                         ${item.is_completed ? 'bg-blue-600 border-blue-600' : ''}
-                       `}
+                          rounded-[6px] 
+                          border-2 
+                          border-[#BFBFBF]
+                          data-[state=checked]:bg-[--primary]
+                          data-[state=checked]:border-[var(--primary)]
+                          data-[state=checked]:text-white
+                          text-[var(--text-dark)] 
+                          w-6 h-6
+                          flex items-center justify-center -mt-0.4
+                          ${item.is_completed ? 'bg-blue-600 border-blue-600' : ''}
+                          ${updatingItems.has(item.uuid) ? 'opacity-50 cursor-not-allowed' : ''}
+                        `}
                         checked={item.is_completed}
+                        disabled={updatingItems.has(item.uuid)}
                         onCheckedChange={() =>
                           handleTaskToggle(sectionId, todo.uuid, item.uuid)
                         }
