@@ -4,13 +4,14 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { useToast } from '@/components/ui/use-toast';
-import { CommonStatus, ROUTES, STORAGE_KEYS } from '@/constants/common';
+import { CommonStatus, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { apiService } from '@/lib/api';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { CreateRoleFormData } from '@/lib/validations/role';
@@ -67,20 +68,8 @@ const CreateRole = () => {
 
     setIsSubmitting(true);
     try {
-      // Get selected company from localStorage
-      const selectedCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      let company_id: string | undefined;
-      console.log('selectedCompany', selectedCompany);
-      if (selectedCompany) {
-        try {
-          const parsedCompany = JSON.parse(selectedCompany);
-          company_id = parsedCompany.id;
-        } catch (error) {
-          console.error('Error parsing selected company:', error);
-        }
-      }
+      // Get selected company ID using global utility function
+      const company_id = getCompanyId();
 
       const roleData: CreateRoleRequest & { permissions?: any } = {
         name,

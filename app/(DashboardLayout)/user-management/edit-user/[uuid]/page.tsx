@@ -7,13 +7,7 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import {
-  CommonStatus,
-  PAGINATION,
-  ROLE_IDS,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { CommonStatus, PAGINATION, ROLE_IDS, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
@@ -26,6 +20,8 @@ import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
+  getCurrentUser,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -236,19 +232,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Get selected company from localStorage for roles
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         // Fetch user details and roles in parallel
         const [userRes, rolesRes] = await Promise.all([
@@ -273,21 +258,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
 
         // Set roles data
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
-        console.log(roleList);
-        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        const userData = getCurrentUser();
         let adminRoleId = null;
         let adminRoleUuid = null; // Default fallback
-        if (currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            // If current user is admin, use their role ID as reference
-            if (userData.role?.id) {
-              adminRoleId = userData.role.id;
-              adminRoleUuid = userData.role.uuid;
-            }
-          } catch (error) {
-            console.error('Error parsing user data from localStorage:', error);
-          }
+        if (userData?.role?.id) {
+          // If current user is admin, use their role ID as reference
+          adminRoleId = userData.role.id;
+          adminRoleUuid = userData.role.uuid;
         }
         setRoles(
           roleList

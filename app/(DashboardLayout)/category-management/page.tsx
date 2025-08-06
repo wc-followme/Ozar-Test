@@ -9,12 +9,7 @@ import CategoryForm from '@/components/shared/forms/CategoryForm';
 import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  PAGINATION,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { catIconOptions } from '@/constants/sidebar-items';
 import { STATUS_CODES } from '@/constants/status-codes';
@@ -30,6 +25,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import {
@@ -104,19 +100,8 @@ const CategoryManagement = () => {
       }
 
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const res = await apiService.fetchCategories({
           page: targetPage,
@@ -304,19 +289,10 @@ const CategoryManagement = () => {
           icon,
         };
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            if (parsedCompany.id) {
-              updateData.company_id = parsedCompany.id;
-            }
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          updateData.company_id = companyId;
         }
 
         const response = await apiService.updateCategory(uuid, updateData);
@@ -354,19 +330,10 @@ const CategoryManagement = () => {
           is_default: false, // New categories are not default
         };
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            if (parsedCompany.id) {
-              categoryData.company_id = parsedCompany.id;
-            }
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          categoryData.company_id = companyId;
         }
 
         const response = await apiService.createCategory(categoryData);

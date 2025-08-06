@@ -5,27 +5,22 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  CUSTOM_EVENTS,
-  PAGINATION,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, FetchUsersResponse, User } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
 import { MenuOption, Role, RoleApiResponse } from './types';
 import { USER_MESSAGES } from './user-messages';
@@ -38,7 +33,6 @@ export default function UserManagement() {
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const selectedCompanyRef = useRef<string | null>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const router = useRouter();
@@ -47,12 +41,6 @@ export default function UserManagement() {
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.users?.create;
   const canViewUsers = userPermissions?.users?.view;
-
-  // Initialize selectedCompany from localStorage
-  useEffect(() => {
-    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    selectedCompanyRef.current = currentCompany;
-  }, []);
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
     return (
@@ -72,19 +60,8 @@ export default function UserManagement() {
       try {
         // Fetch roles only on first load
         if (targetPage === 1) {
-          // Get selected company from localStorage for roles
-          const selectedCompany = localStorage.getItem(
-            STORAGE_KEYS.SELECTED_COMPANY
-          );
-          let companyId: string | undefined;
-          if (selectedCompany) {
-            try {
-              const parsedCompany = JSON.parse(selectedCompany);
-              companyId = parsedCompany.id; // UUID from localStorage
-            } catch (error) {
-              companyId = undefined;
-            }
-          }
+          // Get selected company ID using common function
+          const companyId = getCompanyId();
 
           const rolesRes = await apiService.fetchRoles({
             page: 1,
@@ -104,19 +81,8 @@ export default function UserManagement() {
           );
         }
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const role_id = filter !== 'all' ? filter : '';
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
@@ -155,52 +121,18 @@ export default function UserManagement() {
         setLoading(false);
       }
     },
-    [filter, handleAuthError, showErrorToast]
+    [filter]
   );
 
-  // Fetch roles and first page of users
-  useEffect(() => {
+  // Handle company changes
+  const refetchUsers = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setUsers([]);
     fetchUsers(1, false);
-  }, [fetchUsers]);
+  }, []);
 
-  // Watch for changes in selected company and refetch users
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setPage(1);
-      setHasMore(true);
-      setUsers([]);
-      // Call fetchUsers directly without dependency
-      fetchUsers(1, false);
-    };
-
-    // Listen for storage events (when localStorage changes in other tabs/windows)
-    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-
-    // Listen for custom company change events
-    const handleCompanyChange = () => {
-      const currentCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      if (currentCompany !== selectedCompanyRef.current) {
-        selectedCompanyRef.current = currentCompany;
-        handleStorageChange();
-      }
-    };
-
-    // Add custom event listener for company changes
-    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
-
-    return () => {
-      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-      window.removeEventListener(
-        CUSTOM_EVENTS.COMPANY_CHANGED,
-        handleCompanyChange
-      );
-    };
-  }, []); // Remove fetchUsers from dependencies
+  useCompanyChange(refetchUsers);
 
   // Infinite scroll
   useEffect(() => {
@@ -220,7 +152,7 @@ export default function UserManagement() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, fetchUsers]); // Added fetchUsers to dependencies
+  }, [loading, hasMore]);
 
   // Status toggle handler
   const handleToggleStatus = async (id: number, currentStatus: boolean) => {
