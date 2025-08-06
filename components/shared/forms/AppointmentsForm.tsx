@@ -75,11 +75,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
     formState: { errors },
   } = useForm<AppointmentFormData>({
@@ -96,7 +96,19 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     },
   });
 
-  const selectedEmployees = watch('employees');
+  // Debug employees state
+  React.useEffect(() => {
+    console.log('AppointmentsForm - Employees array length:', employees.length);
+    console.log('AppointmentsForm - Employees data:', employees);
+    console.log(
+      'AppointmentsForm - MultiSelect options:',
+      employees.map(employee => ({
+        value: employee.uuid,
+        label: employee.name,
+        image: employee.profile_picture_url || '/images/profile.jpg',
+      }))
+    );
+  }, [employees]);
 
   // Fetch employees on component mount
   React.useEffect(() => {
@@ -125,7 +137,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
           limit: 50,
         });
 
-        if (response.statusCode === 200 && response.data) {
+        if (response.data) {
           console.log('AppointmentsForm API Response:', response);
           console.log('AppointmentsForm Response data:', response.data);
 
@@ -165,11 +177,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     fetchEmployees();
   }, []);
 
-  const handleEmployeeChange = (value: string[]) => {
-    setValue('employees', value);
+  const handleEmployeeChange = (employees: string[]) => {
+    setSelectedEmployees(employees);
+    setValue('employees', employees);
   };
 
   const handleFormSubmit = (data: AppointmentFormData) => {
+    // Ensure employees data is included in the submission
+    data.employees = selectedEmployees;
+    console.log(
+      'AppointmentsForm - Submitting with employees:',
+      selectedEmployees
+    );
     onSubmit(data);
   };
 
