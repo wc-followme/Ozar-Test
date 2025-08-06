@@ -1731,6 +1731,21 @@ class ApiService {
     });
   }
 
+  // Fetch todo lists
+  async fetchTodoLists(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    
+    return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   // Removed testConnection and all debug code
 }
 
