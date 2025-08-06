@@ -91,7 +91,7 @@ export default function ServiceManagementPage() {
           try {
             const parsedCompany = JSON.parse(selectedCompany);
             companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
+          } catch {
             companyId = undefined;
           }
         }
@@ -250,8 +250,8 @@ export default function ServiceManagementPage() {
       try {
         const parsedCompany = JSON.parse(selectedCompany);
         companyId = parsedCompany.id; // UUID from localStorage
-      } catch (error) {
-        console.error('Error parsing selected company:', error);
+      } catch {
+        // Silently fail if company data is invalid
       }
     }
 

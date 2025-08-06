@@ -11,6 +11,7 @@ export interface Material {
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
   updated_at: string;
+  company_id?: string;
   services: Array<{
     id: number | string;
     name: string;
@@ -68,6 +69,7 @@ export interface FetchMaterialsParams {
   is_active?: boolean;
   status?: string;
   service_id?: string | number;
+  company_id?: string;
 }
 
 // Props interface for material form component
