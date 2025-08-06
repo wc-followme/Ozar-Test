@@ -343,7 +343,6 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
       setIsEditSheetOpen(false);
       setEditingTodoList(null);
       fetchTodoLists(); // Refresh the data
-      showSuccessToast('Todo list updated successfully!');
     };
 
     const handleFormCancel = () => {
