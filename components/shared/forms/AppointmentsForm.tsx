@@ -62,7 +62,7 @@ interface AppointmentFormData {
 }
 
 interface AppointmentFormProps {
-  onSubmit: (data: AppointmentFormData) => void;
+  onSubmit: (data: AppointmentFormData) => void | Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -182,14 +182,20 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     setValue('employees', employees);
   };
 
-  const handleFormSubmit = (data: AppointmentFormData) => {
+  const handleFormSubmit = async (data: AppointmentFormData) => {
+    // Check for validation errors
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     // Ensure employees data is included in the submission
     data.employees = selectedEmployees;
-    console.log(
-      'AppointmentsForm - Submitting with employees:',
-      selectedEmployees
-    );
-    onSubmit(data);
+
+    try {
+      await onSubmit(data);
+    } catch (error) {
+      console.error('AppointmentsForm - Error calling onSubmit:', error);
+    }
   };
 
   return (

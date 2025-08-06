@@ -1792,7 +1792,26 @@ class ApiService {
     });
   }
 
-  // Removed testConnection and all debug code
+  // Create appointment
+  async createAppointment(payload: {
+    agenda: string;
+    appointment_with: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    address: string;
+    notes: string;
+    user_uuids: string;
+  }): Promise<any> {
+    return this.makeRequest('/appointments', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
 }
 
 export const apiService = new ApiService();

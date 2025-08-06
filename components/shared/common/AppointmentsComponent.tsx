@@ -1,7 +1,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
 import React, { useState } from 'react';
@@ -21,6 +24,17 @@ interface Appointment {
   notes: string;
 }
 
+interface AppointmentFormData {
+  agenda: string;
+  appointmentWith: string;
+  date: Date;
+  starts: string;
+  ends: string;
+  address: string;
+  notes: string;
+  employees: string[];
+}
+
 interface AppointmentsComponentProps {
   className?: string;
 }
@@ -36,6 +50,8 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<
     string | null
   >(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showSuccessToast, showErrorToast } = useToast();
   const [appointments] = useState<Appointment[]>([
     {
       id: 'appointment-1',
@@ -135,10 +151,72 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     }
   };
 
-  const handleFormSubmit = () => {
-    // Here you would typically update the appointment data
-    // For now, just close the sidesheet
-    setIsEditSheetOpen(false);
+  const handleFormSubmit = async (data: AppointmentFormData) => {
+    setIsSubmitting(true);
+
+    try {
+      // Format date to YYYY-MM-DD
+      const formattedDate = data.date
+        ? data.date.toISOString().split('T')[0]
+        : '';
+
+      if (!formattedDate) {
+        showErrorToast('Please select a valid date');
+        return;
+      }
+
+      // Convert employees array to comma-separated string
+      const userUuids = data.employees.join(',');
+
+      // Convert 12-hour format to 24-hour format
+      const convertTo24Hour = (time12h: string) => {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time12h; // Return original if parsing fails
+
+        let [hours, minutes] = time.split(':');
+        if (!hours || !minutes) return time12h; // Return original if parsing fails
+
+        if (hours === '12') {
+          hours = modifier === 'PM' ? '12' : '00';
+        } else if (modifier === 'PM') {
+          hours = String(parseInt(hours) + 12);
+        }
+
+        return `${hours.padStart(2, '0')}:${minutes}`;
+      };
+
+      const payload = {
+        agenda: data.agenda,
+        appointment_with: data.appointmentWith,
+        date: formattedDate,
+        start_time: convertTo24Hour(data.starts),
+        end_time: convertTo24Hour(data.ends),
+        address: data.address,
+        notes: data.notes || '',
+        user_uuids: userUuids,
+      };
+
+      const response = await apiService.createAppointment(payload);
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        showSuccessToast(
+          extractApiSuccessMessage(response, 'Appointment created successfully')
+        );
+        setIsEditSheetOpen(false);
+        // TODO: Refresh appointments list if needed
+      } else {
+        showErrorToast(response.message || 'Failed to create appointment');
+      }
+    } catch (error) {
+      console.error('Error creating appointment:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to create appointment'
+      );
+      showErrorToast(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFormCancel = () => {
@@ -160,6 +238,16 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
+      {/* Add Appointment Button */}
+      <div className='flex justify-end mb-4'>
+        <Button
+          onClick={() => setIsEditSheetOpen(true)}
+          className='btn-primary'
+        >
+          Add New Appointment
+        </Button>
+      </div>
+
       {appointments.map(
         ({
           id: appointmentId,
@@ -263,9 +351,9 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         }
       )}
 
-      {/* Edit Appointment SideSheet */}
+      {/* Add Appointment SideSheet */}
       <SideSheet
-        title='Edit Appointment'
+        title='Add Appointment'
         open={isEditSheetOpen}
         onOpenChange={setIsEditSheetOpen}
         size='600px'
@@ -274,7 +362,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
           <AppointmentForm
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
-            loading={false}
+            loading={isSubmitting}
           />
         </div>
       </SideSheet>
