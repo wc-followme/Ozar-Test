@@ -12,7 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
-import { JOB_TYPE, JobType, ROLE_ID } from '@/constants/common';
+import { JOB_TYPE, JobType, ROLE_IDS } from '@/constants/common';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
@@ -72,7 +72,10 @@ const createJobSchema = yup.object({
     .string()
     .email(JOB_MESSAGES.EMAIL_REQUIRED)
     .required(JOB_MESSAGES.EMAIL_REQUIRED),
-  client_phone_number: yup.string().required(JOB_MESSAGES.PHONE_REQUIRED),
+  client_phone_number: yup
+    .string()
+    .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+    .required(JOB_MESSAGES.PHONE_REQUIRED),
   job_privacy: yup
     .mixed<JobType>()
     .oneOf([JOB_TYPE.PUBLIC, JOB_TYPE.PRIVATE])
@@ -140,7 +143,7 @@ export function CreateJobForm({
       try {
         const response = await apiService.getUsersDropdown({
           name: debouncedName,
-          role_id: ROLE_ID.JOB_USER,
+          role_id: ROLE_IDS.HOMEOWNER,
           page: 1,
           limit: 50,
         });
@@ -206,8 +209,8 @@ export function CreateJobForm({
           className='space-y-4 sm:space-y-6'
         >
           {/* Full Name Input with Autocomplete */}
-          <div className='grid grid-cols-1 gap-4'>
-            <div className='space-y-1 md:space-y-2 relative'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='space-y-1 md:space-y-2 relative col-span-full'>
               <Label
                 htmlFor='client_name'
                 className='fled-label text-sm sm:text-base'
@@ -222,7 +225,13 @@ export function CreateJobForm({
                     {...field}
                     id='client_name'
                     placeholder={JOB_MESSAGES.ENTER_JOB_NAME}
-                    className={cn('input-field', userLoading ? 'pr-10' : '')}
+                    className={cn(
+                      'input-field',
+                      userLoading ? 'pr-10' : '',
+                      errors.client_name
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     autoComplete='off'
                     ref={nameInputRef}
                     onChange={e => {
@@ -236,7 +245,7 @@ export function CreateJobForm({
                 )}
               />
               {errors.client_name && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_name.message}
                 </span>
               )}
@@ -284,13 +293,18 @@ export function CreateJobForm({
                     {...field}
                     id='client_email'
                     placeholder={JOB_MESSAGES.ENTER_EMAIL}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.client_email
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     disabled={userSelected}
                   />
                 )}
               />
               {errors.client_email && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_email.message}
                 </span>
               )}
@@ -310,13 +324,52 @@ export function CreateJobForm({
                     {...field}
                     id='client_phone_number'
                     placeholder={JOB_MESSAGES.ENTER_PHONE}
-                    className='input-field'
+                    className={cn(
+                      'input-field',
+                      errors.client_phone_number
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
                     disabled={userSelected}
+                    onKeyDown={e => {
+                      // Only allow numbers, backspace, delete, tab, escape, enter
+                      const allowedKeys = [
+                        'Backspace',
+                        'Delete',
+                        'Tab',
+                        'Escape',
+                        'Enter',
+                        'ArrowLeft',
+                        'ArrowRight',
+                        'ArrowUp',
+                        'ArrowDown',
+                        'Home',
+                        'End',
+                      ];
+
+                      // Allow if it's an allowed key
+                      if (allowedKeys.includes(e.key)) {
+                        return;
+                      }
+
+                      // Allow if it's a number
+                      if (/^[0-9]$/.test(e.key)) {
+                        return;
+                      }
+
+                      // Prevent all other keys
+                      e.preventDefault();
+                    }}
+                    onChange={e => {
+                      // Remove any non-numeric characters from the input
+                      const value = e.target.value.replace(/[^0-9]/g, '');
+                      field.onChange(value);
+                    }}
                   />
                 )}
               />
               {errors.client_phone_number && (
-                <span className='text-red-500 text-xs'>
+                <span className='text-[var(--warning)] text-xs'>
                   {errors.client_phone_number.message}
                 </span>
               )}
@@ -337,7 +390,7 @@ export function CreateJobForm({
               )}
             />
             {errors.job_privacy && (
-              <span className='text-red-500 text-xs'>
+              <span className='text-[var(--warning)] text-xs'>
                 {errors.job_privacy.message}
               </span>
             )}
@@ -360,7 +413,7 @@ export function CreateJobForm({
                 // Helper to determine if a value is selected
                 const isSelected = (v: string) => value.includes(v);
                 return (
-                  <div className='grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
+                  <div className='grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3'>
                     {selectBoxOptions.map(
                       ({
                         id,
@@ -454,7 +507,7 @@ export function CreateJobForm({
               }}
             />
             {errors.job_boxes_step && (
-              <span className='text-red-500 text-xs'>
+              <span className='text-[var(--warning)] text-xs'>
                 {errors.job_boxes_step.message as string}
               </span>
             )}
@@ -499,7 +552,7 @@ export function CreateJobForm({
               <>
                 <Button
                   type='button'
-                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   onClick={() => {
                     if (generatedLink) {
                       window.open(generatedLink, '_blank');
@@ -509,7 +562,7 @@ export function CreateJobForm({
                   Continue Estimate
                 </Button>
                 <Button
-                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   type='button'
                   onClick={() => {
                     navigator.clipboard.writeText(generatedLink);
@@ -523,14 +576,14 @@ export function CreateJobForm({
               <>
                 <Button
                   type='button'
-                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   onClick={onCancel}
                 >
                   {JOB_MESSAGES.CANCEL_BUTTON}
                 </Button>
                 {defaultValues?.link && (
                   <Button
-                    className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                    className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     type='button'
                   >
                     Continue Estimate
@@ -538,7 +591,7 @@ export function CreateJobForm({
                 )}
                 <Button
                   type='submit'
-                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
+                  className='btn-primary !px-4 md:!px-8 text-sm sm:text-base flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                   disabled={isSubmitting}
                 >
                   {isSubmitting

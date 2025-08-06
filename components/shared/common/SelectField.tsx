@@ -25,6 +25,7 @@ interface SelectFieldProps {
   className?: string;
   optionClassName?: string;
   triggerClassName?: string; // New prop for SelectTrigger
+  disabled?: boolean; // New prop for disabled state
 }
 
 const selectContentStyle =
@@ -42,6 +43,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   className = '',
   optionClassName = '',
   triggerClassName = '', // Destructure new prop
+  disabled = false, // Destructure disabled prop
 }) => {
   const [internalValue, setInternalValue] = useState(value);
 
@@ -51,29 +53,30 @@ const SelectField: React.FC<SelectFieldProps> = ({
   }, [value]);
 
   const handleValueChange = (newValue: string) => {
+    if (disabled) return; // Prevent changes when disabled
     setInternalValue(newValue);
     onValueChange(newValue);
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      {label && (
-        <Label className='text-[14px] font-semibold text-[var(--text-dark)]'>
-          {label}
-        </Label>
-      )}
-      <Select value={internalValue} onValueChange={handleValueChange}>
+    <div className={`sm:space-y-2 space-y-1 ${className}`}>
+      {label && <Label className='field-label'>{label}</Label>}
+      <Select
+        value={internalValue}
+        onValueChange={handleValueChange}
+        disabled={disabled}
+      >
         <SelectTrigger
-          className={`h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] ${triggerClassName}`}
+          className={`h-12 border-2 border-[var(--border-dark)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] ${triggerClassName} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className={selectContentStyle}>
-          {options.map(({ value, label, disabled }) => (
+          {options.map(({ value, label, disabled: optionDisabled }) => (
             <SelectItem
               key={value}
               value={value}
-              disabled={disabled ?? false}
+              disabled={optionDisabled ?? false}
               className={`${selectItemStyle} ${optionClassName}`}
             >
               {label}

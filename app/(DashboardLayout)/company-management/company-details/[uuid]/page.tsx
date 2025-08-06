@@ -1,13 +1,23 @@
 'use client';
 import { Search } from '@/components/icons/Search';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { UserCard } from '@/components/shared/cards/UserCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
   FetchUsersResponse,
@@ -19,6 +29,7 @@ import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
   formatDate,
+  getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
 import { Edit2, Trash, UserAdd } from 'iconsax-react';
@@ -26,7 +37,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
-import { UserCard } from '../../../../../components/shared/cards/UserCard';
 import {
   MenuOption,
   Role,
@@ -42,11 +52,20 @@ interface CompanyDetailsPageProps {
 }
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Company Details' }, // current page
+  {
+    name: COMPANY_MESSAGES.COMPANY_MANAGEMENT_TITLE,
+    href: ROUTES.COMPANY_MANAGEMENT,
+  },
+  { name: COMPANY_MESSAGES.COMPANY_DETAILS_TITLE }, // current page
 ];
 
 const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
+  // Destructure constants for better readability
+  const { ROLES_DROPDOWN_LIMIT, USERS_LIMIT } = PAGINATION;
+  const { ACTIVE, INACTIVE } = CommonStatus;
+  const { EDIT, DELETE } = ACTIONS;
+  const { COMPANY_MANAGEMENT, ADD_USER } = ROUTES;
+
   const resolvedParams = React.use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -71,7 +90,13 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [rolesLoaded, setRolesLoaded] = useState(false);
 
+  // Get user permissions for companies and users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditCompany = userPermissions?.companies?.assign_user;
+  const canCreateUser = userPermissions?.users?.create;
+  const canViewCompany = userPermissions?.companies?.view;
   const isCompanyApiResponse = (obj: unknown): obj is GetCompanyResponse => {
     return (
       typeof obj === 'object' &&
@@ -104,8 +129,9 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         );
 
         if (isCompanyApiResponse(response)) {
-          setCompany(response.data);
-          setEnabled(response.data.status === 'ACTIVE');
+          const { data } = response;
+          setCompany(data);
+          setEnabled(data.status === 'ACTIVE');
         } else {
           throw new Error('Invalid response format');
         }
@@ -118,7 +144,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
           COMPANY_MESSAGES.FETCH_DETAILS_ERROR
         );
         showErrorToast(errorMessage);
-        router.push('/company-management');
+        router.push(COMPANY_MANAGEMENT);
       } finally {
         setLoading(false);
       }
@@ -147,9 +173,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     if (selectedTab !== 'usermanagement') return;
 
     const handleScroll = () => {
+      const { innerHeight, scrollY } = window;
+      const { offsetHeight } = document.body;
       if (
-        window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 200 &&
+        innerHeight + scrollY >= offsetHeight - 200 &&
         !usersLoading &&
         hasMore
       ) {
@@ -167,36 +194,68 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
     setUsersLoading(true);
     try {
-      // Fetch roles only on first load
-      if (targetPage === 1) {
+      // Fetch roles only once
+      if (!rolesLoaded) {
         const rolesRes = await apiService.fetchRoles({
           page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
+          limit: ROLES_DROPDOWN_LIMIT,
+          status: ACTIVE, // Only fetch active roles for dropdown
+          company_id: resolvedParams.uuid, // Use company UUID from URL
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+
+        // Get current user data from localStorage to determine admin role ID
+        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        let adminRoleId = null;
+        let adminRoleUuid = null; // Default fallback
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            // If current user is admin, use their role ID as reference
+            if (userData.role?.id) {
+              adminRoleId = userData.role.id;
+              adminRoleUuid = userData.role.uuid;
+            }
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+          }
+        }
+
         setRoles(
-          roleList.map((role: Role) => ({ id: role.id, name: role.name }))
+          roleList
+            .map(({ uuid, name, status }: Role) => ({
+              uuid,
+              name,
+              status: status || 'ACTIVE',
+            }))
+            .filter(role => {
+              if (ROLE_IDS.ADMIN === adminRoleId) {
+                return role.uuid !== adminRoleUuid;
+              } else {
+                return true;
+              }
+            }) // Remove admin role using dynamic ID
         );
+        setRolesLoaded(true);
       }
 
       const role_id = filter !== 'all' ? filter : '';
       const searchParam = searchTerm.trim();
       const fetchParams: any = {
         page: targetPage,
-        limit: PAGINATION.USERS_LIMIT,
+        limit: USERS_LIMIT,
         role_id,
-        company_id: company.id, // Filter by current company
+        company_id: resolvedParams.uuid, // Use company UUID from URL
       };
       if (searchParam) {
         fetchParams.search = searchParam;
       }
       const usersRes: FetchUsersResponse = await apiService.fetchUsers({
         ...fetchParams,
-        status: 'ACTIVE', // Only fetch active users
+        status: ACTIVE, // Only fetch active users
       });
 
-      const newUsers = usersRes.data;
+      const { data: newUsers, pagination } = usersRes;
       setUsers(prev => {
         if (append) {
           // Filter out duplicates when appending to prevent duplicate keys
@@ -210,7 +269,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         }
       });
       setPage(targetPage);
-      setHasMore(usersRes.pagination.page < usersRes.pagination.totalPages);
+      setHasMore(pagination.page < pagination.totalPages);
     } catch (err: unknown) {
       if (handleAuthError(err)) {
         return;
@@ -226,15 +285,18 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   };
 
   // User status toggle handler - same as user-management page
-  const handleUserToggleStatus = async (id: number, currentStatus: boolean) => {
+  const handleUserToggleStatus = async (
+    uuid: string,
+    currentStatus: boolean
+  ) => {
     try {
-      const user = users.find(u => u.id === id);
+      const user = users.find(u => u.uuid === uuid);
       if (!user || !user.uuid)
         throw new Error(USER_MESSAGES.USER_NOT_FOUND_ERROR);
-      const newStatus = currentStatus ? 'INACTIVE' : 'ACTIVE';
+      const newStatus = currentStatus ? INACTIVE : ACTIVE;
       const response = await apiService.updateUserStatus(user.uuid, newStatus);
       setUsers(users =>
-        users.map(u => (u.id === id ? { ...u, status: newStatus } : u))
+        users.map(u => (u.uuid === uuid ? { ...u, status: newStatus } : u))
       );
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
@@ -271,17 +333,18 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
   };
 
   // Filter users based on role
-  const filteredUsers = users.filter(user => {
-    if (filter === 'all') return true;
-    return user.role_id === parseInt(filter);
-  });
 
   // Menu options for user cards
   const menuOptions: MenuOption[] = [
-    { label: 'Edit', action: 'edit', icon: Edit2, variant: 'default' },
     {
-      label: 'Archive',
-      action: 'delete',
+      label: USER_MESSAGES.UPDATE_BUTTON,
+      action: EDIT,
+      icon: Edit2,
+      variant: 'default',
+    },
+    {
+      label: USER_MESSAGES.ARCHIVE_BUTTON,
+      action: DELETE,
       icon: Trash,
       variant: 'destructive',
     },
@@ -305,13 +368,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         return;
       }
 
-      const currentStatus = company.status;
-      const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const { status: currentStatus, uuid } = company;
+      const newStatus = currentStatus === 'ACTIVE' ? INACTIVE : ACTIVE;
 
-      const response = await apiService.updateCompanyStatus(
-        company.uuid,
-        newStatus
-      );
+      const response = await apiService.updateCompanyStatus(uuid, newStatus);
 
       // Update local state
       setCompany(prev => (prev ? { ...prev, status: newStatus } : null));
@@ -325,8 +385,8 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
       );
 
       // If company is archived (status changed to INACTIVE), redirect to company listing
-      if (newStatus === 'INACTIVE') {
-        router.push('/company-management');
+      if (newStatus === INACTIVE) {
+        router.push(COMPANY_MANAGEMENT);
       }
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -349,8 +409,19 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     }
   };
 
-  if (loading) {
+  if (loading || userPermissions === null) {
+    // Show loading if permissions are still loading
     return <LoadingComponent variant='page' />;
+  }
+
+  if (!canViewCompany) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.COMPANY_DETAILS_REDIRECT_TEXT}
+      />
+    );
   }
 
   if (!company) {
@@ -367,12 +438,12 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
     <div className='w-full h-full overflow-auto'>
       {/* Breadcrumb */}
       <Breadcrumb items={breadcrumbData} className='mb-6' />
-      <div className='p-4 md:p-6 bg-[var(--white-background)] rounded-[16px] md:rounded-[24px]'>
+      <div className='p-4 md:p-6 bg-[var(--white-background)] rounded-[16px] md:rounded-[24px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
         {/* Header */}
-        <div className='flex flex-col sm:flex-row gap-4 md:gap-6 items-start sm:items-center'>
-          <div className='flex-shrink-0 w-[100px] sm:w-[120px]'>
+        <div className='grid grid-cols-[100px_auto] sm:grid-cols-[120px_auto] gap-4 gap-y-1 sm:gap-y-4 items-start sm:items-start'>
+          <div className='flex-shrink-0 row-span-2 w-[100px] sm:w-[120px]'>
             {company.image ? (
-              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] p-3 rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center'>
+              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] p-3 rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
                 <Image
                   src={
                     (process.env['NEXT_PUBLIC_CDN_URL'] || '') + company.image
@@ -384,26 +455,28 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 />
               </div>
             ) : (
-              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center bg-gray-50'>
+              <div className='w-[100px] h-[100px] sm:w-[120px] sm:h-[120px] rounded-[12px] md:rounded-[16px] border border-[var(--border-dark)] flex items-center justify-center bg-gray-50 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
                 <span className='text-gray-400 text-sm text-center'>
-                  No Image
+                  {COMPANY_MESSAGES.NO_IMAGE_LABEL}
                 </span>
               </div>
             )}
           </div>
-          <div className='flex-1 -mt-[5px] w-full'>
-            <div className='flex flex-col sm:flex-row sm:items-center gap-3 md:gap-4 border-b border-[var(--border-dark)] pb-3 md:pb-4 mb-3 md:mb-4'>
-              <div className='flex-1'>
-                <h1 className='text-lg sm:text-xl md:text-[24px] font-bold text-[var(--text-dark)] leading-[1] mb-2'>
-                  {company.name}
-                </h1>
-                <p className='text-sm md:text-[16px] text-[var(--text-secondary)] leading-[1]'>
-                  Construction Company
-                </p>
-              </div>
+          <div className='flex flex-col lg:flex-row item-start lg:items-center gap-3 lg:gap-4 lg:border-b border-[var(--border-dark)] pb-3 md:pb-4'>
+            <div className='flex-1'>
+              <h1 className='text-lg sm:text-xl md:text-[24px] font-bold text-[var(--text-dark)] leading-[1] mb-2'>
+                {company.name}
+              </h1>
+              <p className='text-sm md:text-[16px] text-[var(--text-secondary)] leading-[1]'>
+                {COMPANY_MESSAGES.COMPANY_TYPE_LABEL}
+              </p>
+            </div>
 
-              <div className='flex flex-row items-center gap-2 sm:gap-4'>
-                <Link href={`/company-management/edit-company/${company.uuid}`}>
+            <div className='flex flex-row items-center gap-2 sm:gap-4'>
+              {canEditCompany && (
+                <Link
+                  href={`${COMPANY_MANAGEMENT}/edit-company/${company.uuid}`}
+                >
                   <Button
                     variant='outline'
                     className='btn-secondary !h-9 text-sm w-auto'
@@ -414,160 +487,173 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                       className='[&_path]:stroke-2'
                     />
                     <span className='text-[var(--text-dark)]'>
-                      Edit Details
+                      {COMPANY_MESSAGES.EDIT_DETAILS_BUTTON}
                     </span>
                   </Button>
                 </Link>
+              )}
+              {canCreateUser && (
                 <Link
                   className='!h-9 btn-primary flex items-center justify-center !px-0 sm:!px-6 text-center !w-9 sm:!w-auto rounded-full'
-                  href={`/company-management/add-user?company_id=${company.uuid}`}
+                  href={`${ADD_USER}?company_id=${company.uuid}`}
                 >
                   <UserAdd size='20' color='#fff' className='sm:hidden' />
-                  <span className='hidden sm:inline'>Add User</span>
-                </Link>
-              </div>
-            </div>
-            {/* Info Row */}
-            <div className='flex flex-col sm:flex-row gap-3 md:gap-4'>
-              <div className='flex flex-col sm:flex-row gap-6 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Industry
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    Construction
-                  </div>
-                </div>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Created on
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    {formatDate(company.created_at)}
-                  </div>
-                </div>
-                <div>
-                  <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
-                    Subscription Ends
-                  </div>
-                  <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
-                    {formatDate(company.expiry_date)}
-                  </div>
-                </div>
-              </div>
-              {/* Status Toggle */}
-              {!company.is_default && (
-                <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start'>
-                  <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
-                    {enabled ? 'Enable' : 'Disable'}
+                  <span className='hidden sm:inline'>
+                    {COMPANY_MESSAGES.ADD_USER_BUTTON}
                   </span>
-                  <Switch
-                    checked={enabled}
-                    onCheckedChange={handleToggle}
-                    disabled={isToggling}
-                    className={switchStyleSm}
-                  />
-                </div>
+                </Link>
               )}
             </div>
           </div>
+          {/* Info Row */}
+          <div className='flex flex-col sm:flex-row gap-3 md:gap-4'>
+            <div className='flex flex-col sm:flex-row sm:gap-6 gap-3 md:gap-14 text-sm md:text-[16px] flex-1 leading-tight'>
+              <div>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
+                  {COMPANY_MESSAGES.INDUSTRY_LABEL}
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
+                  {COMPANY_MESSAGES.INDUSTRY_VALUE}
+                </div>
+              </div>
+              <div>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
+                  {COMPANY_MESSAGES.CREATED_ON_LABEL}
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
+                  {formatDate(company.created_at)}
+                </div>
+              </div>
+              <div>
+                <div className='text-[var(--text-secondary)] text-xs md:text-sm'>
+                  {COMPANY_MESSAGES.SUBSCRIPTION_ENDS_LABEL}
+                </div>
+                <div className='font-medium text-[var(--text-dark)] text-xs md:text-sm'>
+                  {formatDate(company.expiry_date)}
+                </div>
+              </div>
+            </div>
+            {/* Status Toggle */}
+            {!company.is_default && (
+              <div className='flex gap-3 items-center justify-between bg-[var(--border-light)] rounded-[30px] py-1 px-3 self-start'>
+                <span className='text-[12px] font-medium text-[var(--text-dark)] w-[100px]'>
+                  {enabled
+                    ? COMPANY_MESSAGES.ENABLE_LABEL
+                    : COMPANY_MESSAGES.DISABLE_LABEL}
+                </span>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={handleToggle}
+                  disabled={isToggling}
+                  className={switchStyleSm}
+                />
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* Tabs */}
       </div>
       {/* Main Content */}
-      <div className='bg-[var(--white-background)] rounded-[16px] md:rounded-[20px] p-4 md:p-[28px] mt-4 min-h-[calc(100vh-370px)]'>
+      <div className='bg-[var(--white-background)] rounded-[16px] md:rounded-[20px] p-4 md:p-[28px] mt-4 min-h-[calc(100vh-370px)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
         <Tabs
           value={selectedTab}
           onValueChange={setSelectedTab}
           className='w-full'
         >
           <div className='flex justify-center sm:justify-start'>
-            <TabsList className='grid grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal w-full sm:w-auto'>
+            <TabsList className='grid grid-cols-[auto_auto] sm:grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal w-full max-w-md sm:w-auto shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='about'
-                className='px-3 md:px-4 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+                className='px-3 md:px-6 lg:px-8 py-2 text-sm transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
-                About
+                {COMPANY_MESSAGES.ABOUT_LABEL}
               </TabsTrigger>
               <TabsTrigger
                 value='usermanagement'
-                className='px-4 md:px-8 py-2 text-sm md:text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+                className='px-3 md:px-6 lg:px-8 py-2 text-sm transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal whitespace-nowrap'
               >
-                User Management
+                {COMPANY_MESSAGES.TAB_USER_MANAGEMENT}
               </TabsTrigger>
             </TabsList>
           </div>
 
           <TabsContent value='about' className='py-4 md:py-6'>
             {/* About Section */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6'>
-              <div className='text-xs md:text-sm text-[var(--text-secondary)] font-normal mb-2'>
-                About
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+              <div className='text-sm text-[var(--text-secondary)] font-normal mb-2'>
+                {COMPANY_MESSAGES.ABOUT_LABEL}
               </div>
-              <div className='text-xs md:text-sm text-[var(--text-dark)] font-medium leading-tight'>
-                {company.about || 'No description available.'}
+              <div className='text-sm text-[var(--text-dark)] font-medium leading-tight'>
+                {company.about || COMPANY_MESSAGES.NO_DESCRIPTION_LABEL}
               </div>
             </div>
             {/* Contact Info Row */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 flex flex-col sm:flex-row gap-4 md:gap-8 text-xs md:text-sm flex-wrap'>
-              <div className='flex-1'>
-                <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                  Email
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-sm'>
+                <div className='min-w-0'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
+                    {COMPANY_MESSAGES.EMAIL_LABEL}
+                  </div>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
+                    {company.email || COMPANY_MESSAGES.N_A_LABEL}
+                  </div>
                 </div>
-                <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium'>
-                  {company.email || 'N/A'}
+                <div className='min-w-0'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
+                    {COMPANY_MESSAGES.PHONE_LABEL}
+                  </div>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
+                    {company.phone_number || COMPANY_MESSAGES.N_A_LABEL}
+                  </div>
                 </div>
-              </div>
-              <div className='flex-1'>
-                <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                  Phone Number
+                <div className='min-w-0'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
+                    {COMPANY_MESSAGES.ADDRESS_LABEL}
+                  </div>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
+                    {(() => {
+                      const { city, pincode } = company;
+                      return city && pincode
+                        ? `${city}, ${pincode}`
+                        : COMPANY_MESSAGES.N_A_LABEL;
+                    })()}
+                  </div>
                 </div>
-                <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium'>
-                  {company.phone_number || 'N/A'}
+                <div className='min-w-0'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
+                    {COMPANY_MESSAGES.COMMUNICATION_LABEL}
+                  </div>
+                  <div className='text-[var(--text-dark)] text-sm font-medium break-words'>
+                    {company.preferred_communication_method ||
+                      COMPANY_MESSAGES.N_A_LABEL}
+                  </div>
                 </div>
-              </div>
-              <div className='flex-1'>
-                <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                  Address
-                </div>
-                <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium'>
-                  {company.city && company.pincode
-                    ? `${company.city}, ${company.pincode}`
-                    : 'N/A'}
-                </div>
-              </div>
-              <div className='flex-1'>
-                <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                  Communication
-                </div>
-                <div className='text-[var(--text-dark)] text-xs md:text-sm font-medium'>
-                  {company.preferred_communication_method || 'N/A'}
-                </div>
-              </div>
-              <div className='flex-1'>
-                <div className='font-normal text-[var(--text-secondary)] mb-1 text-xs md:text-sm'>
-                  Website
-                </div>
-                <div className='flex items-center gap-1 text-[var(--text-dark)] text-xs md:text-sm font-medium'>
-                  {company.website ? (
-                    <>
-                      <span>{company.website}</span>
-                      <Link
-                        href={
-                          company.website.startsWith('http')
-                            ? company.website
-                            : `https://${company.website}`
-                        }
-                        target='_blank'
-                        className='underline ml-1'
-                      >
-                        ↗
-                      </Link>
-                    </>
-                  ) : (
-                    'N/A'
-                  )}
+                <div className='min-w-0 sm:col-span-2 lg:col-span-1'>
+                  <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
+                    {COMPANY_MESSAGES.WEBSITE_LABEL}
+                  </div>
+                  <div className='flex items-center gap-1 text-[var(--text-dark)] text-sm font-medium break-words'>
+                    {(() => {
+                      const { website } = company;
+                      return website ? (
+                        <>
+                          <span className='truncate'>{website}</span>
+                          <Link
+                            href={
+                              website.startsWith('http')
+                                ? website
+                                : `https://${website}`
+                            }
+                            target='_blank'
+                            className='underline ml-1 flex-shrink-0'
+                          >
+                            ↗
+                          </Link>
+                        </>
+                      ) : (
+                        COMPANY_MESSAGES.N_A_LABEL
+                      );
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
@@ -578,10 +664,10 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               <div className='relative w-full sm:max-w-[360px]'>
                 <Input
                   id='search'
-                  placeholder='Search here...'
+                  placeholder={COMPANY_MESSAGES.SEARCH_PLACEHOLDER}
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)]'
+                  className='h-12 border-2 border-[var(--border-dark)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[30px] pl-12 placeholder:text-[var(--text-secondary)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
                 />
                 <Search className='absolute top-3 left-4' />
               </div>
@@ -591,14 +677,14 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 options={[
                   { value: 'all', label: USER_MESSAGES.ALL_USERS },
                   ...roles.map(role => ({
-                    value: String(role.id),
+                    value: role.uuid,
                     label: role.name,
                   })),
                 ]}
                 placeholder={USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40 rounded-full'
                 optionClassName={''}
-                triggerClassName='rounded-full h-[42px] border-2 border-[var(--border-dark)]'
+                triggerClassName='rounded-full h-[42px] border-2 border-[var(--border-dark)] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'
               />
             </div>
             <div className='mt-4 md:mt-6'>
@@ -611,7 +697,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                 </div>
               ) : (
                 <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4'>
-                  {filteredUsers.map(
+                  {users?.map(
                     ({
                       uuid,
                       name,
@@ -620,7 +706,6 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                       email,
                       profile_picture_url,
                       status,
-                      id,
                     }) => (
                       <UserCard
                         key={uuid} // Use uuid instead of id for unique keys
@@ -636,7 +721,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
                         }
                         status={status === 'ACTIVE'}
                         onToggle={() =>
-                          handleUserToggleStatus(id, status === 'ACTIVE')
+                          handleUserToggleStatus(uuid, status === 'ACTIVE')
                         }
                         onDelete={() => handleDeleteUser(uuid)}
                         menuOptions={menuOptions}

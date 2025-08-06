@@ -1,15 +1,27 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import {
+  CommonStatus,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -33,11 +45,19 @@ const UserInfoForm = dynamic(
 );
 
 const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'Company Management', href: '/company-management' },
-  { name: 'Add User' }, // current page
+  {
+    name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB,
+    href: ROUTES.USER_MANAGEMENT,
+  },
+  { name: USER_MESSAGES.ADD_USER_BREADCRUMB }, // current page
 ];
 
 export default function AddCompanyUserPage() {
+  // Destructure constants for better readability
+  const { ROLES_DROPDOWN_LIMIT } = PAGINATION;
+  const { ACTIVE } = CommonStatus;
+  const { COMPANY_DETAILS } = ROUTES;
+
   const [selectedTab, setSelectedTab] = useState('info');
   const [fileKey, setFileKey] = useState<string>('');
   const [uploading, setUploading] = useState<boolean>(false);
@@ -58,9 +78,7 @@ export default function AddCompanyUserPage() {
 
   const handleCancel = () => {
     // Redirect back to the company details page
-    router.push(
-      `/company-management/company-details/${companyUuid}?tab=usermanagement`
-    );
+    router.push(`${COMPANY_DETAILS}/${companyUuid}?tab=usermanagement`);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -82,22 +100,13 @@ export default function AddCompanyUserPage() {
       try {
         const companyRes = await apiService.getCompanyDetails(companyUuid);
         const rawId = companyRes.data.id;
-        console.log('Company response data:', companyRes.data);
-        console.log('Raw ID from API:', rawId, 'Type:', typeof rawId);
 
         // Convert string ID to number
         const numericId =
           typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
-        console.log(
-          'Converted to numeric ID:',
-          numericId,
-          'Type:',
-          typeof numericId
-        );
 
         if (isNaN(numericId) || typeof numericId !== 'number') {
-          console.error('Could not convert ID to number:', rawId);
-          showErrorToast('Invalid company ID received from server');
+          showErrorToast(USER_MESSAGES.USER_NOT_FOUND_ERROR);
           return;
         }
 
@@ -106,7 +115,7 @@ export default function AddCompanyUserPage() {
         if (handleAuthError(err)) {
           return; // Don't show toast if it's an auth error
         }
-        showErrorToast('Failed to load company details');
+        showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
       } finally {
         setLoadingCompany(false);
       }
@@ -118,14 +127,59 @@ export default function AddCompanyUserPage() {
     const fetchRoles = async () => {
       setLoadingRoles(true);
       try {
+        // Get selected company from localStorage for roles
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const rolesRes = await apiService.fetchRoles({
           page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
+          limit: ROLES_DROPDOWN_LIMIT,
+          status: ACTIVE, // Only fetch active roles for dropdown
+          ...(companyId ? { company_id: companyId } : {}),
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+
+        // Get current user data from localStorage to determine admin role ID
+        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        let adminRoleId = null;
+        let adminRoleUuid = null; // Default fallback
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            // If current user is admin, use their role ID as reference
+            if (userData.role?.id) {
+              adminRoleId = userData.role.id;
+              adminRoleUuid = userData.role.uuid;
+            }
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+          }
+        }
+
         setRoles(
-          roleList.map((role: Role) => ({ id: role.id, name: role.name }))
+          roleList
+            .map(({ uuid, name, status }: Role) => ({
+              uuid,
+              name,
+              status: status || 'ACTIVE',
+            }))
+            .filter(role => {
+              if (ROLE_IDS.ADMIN === adminRoleId) {
+                return role.uuid !== adminRoleUuid;
+              } else {
+                return true;
+              }
+            }) // Remove admin role using dynamic ID
         );
       } catch (err: unknown) {
         if (handleAuthError(err)) {
@@ -133,12 +187,13 @@ export default function AddCompanyUserPage() {
         }
         // Error fetching roles - proceed with empty array
         setRoles([]);
+        showErrorToast(USER_MESSAGES.LOAD_ROLES_ERROR);
       } finally {
         setLoadingRoles(false);
       }
     };
     fetchRoles();
-  }, [handleAuthError]);
+  }, [handleAuthError, ROLES_DROPDOWN_LIMIT, ACTIVE]);
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -179,7 +234,7 @@ export default function AddCompanyUserPage() {
   const handleCreateUser = async (data: UserFormData) => {
     // Prevent submission if company details are not loaded yet
     if (loadingCompany || !companyNumericId) {
-      showErrorToast('Company details are still loading. Please wait.');
+      showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
       return;
     }
 
@@ -190,44 +245,37 @@ export default function AddCompanyUserPage() {
         throw new Error('Date of joining is required for user creation');
       }
 
+      // Destructure form data for cleaner code
+      const {
+        role_id,
+        name,
+        email,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
+      } = data;
+
       const payload: CreateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
+        role_id,
+        name,
+        email,
         // Password will be generated on the backend
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        date_of_joining: data.date_of_joining,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
         company_id: companyNumericId!, // Pass the numeric company_id to associate user with specific company
       };
-
-      console.log('=== FORM SUBMISSION DEBUG ===');
-      console.log(
-        'companyNumericId value:',
-        companyNumericId,
-        'Type:',
-        typeof companyNumericId
-      );
-      console.log(
-        'companyUuid value:',
-        companyUuid,
-        'Type:',
-        typeof companyUuid
-      );
-      console.log(
-        'Final payload.company_id:',
-        payload.company_id,
-        'Type:',
-        typeof payload.company_id
-      );
-      console.log('Full payload:', payload);
-      console.log('=== END DEBUG ===');
 
       const response = await apiService.createUser(payload);
       showSuccessToast(
@@ -235,9 +283,7 @@ export default function AddCompanyUserPage() {
       );
 
       // Redirect to company details page with user management tab
-      router.push(
-        `/company-management/company-details/${companyUuid}?tab=usermanagement`
-      );
+      router.push(`${COMPANY_DETAILS}/${companyUuid}?tab=usermanagement`);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -251,6 +297,21 @@ export default function AddCompanyUserPage() {
     }
   };
 
+  // Get user permissions for users and companies
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateUser = userPermissions?.users?.create;
+
+  // Check if user has permission to create users
+  if (userPermissions && !canCreateUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
     <div className=''>
       <div className=''>
@@ -258,24 +319,18 @@ export default function AddCompanyUserPage() {
         <Breadcrumb items={breadcrumbData} className='mb-6 mt-2' />
 
         {/* Main Content */}
-        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-[28px]'>
+        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-[28px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <Tabs
             value={selectedTab}
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-1 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
-                Info
-              </TabsTrigger>
-              <TabsTrigger
-                value='permissions'
-                className='px-8 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
-              >
-                Settings
+                {USER_MESSAGES.INFO_TAB}
               </TabsTrigger>
             </TabsList>
 
@@ -289,6 +344,7 @@ export default function AddCompanyUserPage() {
                     onDeletePhoto={handleDeletePhoto}
                     label={USER_MESSAGES.UPLOAD_PHOTO_LABEL}
                     text={USER_MESSAGES.UPLOAD_PHOTO_TEXT}
+                    className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                   />
                   {uploading && (
                     <div className='text-xs mt-2'>
@@ -298,7 +354,7 @@ export default function AddCompanyUserPage() {
                 </div>
 
                 {/* Right Column - Form Fields */}
-                <div className='flex-1'>
+                <div className='flex-1 w-full'>
                   {loadingCompany ? (
                     <LoadingComponent variant='inline' />
                   ) : (
@@ -312,12 +368,6 @@ export default function AddCompanyUserPage() {
                     />
                   )}
                 </div>
-              </div>
-            </TabsContent>
-
-            <TabsContent value='permissions' className='pt-8'>
-              <div className='text-center py-10 text-gray-500'>
-                Permissions management coming soon...
               </div>
             </TabsContent>
           </Tabs>

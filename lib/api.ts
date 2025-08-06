@@ -26,6 +26,7 @@ interface LoginResponse {
     refresh_token: string;
     user: {
       id: number;
+      uuid: string;
       first_name: string;
       last_name: string;
       email: string;
@@ -36,8 +37,17 @@ interface LoginResponse {
       updated_at: string;
       created_by: number | null;
       updated_by: number | null;
-      role_id: number;
       device_token: string;
+      role: {
+        id?: number;
+        uuid: string;
+        name: string;
+      };
+      company: {
+        id?: number;
+        uuid: string;
+        name: string;
+      };
     };
   };
 }
@@ -69,6 +79,7 @@ interface CreateRoleRequest {
   icon: string;
   status?: 'ACTIVE' | 'INACTIVE';
   permissions?: any;
+  company_id?: string | number;
 }
 
 interface CreateRoleResponse {
@@ -89,8 +100,7 @@ interface CreateRoleResponse {
 export interface User {
   id: number;
   uuid: string;
-  role_id: number;
-  company_id: string;
+
   name: string;
   email: string;
   country_code: string;
@@ -106,11 +116,13 @@ export interface User {
   city?: string;
   pincode?: string;
   role: {
-    id: number;
+    id?: number | string; // Not provided in login response
+    uuid: string;
     name: string;
   };
   company: {
-    id: string;
+    id?: number | string;
+    uuid: string;
     name: string;
   };
 }
@@ -155,7 +167,7 @@ export interface CreateUserRequest {
   address: string;
   city: string;
   pincode: string;
-  company_id?: number; // Optional - for creating users within a specific company (numeric ID)
+  company_id?: number | string | undefined; // Optional - for creating users within a specific company (numeric ID)
 }
 
 export interface CreateUserResponse {
@@ -317,6 +329,7 @@ export interface CreateCategoryRequest {
   icon: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface CreateCategoryResponse {
@@ -331,6 +344,7 @@ export interface UpdateCategoryRequest {
   icon?: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateCategoryResponse {
@@ -401,6 +415,7 @@ export interface UserPermissions {
     history: boolean;
   };
   jobs: {
+    view: boolean;
     edit: boolean;
     archive: boolean;
   };
@@ -469,6 +484,7 @@ export interface Tool {
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
   updated_at: string;
+  company_id?: string;
   services: Array<{
     id: number | string;
     name: string;
@@ -495,6 +511,7 @@ export interface CreateToolRequest {
   manufacturer: string;
   tool_assets: string;
   service_ids: string;
+  company_id?: string | number;
 }
 
 export interface CreateToolResponse {
@@ -510,6 +527,7 @@ export interface UpdateToolRequest {
   tool_assets?: string;
   service_ids?: string;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateToolResponse {
@@ -618,7 +636,7 @@ class ApiService {
         }
 
         return data;
-      } catch (error) {
+      } catch (error: any) {
         if (error instanceof TypeError) {
           // Network error
           throw {
@@ -754,12 +772,14 @@ class ApiService {
     search = '',
     name = '',
     status = 'ACTIVE',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
     search?: string;
     name?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
+    company_id?: string | number;
   }) {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -767,6 +787,7 @@ class ApiService {
     if (search) params.append('search', search);
     if (name) params.append('name', name);
     if (status) params.append('status', status);
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/roles?${params.toString()}`, {
       headers: this.getRoleHeaders(),
     });
@@ -1006,12 +1027,14 @@ class ApiService {
     search = '',
     name = '',
     status = 'ACTIVE',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
     search?: string;
     name?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
+    company_id?: string | number;
   }): Promise<FetchCategoriesResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1019,6 +1042,7 @@ class ApiService {
     if (search) params.append('search', search);
     if (name) params.append('name', name);
     if (status) params.append('status', status);
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/categories?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1100,8 +1124,19 @@ class ApiService {
   }
 
   // Get categories dropdown
-  async getCategoriesDropdown(): Promise<any> {
-    return this.makeRequest('/categories/dropdown', {
+  async getCategoriesDropdown(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', String(params.company_id));
+    }
+
+    const url = queryParams.toString()
+      ? `/categories/dropdown?${queryParams.toString()}`
+      : '/categories/dropdown';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1164,6 +1199,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     category_id = '',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
@@ -1172,6 +1208,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     category_id?: string | number;
+    company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1181,6 +1218,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (category_id) params.append('category_id', String(category_id));
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/trades?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1195,6 +1233,7 @@ class ApiService {
     is_active: boolean;
     status: string;
     category_ids: string;
+    company_id?: string | number;
   }): Promise<any> {
     return this.makeRequest('/trades', {
       method: 'POST',
@@ -1221,6 +1260,7 @@ class ApiService {
       is_active: boolean;
       status: string;
       category_ids: string;
+      company_id?: string | number;
     }
   ): Promise<any> {
     return this.makeRequest(`/trades/${uuid}`, {
@@ -1239,8 +1279,19 @@ class ApiService {
   }
 
   // Get trades dropdown
-  async getTradesDropdown(): Promise<any> {
-    return this.makeRequest('/trades/dropdown', {
+  async getTradesDropdown(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', String(params.company_id));
+    }
+
+    const url = queryParams.toString()
+      ? `/trades/dropdown?${queryParams.toString()}`
+      : '/trades/dropdown';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1255,6 +1306,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     trade_id = '',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
@@ -1263,6 +1315,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     trade_id?: string | number;
+    company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1272,6 +1325,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (trade_id) params.append('trade_id', String(trade_id));
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/services?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1286,6 +1340,7 @@ class ApiService {
     is_active: boolean;
     status: string;
     trade_ids: string;
+    company_id?: string | number;
   }): Promise<any> {
     return this.makeRequest('/services', {
       method: 'POST',
@@ -1312,6 +1367,7 @@ class ApiService {
       is_active: boolean;
       status: string;
       trade_ids: string;
+      company_id?: string | number;
     }
   ): Promise<any> {
     return this.makeRequest(`/services/${uuid}`, {
@@ -1330,8 +1386,19 @@ class ApiService {
   }
 
   // Get services dropdown
-  async getServicesDropdown(): Promise<any> {
-    return this.makeRequest('/services/dropdown', {
+  async getServicesDropdown(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', String(params.company_id));
+    }
+
+    const url = queryParams.toString()
+      ? `/services/dropdown?${queryParams.toString()}`
+      : '/services/dropdown';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1366,6 +1433,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     service_id = '',
+    company_id = '',
   }: {
     page?: number;
     limit?: number;
@@ -1374,6 +1442,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     service_id?: string | number;
+    company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -1383,6 +1452,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (service_id) params.append('service_id', String(service_id));
+    if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/materials?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1397,6 +1467,7 @@ class ApiService {
     is_active: boolean;
     status: string;
     service_ids: string;
+    company_id?: string | number;
   }): Promise<any> {
     return this.makeRequest('/materials', {
       method: 'POST',
@@ -1423,6 +1494,7 @@ class ApiService {
       is_active: boolean;
       status: string;
       service_ids: string;
+      company_id?: string | number;
     }
   ): Promise<any> {
     return this.makeRequest(`/materials/${uuid}`, {
@@ -1590,6 +1662,12 @@ class ApiService {
   async deleteTool(uuid: string): Promise<DeleteToolResponse> {
     return this.makeRequest(`/tools/${uuid}`, {
       method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getCompaniesDropdown(): Promise<any> {
+    return this.makeRequest('/companies/dropdown', {
       headers: this.getRoleHeaders(),
     });
   }

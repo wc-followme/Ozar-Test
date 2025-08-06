@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { serviceFormSchema } from '@/lib/validations/service';
@@ -41,7 +42,24 @@ export default function ServiceForm({
     const fetchTrades = async () => {
       try {
         setLoadingTrades(true);
-        const response = await apiService.getTradesDropdown();
+
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            console.error('Error parsing selected company:', error);
+          }
+        }
+
+        const response = await apiService.getTradesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setTradesOption(response.data);
         }
@@ -87,6 +105,20 @@ export default function ServiceForm({
   const onFormSubmit = async (data: any) => {
     const { serviceName, trades = [] } = data;
     try {
+      // Get selected company from localStorage
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          companyId = parsedCompany.id; // UUID from localStorage
+        } catch (error) {
+          console.error('Error parsing selected company:', error);
+        }
+      }
+
       const payload = {
         name: serviceName,
         description: '', // You can add a description field to the form if needed
@@ -94,6 +126,7 @@ export default function ServiceForm({
         is_active: true,
         status: 'ACTIVE',
         trade_ids: trades.join(','),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       if (initialServiceUuid) {
@@ -154,7 +187,7 @@ export default function ServiceForm({
       onSubmit={handleSubmit(onFormSubmit)}
       className='space-y-4 sm:space-y-6 w-full max-w-xl'
     >
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label htmlFor='trades' className='field-label text-sm sm:text-base'>
           {SERVICE_MESSAGES.TRADE_LABEL}
         </Label>
@@ -191,7 +224,7 @@ export default function ServiceForm({
           }}
         />
       </div>
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label
           htmlFor='serviceName'
           className='field-label text-sm sm:text-base'
@@ -221,7 +254,7 @@ export default function ServiceForm({
         <Button
           type='button'
           variant='outline'
-          className='btn-secondary !px-4 md:!px-8'
+          className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           onClick={onCancel}
           disabled={loading}
         >
@@ -229,7 +262,7 @@ export default function ServiceForm({
         </Button>
         <Button
           type='submit'
-          className='btn-primary !px-4 md:!px-8'
+          className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={loading}
         >
           {loading

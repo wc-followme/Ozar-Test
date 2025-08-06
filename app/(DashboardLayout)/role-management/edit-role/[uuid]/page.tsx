@@ -1,11 +1,18 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { useToast } from '@/components/ui/use-toast';
+import { CommonStatus, ROUTES, STORAGE_KEYS } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { apiService } from '@/lib/api';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import { CreateRoleFormData } from '@/lib/validations/role';
 import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
@@ -25,12 +32,11 @@ const RoleForm = dynamic(
   }
 );
 
-const breadcrumbData: BreadcrumbItem[] = [
-  { name: ROLE_MESSAGES.ROLE_MANAGEMENT_BREADCRUMB, href: '/role-management' },
-  { name: ROLE_MESSAGES.EDIT_ROLE_BREADCRUMB }, // current page
-];
-
 const EditRolePage = () => {
+  // Destructure constants for better readability
+  const { ACTIVE } = CommonStatus;
+  const { ROLE_MANAGEMENT } = ROUTES;
+
   const router = useRouter();
   const params = useParams();
   const { showSuccessToast, showErrorToast } = useToast();
@@ -42,6 +48,15 @@ const EditRolePage = () => {
   const [error, setError] = useState<string | null>(null);
   const uuid = params['uuid'] as string;
 
+  // Get user permissions for roles
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditRole = userPermissions?.roles?.edit;
+
+  const breadcrumbData: BreadcrumbItem[] = [
+    { name: ROLE_MESSAGES.ROLE_MANAGEMENT_BREADCRUMB, href: ROLE_MANAGEMENT },
+    { name: ROLE_MESSAGES.EDIT_ROLE_BREADCRUMB }, // current page
+  ];
+
   useEffect(() => {
     const fetchRole = async () => {
       setLoading(true);
@@ -50,12 +65,13 @@ const EditRolePage = () => {
         const res = (await apiService.getRoleDetails(
           uuid
         )) as ApiResponse<Role>;
-        const data = res.data;
+        const { data } = res;
         if (data) {
+          const { name, description, icon } = data;
           setInitialValues({
-            name: data.name || '',
-            description: data.description || '',
-            icon: data.icon || '',
+            name: name || '',
+            description: description || '',
+            icon: icon || '',
             permissions: (data as any).permissions || undefined,
           });
         }
@@ -69,56 +85,93 @@ const EditRolePage = () => {
   }, [uuid]);
 
   const onSubmit = async (data: CreateRoleFormData) => {
+    const { name, description, icon, permissions } = data;
+
     setIsSubmitting(true);
     try {
+      // Get selected company from localStorage
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let company_id: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          company_id = parsedCompany.id; // UUID from localStorage
+        } catch (error) {
+          company_id = undefined;
+        }
+      }
+
       const response = (await apiService.updateRoleDetails(uuid, {
-        name: data.name,
-        description: data.description,
-        icon: data.icon,
-        status: 'ACTIVE',
-        permissions: data.permissions,
+        name,
+        description,
+        icon,
+        status: ACTIVE,
+        permissions,
+        ...(company_id && { company_id }),
       })) as ApiResponse;
+
+      const { statusCode, message } = response;
+
       if (
-        response.statusCode === STATUS_CODES.OK ||
-        response.statusCode === STATUS_CODES.CREATED
+        statusCode === STATUS_CODES.OK ||
+        statusCode === STATUS_CODES.CREATED
       ) {
         showSuccessToast(
           extractApiSuccessMessage(response, ROLE_MESSAGES.UPDATE_SUCCESS)
         );
-        router.push('/role-management');
+        router.push(ROLE_MANAGEMENT);
       } else {
-        throw new Error(response.message || ROLE_MESSAGES.UPDATE_ERROR);
+        throw new Error(message || ROLE_MESSAGES.UPDATE_ERROR);
       }
     } catch (err: unknown) {
       let errorMessage = ROLE_MESSAGES.UPDATE_ERROR;
       const apiError = err as any; // Using any for flexibility with different error structures
+      const {
+        statusCode: errorStatusCode,
+        message: apiErrorMessage,
+        errors,
+      } = apiError;
 
-      if (apiError.statusCode === STATUS_CODES.BAD_REQUEST) {
+      if (errorStatusCode === STATUS_CODES.BAD_REQUEST) {
         errorMessage = ROLE_MESSAGES.INVALID_DATA;
-      } else if (apiError.statusCode === STATUS_CODES.UNAUTHORIZED) {
+      } else if (errorStatusCode === STATUS_CODES.UNAUTHORIZED) {
         errorMessage = ROLE_MESSAGES.UNAUTHORIZED;
-      } else if (apiError.statusCode === STATUS_CODES.CONFLICT) {
+      } else if (errorStatusCode === STATUS_CODES.CONFLICT) {
         errorMessage = ROLE_MESSAGES.DUPLICATE_ROLE;
-      } else if (apiError.statusCode === STATUS_CODES.UNPROCESSABLE_ENTITY) {
-        if (apiError.errors) {
-          const errorMessages = Object.values(apiError.errors).flat();
+      } else if (errorStatusCode === STATUS_CODES.UNPROCESSABLE_ENTITY) {
+        if (errors) {
+          const errorMessages = Object.values(errors).flat();
           errorMessage = errorMessages.join(', ');
         } else {
-          errorMessage = apiError.message || ROLE_MESSAGES.VALIDATION_ERROR;
+          errorMessage = apiErrorMessage || ROLE_MESSAGES.VALIDATION_ERROR;
         }
-      } else if (apiError.statusCode === STATUS_CODES.NETWORK_ERROR) {
+      } else if (errorStatusCode === STATUS_CODES.NETWORK_ERROR) {
         errorMessage = ROLE_MESSAGES.NETWORK_ERROR;
-      } else if (apiError.message) {
-        errorMessage = apiError.message;
+      } else if (apiErrorMessage) {
+        errorMessage = apiErrorMessage;
       }
 
       showErrorToast(errorMessage);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
+  // Check if user has permission to edit roles
+  if (userPermissions && !canEditRole) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.ROLE_EDIT_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   if (loading) return <LoadingComponent variant='fullscreen' />;
-  if (error) return <div className='p-8 text-red-500'>{error}</div>;
+  if (error) return <div className='p-8 text-[var(--warning)]'>{error}</div>;
 
   if (!initialValues) return null;
 

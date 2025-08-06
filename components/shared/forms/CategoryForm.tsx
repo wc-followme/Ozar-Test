@@ -64,7 +64,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
                   <Input
                     {...field}
                     placeholder={CATEGORY_MESSAGES.ENTER_CATEGORY_NAME}
-                    className={`h-12 ${errors.name ? 'border-2 !border-[var(--warning)]' : 'border-2 !border-[var(--border-dark)]'} focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]`}
+                    className={`h-12 ${errors.name ? 'border-2 !border-[var(--warning)]' : 'border-2 !border-[var(--border-dark)]'} focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]`}
                     disabled={isSubmitting}
                   />
                 )}
@@ -90,7 +90,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
               <Textarea
                 {...field}
                 placeholder={CATEGORY_MESSAGES.ENTER_DESCRIPTION}
-                className={`min-h-[80px] ${errors.description ? 'border-2 !border-[var(--warning)]' : 'border-2 !border-[var(--border-dark)]'} focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]`}
+                className={`min-h-[80px] ${errors.description ? 'border-2 !border-[var(--warning)]' : 'border-2 !border-[var(--border-dark)]'} focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]`}
                 disabled={isSubmitting}
               />
             )}
@@ -100,20 +100,19 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
           )}
         </div>
         {/* Actions */}
-        <div className='flex gap-4 pt-2'>
+        <div className='pt-2 flex flex-row items-center gap-2 sm:gap-4'>
           <Button
             type='button'
             variant='outline'
-            className='btn-secondary !px-4 md:!px-8'
             onClick={handleClose}
-            disabled={isSubmitting}
+            className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {CATEGORY_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
-            className='btn-primary !px-4 md:!px-8'
             disabled={isSubmitting}
+            className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
             {isSubmitting
               ? editingCategory

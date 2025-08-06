@@ -1,18 +1,23 @@
 'use client';
 
 import ToolCard from '@/components/shared/cards/ToolCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { ACTIONS, PAGINATION, STORAGE_KEYS } from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { Add, Edit2, Trash } from 'iconsax-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import ToolCardSkeleton from '../../../components/shared/skeleton/ToolCardSkeleton';
 import { TOOL_MESSAGES } from './tool-messages';
 
@@ -27,6 +32,8 @@ export default function ToolsManagement() {
   const [editToolUuid, setEditToolUuid] = useState<string | null>(null);
   const [editToolData, setEditToolData] = useState<Tool | null>(null);
   const [editLoading, setEditLoading] = useState(false);
+  const [_page, setPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
 
   // Track if the existing image has been deleted
   const [imageDeleted, setImageDeleted] = useState(false);
@@ -39,82 +46,177 @@ export default function ToolsManagement() {
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.tools?.edit;
+  const canViewTools = userPermissions?.tools?.view;
+
+  // Memoize menu options to prevent unnecessary re-renders
+  const menuOptions = useMemo(
+    () => [
+      {
+        label: TOOL_MESSAGES.EDIT_MENU,
+        action: ACTIONS.EDIT,
+        icon: Edit2,
+        variant: 'default' as const,
+      },
+      {
+        label: TOOL_MESSAGES.DELETE_MENU,
+        action: ACTIONS.DELETE,
+        icon: Trash,
+        variant: 'destructive' as const,
+      },
+    ],
+    []
+  );
 
   const cdnPrefix = process.env['NEXT_PUBLIC_CDN_URL'] || '';
 
   // Load tools from API
-  useEffect(() => {
-    const loadTools = async () => {
-      console.log('loadTools called, user:', user);
-      console.log('user?.company_id:', user?.company_id);
-
+  const loadTools = useCallback(
+    async (targetPage = 1, append = false) => {
       if (!user) {
-        console.log('User not available yet, waiting...');
-        return; // Don't set loading to false, wait for user to load
+        return; // Don't fetch if user is not available yet
       }
 
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
+
       try {
-        console.log('Making API call WITHOUT company_id');
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchTools({
-          page: 1,
-          limit: 50,
+          page: targetPage,
+          limit: PAGINATION.TOOLS_LIMIT,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
-        console.log('API response:', response);
-        if (response.statusCode === 200) {
+        const { statusCode, data, message } = response;
+
+        if (statusCode === 200) {
           // Handle both possible response structures
-          let toolsData = response.data;
+          let toolsData = data;
+          let total = 0;
+
           if (
-            response.data &&
-            typeof response.data === 'object' &&
-            !Array.isArray(response.data) &&
-            'data' in response.data
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            'data' in data
           ) {
-            toolsData = (response.data as any).data;
+            const { data: nestedData, total: responseTotal } = data as any;
+            toolsData = nestedData;
+            total = responseTotal || nestedData.length;
+          } else if (Array.isArray(data)) {
+            toolsData = data;
+            total = data.length;
           }
-          console.log('Tools data to set:', toolsData);
-          setTools(Array.isArray(toolsData) ? toolsData : []);
+
+          setTools(prev => {
+            if (append) {
+              // Filter out duplicates when appending to prevent duplicate keys
+              const existingUuids = new Set(prev.map(tool => tool.uuid));
+              const uniqueNewTools = toolsData.filter(
+                (tool: Tool) => !existingUuids.has(tool.uuid)
+              );
+              return [...prev, ...uniqueNewTools];
+            } else {
+              return Array.isArray(toolsData) ? toolsData : [];
+            }
+          });
+
+          setPage(targetPage);
+          setHasMore(targetPage * PAGINATION.TOOLS_LIMIT < total);
         } else {
           showErrorToast(
-            extractApiErrorMessage(response.message) || 'Failed to load tools'
+            extractApiErrorMessage(message) || 'Failed to load tools'
           );
         }
       } catch (error: any) {
-        console.error('Error loading tools:', error);
-        if (error.status === 401) {
+        const { status, message: errorMessage } = error;
+        if (status === 401) {
           handleAuthError(error);
         } else {
           showErrorToast(
-            extractApiErrorMessage(error.message) || 'Failed to load tools'
+            extractApiErrorMessage(errorMessage) || 'Failed to load tools'
           );
         }
+        if (!append) setTools([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [user, showErrorToast, handleAuthError]
+  );
 
-    loadTools();
-  }, [user, showErrorToast, handleAuthError]);
+  // Handle company changes
+  const refetchTools = useCallback(() => {
+    setPage(1);
+    setHasMore(true);
+    setTools([]);
+    loadTools(1, false);
+  }, [loadTools]);
+
+  useCompanyChange(refetchTools);
+
+  // Load initial tools when component mounts
+  useEffect(() => {
+    if (user) {
+      loadTools(1, false);
+    }
+  }, [user, loadTools]);
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 200 &&
+        !loading &&
+        hasMore
+      ) {
+        setPage(prevPage => {
+          const nextPage = prevPage + 1;
+          loadTools(nextPage, true);
+          return nextPage;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loading, hasMore, loadTools]);
 
   const handleDelete = async (uuid: string) => {
     try {
       const response = await apiService.deleteTool(uuid);
-      if (response.statusCode === 200) {
-        showSuccessToast(response.message || TOOL_MESSAGES.DELETE_SUCCESS);
+      const { statusCode, message } = response;
+
+      if (statusCode === 200) {
+        showSuccessToast(message || TOOL_MESSAGES.DELETE_SUCCESS);
         setTools(tools.filter(tool => tool.uuid !== uuid));
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.DELETE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.DELETE_ERROR
         );
       }
     } catch (error: any) {
-      console.error('Delete tool error:', error);
-      if (error.status === 401) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
         showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.DELETE_ERROR
+          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.DELETE_ERROR
         );
       }
     }
@@ -134,31 +236,34 @@ export default function ToolsManagement() {
     setOriginalToolAssets('');
     try {
       const response = await apiService.getToolDetails(uuid);
-      if (response.statusCode === 200 && response.data) {
-        setEditToolData(response.data);
+      const { statusCode, data, message } = response;
+
+      if (statusCode === 200 && data) {
+        const { tool_assets, assets } = data;
+        setEditToolData(data);
+
         // Check if tool_assets exists in the response
-        const toolAssetsValue = response.data.tool_assets;
+        const toolAssetsValue = tool_assets;
 
         // Check if we need to extract tool_assets from assets array
         let finalToolAssets = toolAssetsValue;
         if (
           !toolAssetsValue &&
-          response.data.assets &&
-          response.data.assets.length > 0 &&
-          response.data.assets[0]?.media_url
+          assets &&
+          assets.length > 0 &&
+          assets[0]?.media_url
         ) {
           // If tool_assets is empty but assets array has items, use the first asset's media_url
-          finalToolAssets = response.data.assets[0].media_url;
+          finalToolAssets = assets[0].media_url;
         }
 
         setOriginalToolAssets(finalToolAssets ?? '');
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.FETCH_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.FETCH_ERROR
         );
       }
-    } catch (error) {
-      console.error('Error fetching tool details:', error);
+    } catch (_) {
       showErrorToast(TOOL_MESSAGES.FETCH_ERROR);
     } finally {
       setEditLoading(false);
@@ -172,53 +277,52 @@ export default function ToolsManagement() {
     tool_assets: string;
     service_ids: string;
   }) => {
+    const { name, available_quantity, manufacturer, service_ids } = data;
+
     setFormLoading(true);
     try {
+      // Get selected company from localStorage
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          companyId = parsedCompany.id; // UUID from localStorage
+        } catch {
+          companyId = undefined;
+        }
+      }
+
       const payload: CreateToolRequest = {
-        name: data.name,
-        available_quantity: data.available_quantity,
-        manufacturer: data.manufacturer,
+        name,
+        available_quantity,
+        manufacturer,
         tool_assets: fileKey,
-        service_ids: data.service_ids,
+        service_ids,
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       const response = await apiService.createTool(payload);
+      const { statusCode, message } = response;
 
-      if (response.statusCode === 200 || response.statusCode === 201) {
-        showSuccessToast(response.message || TOOL_MESSAGES.CREATE_SUCCESS);
+      if (statusCode === 200 || statusCode === 201) {
+        showSuccessToast(message || TOOL_MESSAGES.CREATE_SUCCESS);
         setSideSheetOpen(false);
         setPhoto(null);
         setFileKey('');
-        // Refresh tools list - use the same API call as initial load
-        const refreshResponse = await apiService.fetchTools({
-          page: 1,
-          limit: 50,
-        });
-        if (refreshResponse.statusCode === 200) {
-          // Handle both possible response structures
-          let toolsData = refreshResponse.data;
-          if (
-            refreshResponse.data &&
-            typeof refreshResponse.data === 'object' &&
-            !Array.isArray(refreshResponse.data) &&
-            'data' in refreshResponse.data
-          ) {
-            toolsData = (refreshResponse.data as any).data;
-          }
-          setTools(Array.isArray(toolsData) ? toolsData : []);
-        }
+        // Refresh tools list using existing loadTools function
+        await loadTools(1, false);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.CREATE_ERROR
-        );
+        showErrorToast(message);
       }
     } catch (error: any) {
-      if (error.status === 401) {
+      const { status } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.CREATE_ERROR
-        );
+        showErrorToast(extractApiErrorMessage(error));
       }
     } finally {
       setFormLoading(false);
@@ -232,8 +336,14 @@ export default function ToolsManagement() {
     tool_assets: string;
     service_ids: string;
   }) => {
+    const { name, available_quantity, manufacturer, service_ids } = data;
+
     // Prevent submission if originalToolAssets is not loaded yet
-    if (!originalToolAssets && editToolData?.assets && editToolData.assets.length > 0) {
+    if (
+      !originalToolAssets &&
+      editToolData?.assets &&
+      editToolData.assets.length > 0
+    ) {
       return;
     }
 
@@ -244,16 +354,18 @@ export default function ToolsManagement() {
         fileKey || (imageDeleted ? '' : (originalToolAssets ?? ''));
 
       const payload: CreateToolRequest = {
-        name: data.name,
-        available_quantity: data.available_quantity,
-        manufacturer: data.manufacturer,
+        name,
+        available_quantity,
+        manufacturer,
         tool_assets: toolAssets,
-        service_ids: data.service_ids,
+        service_ids,
       };
 
       const response = await apiService.updateTool(editToolUuid!, payload);
 
-      if (response.statusCode === 200) {
+      const { statusCode, message } = response;
+
+      if (statusCode === 200) {
         showSuccessToast(TOOL_MESSAGES.UPDATE_SUCCESS);
         setSideSheetOpen(false);
         setPhoto(null);
@@ -262,37 +374,19 @@ export default function ToolsManagement() {
         setEditToolData(null);
         setImageDeleted(false);
         setOriginalToolAssets('');
-        // Refresh tools list
-        const refreshResponse = await apiService.fetchTools({
-          page: 1,
-          limit: 50,
-        });
-        if (refreshResponse.statusCode === 200) {
-          // Handle both possible response structures
-          let toolsData = refreshResponse.data;
-          if (
-            refreshResponse.data &&
-            typeof refreshResponse.data === 'object' &&
-            !Array.isArray(refreshResponse.data) &&
-            'data' in refreshResponse.data
-          ) {
-            toolsData = (refreshResponse.data as any).data;
-          }
-          setTools(Array.isArray(toolsData) ? toolsData : []);
-        }
+        // Refresh tools list using existing loadTools function
+        await loadTools(1, false);
       } else {
         showErrorToast(
-          extractApiErrorMessage(response.message) || TOOL_MESSAGES.UPDATE_ERROR
+          extractApiErrorMessage(message) || TOOL_MESSAGES.UPDATE_ERROR
         );
       }
     } catch (error: any) {
-      console.error('Error updating tool:', error);
-      if (error.status === 401) {
+      const { status } = error;
+      if (status === 401) {
         handleAuthError(error);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(error.message) || TOOL_MESSAGES.UPDATE_ERROR
-        );
+        showErrorToast(extractApiErrorMessage(error));
       }
     } finally {
       setFormLoading(false);
@@ -308,6 +402,28 @@ export default function ToolsManagement() {
     setImageDeleted(false);
     setOriginalToolAssets('');
   };
+
+  const handleOpenCreateForm = () => {
+    // Reset all state for create mode
+    setPhoto(null);
+    setFileKey('');
+    setEditToolUuid(null);
+    setEditToolData(null);
+    setImageDeleted(false);
+    setOriginalToolAssets('');
+    setSideSheetOpen(true);
+  };
+
+  // Check if user has permission to view tools
+  if (userPermissions && !canViewTools) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TOOL_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -327,48 +443,80 @@ export default function ToolsManagement() {
   return (
     <div className='w-full'>
       {/* Header */}
-      <div className='flex items-center justify-between mb-8'>
-        <h2 className='page-title'>Tools Management</h2>
-        {canEdit && (
-          <Button
-            onClick={() => setSideSheetOpen(true)}
-            className='btn-primary'
-          >
-            Create Tool
-          </Button>
-        )}
+      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
+        <div className='flex items-center justify-between w-full'>
+          <h1 className='page-title'>Tools Management</h1>
+          <div className='flex items-center gap-4 justify-end'>
+            {canEdit && (
+              <button
+                onClick={handleOpenCreateForm}
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+              >
+                <Add size='24' color='#fff' className='sm:hidden' />
+                <span className='hidden sm:inline'>Create Tool</span>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Tools Grid */}
-      {tools.length > 0 ? (
+      {/* Initial Loading State */}
+      {tools.length === 0 && loading ? (
         <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-          {tools.map((tool, index) => {
-            const imageUrl =
-              tool.assets && tool.assets[0]?.media_url
-                ? cdnPrefix + tool.assets[0].media_url
-                : '/images/img-placeholder-sm.png';
-            return (
-              <ToolCard
-                key={tool.id ?? `${tool.name}-${tool.manufacturer}-${index}`}
-                image={imageUrl}
-                name={tool.name}
-                brand={tool.manufacturer}
-                quantity={tool.available_quantity}
-                videoCount={0} // Static 0 for now as requested
-                onDelete={() => handleDelete(tool.uuid)}
-                onEdit={() => handleEdit(tool.uuid)}
-              />
-            );
-          })}
+          {[...Array(8)].map((_, i) => (
+            <ToolCardSkeleton key={i} />
+          ))}
         </div>
       ) : (
-        <NoDataFound
-          title='No Tools Found'
-          description="You haven't created any tools yet. Start by adding your first one to organize your tools."
-          buttonText='Create Tool'
-          onButtonClick={() => setSideSheetOpen(true)}
-          showButton={canEdit ?? false}
-        />
+        <>
+          {/* Tools Grid */}
+          {tools.length === 0 && !loading ? (
+            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+              <NoDataFound
+                title='No Tools Found'
+                description="You haven't created any tools yet. Start by adding your first one to organize your tools."
+                buttonText='Create Tool'
+                onButtonClick={handleOpenCreateForm}
+                showButton={canEdit ?? false}
+              />
+            </div>
+          ) : (
+            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+              {tools.map((tool, index) => {
+                const {
+                  id,
+                  name,
+                  manufacturer,
+                  available_quantity,
+                  assets,
+                  uuid,
+                } = tool;
+                const imageUrl =
+                  assets && assets[0]?.media_url
+                    ? cdnPrefix + assets[0].media_url
+                    : '/images/img-placeholder-sm.png';
+                return (
+                  <ToolCard
+                    key={id ?? `${name}-${manufacturer}-${index}`}
+                    image={imageUrl}
+                    name={name}
+                    brand={manufacturer}
+                    quantity={available_quantity}
+                    videoCount={0} // Static 0 for now as requested
+                    menuOptions={menuOptions}
+                    onDelete={() => handleDelete(uuid)}
+                    onEdit={() => handleEdit(uuid)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+      {loading && tools.length > 0 && (
+        <div className='text-center py-4'>
+          <LoadingComponent variant='inline' size='md' text={''} />
+        </div>
       )}
 
       {/* Side Sheet for Create Tool */}
@@ -379,13 +527,19 @@ export default function ToolsManagement() {
             : TOOL_MESSAGES.ADD_TOOL_TITLE
         }
         open={sideSheetOpen}
-        onOpenChange={setSideSheetOpen}
+        onOpenChange={open => {
+          if (!open) {
+            handleCancel(); // Reset state when sheet is closed
+          }
+          setSideSheetOpen(open);
+        }}
         size='600px'
       >
         {editLoading ? (
           <div className='p-6 text-center'>Loading...</div>
         ) : (
           <ToolForm
+            key={editToolUuid || 'create'} // Force re-render when switching modes
             photo={photo}
             setPhoto={setPhoto}
             handleDeletePhoto={handleDeletePhoto}
@@ -398,24 +552,26 @@ export default function ToolsManagement() {
             existingImageUrl={
               imageDeleted
                 ? undefined
-                : editToolData &&
-                    editToolData.assets &&
-                    editToolData.assets[0]?.media_url
+                : editToolData?.assets?.[0]?.media_url
                   ? cdnPrefix + editToolData.assets[0].media_url
                   : undefined
             }
             existingToolAssets={imageDeleted ? '' : originalToolAssets}
             initialValues={
               editToolData
-                ? {
-                    name: editToolData.name,
-                    available_quantity: editToolData.available_quantity,
-                    manufacturer: editToolData.manufacturer,
-                    services: editToolData.services?.map(s => s.id) || [],
-                  }
+                ? (() => {
+                    const { name, available_quantity, manufacturer, services } =
+                      editToolData;
+                    return {
+                      name,
+                      available_quantity,
+                      manufacturer,
+                      services: services?.map(s => s.id) || [],
+                    };
+                  })()
                 : {}
             }
-            isEdit={true}
+            isEdit={!!editToolUuid}
           />
         )}
       </SideSheet>

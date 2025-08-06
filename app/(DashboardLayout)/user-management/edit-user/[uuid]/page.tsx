@@ -1,12 +1,20 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import { PAGINATION } from '@/constants/common';
+import {
+  CommonStatus,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
   UpdateUserRequest,
@@ -15,7 +23,11 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -43,13 +55,16 @@ interface EditUserPageProps {
   }>;
 }
 
-const breadcrumbData: BreadcrumbItem[] = [
-  { name: 'User Management', href: '/user-management' },
-  { name: 'Edit User' }, // current page
-];
-
 export default function EditUserPage({ params }: EditUserPageProps) {
+  const { USER_MANAGEMENT } = ROUTES;
+  const { ACTIVE } = CommonStatus;
+  const { ROLES_DROPDOWN_LIMIT } = PAGINATION;
+
   const resolvedParams = React.use(params);
+
+  // Get user permissions for users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canEditUser = userPermissions?.users?.create; // Use create permission for edit as well
 
   // State for all accordions' switches
   const [accordions, setAccordions] = useState(() =>
@@ -84,7 +99,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       services: { view: false, edit: false, archive: false },
       materials: { view: false, edit: false, archive: false },
       tools: { view: false, edit: false, archive: false, history: false },
-      jobs: { edit: false, archive: false },
+      jobs: { view: false, edit: false, archive: false },
     };
 
     // Map accordion indices to permission keys
@@ -110,7 +125,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       ['view', 'edit', 'archive'], // services
       ['view', 'edit', 'archive'], // materials
       ['view', 'edit', 'archive', 'history'], // tools
-      ['edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // jobs
     ];
 
     accordionsData.forEach((accordion, accordionIdx) => {
@@ -190,8 +205,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
+  const breadcrumbData: BreadcrumbItem[] = [
+    { name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB, href: USER_MANAGEMENT },
+    { name: USER_MESSAGES.EDIT_USER_BREADCRUMB },
+  ];
+
   const handleCancel = () => {
-    router.push('/user-management');
+    router.push(USER_MANAGEMENT);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -209,7 +229,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   // Load permissions from localStorage and initialize
   useEffect(() => {
     // Remove localStorage logic - we'll load from API instead
-    console.log('Removed localStorage logic - loading from API');
   }, []); // Run only once on component mount
 
   // Fetch user details and roles
@@ -217,33 +236,73 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Get selected company from localStorage for roles
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         // Fetch user details and roles in parallel
         const [userRes, rolesRes] = await Promise.all([
           apiService.getUserDetails(resolvedParams.uuid),
           apiService.fetchRoles({
             page: 1,
-            limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
+            limit: ROLES_DROPDOWN_LIMIT,
             status: '', // Fetch both active and inactive roles
+            ...(companyId ? { company_id: companyId } : {}),
           }),
         ]);
 
         // Set user data
         if (userRes.statusCode === 200 && userRes.data) {
-          setUser(userRes.data);
+          const { data: userData } = userRes;
+          setUser(userData);
           // Set existing image if available
-          if (userRes.data.profile_picture_url) {
-            setFileKey(userRes.data.profile_picture_url);
+          if (userData.profile_picture_url) {
+            setFileKey(userData.profile_picture_url);
           }
         }
 
         // Set roles data
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+        console.log(roleList);
+        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        let adminRoleId = null;
+        let adminRoleUuid = null; // Default fallback
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            // If current user is admin, use their role ID as reference
+            if (userData.role?.id) {
+              adminRoleId = userData.role.id;
+              adminRoleUuid = userData.role.uuid;
+            }
+          } catch (error) {
+            console.error('Error parsing user data from localStorage:', error);
+          }
+        }
         setRoles(
-          roleList.map(({ id, name, status }) => ({
-            id,
-            name,
-            status: status || 'ACTIVE',
-          }))
+          roleList
+            .map(({ uuid, name, status }: Role) => ({
+              uuid,
+              name,
+              status: status || 'ACTIVE',
+            }))
+            .filter(role => {
+              if (ROLE_IDS.ADMIN === adminRoleId) {
+                return role.uuid !== adminRoleUuid;
+              } else {
+                return true;
+              }
+            }) // Remove admin role using dynamic ID
         );
       } catch (err: unknown) {
         // Handle auth errors first (will redirect to login if 401)
@@ -256,7 +315,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
           USER_MESSAGES.FETCH_DETAILS_ERROR
         );
         showErrorToast(message);
-        router.push('/user-management');
+        router.push(USER_MANAGEMENT);
       } finally {
         setLoading(false);
         setLoadingRoles(false);
@@ -264,7 +323,15 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     };
 
     fetchData();
-  }, [resolvedParams.uuid, router, showErrorToast, handleAuthError]);
+  }, [
+    resolvedParams.uuid,
+    router,
+    showErrorToast,
+    handleAuthError,
+    ROLES_DROPDOWN_LIMIT,
+    ACTIVE,
+    USER_MANAGEMENT,
+  ]);
 
   // Fetch user permissions
   useEffect(() => {
@@ -276,8 +343,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         );
         if (response.statusCode === 200 && response.data) {
           // Extract permissions from the response
-          const permissionsData = response.data.permissions || response.data;
-          console.log('Fetched permissions data:', permissionsData);
+          const { data: permissionsData } = response;
+          const permissions = permissionsData.permissions || permissionsData;
 
           // Update accordions state based on fetched permissions
           const updatedAccordions = ACCESS_CONTROL_ACCORDIONS_DATA.map(
@@ -295,10 +362,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
               ];
               const permissionKey = permissionKeys[accordionIdx];
               const userPermissions = permissionKey
-                ? (permissionsData as any)[permissionKey]
+                ? (permissions as any)[permissionKey]
                 : undefined;
-
-              console.log(`Processing ${permissionKey}:`, userPermissions);
 
               if (userPermissions) {
                 const updatedStripes = acc.stripes.map((_, stripeIdx) => {
@@ -311,7 +376,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     ['view', 'edit', 'archive'], // services
                     ['view', 'edit', 'archive'], // materials
                     ['view', 'edit', 'archive', 'history'], // tools
-                    ['edit', 'archive'], // jobs
+                    ['view', 'edit', 'archive'], // jobs
                   ];
                   const permissionNames = permissionNamesArray[accordionIdx];
                   const permissionName = permissionNames?.[stripeIdx];
@@ -323,10 +388,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     const permissionValue = (userPermissions as any)[
                       permissionName
                     ];
-                    console.log(
-                      `Setting ${permissionKey}.${permissionName} to:`,
-                      permissionValue
-                    );
+
                     return permissionValue === true;
                   }
                   return false;
@@ -339,9 +401,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
               }
 
               // If no permissions found for this section, default all to false
-              console.log(
-                `No permissions found for ${permissionKey}, defaulting to false`
-              );
               return {
                 title: acc.title,
                 stripes: acc.stripes.map(() => false),
@@ -393,8 +452,9 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         purpose: 'profile-picture',
         customPath: '',
       });
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      const { data } = presigned;
+      await uploadFileToPresignedUrl(data['uploadUrl'], file);
+      setFileKey(data['fileKey'] || '');
     } catch {
       showErrorToast(USER_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
@@ -410,30 +470,45 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   };
 
   const handleUpdateUser = async (data: UserFormData) => {
+    const {
+      role_id,
+      name,
+      email,
+      country_code,
+      phone_number,
+      designation,
+      preferred_communication_method,
+      address,
+      city,
+      pincode,
+      password,
+      date_of_joining,
+    } = data;
+
     setFormLoading(true);
     try {
       const payload: UpdateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        role_id,
+        name,
+        email,
+        country_code,
+        phone_number,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
       };
 
       // Only include password if provided
-      if (data.password) {
-        payload.password = data.password;
+      if (password) {
+        payload.password = password;
       }
 
       // Only include date if provided
-      if (data.date_of_joining) {
-        payload.date_of_joining = data.date_of_joining;
+      if (date_of_joining) {
+        payload.date_of_joining = date_of_joining;
       }
 
       const response = await apiService.updateUser(
@@ -443,7 +518,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.UPDATE_SUCCESS)
       );
-      router.push('/user-management');
+      router.push(USER_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -461,7 +536,6 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     setFormLoading(true);
     try {
       const permissionsData = generatePermissionsJson(accordions);
-      console.log('Sending permissions data to API:', permissionsData);
 
       const response = await apiService.updateUserPermissions(
         resolvedParams.uuid,
@@ -491,6 +565,17 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     }
   };
 
+  // Check if user has permission to edit users
+  if (userPermissions && !canEditUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_EDIT_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   if (loading) {
     return <LoadingComponent variant='fullscreen' />;
   }
@@ -498,7 +583,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
   if (!user) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
-        <div className='text-center text-red-500'>
+        <div className='text-center text-[var(--warning)]'>
           {USER_MESSAGES.USER_NOT_FOUND}
         </div>
       </div>
@@ -519,13 +604,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
         </div> */}
 
         {/* Main Content */}
-        <div className='bg-[var(--white-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+        <div className='bg-[var(--white-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <Tabs
             value={selectedTab}
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
@@ -536,7 +621,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                 value='permissions'
                 className='px-8 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
-                {USER_MESSAGES.PERMISSIONS_TAB}
+                {USER_MESSAGES.SETTINGS_TAB}
               </TabsTrigger>
             </TabsList>
 
@@ -556,7 +641,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                         ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') + fileKey
                         : ''
                     }
-                    className='h-[250px]'
+                    className='h-[250px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                   />
                   {uploading && (
                     <div className='text-xs mt-2'>
@@ -597,47 +682,51 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                       const { title, stripes } = accordion;
                       const accessLevel = calculateAccessLevel(stripes);
                       return (
-                        <CompanyManagementAddUser
+                        <div
                           key={title + idx}
-                          title={title}
-                          badgeLabel={accessLevel}
-                          stripes={
-                            Array.isArray(stripes) &&
-                            Array.isArray(
-                              ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes
-                            )
-                              ? ACCESS_CONTROL_ACCORDIONS_DATA[
-                                  idx
-                                ]?.stripes.map((stripe, sIdx) => ({
-                                  title: stripe.title,
-                                  description: stripe.description,
-                                  checked:
-                                    typeof stripes?.[sIdx] === 'boolean'
-                                      ? stripes[sIdx]
-                                      : false,
-                                  onToggle: () => handleToggle(idx, sIdx),
-                                }))
-                              : []
-                          }
-                          open={openAccordionIdx === idx}
-                          onOpenChange={open =>
-                            setOpenAccordionIdx(open ? idx : -1)
-                          }
-                        />
+                          className='shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
+                        >
+                          <CompanyManagementAddUser
+                            title={title}
+                            badgeLabel={accessLevel}
+                            stripes={
+                              Array.isArray(stripes) &&
+                              Array.isArray(
+                                ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes
+                              )
+                                ? ACCESS_CONTROL_ACCORDIONS_DATA[
+                                    idx
+                                  ]?.stripes.map((stripe, sIdx) => ({
+                                    title: stripe.title,
+                                    description: stripe.description,
+                                    checked:
+                                      typeof stripes?.[sIdx] === 'boolean'
+                                        ? stripes[sIdx]
+                                        : false,
+                                    onToggle: () => handleToggle(idx, sIdx),
+                                  }))
+                                : []
+                            }
+                            open={openAccordionIdx === idx}
+                            onOpenChange={open =>
+                              setOpenAccordionIdx(open ? idx : -1)
+                            }
+                          />
+                        </div>
                       );
                     })}
                   </div>
-                  <div className='flex justify-end gap-6 mt-8'>
+                  <div className='flex justify-end sm:gap-6 gap-4 mt-8'>
                     <Link
-                      href={'/user-management'}
-                      className='btn-secondary !px-4 md:!px-8'
+                      href={USER_MANAGEMENT}
+                      className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     >
                       Cancel
                     </Link>
                     <Button
                       onClick={handleUpdatePermissions}
                       disabled={formLoading}
-                      className='btn-primary !px-4 md:!px-8'
+                      className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                     >
                       {formLoading ? 'Updating...' : 'Update'}
                     </Button>

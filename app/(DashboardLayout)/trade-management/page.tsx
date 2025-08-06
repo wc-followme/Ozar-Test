@@ -8,7 +8,16 @@ import TradeForm from '@/components/shared/forms/TradeForm';
 import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+
+import AccessDenied from '@/components/shared/common/AccessDenied';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -43,7 +52,7 @@ const menuOptions: {
 export default function TradeManagementPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(PAGINATION.TRADES_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -60,36 +69,54 @@ export default function TradeManagementPage() {
   // Get user permissions for trades
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.trades?.edit;
+  const canViewTrades = userPermissions?.trades?.view;
 
   const fetchTrades = useCallback(
     async (targetPage = 1, append = false) => {
       setLoading(true);
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchTrades({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
         let newTrades: Trade[] = [];
         let total = 0;
+        const { data } = response;
 
-        if (response && response.data) {
+        if (data) {
           // If data is directly an array
-          if (Array.isArray(response.data)) {
-            newTrades = response.data;
-            total = response.data.length; // Fallback if no total provided
+          if (Array.isArray(data)) {
+            newTrades = data;
+            total = data.length; // Fallback if no total provided
           }
           // If data is nested under data.data
-          else if (response.data.data && Array.isArray(response.data.data)) {
-            newTrades = response.data.data;
-            total = response.data.total || response.data.data.length;
+          else if (data.data && Array.isArray(data.data)) {
+            const { data: nestedData, total: totalCount } = data;
+            newTrades = nestedData;
+            total = totalCount || nestedData.length;
           }
           // If data is just the response itself (fallback)
-          else if (Array.isArray(response)) {
-            newTrades = response;
-            total = response.length;
+          else if (Array.isArray(data)) {
+            newTrades = data;
+            total = data.length;
           }
         }
 
@@ -125,13 +152,15 @@ export default function TradeManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of trades
-  useEffect(() => {
+  // Handle company changes
+  const refetchTrades = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setTrades([]);
     fetchTrades(1, false);
   }, [fetchTrades]);
+
+  useCompanyChange(refetchTrades);
 
   // Infinite scroll
   useEffect(() => {
@@ -172,14 +201,23 @@ export default function TradeManagementPage() {
       if (trade) {
         try {
           const response = await apiService.deleteTrade(trade.uuid);
-          showSuccessToast(response.message || TRADE_MESSAGES.DELETE_SUCCESS);
+          const { message } = response;
+          showSuccessToast(message || TRADE_MESSAGES.DELETE_SUCCESS);
           // Remove the trade from local state instead of fetching again
           setTrades(prevTrades =>
             prevTrades.filter((_, index) => index !== deleteIdx)
           );
-        } catch (error) {
-          console.error('Failed to delete trade:', error);
-          showErrorToast(TRADE_MESSAGES.DELETE_ERROR);
+        } catch (err: unknown) {
+          // Handle auth errors first (will redirect to login if 401)
+          if (handleAuthError(err)) {
+            return; // Don't show toast if it's an auth error
+          }
+
+          const message = extractApiErrorMessage(
+            err,
+            TRADE_MESSAGES.DELETE_ERROR
+          );
+          showErrorToast(message);
         }
       }
       setDeleteIdx(null);
@@ -192,27 +230,42 @@ export default function TradeManagementPage() {
     category: string;
     tradeData?: Trade;
   }) => {
+    const { tradeName, category, tradeData } = data;
+
+    // Get selected company from localStorage
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    let companyId: string | undefined;
+    if (selectedCompany) {
+      try {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id; // UUID from localStorage
+      } catch (error) {
+        console.error('Error parsing selected company:', error);
+      }
+    }
+
     // Use the actual trade data from API response if available
-    if (data.tradeData) {
+    if (tradeData) {
       // Add the new trade to the beginning of the trades list
-      setTrades(prevTrades => [data.tradeData!, ...prevTrades]);
+      setTrades(prevTrades => [tradeData, ...prevTrades]);
     } else {
       // Fallback: Create a new trade object to add to local state
       const newTrade: Trade = {
         id: Date.now(), // Temporary ID for local state
         uuid: `temp-${Date.now()}`, // Temporary UUID
-        name: data.tradeName,
+        name: tradeName,
         description: '',
         is_default: false,
         is_active: true,
-        status: 'ACTIVE',
+        status: CommonStatus.ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        categories: data.category.split(', ').map(cat => ({
+        categories: category.split(', ').map(cat => ({
           id: Date.now(),
           name: cat.trim(),
-          status: 'ACTIVE',
+          status: CommonStatus.ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new trade to the beginning of the trades list
@@ -225,12 +278,14 @@ export default function TradeManagementPage() {
     category: string;
     tradeData?: Trade;
   }) => {
+    const { tradeName, category, tradeData } = data;
+
     // Use the actual trade data from API response if available
-    if (data.tradeData) {
+    if (tradeData) {
       // Update the trade in local state with the actual API response data
       setTrades(prevTrades =>
         prevTrades.map(trade =>
-          trade.uuid === editingTradeUuid ? data.tradeData! : trade
+          trade.uuid === editingTradeUuid ? tradeData : trade
         )
       );
     } else {
@@ -240,11 +295,11 @@ export default function TradeManagementPage() {
           trade.uuid === editingTradeUuid
             ? {
                 ...trade,
-                name: data.tradeName,
-                categories: data.category.split(', ').map(cat => ({
+                name: tradeName,
+                categories: category.split(', ').map(cat => ({
                   id: Date.now(),
                   name: cat.trim(),
-                  status: 'ACTIVE',
+                  status: CommonStatus.ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -254,8 +309,19 @@ export default function TradeManagementPage() {
     }
   };
 
+  // Check if user has permission to view trades
+  if (userPermissions && !canViewTrades) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.TRADE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
-    <div className='w-full overflow-y-auto'>
+    <div className='w-full'>
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
         <div className='flex items-center justify-between w-full'>
@@ -265,10 +331,10 @@ export default function TradeManagementPage() {
           {canEdit && (
             <div className='flex justify-end'>
               <Button
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 onClick={() => setSideSheetOpen(true)}
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {TRADE_MESSAGES.ADD_TRADE_BUTTON}
                 </span>
@@ -294,16 +360,19 @@ export default function TradeManagementPage() {
             />
           </div>
         ) : (
-          trades.map((trade, idx) => (
-            <InfoCard
-              key={trade.uuid}
-              tradeName={trade.name || ''}
-              category={`${trade.categories?.length || 0} Category${(trade.categories?.length || 0) !== 1 ? 's' : ''}`}
-              menuOptions={menuOptions}
-              onMenuAction={action => handleMenuAction(action, idx)}
-              module='trades'
-            />
-          ))
+          trades.map((trade, idx) => {
+            const { uuid, name, categories } = trade;
+            return (
+              <InfoCard
+                key={uuid}
+                tradeName={name || ''}
+                category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
+                menuOptions={menuOptions}
+                onMenuAction={action => handleMenuAction(action, idx)}
+                module='trades'
+              />
+            );
+          })
         )}
       </div>
 

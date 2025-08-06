@@ -1,4 +1,5 @@
 import { ROLE_MESSAGES } from '@/app/(DashboardLayout)/role-management/role-messages';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,7 +113,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       ['view', 'edit', 'archive'], // services
       ['view', 'edit', 'archive'], // materials
       ['view', 'edit', 'archive', 'history'], // tools
-      ['edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // jobs
     ];
 
     // Helper: Convert permissions object to accordions state
@@ -146,7 +147,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
         services: { view: false, edit: false, archive: false },
         materials: { view: false, edit: false, archive: false },
         tools: { view: false, edit: false, archive: false, history: false },
-        jobs: { edit: false, archive: false },
+        jobs: { view: false, edit: false, archive: false },
       };
       accordions.forEach((accordion, accordionIdx) => {
         const permissionKey = accordionToPermissionMap[accordionIdx];
@@ -282,7 +283,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
                       errors.name
                         ? 'border-[var(--warning)]'
                         : 'border-[var(--border-dark)]',
-                      'focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                      'focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
                     )}
                     placeholder={ROLE_MESSAGES.ROLE_NAME_PLACEHOLDER}
                     disabled={isSubmitting}
@@ -355,21 +356,22 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
           </div>
 
           {/* Footer with action buttons */}
-          <div className='flex items-start justify-end gap-3'>
-            <button
+          <div className='pt-4 flex items-center justify-end gap-3'>
+            <Button
               type='button'
-              className='btn-secondary !px-4 md:!px-8'
+              variant='outline'
               onClick={handleCancel}
+              className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
-              {ROLE_MESSAGES.CANCEL_BUTTON}
-            </button>
-            <button
+              Cancel
+            </Button>
+            <Button
               type='submit'
-              className='btn-primary !px-4 md:!px-8'
               disabled={isSubmitting}
+              className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             >
               {submitButtonContent}
-            </button>
+            </Button>
           </div>
         </form>
       </Card>

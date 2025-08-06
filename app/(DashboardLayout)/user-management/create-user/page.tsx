@@ -1,17 +1,30 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION } from '@/constants/common';
+import {
+  CommonStatus,
+  CUSTOM_EVENTS,
+  PAGINATION,
+  ROLE_IDS,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import {
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+  getUserPermissionsFromStorage,
+} from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Role, RoleApiResponse, UserFormData } from '../types';
 import { USER_MESSAGES } from '../user-messages';
 
@@ -33,13 +46,14 @@ export default function AddUserPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loadingRoles, setLoadingRoles] = useState<boolean>(true);
   const [formLoading, setFormLoading] = useState(false);
+  const selectedCompanyRef = useRef<string | null>(null);
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
 
   const handleCancel = () => {
-    router.push('/user-management');
+    router.push(ROUTES.USER_MANAGEMENT);
   };
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -54,35 +68,131 @@ export default function AddUserPage() {
     );
   };
 
+  // Initialize selectedCompany from localStorage
   useEffect(() => {
-    const fetchRoles = async () => {
-      setLoadingRoles(true);
-      try {
-        const rolesRes = await apiService.fetchRoles({
-          page: 1,
-          limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
-          status: 'ACTIVE', // Only fetch active roles for dropdown
-        });
-        const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
-        setRoles(
-          roleList.map(({ id, name, status }: Role) => ({
-            id,
+    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    selectedCompanyRef.current = currentCompany;
+  }, []);
+
+  const fetchRoles = async () => {
+    setLoadingRoles(true);
+    try {
+      // Get selected company from localStorage for roles
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: string | undefined;
+      if (selectedCompany) {
+        try {
+          const parsedCompany = JSON.parse(selectedCompany);
+          companyId = parsedCompany.id; // UUID from localStorage
+        } catch (error) {
+          companyId = undefined;
+        }
+      }
+
+      const rolesRes = await apiService.fetchRoles({
+        page: 1,
+        limit: PAGINATION.ROLES_DROPDOWN_LIMIT,
+        status: CommonStatus.ACTIVE, // Only fetch active roles for dropdown
+        ...(companyId ? { company_id: companyId } : {}),
+      });
+      const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
+
+      // Get current user data from localStorage to determine admin role ID
+      const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+      let adminRoleId = null;
+      let adminRoleUuid = null; // Default fallback
+      if (currentUser) {
+        try {
+          const userData = JSON.parse(currentUser);
+          // If current user is admin, use their role ID as reference
+          if (userData.role?.id) {
+            adminRoleId = userData.role.id;
+            adminRoleUuid = userData.role.uuid;
+          }
+        } catch (error) {
+          console.error('Error parsing user data from localStorage:', error);
+        }
+      }
+
+      setRoles(
+        roleList
+          .map(({ id, uuid, name, status }: Role) => ({
+            id: id || 0,
+            uuid,
             name,
             status: status || 'ACTIVE',
           }))
-        );
-      } catch (err: unknown) {
-        if (handleAuthError(err)) {
-          return; // Don't show toast if it's an auth error
-        }
-        // Error fetching roles - proceed with empty array
-        setRoles([]);
-      } finally {
-        setLoadingRoles(false);
+          .filter(role => {
+            if (ROLE_IDS.ADMIN === adminRoleId) {
+              return role.uuid !== adminRoleUuid;
+            } else {
+              return true;
+            }
+          }) // Remove admin role using dynamic ID
+      );
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
-    };
+      // Error fetching roles - proceed with empty array
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  useEffect(() => {
     fetchRoles();
   }, [handleAuthError]);
+
+  // Watch for changes in selected company and refetch roles
+  useEffect(() => {
+    const handleStorageChange = () => {
+      fetchRoles();
+    };
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+
+    // Listen for custom company change events
+    const handleCompanyChange = () => {
+      const currentCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      if (currentCompany !== selectedCompanyRef.current) {
+        selectedCompanyRef.current = currentCompany;
+        handleStorageChange();
+      }
+    };
+
+    // Add custom event listener for company changes
+    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
+
+    return () => {
+      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChange
+      );
+    };
+  }, []); // Empty dependency array
+
+  // Get user permissions for users
+  const userPermissions = getUserPermissionsFromStorage();
+  const canCreateUser = userPermissions?.users?.create;
+
+  // Check if user has permission to create users
+  if (userPermissions && !canCreateUser) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.USER_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.USER_CREATE_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
 
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
@@ -104,8 +214,9 @@ export default function AddUserPage() {
         purpose: 'profile-picture',
         customPath: ``,
       });
-      await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey(presigned.data['fileKey'] || '');
+      const { data } = presigned;
+      await uploadFileToPresignedUrl(data['uploadUrl'], file);
+      setFileKey(data['fileKey'] || '');
     } catch {
       showErrorToast(USER_MESSAGES.UPLOAD_ERROR);
       setPhotoFile(null);
@@ -121,33 +232,63 @@ export default function AddUserPage() {
   };
 
   const handleCreateUser = async (data: UserFormData) => {
+    const {
+      role_id,
+      name,
+      email,
+      country_code,
+      phone_number,
+      date_of_joining,
+      designation,
+      preferred_communication_method,
+      address,
+      city,
+      pincode,
+    } = data;
+
     setFormLoading(true);
     try {
       // Ensure all required fields are provided for create operation
-      if (!data.date_of_joining) {
+      if (!date_of_joining) {
         throw new Error('Date of joining is required for user creation');
       }
 
+      // Get selected company from localStorage
+
       const payload: CreateUserRequest = {
-        role_id: data.role_id,
-        name: data.name,
-        email: data.email,
+        role_id,
+        name,
+        email,
         // Password will be generated on the backend
-        country_code: data.country_code,
-        phone_number: data.phone_number,
-        date_of_joining: data.date_of_joining,
-        designation: data.designation,
-        preferred_communication_method: data.preferred_communication_method,
-        address: data.address,
-        city: data.city,
-        pincode: data.pincode,
+        country_code,
+        phone_number,
+        date_of_joining,
+        designation,
+        preferred_communication_method,
+        address,
+        city,
+        pincode,
         profile_picture_url: fileKey,
+        // company_id will be handled by backend based on current user's company
       };
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      let companyId: number | undefined;
+
+      if (selectedCompany) {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id;
+      }
+
+      if (companyId) {
+        payload.company_id = companyId;
+      }
       const response = await apiService.createUser(payload);
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.CREATE_SUCCESS)
       );
-      router.push('/user-management');
+      router.push(ROUTES.USER_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -164,7 +305,7 @@ export default function AddUserPage() {
   const breadcrumbData: BreadcrumbItem[] = [
     {
       name: USER_MESSAGES.USER_MANAGEMENT_BREADCRUMB,
-      href: '/user-management',
+      href: ROUTES.USER_MANAGEMENT,
     },
     { name: USER_MESSAGES.ADD_USER_BREADCRUMB },
   ];
@@ -175,7 +316,7 @@ export default function AddUserPage() {
         <Breadcrumb items={breadcrumbData} className='mb-6 mt-2' />
 
         {/* Main Content */}
-        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6'>
+        <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-4 md:p-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
           <div className=''>
             <div className='flex flex-col xl:flex-row items-start gap-3 md:gap-6'>
               {/* Left Column - Upload Photo */}
@@ -186,7 +327,7 @@ export default function AddUserPage() {
                   onDeletePhoto={handleDeletePhoto}
                   label={USER_MESSAGES.UPLOAD_PHOTO_LABEL}
                   // text={USER_MESSAGES.UPLOAD_PHOTO_TEXT}
-                  className='h-[250px]'
+                  className='h-[250px] shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 rounded-[16px] sm:rounded-none'
                 />
                 {uploading && (
                   <div className='text-xs mt-2'>{USER_MESSAGES.UPLOADING}</div>

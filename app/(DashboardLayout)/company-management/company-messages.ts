@@ -106,6 +106,7 @@ export const COMPANY_MESSAGES = {
   COMPANY_MANAGEMENT_TITLE: 'Company Management',
   ADD_COMPANY_TITLE: 'Add Company',
   EDIT_COMPANY_TITLE: 'Edit Company',
+  COMPANY_DETAILS_TITLE: 'Company Details',
 
   // Breadcrumbs
   BREADCRUMB_COMPANIES: 'Companies',
@@ -113,10 +114,28 @@ export const COMPANY_MESSAGES = {
   // Tabs
   TAB_COMPANY_INFO: 'Company Info',
   TAB_PHOTO: 'Photo',
+  TAB_ABOUT: 'About',
+  TAB_USER_MANAGEMENT: 'User Management',
 
   // Menu Options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+
+  // Company Details Labels
+  COMPANY_TYPE_LABEL: 'Construction Company',
+  INDUSTRY_LABEL: 'Industry',
+  INDUSTRY_VALUE: 'Construction',
+  CREATED_ON_LABEL: 'Created on',
+  SUBSCRIPTION_ENDS_LABEL: 'Subscription Ends',
+  ENABLE_LABEL: 'Enable',
+  DISABLE_LABEL: 'Disable',
+  EDIT_DETAILS_BUTTON: 'Edit Details',
+  ADD_USER_BUTTON: 'Add User',
+  NO_IMAGE_LABEL: 'No Image',
+  NO_DESCRIPTION_LABEL: 'No description available.',
+  ADDRESS_LABEL: 'Address',
+  SEARCH_PLACEHOLDER: 'Search here...',
+  N_A_LABEL: 'N/A',
 
   // General Messages
   NETWORK_ERROR: 'Network error. Please check your connection.',

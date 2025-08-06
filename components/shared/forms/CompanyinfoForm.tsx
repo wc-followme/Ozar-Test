@@ -3,7 +3,6 @@
 import { COMPANY_MESSAGES } from '@/app/(DashboardLayout)/company-management/company-messages';
 import {
   CompanyCreateFormData,
-  CompanyFormErrors,
   CompanyInfoFormProps,
 } from '@/app/(DashboardLayout)/company-management/company-types';
 import { Button } from '@/components/ui/button';
@@ -26,12 +25,43 @@ import { Textarea } from '@/components/ui/textarea';
 import { COUNTRY_CODES } from '@/constants/common';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import { cn } from '@/lib/utils';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
 import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import PhotoUploadField from '../common/PhotoUploadField';
+
+// Validation schema
+const companyFormSchema = yup.object({
+  name: yup.string().required(COMPANY_MESSAGES.NAME_REQUIRED),
+  tagline: yup.string().required(COMPANY_MESSAGES.TAGLINE_REQUIRED),
+  about: yup.string().required(COMPANY_MESSAGES.ABOUT_REQUIRED),
+  email: yup
+    .string()
+    .email('Please enter a valid email address')
+    .required(COMPANY_MESSAGES.EMAIL_REQUIRED),
+  phone_number: yup.string().required(COMPANY_MESSAGES.PHONE_REQUIRED),
+  country_code: yup.string().required(),
+  communication: yup.string().required('Address is required'),
+  website: yup.string().required(COMPANY_MESSAGES.WEBSITE_REQUIRED),
+  expiry_date: yup.date().required(COMPANY_MESSAGES.EXPIRY_DATE_REQUIRED),
+  preferred_communication_method: yup
+    .string()
+    .required(COMPANY_MESSAGES.PREFERRED_COMMUNICATION_REQUIRED),
+  city: yup.string().required(COMPANY_MESSAGES.CITY_REQUIRED),
+  pincode: yup.string().required(COMPANY_MESSAGES.PINCODE_REQUIRED),
+  contractor_name: yup.string().optional(),
+  contractor_email: yup
+    .string()
+    .email('Please enter a valid email address')
+    .optional(),
+  contractor_phone: yup.string().optional(),
+  contractor_country_code: yup.string().optional(),
+});
 
 export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
   ({
@@ -42,30 +72,8 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
     isEditMode = false,
   }) => {
     const router = useRouter();
-
-    // Form states
-    const [name, setName] = useState('');
-    const [tagline, setTagline] = useState('');
-    const [about, setAbout] = useState('');
-    const [email, setEmail] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
-    const [communication, setCommunication] = useState('');
-    const [website, setWebsite] = useState('');
-    const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
-    const [preferredCommunication, setPreferredCommunication] = useState('');
-    const [city, setCity] = useState('');
-    const [pincode, setPincode] = useState('');
-    const [projects, setProjects] = useState('');
     const [isInitialized, setIsInitialized] = useState(false);
-
-    // Contractor fields
-    const [contractorName, setContractorName] = useState('');
-    const [contractorEmail, setContractorEmail] = useState('');
-    const [contractorPhone, setContractorPhone] = useState('');
-    const [contractorCountryCode, setContractorCountryCode] = useState('+1');
-
-    const [errors, setErrors] = useState<CompanyFormErrors>({});
+    const [datePickerOpen, setDatePickerOpen] = useState(false);
 
     // Contractor image upload states
     const [contractorPhotoFile, setContractorPhotoFile] = useState<File | null>(
@@ -75,6 +83,33 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
     const [contractorFileKey, setContractorFileKey] = useState<string | null>(
       null
     );
+
+    const {
+      control,
+      handleSubmit,
+      setValue,
+      formState: { errors },
+    } = useForm({
+      resolver: yupResolver(companyFormSchema),
+      defaultValues: {
+        name: '',
+        tagline: '',
+        about: '',
+        email: '',
+        phone_number: '',
+        country_code: '+1',
+        communication: '',
+        website: '',
+        expiry_date: undefined as any,
+        preferred_communication_method: '',
+        city: '',
+        pincode: '',
+        contractor_name: '',
+        contractor_email: '',
+        contractor_phone: '',
+        contractor_country_code: '+1',
+      },
+    });
 
     // Contractor image handlers
     const handleContractorPhotoChange = (file: File | null) => {
@@ -105,39 +140,23 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
           fileName: generatedFileName,
           fileType: contractorPhotoFile.type,
           fileSize: contractorPhotoFile.size,
-          purpose: 'profile-picture', // Try 'company' instead of 'profile-picture'
+          purpose: 'profile-picture',
           customPath: '',
         });
 
-        console.log('Presigned URL response:', presignedResponse);
-        console.log(
-          'Presigned URL response status:',
-          presignedResponse.statusCode
-        );
-        console.log('Presigned URL response data:', presignedResponse.data);
+        const { statusCode, message, data } = presignedResponse;
 
-        if (
-          presignedResponse.statusCode !== 200 &&
-          presignedResponse.statusCode !== 201
-        ) {
-          console.error('Presigned URL failed:', presignedResponse);
-          console.error(
-            'Presigned URL error message:',
-            presignedResponse.message
-          );
+        if (statusCode !== 200 && statusCode !== 201) {
           throw new Error(
-            `Failed to get presigned URL: ${presignedResponse.message || 'Unknown error'}`
+            `Failed to get presigned URL: ${message || 'Unknown error'}`
           );
         }
 
         // Upload file
-        await uploadFileToPresignedUrl(
-          presignedResponse.data['uploadUrl'],
-          contractorPhotoFile
-        );
+        await uploadFileToPresignedUrl(data['uploadUrl'], contractorPhotoFile);
 
         // Use fileKey for contractor_profile_url
-        const fileKey = presignedResponse.data['fileKey'];
+        const fileKey = data['fileKey'];
 
         setContractorFileKey(fileKey);
         return fileKey;
@@ -152,51 +171,71 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
     // Initialize form with initial data
     const initializeForm = useCallback(() => {
       if (isEditMode && initialData && !isInitialized) {
-        setName(initialData.name || '');
-        setTagline(initialData.tagline || '');
-        setAbout(initialData.about || '');
-        setEmail(initialData.email || '');
+        const {
+          name,
+          tagline,
+          about,
+          email,
+          country_code,
+          phone_number,
+          communication,
+          website,
+          preferred_communication_method,
+          city,
+          pincode,
+          expiry_date,
+        } = initialData;
+
+        setValue('name', name || '');
+        setValue('tagline', tagline || '');
+        setValue('about', about || '');
+        setValue('email', email || '');
 
         // Handle phone number and country code
-        if (initialData.country_code && initialData.phone_number) {
+        if (country_code && phone_number) {
           // Separate fields available
-          setPhoneCountryCode(initialData.country_code);
-          setPhoneNumber(initialData.phone_number);
-        } else if (initialData.phone_number) {
+          setValue('country_code', country_code);
+          setValue('phone_number', phone_number);
+        } else if (phone_number) {
           // Combined phone number - extract country code
-          const phoneStr = initialData.phone_number;
+          const phoneStr = phone_number;
           const matchedCountry = COUNTRY_CODES.LIST.find(country =>
             phoneStr.startsWith(country.code)
           );
           if (matchedCountry) {
-            setPhoneCountryCode(matchedCountry.code);
-            setPhoneNumber(phoneStr.substring(matchedCountry.code.length));
+            setValue('country_code', matchedCountry.code);
+            setValue(
+              'phone_number',
+              phoneStr.substring(matchedCountry.code.length)
+            );
           } else {
             // Default to +1 if no country code found
-            setPhoneCountryCode('+1');
-            setPhoneNumber(phoneStr);
+            setValue('country_code', '+1');
+            setValue('phone_number', phoneStr);
           }
         }
 
-        setCommunication(initialData.communication || '');
-        setWebsite(initialData.website || '');
+        setValue('communication', communication || '');
+        setValue('website', website || '');
 
         // Set preferred communication method
-        if (initialData.preferred_communication_method) {
-          setPreferredCommunication(initialData.preferred_communication_method);
+        if (preferred_communication_method) {
+          setValue(
+            'preferred_communication_method',
+            preferred_communication_method
+          );
         }
 
-        setCity(initialData.city || '');
-        setPincode(initialData.pincode || '');
-        setProjects(initialData.projects || '');
+        setValue('city', city || '');
+        setValue('pincode', pincode || '');
 
-        if (initialData.expiry_date) {
-          setExpiryDate(new Date(initialData.expiry_date));
+        if (expiry_date) {
+          setValue('expiry_date', new Date(expiry_date));
         }
 
         setIsInitialized(true);
       }
-    }, [isEditMode, initialData, isInitialized]);
+    }, [isEditMode, initialData, isInitialized, setValue]);
 
     // Initialize form when component mounts or when initialData changes
     useEffect(() => {
@@ -224,48 +263,8 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
       return undefined;
     }, [isEditMode, initialData, isInitialized, initializeForm]);
 
-    const validate = useCallback((): boolean => {
-      const newErrors: CompanyFormErrors = {};
-
-      if (!name) newErrors.name = COMPANY_MESSAGES.NAME_REQUIRED;
-      if (!tagline) newErrors.tagline = COMPANY_MESSAGES.TAGLINE_REQUIRED;
-      if (!about) newErrors.about = COMPANY_MESSAGES.ABOUT_REQUIRED;
-      if (!email) newErrors.email = COMPANY_MESSAGES.EMAIL_REQUIRED;
-      if (!phoneNumber)
-        newErrors.phone_number = COMPANY_MESSAGES.PHONE_REQUIRED;
-      if (!communication) newErrors.communication = 'Address is required';
-      if (!website) newErrors.website = COMPANY_MESSAGES.WEBSITE_REQUIRED;
-      if (!expiryDate)
-        newErrors.expiry_date = COMPANY_MESSAGES.EXPIRY_DATE_REQUIRED;
-      if (!preferredCommunication)
-        newErrors.preferred_communication_method =
-          COMPANY_MESSAGES.PREFERRED_COMMUNICATION_REQUIRED;
-      if (!city) newErrors.city = COMPANY_MESSAGES.CITY_REQUIRED;
-      if (!pincode) newErrors.pincode = COMPANY_MESSAGES.PINCODE_REQUIRED;
-      // Removed projects validation as field is commented out
-      // if (!projects) newErrors.projects = COMPANY_MESSAGES.PROJECTS_REQUIRED;
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    }, [
-      name,
-      tagline,
-      about,
-      email,
-      phoneNumber,
-      communication,
-      website,
-      expiryDate,
-      preferredCommunication,
-      city,
-      pincode,
-    ]);
-
-    const handleSubmit = useCallback(
-      async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!validate()) return;
-
+    const onFormSubmit = useCallback(
+      async (data: any) => {
         try {
           // Upload contractor image if provided
           let contractorProfileUrl: string | null = null;
@@ -273,69 +272,57 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
             contractorProfileUrl = await uploadContractorImage();
           }
 
-          // After validation, all required fields including expiryDate are guaranteed to be defined
-          if (!expiryDate) {
-            throw new Error('Expiry date is required but validation passed'); // This should never happen
-          }
+          const {
+            name,
+            tagline,
+            about,
+            email,
+            country_code,
+            phone_number,
+            communication,
+            website,
+            preferred_communication_method,
+            city,
+            pincode,
+            contractor_name,
+            contractor_email,
+            contractor_phone,
+            contractor_country_code,
+            expiry_date,
+          } = data;
 
           const payload: CompanyCreateFormData = {
             name,
             tagline,
             about,
             email,
-            country_code: phoneCountryCode,
-            phone_number: phoneNumber,
-            communication, // Now using communication field as address
+            country_code,
+            phone_number,
+            communication,
             website,
-            preferred_communication_method: preferredCommunication,
+            preferred_communication_method,
             city,
             pincode,
-            projects: projects || 'N/A', // Default value since field is hidden
+            projects: 'N/A', // Default value since field is hidden
           };
 
           // Add contractor information if provided
-          console.log('Contractor data before adding to payload:', {
-            contractorName,
-            contractorEmail,
-            contractorPhone,
-            contractorCountryCode,
-            contractorProfileUrl,
-          });
-
-          if (contractorName.trim()) {
-            payload.contractor_name = contractorName.trim();
-            console.log(
-              'Added contractor_name to payload:',
-              payload.contractor_name
-            );
+          if (contractor_name?.trim()) {
+            payload.contractor_name = contractor_name.trim();
           }
-          if (contractorEmail.trim()) {
-            payload.contractor_email = contractorEmail.trim();
-            console.log(
-              'Added contractor_email to payload:',
-              payload.contractor_email
-            );
+          if (contractor_email?.trim()) {
+            payload.contractor_email = contractor_email.trim();
           }
-          if (contractorPhone.trim()) {
-            payload.contractor_phone = `${contractorCountryCode} ${contractorPhone.trim()}`;
-            console.log(
-              'Added contractor_phone to payload:',
-              payload.contractor_phone
-            );
+          if (contractor_phone?.trim()) {
+            payload.contractor_phone = `${contractor_country_code} ${contractor_phone.trim()}`;
           }
           if (contractorProfileUrl) {
             payload.contractor_profile_url = contractorProfileUrl;
-            console.log(
-              'Added contractor_profile_url to payload:',
-              payload.contractor_profile_url
-            );
           }
 
-          console.log('Final payload before onSubmit:', payload);
-
           // Add optional fields only if they're set
-          if (expiryDate) {
-            payload.expiry_date = expiryDate.toISOString().split('T')[0];
+          if (expiry_date) {
+            payload.expiry_date = expiry_date.toISOString().split('T')[0];
           }
 
           if (imageUrl) {
@@ -345,33 +332,9 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
           onSubmit(payload);
         } catch (error) {
           console.error('Error submitting form:', error);
-          // Optionally, display an error message to the user
         }
       },
-      [
-        validate,
-        expiryDate,
-        name,
-        tagline,
-        about,
-        email,
-        phoneCountryCode,
-        phoneNumber,
-        communication,
-        website,
-        preferredCommunication,
-        city,
-        pincode,
-        projects,
-        imageUrl,
-        contractorName,
-        contractorEmail,
-        contractorPhone,
-        contractorCountryCode,
-        onSubmit,
-        uploadContractorImage,
-        contractorPhotoFile,
-      ]
+      [imageUrl, onSubmit, uploadContractorImage, contractorPhotoFile]
     );
 
     const handleCancel = useCallback((): void => {
@@ -390,7 +353,10 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
     }
 
     return (
-      <form onSubmit={handleSubmit} className='space-y-4 sm:space-y-6'>
+      <form
+        onSubmit={handleSubmit(onFormSubmit)}
+        className='space-y-4 sm:space-y-6'
+      >
         {/* Company Information */}
         <div>
           <h2 className='text-base sm:text-lg font-bold mb-3 sm:mb-4'>
@@ -402,14 +368,25 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <Label htmlFor='company-name' className='field-label'>
                 {COMPANY_MESSAGES.COMPANY_NAME_LABEL}
               </Label>
-              <Input
-                id='company-name'
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_COMPANY_NAME}
-                className='input-field'
+              <Controller
+                name='name'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='company-name'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_COMPANY_NAME}
+                    className={cn(
+                      'input-field',
+                      errors.name
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.name || ''} />
+              <FormErrorMessage message={errors.name?.message || ''} />
             </div>
 
             {/* Tagline */}
@@ -417,44 +394,77 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <Label htmlFor='tagline' className='field-label'>
                 {COMPANY_MESSAGES.TAGLINE_LABEL}
               </Label>
-              <Input
-                id='tagline'
-                value={tagline}
-                onChange={e => setTagline(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_TAGLINE}
-                className='input-field'
+              <Controller
+                name='tagline'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='tagline'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_TAGLINE}
+                    className={cn(
+                      'input-field',
+                      errors.tagline
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.tagline || ''} />
+              <FormErrorMessage message={errors.tagline?.message || ''} />
             </div>
             {/* About - Full Width */}
             <div className='space-y-2 sm:col-span-2'>
               <Label htmlFor='about' className='field-label'>
                 {COMPANY_MESSAGES.ABOUT_LABEL}
               </Label>
-              <Textarea
-                id='about'
-                value={about}
-                onChange={e => setAbout(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_ABOUT}
-                rows={3}
-                className='border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+              <Controller
+                name='about'
+                control={control}
+                render={({ field }) => (
+                  <Textarea
+                    id='about'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_ABOUT}
+                    rows={3}
+                    className={cn(
+                      'border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                      errors.about
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.about || ''} />
+              <FormErrorMessage message={errors.about?.message || ''} />
             </div>
             {/* Email */}
             <div className='space-y-2'>
               <Label htmlFor='email' className='field-label'>
                 {COMPANY_MESSAGES.EMAIL_LABEL}
               </Label>
-              <Input
-                id='email'
-                type='email'
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_EMAIL}
-                className='input-field'
+              <Controller
+                name='email'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='email'
+                    type='email'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_EMAIL}
+                    className={cn(
+                      'input-field',
+                      errors.email
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.email || ''} />
+              <FormErrorMessage message={errors.email?.message || ''} />
             </div>
 
             {/* Phone Number */}
@@ -463,64 +473,82 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                 {COMPANY_MESSAGES.PHONE_LABEL}
               </Label>
               <div className='flex'>
-                <Select
-                  value={phoneCountryCode}
-                  onValueChange={value => {
-                    setPhoneCountryCode(value);
-                  }}
-                >
-                  <SelectTrigger
-                    className={cn(
-                      'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
-                      errors.phone_number
-                        ? 'border-[var(--warning)]'
-                        : 'border-[var(--border-dark)]'
-                    )}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                    {COUNTRY_CODES.LIST.map(country => (
-                      <SelectItem key={country.key} value={country.code}>
-                        <div className='flex items-center gap-2'>
-                          <span>{country.flag}</span>
-                          <span className='hidden sm:inline'>
-                            {country.code}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Input
-                  id='phone'
-                  value={phoneNumber}
-                  onChange={e => setPhoneNumber(e.target.value)}
-                  placeholder={COMPANY_MESSAGES.ENTER_PHONE}
-                  className={cn(
-                    'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
-                    errors.phone_number
-                      ? 'border-[var(--warning)]'
-                      : 'border-[var(--border-dark)]'
+                <Controller
+                  name='country_code'
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger
+                        className={cn(
+                          'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
+                          errors.phone_number
+                            ? '!border-[var(--warning)]'
+                            : 'border-[var(--border-dark)]'
+                        )}
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
+                        {COUNTRY_CODES.LIST.map(country => (
+                          <SelectItem key={country.key} value={country.code}>
+                            <div className='flex items-center gap-2'>
+                              <span>{country.flag}</span>
+                              <span className='hidden sm:inline'>
+                                {country.code}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                <Controller
+                  name='phone_number'
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id='phone'
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder={COMPANY_MESSAGES.ENTER_PHONE}
+                      className={cn(
+                        'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
+                        errors.phone_number
+                          ? '!border-[var(--warning)]'
+                          : 'border-[var(--border-dark)]'
+                      )}
+                    />
                   )}
                 />
               </div>
-              <FormErrorMessage message={errors.phone_number || ''} />
+              <FormErrorMessage message={errors.phone_number?.message || ''} />
             </div>
             {/* Address field - using communication state since it's not used elsewhere */}
             <div className='space-y-2 sm:col-span-2'>
               <Label htmlFor='address' className='field-label'>
                 Address
               </Label>
-              <Input
-                id='address'
-                type='text'
-                value={communication}
-                onChange={e => setCommunication(e.target.value)}
-                placeholder='Enter company address'
-                className='input-field'
+              <Controller
+                name='communication'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='address'
+                    type='text'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder='Enter company address'
+                    className={cn(
+                      'input-field',
+                      errors.communication
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.communication || ''} />
+              <FormErrorMessage message={errors.communication?.message || ''} />
             </div>
 
             {/* City */}
@@ -528,14 +556,25 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <Label htmlFor='city' className='field-label'>
                 {COMPANY_MESSAGES.CITY_LABEL}
               </Label>
-              <Input
-                id='city'
-                value={city}
-                onChange={e => setCity(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_CITY}
-                className='input-field'
+              <Controller
+                name='city'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='city'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_CITY}
+                    className={cn(
+                      'input-field',
+                      errors.city
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.city || ''} />
+              <FormErrorMessage message={errors.city?.message || ''} />
             </div>
 
             {/* Pin Code */}
@@ -543,29 +582,51 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <Label htmlFor='pincode' className='field-label'>
                 {COMPANY_MESSAGES.PINCODE_LABEL}
               </Label>
-              <Input
-                id='pincode'
-                value={pincode}
-                onChange={e => setPincode(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_PINCODE}
-                className='input-field'
+              <Controller
+                name='pincode'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='pincode'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_PINCODE}
+                    className={cn(
+                      'input-field',
+                      errors.pincode
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.pincode || ''} />
+              <FormErrorMessage message={errors.pincode?.message || ''} />
             </div>
             {/* Website */}
             <div className='space-y-2'>
               <Label htmlFor='website' className='field-label'>
                 {COMPANY_MESSAGES.WEBSITE_LABEL}
               </Label>
-              <Input
-                id='website'
-                type='url'
-                value={website}
-                onChange={e => setWebsite(e.target.value)}
-                placeholder={COMPANY_MESSAGES.ENTER_WEBSITE}
-                className='input-field'
+              <Controller
+                name='website'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='website'
+                    type='url'
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder={COMPANY_MESSAGES.ENTER_WEBSITE}
+                    className={cn(
+                      'input-field',
+                      errors.website
+                        ? '!border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
               />
-              <FormErrorMessage message={errors.website || ''} />
+              <FormErrorMessage message={errors.website?.message || ''} />
             </div>
 
             {/* Expiry Date */}
@@ -573,75 +634,97 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <Label className='field-label'>
                 {COMPANY_MESSAGES.EXPIRY_DATE_LABEL}
               </Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={'outline'}
-                    className={cn(
-                      'w-full h-12 justify-between text-left font-normal border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-[10px]',
-                      !expiryDate && 'text-muted-foreground'
-                    )}
+              <Controller
+                name='expiry_date'
+                control={control}
+                render={({ field }) => (
+                  <Popover
+                    open={datePickerOpen}
+                    onOpenChange={setDatePickerOpen}
                   >
-                    {' '}
-                    {expiryDate ? (
-                      format(expiryDate, 'PPP')
-                    ) : (
-                      <span className='flex-1'>
-                        {COMPANY_MESSAGES.SELECT_EXPIRY_DATE}
-                      </span>
-                    )}
-                    <IconsaxCalendar
-                      className='ml-2 !h-6 !w-6'
-                      color='var(--primary)'
-                    />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent
-                  className='w-auto p-0 bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
-                  align='start'
-                >
-                  <Calendar
-                    mode='single'
-                    selected={expiryDate}
-                    onSelect={setExpiryDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormErrorMessage message={errors.expiry_date || ''} />
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={'outline'}
+                        className={cn(
+                          'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px]',
+                          !field.value && 'text-muted-foreground',
+                          errors.expiry_date
+                            ? '!border-[var(--warning)]'
+                            : 'border-[var(--border-dark)]'
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, 'PPP')
+                        ) : (
+                          <span className='flex-1'>
+                            {COMPANY_MESSAGES.SELECT_EXPIRY_DATE}
+                          </span>
+                        )}
+                        <IconsaxCalendar
+                          className='ml-2 !h-6 !w-6'
+                          color='var(--primary)'
+                        />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className='w-auto p-0 bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
+                      align='start'
+                    >
+                      <Calendar
+                        mode='single'
+                        selected={field.value}
+                        onSelect={date => {
+                          field.onChange(date);
+                          setDatePickerOpen(false); // Close popover after selection
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              />
+              <FormErrorMessage message={errors.expiry_date?.message || ''} />
             </div>
             {/* Preferred Communication */}
             <div className='space-y-2'>
               <Label className='field-label'>
                 {COMPANY_MESSAGES.PREFERRED_COMMUNICATION_LABEL}
               </Label>
-              <Select
-                value={preferredCommunication}
-                onValueChange={value => {
-                  setPreferredCommunication(value);
-                }}
-              >
-                <SelectTrigger className='h-12 border-2 border-[var(--border-dark)] text-left bg-[var(--white-background)] rounded-[10px]'>
-                  <SelectValue
-                    placeholder={
-                      COMPANY_MESSAGES.SELECT_PREFERRED_COMMUNICATION
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent className='bg-[var(--white-background)] border border-[var(--border-light)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'>
-                  <SelectItem value='email'>
-                    {COMPANY_MESSAGES.EMAIL_OPTION}
-                  </SelectItem>
-                  <SelectItem value='phone'>
-                    {COMPANY_MESSAGES.PHONE_OPTION}
-                  </SelectItem>
-                  <SelectItem value='sms'>
-                    {COMPANY_MESSAGES.SMS_OPTION}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+              <Controller
+                name='preferred_communication_method'
+                control={control}
+                render={({ field }) => (
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      className={cn(
+                        'h-12 border-2 text-left bg-[var(--white-background)] rounded-[10px]',
+                        errors.preferred_communication_method
+                          ? '!border-[var(--warning)]'
+                          : 'border-[var(--border-dark)]'
+                      )}
+                    >
+                      <SelectValue
+                        placeholder={
+                          COMPANY_MESSAGES.SELECT_PREFERRED_COMMUNICATION
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className='bg-[var(--white-background)] border border-[var(--border-light)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'>
+                      <SelectItem value='email'>
+                        {COMPANY_MESSAGES.EMAIL_OPTION}
+                      </SelectItem>
+                      <SelectItem value='phone'>
+                        {COMPANY_MESSAGES.PHONE_OPTION}
+                      </SelectItem>
+                      <SelectItem value='sms'>
+                        {COMPANY_MESSAGES.SMS_OPTION}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               <FormErrorMessage
-                message={errors.preferred_communication_method || ''}
+                message={errors.preferred_communication_method?.message || ''}
               />
             </div>
             {!isEditMode && (
@@ -685,15 +768,28 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                         >
                           {COMPANY_MESSAGES.CONTRACTOR_NAME_LABEL}
                         </Label>
-                        <Input
-                          id='contractor-name'
-                          value={contractorName}
-                          onChange={e => setContractorName(e.target.value)}
-                          placeholder={COMPANY_MESSAGES.ENTER_CONTRACTOR_NAME}
-                          className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                        <Controller
+                          name='contractor_name'
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              id='contractor-name'
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={
+                                COMPANY_MESSAGES.ENTER_CONTRACTOR_NAME
+                              }
+                              className={cn(
+                                'h-12 border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                                errors.contractor_name
+                                  ? '!border-[var(--warning)]'
+                                  : 'border-[var(--border-dark)]'
+                              )}
+                            />
+                          )}
                         />
                         <FormErrorMessage
-                          message={errors.contractor_name || ''}
+                          message={errors.contractor_name?.message || ''}
                         />
                       </div>
 
@@ -705,16 +801,29 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                         >
                           {COMPANY_MESSAGES.CONTRACTOR_EMAIL_LABEL}
                         </Label>
-                        <Input
-                          id='contractor-email'
-                          type='email'
-                          value={contractorEmail}
-                          onChange={e => setContractorEmail(e.target.value)}
-                          placeholder={COMPANY_MESSAGES.ENTER_CONTRACTOR_EMAIL}
-                          className='h-12 border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+                        <Controller
+                          name='contractor_email'
+                          control={control}
+                          render={({ field }) => (
+                            <Input
+                              id='contractor-email'
+                              type='email'
+                              value={field.value}
+                              onChange={field.onChange}
+                              placeholder={
+                                COMPANY_MESSAGES.ENTER_CONTRACTOR_EMAIL
+                              }
+                              className={cn(
+                                'h-12 border-2 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
+                                errors.contractor_email
+                                  ? '!border-[var(--warning)]'
+                                  : 'border-[var(--border-dark)]'
+                              )}
+                            />
+                          )}
                         />
                         <FormErrorMessage
-                          message={errors.contractor_email || ''}
+                          message={errors.contractor_email?.message || ''}
                         />
                       </div>
 
@@ -727,55 +836,65 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                           {COMPANY_MESSAGES.CONTRACTOR_PHONE_LABEL}
                         </Label>
                         <div className='flex'>
-                          <Select
-                            value={contractorCountryCode}
-                            onValueChange={value => {
-                              setContractorCountryCode(value);
-                            }}
-                          >
-                            <SelectTrigger
-                              className={cn(
-                                'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
-                                errors.contractor_phone
-                                  ? 'border-[var(--warning)]'
-                                  : 'border-[var(--border-dark)]'
-                              )}
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                              {COUNTRY_CODES.LIST.map(country => (
-                                <SelectItem
-                                  key={country.key}
-                                  value={country.code}
+                          <Controller
+                            name='contractor_country_code'
+                            control={control}
+                            render={({ field }) => (
+                              <Select
+                                value={field.value || '+1'}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger
+                                  className={cn(
+                                    'w-20 sm:w-24 h-12 rounded-l-[10px] rounded-r-none border-2 border-r-0 bg-[var(--white-background)]',
+                                    errors.contractor_phone
+                                      ? '!border-[var(--warning)]'
+                                      : 'border-[var(--border-dark)]'
+                                  )}
                                 >
-                                  <div className='flex items-center gap-2'>
-                                    <span>{country.flag}</span>
-                                    <span className='hidden sm:inline'>
-                                      {country.code}
-                                    </span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            id='contractor-phone'
-                            value={contractorPhone}
-                            onChange={e => setContractorPhone(e.target.value)}
-                            placeholder={
-                              COMPANY_MESSAGES.ENTER_CONTRACTOR_PHONE
-                            }
-                            className={cn(
-                              'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
-                              errors.contractor_phone
-                                ? 'border-[var(--warning)]'
-                                : 'border-[var(--border-dark)]'
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
+                                  {COUNTRY_CODES.LIST.map(country => (
+                                    <SelectItem
+                                      key={country.key}
+                                      value={country.code}
+                                    >
+                                      <div className='flex items-center gap-2'>
+                                        <span>{country.flag}</span>
+                                        <span className='hidden sm:inline'>
+                                          {country.code}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                          />
+                          <Controller
+                            name='contractor_phone'
+                            control={control}
+                            render={({ field }) => (
+                              <Input
+                                id='contractor-phone'
+                                value={field.value}
+                                onChange={field.onChange}
+                                placeholder={
+                                  COMPANY_MESSAGES.ENTER_CONTRACTOR_PHONE
+                                }
+                                className={cn(
+                                  'h-12 flex-1 rounded-r-[10px] rounded-l-none border-2 border-l-0 bg-[var(--white-background)] !placeholder-[var(--text-placeholder)]',
+                                  errors.contractor_phone
+                                    ? '!border-[var(--warning)]'
+                                    : 'border-[var(--border-dark)]'
+                                )}
+                              />
                             )}
                           />
                         </div>
                         <FormErrorMessage
-                          message={errors.contractor_phone || ''}
+                          message={errors.contractor_phone?.message || ''}
                         />
                       </div>
                     </div>
@@ -784,61 +903,24 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               </div>
             )}
           </div>
-
-          {/* Communication - Full Width */}
-          {/* <div className='mt-4'>
-            <Label htmlFor='communication' className='field-label'>
-              {COMPANY_MESSAGES.COMMUNICATION_LABEL}
-            </Label>
-            <Textarea
-              id='communication'
-              value={communication}
-              onChange={e => setCommunication(e.target.value)}
-              placeholder={COMPANY_MESSAGES.ENTER_COMMUNICATION}
-              rows={3}
-              className='border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
-            />
-            <FormErrorMessage message={errors.communication || ''} />
-          </div> */}
-
-          {/* Projects - Full Width */}
-          {/* <div className='space-y-2 mt-4'>
-            <Label htmlFor='projects' className='field-label'>
-              {COMPANY_MESSAGES.PROJECTS_LABEL}
-            </Label>
-            <Textarea
-              id='projects'
-              value={projects}
-              onChange={e => setProjects(e.target.value)}
-              placeholder={COMPANY_MESSAGES.ENTER_PROJECTS}
-              rows={3}
-              className='border-2 border-[var(--border-dark)] focus:border-green-500 focus:ring-green-500 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
-            />
-            <FormErrorMessage message={errors.projects || ''} />
-          </div> */}
         </div>
 
         {/* Form Actions */}
-        <div className='flex sm:items-center justify-end gap-2 sm:gap-4 pt-4 sm:pt-6'>
+        <div className='pt-4 flex items-center justify-end gap-3'>
           <Button
             type='button'
             variant='outline'
             onClick={handleCancel}
-            disabled={loading}
-            className='btn-secondary !px-4 md:!px-8'
+            className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
-            {COMPANY_MESSAGES.CANCEL_BUTTON}
+            Cancel
           </Button>
           <Button
             type='submit'
             disabled={loading}
-            className='btn-primary !px-4 md:!px-8'
+            className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           >
-            {loading
-              ? 'Creating...'
-              : isEditMode
-                ? COMPANY_MESSAGES.UPDATE_BUTTON
-                : COMPANY_MESSAGES.CREATE_BUTTON}
+            {loading ? 'Submitting...' : isEditMode ? 'Update' : 'Create'}
           </Button>
         </div>
       </form>

@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { materialFormSchema } from '@/lib/validations/material';
@@ -41,12 +42,29 @@ export default function MaterialForm({
     const fetchServices = async () => {
       try {
         setLoadingServices(true);
-        const response = await apiService.getServicesDropdown();
+
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            // Silently fail if company data is invalid
+          }
+        }
+
+        const response = await apiService.getServicesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setServicesOption(response.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch services:', error);
+      } catch {
+        // Silently fail if services fetch fails
         setServicesOption([]);
       } finally {
         setLoadingServices(false);
@@ -77,9 +95,8 @@ export default function MaterialForm({
             services: serviceIds,
           });
         }
-      } catch (error) {
-        console.error('Failed to fetch material details:', error);
-        // Optionally show error toast
+      } catch {
+        // Silently fail if material details fetch fails
       }
     };
     fetchMaterial();
@@ -88,20 +105,20 @@ export default function MaterialForm({
   const onFormSubmit = async (data: any) => {
     const { materialName, services = [] } = data;
     try {
-      const payload = {
-        name: materialName,
-        description: '', // You can add a description field to the form if needed
-        is_default: false,
-        is_active: true,
-        status: 'ACTIVE',
-        service_ids: services.join(','),
-      };
-
       if (initialMaterialUuid) {
-        // Update existing material
+        // Update existing material (without company_id)
+        const updatePayload = {
+          name: materialName,
+          description: '', // You can add a description field to the form if needed
+          is_default: false,
+          is_active: true,
+          status: 'ACTIVE',
+          service_ids: services.join(','),
+        };
+
         const response = await apiService.updateMaterial(
           initialMaterialUuid,
-          payload
+          updatePayload
         );
         const { message, data } = response;
         showSuccessToast(message || MATERIAL_MESSAGES.UPDATE_SUCCESS);
@@ -115,8 +132,32 @@ export default function MaterialForm({
           });
         }
       } else {
-        // Create new material
-        const response = await apiService.createMaterial(payload);
+        // Create new material (with company_id)
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            // Silently fail if company data is invalid
+          }
+        }
+
+        const createPayload = {
+          name: materialName,
+          description: '', // You can add a description field to the form if needed
+          is_default: false,
+          is_active: true,
+          status: 'ACTIVE',
+          service_ids: services.join(','),
+          ...(companyId ? { company_id: companyId } : {}),
+        };
+
+        const response = await apiService.createMaterial(createPayload);
         const { message, data } = response;
         showSuccessToast(message || MATERIAL_MESSAGES.CREATE_SUCCESS);
 
@@ -155,7 +196,7 @@ export default function MaterialForm({
       onSubmit={handleSubmit(onFormSubmit)}
       className='space-y-4 sm:space-y-6 w-full max-w-xl'
     >
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label htmlFor='services' className='field-label text-sm sm:text-base'>
           {MATERIAL_MESSAGES.SERVICE_LABEL}
         </Label>
@@ -192,7 +233,7 @@ export default function MaterialForm({
           }}
         />
       </div>
-      <div className='space-y-2'>
+      <div className='space-y-1 md:space-y-2'>
         <Label
           htmlFor='materialName'
           className='field-label text-sm sm:text-base'
@@ -222,7 +263,7 @@ export default function MaterialForm({
         <Button
           type='button'
           variant='outline'
-          className='btn-secondary !px-4 md:!px-8'
+          className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           onClick={onCancel}
           disabled={loading}
         >
@@ -230,7 +271,7 @@ export default function MaterialForm({
         </Button>
         <Button
           type='submit'
-          className='btn-primary !px-4 md:!px-8'
+          className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={loading}
         >
           {loading

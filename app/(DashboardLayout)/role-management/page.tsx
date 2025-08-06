@@ -2,10 +2,19 @@
 
 import { HelmetIcon } from '@/components/icons/HelmetIcon';
 import { RoleCard } from '@/components/shared/cards/RoleCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  CUSTOM_EVENTS,
+  PAGINATION,
+  ROUTES,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { roleIconOptions } from '@/constants/sidebar-items';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -16,7 +25,7 @@ import {
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import RoleCardSkeleton from '../../../components/shared/skeleton/RoleCardSkeleton';
 import { ROLE_MESSAGES } from './role-messages';
 import type { FetchRolesParams, Role, RoleApiResponse } from './types';
@@ -31,37 +40,52 @@ interface MenuOption {
   }>;
 }
 
-const menuOptions: MenuOption[] = [
-  {
-    label: ROLE_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-  },
-  {
-    label: ROLE_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-  },
-];
+const getMenuOptions = (isDefault: boolean): MenuOption[] => {
+  const options: MenuOption[] = [];
+
+  // Only show delete option if role is not default
+  if (!isDefault) {
+    options.push(
+      {
+        label: ROLE_MESSAGES.DELETE_MENU,
+        action: ACTIONS.DELETE,
+        icon: Trash,
+      },
+      {
+        label: ROLE_MESSAGES.EDIT_MENU,
+        action: ACTIONS.EDIT,
+        icon: Edit2,
+      }
+    );
+  }
+
+  return options;
+};
 
 // Adapter for icons that expect className instead of size/color
 const IconAdapter = (IconComp: any) => {
   const WrappedIcon = ({ color = '#00a8bf' }) => (
-    <IconComp className='w-[30px] h-[30px]' style={{ color }} />
+    <IconComp className='w-8 h-8' style={{ color }} />
   );
   WrappedIcon.displayName = `IconAdapter(${IconComp.displayName || IconComp.name || 'Component'})`;
   return WrappedIcon;
 };
 
 const RoleManagement = () => {
+  // Destructure constants for better readability
+  const { CREATE_ROLE, EDIT_ROLE } = ROUTES;
+  const { ROLES_LIMIT } = PAGINATION;
+  const { ACTIVE } = CommonStatus;
+
   const [roles, setRoles] = useState<Role[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(PAGINATION.DEFAULT_LIMIT); // Use common constant
+  const [limit] = useState(ROLES_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [name] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const selectedCompanyRef = useRef<string | null>(null);
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
@@ -69,17 +93,41 @@ const RoleManagement = () => {
   // Get user permissions for roles
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.roles?.edit;
+  const canViewRoles = userPermissions?.roles?.view;
+
+  // Initialize selectedCompany from localStorage
+  useEffect(() => {
+    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    selectedCompanyRef.current = currentCompany;
+  }, []);
 
   const fetchRoles = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let company_id: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            company_id = parsedCompany.id; // UUID from localStorage
+          } catch (error) {
+            company_id = undefined;
+          }
+        }
+
         const params: FetchRolesParams = {
           page: targetPage,
           limit,
           search,
           name,
-          status: 'ACTIVE', // Only fetch active roles
+          status: ACTIVE, // Only fetch active roles
+          ...(company_id ? { company_id } : {}),
         };
         const res = (await apiService.fetchRoles(params)) as RoleApiResponse;
         const data = res.data || { data: [], total: 0 };
@@ -101,14 +149,24 @@ const RoleManagement = () => {
         const total = data.total;
         setPage(targetPage);
         setHasMore(targetPage * limit < total);
-      } catch {
+      } catch (err: unknown) {
+        // Handle auth errors first (will redirect to login if 401)
+        if (handleAuthError(err)) {
+          return; // Don't show toast if it's an auth error
+        }
+
+        const message = extractApiErrorMessage(
+          err,
+          ROLE_MESSAGES.FETCH_ROLES_ERROR
+        );
+        showErrorToast(message);
         if (!append) setRoles([]);
         setHasMore(false);
       } finally {
         setLoading(false);
       }
     },
-    [limit, search, name]
+    [limit, search, name, handleAuthError, showErrorToast]
   );
 
   // Fetch first page of roles
@@ -118,6 +176,42 @@ const RoleManagement = () => {
     setRoles([]);
     fetchRoles(1, false);
   }, [fetchRoles]);
+
+  // Watch for changes in selected company and refetch roles
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPage(1);
+      setHasMore(true);
+      setRoles([]);
+      // Call fetchRoles directly without dependency
+      fetchRoles(1, false);
+    };
+
+    // Listen for storage events (when localStorage changes in other tabs/windows)
+    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+
+    // Listen for custom company change events
+    const handleCompanyChange = () => {
+      const currentCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      if (currentCompany !== selectedCompanyRef.current) {
+        selectedCompanyRef.current = currentCompany;
+        handleStorageChange();
+      }
+    };
+
+    // Add custom event listener for company changes
+    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
+
+    return () => {
+      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChange
+      );
+    };
+  }, []); // Remove fetchRoles from dependencies
 
   // Infinite scroll
   useEffect(() => {
@@ -159,7 +253,7 @@ const RoleManagement = () => {
   const handleEditRole = useCallback(
     (uuid: string) => {
       setIsNavigating(true);
-      router.push(`/role-management/edit-role/${uuid}`);
+      router.push(`${EDIT_ROLE}/${uuid}`);
     },
     [router]
   );
@@ -167,7 +261,7 @@ const RoleManagement = () => {
   // Handler for create role navigation with loading state
   const handleCreateRole = useCallback(() => {
     setIsNavigating(true);
-    router.push('/role-management/create-role');
+    router.push(CREATE_ROLE);
   }, [router]);
 
   // Show navigation loading state
@@ -178,6 +272,17 @@ const RoleManagement = () => {
   // Ensure icon options is always an array and has label property
   const safeIconOptions = Array.isArray(roleIconOptions) ? roleIconOptions : [];
 
+  // Check if user has permission to view roles
+  if (userPermissions && !canViewRoles) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
     <section className=''>
       <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
@@ -186,9 +291,10 @@ const RoleManagement = () => {
           {canEdit && (
             <button
               onClick={handleCreateRole}
-              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+              disabled={loading}
             >
-              <Add size='20' color='#fff' className='sm:hidden' />
+              <Add size='24' color='#fff' className='sm:hidden' />
               <span className='hidden sm:inline'>
                 {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
               </span>
@@ -218,8 +324,15 @@ const RoleManagement = () => {
                 />
               </div>
             ) : (
-              roles.map(
-                ({ uuid, icon, name, description, total_permissions }) => {
+              roles?.map(
+                ({
+                  uuid,
+                  icon,
+                  name,
+                  description,
+                  total_permissions,
+                  is_default,
+                }) => {
                   // Use the icon component directly if it matches the expected signature
                   const iconOptionRaw = safeIconOptions.find(
                     (opt: any) => opt.value === icon
@@ -236,7 +349,7 @@ const RoleManagement = () => {
                   return (
                     <div key={uuid}>
                       <RoleCard
-                        menuOptions={menuOptions}
+                        menuOptions={getMenuOptions(is_default ?? false)}
                         iconSrc={iconOption.icon}
                         iconBgColor={iconOption.color + '26'}
                         title={name}
@@ -258,11 +371,7 @@ const RoleManagement = () => {
       {/* Loading more roles */}
       {loading && roles.length > 0 && (
         <div className='w-full text-center py-4'>
-          <LoadingComponent
-            variant='inline'
-            size='sm'
-            text={ROLE_MESSAGES.LOADING_ROLES}
-          />
+          <LoadingComponent variant='inline' size='md' text={''} />
         </div>
       )}
     </section>

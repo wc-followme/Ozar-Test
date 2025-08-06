@@ -1,4 +1,6 @@
+'use client';
 import { clsx, type ClassValue } from 'clsx';
+import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 // --- Encryption Utilities ---
@@ -62,7 +64,7 @@ export function formatDate(dateString: string): string {
     const year = date.getFullYear().toString();
 
     return `${day}/${month}/${year}`;
-  } catch (error) {
+  } catch (_) {
     return dateString; // Return original string if parsing fails
   }
 }
@@ -86,7 +88,7 @@ export function formatDateTime(dateString: string): string {
     const minutes = date.getMinutes().toString().padStart(2, '0');
 
     return `${day}/${month}/${year} ${hours}:${minutes}`;
-  } catch (error) {
+  } catch (_) {
     return dateString; // Return original string if parsing fails
   }
 }
@@ -112,3 +114,93 @@ export function getUserPermissionsFromStorage():
     return null;
   }
 }
+
+/**
+ * Calculates dynamic width for responsive components based on screen size
+ * @param options Configuration options for width calculation
+ * @returns Calculated width in pixels as a string
+ */
+export const calculateDynamicWidth = (
+  options: {
+    mobilePadding?: number;
+    tabletPadding?: number;
+    desktopPadding?: number;
+    maxMobileWidth?: number;
+    maxTabletWidth?: number;
+    maxLargeTabletWidth?: number;
+    defaultDesktopWidth?: number;
+    buttonWidth?: number;
+    buttonWidthDesktop?: number;
+  } = {}
+) => {
+  if (typeof window === 'undefined') return '320px';
+
+  const {
+    mobilePadding = 32,
+    tabletPadding = 48,
+    desktopPadding = 64,
+    maxMobileWidth = 640,
+    maxTabletWidth = 768,
+    maxLargeTabletWidth = 1024,
+    defaultDesktopWidth = 320,
+    buttonWidth = 0,
+    buttonWidthDesktop = 0,
+  } = options;
+
+  const screenWidth = window.innerWidth;
+
+  // Mobile devices (up to maxMobileWidth)
+  if (screenWidth <= maxMobileWidth) {
+    const availableWidth = screenWidth - mobilePadding - buttonWidth;
+    return `${Math.max(availableWidth, 200)}px`; // Minimum 200px width
+  }
+  // Small tablets (maxMobileWidth + 1 to maxTabletWidth)
+  else if (screenWidth <= maxTabletWidth) {
+    const availableWidth = Math.min(
+      screenWidth - tabletPadding - buttonWidth,
+      400
+    );
+    return `${Math.max(availableWidth, 250)}px`; // Minimum 250px width
+  }
+  // Medium tablets (maxTabletWidth + 1 to maxLargeTabletWidth)
+  else if (screenWidth <= maxLargeTabletWidth) {
+    const availableWidth = Math.min(
+      screenWidth - desktopPadding - buttonWidthDesktop,
+      500
+    );
+    return `${Math.max(availableWidth, 300)}px`; // Minimum 300px width
+  }
+  // Desktop (maxLargeTabletWidth + 1 and above)
+  else {
+    const availableWidth = defaultDesktopWidth - buttonWidthDesktop;
+    return `${Math.max(availableWidth, 200)}px`; // Minimum 200px width
+  }
+};
+
+/**
+ * Hook for dynamic width calculation with resize listener
+ * @param options Configuration options for width calculation
+ * @returns Current calculated width
+ */
+export const useDynamicWidth = (
+  options?: Parameters<typeof calculateDynamicWidth>[0]
+) => {
+  const [width, setWidth] = useState('320px');
+
+  useEffect(() => {
+    const updateWidth = () => {
+      setWidth(calculateDynamicWidth(options));
+    };
+
+    // Set initial width
+    updateWidth();
+
+    // Add resize listener
+    window.addEventListener('resize', updateWidth);
+
+    // Cleanup
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [options]);
+
+  return width;
+};

@@ -19,60 +19,104 @@ import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
 import { UserCardIcon } from '../components/icons/UserCardIcon';
 
-type SidebarItem = {
+// Sidebar title constants
+export const SIDEBAR_TITLES = {
+  HOME: 'Home',
+  JOBS: 'Jobs',
+  ROLE_MANAGEMENT: 'Role Management',
+  USER_MANAGEMENT: 'Employee Management',
+  COMPANY_MANAGEMENT: 'Company Management',
+  CATEGORY_MANAGEMENT: 'Category Management',
+  TRADE_MANAGEMENT: 'Trade Management',
+  SERVICE_MANAGEMENT: 'Service Management',
+  MATERIAL_MANAGEMENT: 'Material Management',
+  TOOLS_MANAGEMENT: 'Tools Management',
+} as const;
+
+// Permission categories constants
+export const PERMISSION_CATEGORIES = {
+  CATEGORIES: 'categories',
+  ROLES: 'roles',
+  USERS: 'users',
+  COMPANIES: 'companies',
+  TRADES: 'trades',
+  SERVICES: 'services',
+  MATERIALS: 'materials',
+  TOOLS: 'tools',
+  JOBS: 'jobs',
+} as const;
+
+// Permission actions constants
+export const PERMISSION_ACTIONS = {
+  VIEW: 'view',
+  EDIT: 'edit',
+} as const;
+
+type SidebarMenuItem = {
+  menu_id: string;
   title: string;
   href: string;
   icon: Icon;
 };
 
-export const sidebarItems: SidebarItem[] = [
+export const sidebarItems: SidebarMenuItem[] = [
   {
-    title: 'Home',
+    menu_id: 'home',
+    title: SIDEBAR_TITLES.HOME,
     href: '/',
     icon: Home,
   },
   {
-    title: 'Jobs',
+    menu_id: 'jobs',
+    title: SIDEBAR_TITLES.JOBS,
     href: '/job-management',
     icon: JobIcon,
   },
   {
-    title: 'Role Management',
+    menu_id: 'role-management',
+    title: SIDEBAR_TITLES.ROLE_MANAGEMENT,
     href: '/role-management',
     icon: RoleIcon,
   },
   {
-    title: 'User Management',
+    menu_id: 'user-management',
+    title: SIDEBAR_TITLES.USER_MANAGEMENT,
     href: '/user-management',
     icon: CircleUsersStarIcon,
   },
   {
-    title: 'Company Management',
+    menu_id: 'company-management',
+    title: SIDEBAR_TITLES.COMPANY_MANAGEMENT,
     href: '/company-management',
     icon: Company,
   },
   {
-    title: 'Category Management',
+    menu_id: 'category-management',
+    title: SIDEBAR_TITLES.CATEGORY_MANAGEMENT,
     href: '/category-management',
     icon: Category,
   },
   {
-    title: 'Trade Management',
+    menu_id: 'trade-management',
+    title: SIDEBAR_TITLES.TRADE_MANAGEMENT,
     href: '/trade-management',
     icon: Trade,
   },
   {
-    title: 'Service Management',
+    menu_id: 'service-management',
+    title: SIDEBAR_TITLES.SERVICE_MANAGEMENT,
     href: '/service-management',
     icon: Service,
   },
   {
-    title: 'Material Management',
+    menu_id: 'material-management',
+    title: SIDEBAR_TITLES.MATERIAL_MANAGEMENT,
     href: '/material-management',
     icon: Material,
   },
   {
-    title: 'Tools Management',
+    menu_id: 'tools-management',
+    title: SIDEBAR_TITLES.TOOLS_MANAGEMENT,
     href: '/tools-management',
     icon: Tool,
   },

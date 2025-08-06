@@ -174,6 +174,10 @@ export const ACCESS_CONTROL_ACCORDIONS_DATA = [
     badgeLabel: 'Restricted',
     stripes: [
       {
+        title: 'Browse Job Setting',
+        description: 'View complete jobs list and access job details',
+      },
+      {
         title: 'Create & Modify Job Setting',
         description: 'Create new jobs and manage job details',
       },

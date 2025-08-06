@@ -2,7 +2,7 @@
 const nextConfig = {
   // 🚀 Enable strict checking (REMOVED ignore flags for production safety)
   eslint: {
-    dirs: ["app", "components", "lib", "hooks", "constants"], // Only lint these directories
+    dirs: ['app', 'components', 'lib', 'hooks', 'constants'], // Only lint these directories
     ignoreDuringBuilds: false, // Enable linting during builds
   },
   typescript: {
@@ -16,16 +16,16 @@ const nextConfig = {
 
   // 🚀 Security and performance headers
   poweredByHeader: false,
-  reactStrictMode: true,
+  reactStrictMode: false,
 
   // 🚀 Experimental features for enterprise
   experimental: {
-    optimizePackageImports: ["@radix-ui/react-icons", "lucide-react"],
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
     turbo: {
       rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
+        '*.svg': {
+          loaders: ['@svgr/webpack'],
+          as: '*.js',
         },
       },
     },
@@ -34,20 +34,20 @@ const nextConfig = {
   // 🚀 Build optimizations
   compiler: {
     removeConsole:
-      process.env.NODE_ENV === "production"
+      process.env.NODE_ENV === 'production'
         ? {
-            exclude: ["error", "warn"],
+            exclude: ['error', 'warn'],
           }
         : false,
   },
 
   // 🚀 Bundle analyzer setup (run with ANALYZE=true npm run build)
-  ...(process.env.ANALYZE === "true" && {
-    webpack: (config) => {
-      const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer");
+  ...(process.env.ANALYZE === 'true' && {
+    webpack: config => {
+      const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
       config.plugins.push(
         new BundleAnalyzerPlugin({
-          analyzerMode: "static",
+          analyzerMode: 'static',
           openAnalyzer: true,
         })
       );

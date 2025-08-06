@@ -1,5 +1,6 @@
 'use client';
 import { InfoCard } from '@/components/shared/cards/InfoCard';
+import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
@@ -7,11 +8,19 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS } from '@/constants/common';
+import {
+  ACTIONS,
+  CommonStatus,
+  PAGINATION,
+  STORAGE_KEYS,
+} from '@/constants/common';
+import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  extractApiSuccessMessage,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -41,9 +50,14 @@ const menuOptions: {
 ];
 
 export default function ServiceManagementPage() {
+  // Destructure constants for better readability
+  const { EDIT, DELETE } = ACTIONS;
+  const { ACTIVE } = CommonStatus;
+  const { MATERIALS_LIMIT } = PAGINATION; // Using MATERIALS_LIMIT as it's 32, same as services
+
   const [services, setServices] = useState<Service[]>([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(28);
+  const [limit] = useState(MATERIALS_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
@@ -60,15 +74,33 @@ export default function ServiceManagementPage() {
   // Get user permissions for services
   const userPermissions = getUserPermissionsFromStorage();
   const canEdit = userPermissions?.services?.edit;
+  const canViewServices = userPermissions?.services?.view;
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
+        // Get selected company from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        let companyId: string | undefined;
+        if (selectedCompany) {
+          try {
+            const parsedCompany = JSON.parse(selectedCompany);
+            companyId = parsedCompany.id; // UUID from localStorage
+          } catch {
+            companyId = undefined;
+          }
+        }
+
         const response = await apiService.fetchServices({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -83,8 +115,9 @@ export default function ServiceManagementPage() {
           }
           // If data is nested under data.data
           else if (servicesData.data && Array.isArray(servicesData.data)) {
-            newServices = servicesData.data;
-            total = servicesData.total || servicesData.data.length;
+            const { data: nestedData, total: totalCount } = servicesData;
+            newServices = nestedData;
+            total = totalCount || nestedData.length;
           }
           // If data is just the response itself (fallback)
           else if (Array.isArray(servicesData)) {
@@ -128,13 +161,15 @@ export default function ServiceManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of services
-  useEffect(() => {
+  // Handle company changes
+  const refetchServices = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setServices([]);
     fetchServices(1, false);
   }, [fetchServices]);
+
+  useCompanyChange(refetchServices);
 
   // Infinite scroll
   useEffect(() => {
@@ -158,14 +193,35 @@ export default function ServiceManagementPage() {
     const service = services[idx];
     if (!service) return;
 
-    if (action === 'edit') {
+    if (action === EDIT) {
       setEditingServiceUuid(service.uuid);
       setSideSheetOpen(true);
     }
-    if (action === 'delete') {
+    if (action === DELETE) {
       setDeleteIdx(idx);
       setDeleteServiceName(service.name || '');
       setModalOpen(true);
+    }
+  };
+
+  // Handler for deleting a service
+  const handleDeleteService = async (uuid: string) => {
+    try {
+      const response = await apiService.deleteService(uuid);
+      setServices(prev => prev.filter(service => service.uuid !== uuid));
+      showSuccessToast(
+        extractApiSuccessMessage(response, SERVICE_MESSAGES.DELETE_SUCCESS)
+      );
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+      const message = extractApiErrorMessage(
+        err,
+        SERVICE_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -173,17 +229,7 @@ export default function ServiceManagementPage() {
     if (deleteIdx !== null) {
       const service = services[deleteIdx];
       if (service) {
-        try {
-          const { message } = await apiService.deleteService(service.uuid);
-          showSuccessToast(message || SERVICE_MESSAGES.DELETE_SUCCESS);
-          // Remove the service from local state instead of fetching again
-          setServices(prevServices =>
-            prevServices.filter((_, index) => index !== deleteIdx)
-          );
-        } catch (error) {
-          console.error('Failed to delete service:', error);
-          showErrorToast(SERVICE_MESSAGES.DELETE_ERROR);
-        }
+        await handleDeleteService(service.uuid);
       }
       setDeleteIdx(null);
       setModalOpen(false);
@@ -195,27 +241,42 @@ export default function ServiceManagementPage() {
     trades: string;
     serviceData?: Service;
   }) => {
+    const { serviceName, trades, serviceData } = data;
+
+    // Get selected company from localStorage
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    let companyId: string | undefined;
+    if (selectedCompany) {
+      try {
+        const parsedCompany = JSON.parse(selectedCompany);
+        companyId = parsedCompany.id; // UUID from localStorage
+      } catch {
+        // Silently fail if company data is invalid
+      }
+    }
+
     // Use the actual service data from API response if available
-    if (data.serviceData) {
+    if (serviceData) {
       // Add the new service to the beginning of the services list
-      setServices(prevServices => [data.serviceData!, ...prevServices]);
+      setServices(prevServices => [serviceData, ...prevServices]);
     } else {
       // Fallback: Create a new service object to add to local state
       const newService: Service = {
         id: Date.now(), // Temporary ID for local state
         uuid: `temp-${Date.now()}`, // Temporary UUID
-        name: data.serviceName,
+        name: serviceName,
         description: '',
         is_default: false,
         is_active: true,
-        status: 'ACTIVE',
+        status: ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        trades: data.trades.split(', ').map(trade => ({
+        trades: trades.split(', ').map(trade => ({
           id: Date.now(),
           name: trade.trim(),
-          status: 'ACTIVE',
+          status: ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new service to the beginning of the services list
@@ -228,12 +289,14 @@ export default function ServiceManagementPage() {
     trades: string;
     serviceData?: Service;
   }) => {
+    const { serviceName, trades, serviceData } = data;
+
     // Use the actual service data from API response if available
-    if (data.serviceData) {
+    if (serviceData) {
       // Update the service in local state with the actual API response data
       setServices(prevServices =>
         prevServices.map(service =>
-          service.uuid === editingServiceUuid ? data.serviceData! : service
+          service.uuid === editingServiceUuid ? serviceData : service
         )
       );
     } else {
@@ -243,11 +306,11 @@ export default function ServiceManagementPage() {
           service.uuid === editingServiceUuid
             ? {
                 ...service,
-                name: data.serviceName,
-                trades: data.trades.split(', ').map(trade => ({
+                name: serviceName,
+                trades: trades.split(', ').map(trade => ({
                   id: Date.now(),
                   name: trade.trim(),
-                  status: 'ACTIVE',
+                  status: ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -257,8 +320,19 @@ export default function ServiceManagementPage() {
     }
   };
 
+  // Check if user has permission to view services
+  if (userPermissions && !canViewServices) {
+    return (
+      <AccessDenied
+        title={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_TITLE}
+        message={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_MESSAGE}
+        redirectText={ACCESS_DENIED_MESSAGES.SERVICE_DETAILS_REDIRECT_TEXT}
+      />
+    );
+  }
+
   return (
-    <div className='w-full overflow-y-auto'>
+    <div className='w-full'>
       {/* Header */}
       <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
         <div className='flex items-center justify-between w-full'>
@@ -268,10 +342,10 @@ export default function ServiceManagementPage() {
           {canEdit && (
             <div className='flex justify-end'>
               <Button
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full'
+                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 onClick={() => setSideSheetOpen(true)}
               >
-                <Add size='20' color='#fff' className='sm:hidden' />
+                <Add size='24' color='#fff' className='sm:hidden' />
                 <span className='hidden sm:inline'>
                   {SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
                 </span>
@@ -297,16 +371,19 @@ export default function ServiceManagementPage() {
             />
           </div>
         ) : (
-          services.map((service, idx) => (
-            <InfoCard
-              key={service.uuid}
-              tradeName={service.name || ''}
-              category={`${service.trades?.length || 0} Trade${(service.trades?.length || 0) !== 1 ? 's' : ''}`}
-              menuOptions={menuOptions}
-              onMenuAction={action => handleMenuAction(action, idx)}
-              module='services'
-            />
-          ))
+          services.map((service, idx) => {
+            const { uuid, name, trades } = service;
+            return (
+              <InfoCard
+                key={uuid}
+                tradeName={name || ''}
+                category={`${trades?.length || 0} Trade${(trades?.length || 0) !== 1 ? 's' : ''}`}
+                menuOptions={menuOptions}
+                onMenuAction={action => handleMenuAction(action, idx)}
+                module='services'
+              />
+            );
+          })
         )}
       </div>
 

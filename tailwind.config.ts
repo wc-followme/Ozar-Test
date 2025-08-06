@@ -159,6 +159,10 @@ const config: Config = {
           },
         },
       },
+      boxShadow: {
+        custom: '0px 2px 8px 0px #0000001A',
+        'card-hover': 'rgba(0, 0, 0, 0.1) 0px 10px 50px',
+      },
     },
   },
   plugins: [
@@ -175,10 +179,10 @@ const config: Config = {
           },
           // Custom grid-cols utilities
           '.grid-cols-autofit': {
-            gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(255px, 1fr))',
           },
           '.grid-cols-autofit-xl': {
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
           },
         },
         {

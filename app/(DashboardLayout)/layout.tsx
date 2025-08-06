@@ -1,5 +1,7 @@
 import { Header } from '@/components/layout/Header';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { PermissionAwareSidebar } from '@/components/layout/PermissionAwareSidebar';
+import { SideToolbarWrapper } from '@/components/layout/SideToolbarWrapper';
+import { PermissionProvider } from '@/lib/permission-context';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type React from 'react';
@@ -20,14 +22,19 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className='flex bg-[var(--white-background)] min-h-screen'>
-      <Sidebar />
-      <div className='flex flex-col flex-1'>
-        <Header />
-        <main className='rounded-t-[30px] p-4 md:p-6 bg-[var(--background)] flex-1'>
-          {children}
-        </main>
+    <PermissionProvider>
+      <div className='flex bg-[var(--white-background)] min-h-screen'>
+        <PermissionAwareSidebar />
+        <div className='flex flex-col flex-1'>
+          <Header />
+          <div className='flex flex-1'>
+            <main className='rounded-t-[30px] p-4 md:p-6 md:pb-0 bg-[var(--background)] flex-1 min-h-[calc(100dvh_-_80px)]'>
+              {children}
+            </main>
+            <SideToolbarWrapper />
+          </div>
+        </div>
       </div>
-    </div>
+    </PermissionProvider>
   );
 }

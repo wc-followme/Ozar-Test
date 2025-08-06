@@ -11,6 +11,7 @@ export interface Service {
   status: 'ACTIVE' | 'INACTIVE';
   created_at: string;
   updated_at: string;
+  company_id?: string;
   trades: Array<{
     id: number | string;
     name: string;
@@ -68,6 +69,7 @@ export interface FetchServicesParams {
   is_active?: boolean;
   status?: string;
   trade_id?: string | number;
+  company_id?: string;
 }
 
 // Props interface for service form component

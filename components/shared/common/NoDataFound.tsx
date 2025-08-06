@@ -11,7 +11,7 @@ interface NoDataFoundProps {
 
 const NoDataFound: React.FC<NoDataFoundProps> = ({
   title = 'Nothing Here Yet',
-  description = "You haven't created any items yet. Start by adding your first one.",
+  description = 'You haven&apos;t created any items yet. Start by adding your first one.',
   buttonText = 'Create',
   onButtonClick,
   showButton = true,

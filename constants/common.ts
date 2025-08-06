@@ -5,6 +5,22 @@ export const PAGINATION = {
   DEFAULT_LIMIT: 10, // Standard limit for most listing pages
   USERS_LIMIT: 20, // Higher limit for user listing to improve infinite scroll UX
   ROLES_DROPDOWN_LIMIT: 50, // Higher limit for role dropdowns to get complete lists
+  TOOLS_LIMIT: 28, // Limit for tools management
+  CATEGORIES_LIMIT: 16, // Limit for category management
+  MATERIALS_LIMIT: 32, // Limit for material management
+  ROLES_LIMIT: 12, // Limit for role management
+  COMPANY_LIMIT: 8, // Limit for company management
+  JOBS_LIMIT: 8, // Limit for job management
+  TRADES_LIMIT: 32, // Limit for trade management
+} as const;
+
+// Role IDs for role-based access control
+export const ROLE_IDS = {
+  ADMIN: 1,
+  CONTRACTOR: 2,
+  EMPLOYEE: 3,
+  HOMEOWNER: 4,
+  VENDOR: 5,
 } as const;
 
 // General App Constants
@@ -21,6 +37,20 @@ export const ROUTES = {
   HOME_OWNER: '/home-owner',
   JOB_MANAGEMENT: '/job-management',
   DASHBOARD: '/',
+  COMPANY_MANAGEMENT: '/company-management',
+  ADD_COMPANY: '/company-management/add-company',
+  COMPANY_DETAILS: '/company-management/company-details',
+  ADD_USER: '/company-management/add-user',
+  TOOLS_MANAGEMENT: '/tools-management',
+  USER_MANAGEMENT: '/user-management',
+  CREATE_USER: '/user-management/create-user',
+  ROLE_MANAGEMENT: '/role-management',
+  CREATE_ROLE: '/role-management/create-role',
+  EDIT_ROLE: '/role-management/edit-role',
+  CATEGORY_MANAGEMENT: '/category-management',
+  MATERIAL_MANAGEMENT: '/material-management',
+  SERVICE_MANAGEMENT: '/service-management',
+  TRADE_MANAGEMENT: '/trade-management',
 } as const;
 
 // Action constants for menu options and permissions
@@ -33,6 +63,20 @@ export const ACTIONS = {
   CUSTOMIZE: 'customize',
   ASSIGN_USER: 'assign_user',
   HISTORY: 'history',
+  COMPLETED: 'completed',
+} as const;
+
+// Menu labels for different categories
+export const CATEGORY_MESSAGES = {
+  EDIT_MENU: 'Edit',
+  DELETE_MENU: 'Delete',
+  COMPLETED_MENU: 'Completed',
+  ARCHIVE_MENU: 'Archive',
+  VIEW_MENU: 'View',
+  CREATE_MENU: 'Create',
+  CUSTOMIZE_MENU: 'Customize',
+  ASSIGN_USER_MENU: 'Assign User',
+  HISTORY_MENU: 'History',
 } as const;
 
 // Country codes and phone number related constants
@@ -188,12 +232,6 @@ export const JOB_TYPE = {
 
 export type JobType = (typeof JOB_TYPE)[keyof typeof JOB_TYPE];
 
-// ROLE_ID is the ID of the role in the database
-export const ROLE_ID = {
-  JOB_USER: 5,
-  CONTRACTOR: 3,
-} as const;
-
 export enum CommonStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
@@ -215,7 +253,143 @@ export enum JobFilterType {
   ONGOING = 'ONGOING',
 }
 
+// Job Management Tab Values
+export const JOB_TABS = {
+  NEW_LEADS: 'newLeads',
+  INFO: 'info',
+  ONGOING_JOB: 'ongoingJob',
+  WAITING_ON_CLIENT: 'waitingOnClient',
+  ARCHIVE: 'archive',
+  CLOSED: 'closed',
+} as const;
+
+// Appointment form constants
+export const APPOINTMENT_MESSAGES = {
+  AGENDA_LABEL: 'Agenda',
+  AGENDA_PLACEHOLDER: 'Enter Title',
+  AGENDA_REQUIRED: 'Agenda is required',
+
+  EMPLOYEES_LABEL: 'Select Employees',
+  EMPLOYEES_PLACEHOLDER: 'Select employees',
+  EMPLOYEES_REQUIRED: 'At least one employee is required',
+
+  APPOINTMENT_WITH_LABEL: 'Appointment with',
+  APPOINTMENT_WITH_PLACEHOLDER: 'Enter Name',
+  APPOINTMENT_WITH_REQUIRED: 'Appointment with is required',
+
+  DATE_LABEL: 'Date',
+  DATE_PLACEHOLDER: 'Select Date',
+  DATE_REQUIRED: 'Date is required',
+
+  STARTS_LABEL: 'Starts',
+  STARTS_PLACEHOLDER: 'Select Time',
+  STARTS_REQUIRED: 'Start time is required',
+
+  ENDS_LABEL: 'Ends',
+  ENDS_PLACEHOLDER: 'Select Time',
+  ENDS_REQUIRED: 'End time is required',
+
+  ADDRESS_LABEL: 'Address',
+  ADDRESS_PLACEHOLDER: 'Enter Address',
+  ADDRESS_REQUIRED: 'Address is required',
+
+  NOTES_LABEL: 'Notes',
+  NOTES_PLACEHOLDER: 'Enter Notes',
+
+  CANCEL_BUTTON: 'Cancel',
+  SAVE_BUTTON: 'Save',
+  SAVING_BUTTON: 'Saving...',
+} as const;
+
+// Mock employees data
+export const MOCK_EMPLOYEES = [
+  {
+    value: '1',
+    label: 'John Doe',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '2',
+    label: 'Jane Smith',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '3',
+    label: 'Mike Johnson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '4',
+    label: 'Sarah Wilson',
+    image: '/images/profile.jpg',
+  },
+  {
+    value: '5',
+    label: 'David Brown',
+    image: '/images/profile.jpg',
+  },
+];
+
+// Todo form constants
+export const TODO_MESSAGES = {
+  JOB_LABEL: 'Job',
+  JOB_PLACEHOLDER: 'Select Job',
+  JOB_REQUIRED: 'Job is required',
+
+  DATE_LABEL: 'Date',
+  DATE_PLACEHOLDER: 'Select Date',
+  DATE_REQUIRED: 'Date is required',
+
+  EMPLOYEES_LABEL: 'Select Employees',
+  EMPLOYEES_PLACEHOLDER: 'Select employees',
+  EMPLOYEES_REQUIRED: 'At least one employee must be selected',
+
+  TITLE_LABEL: 'Title',
+  TITLE_PLACEHOLDER: 'Enter Title',
+  TITLE_REQUIRED: 'Title is required',
+
+  LIST_ITEM_LABEL: 'List Item',
+  LIST_ITEM_PLACEHOLDER: 'Enter Item',
+  LIST_ITEM_REQUIRED: 'List item cannot be empty',
+  LIST_ITEMS_REQUIRED: 'At least one list item is required',
+
+  ADD_ANOTHER_BUTTON: '+ Add Another',
+
+  CANCEL_BUTTON: 'Cancel',
+  SAVE_BUTTON: 'Save',
+  SAVING_BUTTON: 'Saving...',
+
+  EDIT_TODO_TITLE: 'Edit Todo',
+  JOB_NAME_PLACEHOLDER: 'Job Name Here',
+} as const;
+
+// Mock jobs data
+export const MOCK_JOBS = [
+  { value: 'job-1', label: 'Kitchen Renovation' },
+  { value: 'job-2', label: 'Bathroom Remodel' },
+  { value: 'job-3', label: 'Living Room Painting' },
+];
+
 // Future constants can be added here
 // export const OTHER_CONSTANTS = {
 //   // Add new constants as needed
 // } as const;
+
+// Local Storage Keys
+export const STORAGE_KEYS = {
+  SELECTED_COMPANY: 'selected_company',
+  IS_AUTHENTICATED: 'isAuthenticated',
+  USER: 'user',
+  AUTH_TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'refresh_token',
+  DEVICE_ID: 'device_id',
+  USER_PERMISSIONS: 'user_permissions',
+  // Cookie keys (different from localStorage keys)
+  USER_DATA: 'user_data',
+  IS_AUTHENTICATED_COOKIE: 'is_authenticated',
+} as const;
+
+export const CUSTOM_EVENTS = {
+  COMPANY_CHANGED: 'company-changed',
+  STORAGE: 'storage',
+} as const;

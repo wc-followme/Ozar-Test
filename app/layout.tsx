@@ -1,3 +1,4 @@
+import ScrollToTop from '@/components/shared/common/ScrollToTop';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/lib/auth-context';
@@ -30,7 +31,10 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <ScrollToTop />
+            {children}
+          </AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>

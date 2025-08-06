@@ -8,6 +8,7 @@ export interface Role {
   icon: string;
   status: 'ACTIVE' | 'INACTIVE';
   total_permissions?: number;
+  is_default?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +29,7 @@ export interface CreateRoleRequest {
   description: string;
   icon: string;
   status?: 'ACTIVE' | 'INACTIVE';
+  company_id?: string | number;
 }
 
 export interface UpdateRoleRequest {
@@ -71,4 +73,5 @@ export interface FetchRolesParams {
   search?: string;
   name?: string;
   status?: 'ACTIVE' | 'INACTIVE' | '';
+  company_id?: string | number;
 }

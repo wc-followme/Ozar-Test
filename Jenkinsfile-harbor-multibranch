@@ -6,18 +6,18 @@ def project = 'envision-development'
 
 // Define file paths - required when configFiles is used
 def filePaths = [
-    dev: "file:///home/ubuntu/env/envision-development/web"
+    qa: "file:///home/ubuntu/env/envision-development/web"
 ]
 
 // Branch definitions with mixed configuration approaches and branch-specific website_url where applicable
 def branch_definitions = [
-    'development': [
+    'qa': [
         // Simple array of strings for standard files
         configFiles: [
-            "${filePaths.dev}/.env"
+            "${filePaths.qa}/.env"
         ],
         agent         : 'wdcs-arm64-agent',
-        imageName     : "dev-${componentName}",
+        imageName     : "qa-${componentName}",
         namespace     : 'dev',
         deployment    : 'envision-development-web',
         hostIP        : '43.204.64.131',
