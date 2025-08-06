@@ -66,7 +66,7 @@ export default function EstimationItemsAccordion({
                 </h3>
               </div>
               <Button
-                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)]'
+                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
                 onClick={e => {
                   e.stopPropagation();
                   onAddItem();

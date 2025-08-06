@@ -592,7 +592,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
           <TabsContent value='about' className='py-4 md:py-6'>
             {/* About Section */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-borderlightgray p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-2'>
                 {COMPANY_MESSAGES.ABOUT_LABEL}
               </div>
@@ -601,7 +601,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               </div>
             </div>
             {/* Contact Info Row */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-borderlightgray p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-sm'>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>
