@@ -28,16 +28,40 @@ import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
 
-// Validation schema
+// Validation schema with enhanced validation
 const todoFormSchema = yup.object({
-  job: yup.string().required(TODO_MESSAGES.JOB_REQUIRED),
-  date: yup.date().required(TODO_MESSAGES.DATE_REQUIRED),
-  employees: yup.array().min(1, TODO_MESSAGES.EMPLOYEES_REQUIRED).default([]),
-  title: yup.string().required(TODO_MESSAGES.TITLE_REQUIRED),
+  job: yup
+    .string()
+    .required(TODO_MESSAGES.JOB_REQUIRED)
+    .trim()
+    .min(1, TODO_MESSAGES.JOB_REQUIRED),
+  date: yup
+    .date()
+    .required(TODO_MESSAGES.DATE_REQUIRED)
+    .min(new Date(), 'Date cannot be in the past'),
+  employees: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, TODO_MESSAGES.EMPLOYEES_REQUIRED)
+    .default([]),
+  title: yup
+    .string()
+    .required(TODO_MESSAGES.TITLE_REQUIRED)
+    .trim()
+    .min(3, 'Title must be at least 3 characters')
+    .max(100, 'Title must be less than 100 characters'),
   listItems: yup
     .array()
-    .of(yup.string().required(TODO_MESSAGES.LIST_ITEM_REQUIRED))
+    .of(
+      yup
+        .string()
+        .required(TODO_MESSAGES.LIST_ITEM_REQUIRED)
+        .trim()
+        .min(1, TODO_MESSAGES.LIST_ITEM_REQUIRED)
+        .max(500, 'List item must be less than 500 characters')
+    )
     .min(1, TODO_MESSAGES.LIST_ITEMS_REQUIRED)
+    .max(20, 'Maximum 20 list items allowed')
     .default(['']),
 });
 
@@ -83,6 +107,8 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   const [jobsLoading, setJobsLoading] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     control,
@@ -229,9 +255,44 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     }
   };
 
-  const handleFormSubmit = (data: TodoFormData) => {
-    data.employees = selectedEmployees;
-    onSubmit(data);
+  const handleFormSubmit = async (data: TodoFormData) => {
+    setSubmitLoading(true);
+    setSubmitError(null);
+
+    try {
+      // Prepare the payload for the API
+      const payload = {
+        job_uuid: data.job,
+        title: data.title,
+        date: format(data.date, 'yyyy-MM-dd'),
+        user_uuids: selectedEmployees,
+        items: data.listItems
+          .filter(item => item.trim() !== '') // Remove empty items
+          .map(item => ({ description: item.trim() })),
+      };
+
+      console.log('Submitting todo list with payload:', payload);
+
+      // Call the API
+      const response = await apiService.createTodoList(payload);
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        console.log('Todo list created successfully:', response);
+        // Call the original onSubmit with the form data
+        data.employees = selectedEmployees;
+        onSubmit(data);
+      } else {
+        console.error('Failed to create todo list:', response);
+        setSubmitError(response.message || 'Failed to create todo list');
+      }
+    } catch (error) {
+      console.error('Error creating todo list:', error);
+      setSubmitError(
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const handleEmployeeChange = (employees: string[]) => {
@@ -387,7 +448,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     ? '!border-[var(--warning)]'
                     : 'border-[var(--border-dark)]'
                 )}
-                disabled={loading}
+                disabled={loading || submitLoading}
               />
             )}
           />
@@ -427,7 +488,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                           ? '!border-[var(--warning)]'
                           : 'border-[var(--border-dark)]'
                       )}
-                      disabled={loading}
+                      disabled={loading || submitLoading}
                     />
                   )}
                 />
@@ -446,22 +507,31 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           <FormErrorMessage message={errors.listItems?.message || ''} />
         </div>
 
+        {/* Error Display */}
+        {submitError && (
+          <div className='p-3 bg-red-50 border border-red-200 rounded-md'>
+            <p className='text-red-600 text-sm'>{submitError}</p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className='pt-4 flex items-center gap-3'>
           <Button
             type='button'
             className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             onClick={onCancel}
-            disabled={loading}
+            disabled={loading || submitLoading}
           >
             {TODO_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
-            disabled={loading}
+            disabled={loading || submitLoading}
           >
-            {loading ? TODO_MESSAGES.SAVING_BUTTON : TODO_MESSAGES.SAVE_BUTTON}
+            {submitLoading
+              ? TODO_MESSAGES.SAVING_BUTTON
+              : TODO_MESSAGES.SAVE_BUTTON}
           </Button>
         </div>
       </form>

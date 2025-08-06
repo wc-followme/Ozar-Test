@@ -1713,6 +1713,24 @@ class ApiService {
     });
   }
 
+  // Create todo list
+  async createTodoList(payload: {
+    job_uuid: string;
+    title: string;
+    date: string;
+    user_uuids: string[];
+    items: Array<{ description: string }>;
+  }): Promise<any> {
+    return this.makeRequest('/todo-lists', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Removed testConnection and all debug code
 }
 
