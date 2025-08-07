@@ -67,6 +67,7 @@ interface Appointment {
   created_at: string;
   updated_at: string;
   status: string;
+  is_completed: boolean;
   creator: {
     id: number;
     uuid: string;
@@ -233,7 +234,9 @@ export const AppointmentsComponent = forwardRef<
     }> = [
       {
         id: 'completed',
-        label: CATEGORY_MESSAGES.COMPLETED_MENU,
+        label: appointment.is_completed
+          ? 'Mark as Incomplete'
+          : CATEGORY_MESSAGES.COMPLETED_MENU,
         icon: TickCircle,
         action: ACTIONS.COMPLETED,
       },
@@ -456,26 +459,41 @@ export const AppointmentsComponent = forwardRef<
 
   const handleMarkAsCompleted = async (appointmentUuid: string) => {
     try {
+      // Find the appointment to get its current completion status
+      const appointment = appointments.find(
+        app => app.uuid === appointmentUuid
+      );
+      if (!appointment) {
+        showErrorToast('Appointment not found');
+        return;
+      }
+
+      // Toggle the completion status
+      const newCompletionStatus = !appointment.is_completed;
+
       const response = await apiService.markAppointmentCompleted(
         appointmentUuid,
-        true
+        newCompletionStatus
       );
       if (response.statusCode === 200 || response.statusCode === 201) {
         showSuccessToast(
-          extractApiSuccessMessage(response, 'Appointment marked as completed')
+          extractApiSuccessMessage(
+            response,
+            `Appointment ${newCompletionStatus ? 'marked as completed' : 'marked as incomplete'} successfully`
+          )
         );
         // Refresh the appointments list
         fetchAppointments();
       } else {
         showErrorToast(
-          response.message || 'Failed to mark appointment as completed'
+          response.message || 'Failed to update appointment completion status'
         );
       }
     } catch (error) {
-      console.error('Error marking appointment as completed:', error);
+      console.error('Error updating appointment completion status:', error);
       const message = extractApiErrorMessage(
         error,
-        'Failed to mark appointment as completed'
+        'Failed to update appointment completion status'
       );
       showErrorToast(message);
     }
@@ -525,7 +543,7 @@ export const AppointmentsComponent = forwardRef<
             end_time,
             address,
             notes,
-            completionPercentage,
+            is_completed,
             created_by,
             creator,
           }) => {
@@ -544,9 +562,9 @@ export const AppointmentsComponent = forwardRef<
                       <span className='text-xs font-medium text-[var(--text-secondary)]'>
                         {formatDateDisplay(date)}
                       </span>
-                      {completionPercentage > 0 && (
+                      {is_completed && (
                         <span className='text-xs font-medium text-green-600'>
-                          {completionPercentage}% Complete
+                          Complete
                         </span>
                       )}
                     </div>
@@ -574,6 +592,7 @@ export const AppointmentsComponent = forwardRef<
                       created_at: '',
                       updated_at: '',
                       status: '',
+                      is_completed,
                       creator,
                       employees: [],
                       completions: [],
