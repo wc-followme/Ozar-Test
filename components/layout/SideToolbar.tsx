@@ -1,5 +1,8 @@
 'use client';
-import { AppointmentsComponent } from '@/components/shared/common/AppointmentsComponent';
+import {
+  AppointmentsComponent,
+  AppointmentsComponentRef,
+} from '@/components/shared/common/AppointmentsComponent';
 import { MaterialChecklistComponent } from '@/components/shared/common/MaterialChecklistComponent';
 import SideSheet from '@/components/shared/common/SideSheet';
 import {
@@ -98,6 +101,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   const [showTodoForm, setShowTodoForm] = useState(false);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const todoComponentRef = useRef<TodoComponentRef>(null);
+  const appointmentsComponentRef = useRef<AppointmentsComponentRef>(null);
   const { isOpen, setIsOpen } = useSideToolbar();
   const { showSuccessToast, showErrorToast } = useToast();
 
@@ -192,6 +196,8 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
           extractApiSuccessMessage(response, 'Appointment created successfully')
         );
         setShowAppointmentForm(false);
+        // Refresh appointments list
+        appointmentsComponentRef.current?.refreshAppointments();
       } else {
         console.error(
           'SideToolbar - Failed to create appointment:',
@@ -259,7 +265,9 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                           <TodoComponent ref={todoComponentRef} />
                         )}
                         {activeItem === 'appointmentList' && (
-                          <AppointmentsComponent />
+                          <AppointmentsComponent
+                            ref={appointmentsComponentRef}
+                          />
                         )}
                         {activeItem === 'toolChecklist' && (
                           <ToolsChecklistComponent />

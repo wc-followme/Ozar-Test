@@ -8,7 +8,7 @@ import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import Dropdown from '../common/Dropdown';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -95,9 +95,14 @@ interface AppointmentsComponentProps {
   className?: string;
 }
 
-export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
-  className,
-}) => {
+export interface AppointmentsComponentRef {
+  refreshAppointments: () => void;
+}
+
+export const AppointmentsComponent = forwardRef<
+  AppointmentsComponentRef,
+  AppointmentsComponentProps
+>(({ className }, ref) => {
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(
     null
   );
@@ -114,6 +119,11 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     useState<Appointment | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const { showSuccessToast, showErrorToast } = useToast();
+
+  // Expose refresh method to parent components
+  useImperativeHandle(ref, () => ({
+    refreshAppointments: fetchAppointments,
+  }));
 
   // Fetch appointments function
   const fetchAppointments = async () => {
@@ -598,4 +608,4 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
       />
     </div>
   );
-};
+});

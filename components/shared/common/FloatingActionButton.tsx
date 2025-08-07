@@ -14,7 +14,10 @@ import { Button } from '../../ui/button';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { CreateJobForm } from '../forms/CreateJobForm';
 import { TodoForm } from '../forms/TodoForm';
-import { AppointmentsComponent } from './AppointmentsComponent';
+import {
+  AppointmentsComponent,
+  AppointmentsComponentRef,
+} from './AppointmentsComponent';
 import { MaterialChecklistComponent } from './MaterialChecklistComponent';
 import SideSheet from './SideSheet';
 import { TodoComponent, TodoComponentRef } from './TodoComponent';
@@ -55,6 +58,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const [showJobSheet, setShowJobSheet] = useState(false);
   const todoComponentRef = useRef<TodoComponentRef>(null);
+  const appointmentsComponentRef = useRef<AppointmentsComponentRef>(null);
   const { showSuccessToast, showErrorToast } = useToast();
 
   const items = externalToolbarItems || toolbarItems;
@@ -162,6 +166,8 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
           extractApiSuccessMessage(response, 'Appointment created successfully')
         );
         setShowAppointmentForm(false);
+        // Refresh appointments list
+        appointmentsComponentRef.current?.refreshAppointments();
       } else {
         console.error(
           'FloatingActionButton - Failed to create appointment:',
@@ -305,7 +311,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
                 {activeItem === 'todoList' && (
                   <TodoComponent ref={todoComponentRef} />
                 )}
-                {activeItem === 'appointmentList' && <AppointmentsComponent />}
+                {activeItem === 'appointmentList' && (
+                  <AppointmentsComponent ref={appointmentsComponentRef} />
+                )}
                 {activeItem === 'toolChecklist' && <ToolsChecklistComponent />}
                 {activeItem === 'materialChecklist' && (
                   <MaterialChecklistComponent />
