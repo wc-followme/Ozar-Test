@@ -3,6 +3,7 @@
 import { useToast } from '@/components/ui/use-toast';
 import { TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { Edit2 } from 'iconsax-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
@@ -45,6 +46,7 @@ interface TodoList {
   status: string;
   created_at: string;
   updated_at: string;
+  created_by: number;
   project_name: string;
   items: TodoItem[];
   employees: TodoEmployee[];
@@ -80,6 +82,7 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
     );
     const [editLoading, setEditLoading] = useState(false);
     const { showSuccessToast, showErrorToast } = useToast();
+    const { user } = useAuth();
 
     // Fetch todo lists function
     const fetchTodoLists = async () => {
@@ -420,16 +423,18 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
                       {todo.title}
                     </p>
                   </div>
-                  <button
-                    onClick={() => handleEditSection(sectionId)}
-                    className='p-1 hover:bg-gray-100 rounded transition-colors'
-                  >
-                    <Edit2
-                      size={20}
-                      color='var(--text-dark)'
-                      className='text-gray-500'
-                    />
-                  </button>
+                  {user && todo.created_by === user.id && (
+                    <button
+                      onClick={() => handleEditSection(sectionId)}
+                      className='p-1 hover:bg-gray-100 rounded transition-colors'
+                    >
+                      <Edit2
+                        size={20}
+                        color='var(--text-dark)'
+                        className='text-gray-500'
+                      />
+                    </button>
+                  )}
                 </div>
 
                 {/* Todo Items */}
