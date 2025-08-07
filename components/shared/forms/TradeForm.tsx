@@ -6,9 +6,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { tradeFormSchema, TradeFormSchema } from '@/lib/validations/trade';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -43,19 +42,8 @@ export default function TradeForm({
       try {
         setLoadingCategories(true);
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const response = await apiService.getCategoriesDropdown({
           ...(companyId ? { company_id: companyId } : {}),
@@ -105,19 +93,8 @@ export default function TradeForm({
   const onFormSubmit = async (data: TradeFormSchema) => {
     const { tradeName, categories } = data;
     try {
-      // Get selected company from localStorage
-      const selectedCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      let companyId: string | undefined;
-      if (selectedCompany) {
-        try {
-          const parsedCompany = JSON.parse(selectedCompany);
-          companyId = parsedCompany.id; // UUID from localStorage
-        } catch (error) {
-          console.error('Error parsing selected company:', error);
-        }
-      }
+      // Get selected company ID using global utility function
+      const companyId = getCompanyId();
 
       const payload = {
         name: tradeName,

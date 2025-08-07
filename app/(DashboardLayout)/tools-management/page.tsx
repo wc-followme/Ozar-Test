@@ -7,13 +7,14 @@ import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION, STORAGE_KEYS } from '@/constants/common';
+import { ACTIONS, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -24,6 +25,7 @@ import { TOOL_MESSAGES } from './tool-messages';
 export default function ToolsManagement() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState<string>('');
@@ -81,19 +83,8 @@ export default function ToolsManagement() {
       }
 
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
 
         const response = await apiService.fetchTools({
           page: targetPage,
@@ -281,19 +272,8 @@ export default function ToolsManagement() {
 
     setFormLoading(true);
     try {
-      // Get selected company from localStorage
-      const selectedCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      let companyId: string | undefined;
-      if (selectedCompany) {
-        try {
-          const parsedCompany = JSON.parse(selectedCompany);
-          companyId = parsedCompany.id; // UUID from localStorage
-        } catch {
-          companyId = undefined;
-        }
-      }
+      // Get selected company ID using common function
+      const companyId = getCompanyId();
 
       const payload: CreateToolRequest = {
         name,

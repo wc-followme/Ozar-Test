@@ -1587,6 +1587,7 @@ class ApiService {
     status?: string;
     type?: string;
     job_status?: string;
+    company_id?: string | number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -1594,6 +1595,8 @@ class ApiService {
     if (params?.status) queryParams.append('status', params.status);
     if (params?.type) queryParams.append('type', params.type);
     if (params?.job_status) queryParams.append('job_status', params.job_status);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -1634,8 +1637,19 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
-  async fetchJobStatistics(): Promise<any> {
-    return this.makeRequest('/jobs/statistics', {
+  async fetchJobStatistics(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/jobs/statistics?${queryParams.toString()}`
+      : '/jobs/statistics';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
