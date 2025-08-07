@@ -164,6 +164,25 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     }
   };
 
+  // Helper function to convert 24-hour format to 12-hour AM/PM format
+  const formatTimeDisplay = (timeString: string) => {
+    try {
+      // Remove seconds if present (e.g., "09:30:00" -> "09:30")
+      const timeWithoutSeconds = timeString.split(':').slice(0, 2).join(':');
+      const [hours, minutes] = timeWithoutSeconds.split(':');
+
+      if (!hours || !minutes) return timeString;
+
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+      return `${displayHour}:${minutes} ${ampm}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
+
   const handleAppointmentClick = (appointmentId: string) => {
     setExpandedAppointment(
       expandedAppointment === appointmentId ? null : appointmentId
@@ -383,7 +402,8 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                       {agenda}
                     </h3>
                     <p className='text-sm text-[var(--text-dark)]'>
-                      {start_time} - {end_time}
+                      {formatTimeDisplay(start_time)} -{' '}
+                      {formatTimeDisplay(end_time)}
                     </p>
                   </div>
                   <Dropdown
@@ -418,6 +438,29 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                           </p>
                           <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
                             {appointment_with}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Date
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {formatDateDisplay(date)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Time */}
+                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Time
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {formatTimeDisplay(start_time)} -{' '}
+                            {formatTimeDisplay(end_time)}
                           </p>
                         </div>
                         <div>
