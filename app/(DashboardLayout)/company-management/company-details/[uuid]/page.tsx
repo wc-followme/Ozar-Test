@@ -15,7 +15,6 @@ import {
   PAGINATION,
   ROLE_IDS,
   ROUTES,
-  STORAGE_KEYS,
 } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
@@ -29,6 +28,7 @@ import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
   formatDate,
+  getCurrentUser,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
@@ -204,21 +204,14 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
 
-        // Get current user data from localStorage to determine admin role ID
-        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        // Get current user data using global utility function
+        const userData = getCurrentUser();
         let adminRoleId = null;
         let adminRoleUuid = null; // Default fallback
-        if (currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            // If current user is admin, use their role ID as reference
-            if (userData.role?.id) {
-              adminRoleId = userData.role.id;
-              adminRoleUuid = userData.role.uuid;
-            }
-          } catch (error) {
-            console.error('Error parsing user data from localStorage:', error);
-          }
+        if (userData?.role?.id) {
+          // If current user is admin, use their role ID as reference
+          adminRoleId = userData.role.id;
+          adminRoleUuid = userData.role.uuid;
         }
 
         setRoles(

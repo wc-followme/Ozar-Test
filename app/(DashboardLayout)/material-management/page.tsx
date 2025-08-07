@@ -8,12 +8,7 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import MaterialForm from '@/components/shared/forms/MaterialForm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  PAGINATION,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
@@ -21,6 +16,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -82,19 +78,8 @@ export default function MaterialManagementPage() {
         setLoading(true);
       }
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
 
         const response = await apiService.fetchMaterials({
           page: targetPage,
@@ -242,17 +227,8 @@ export default function MaterialManagementPage() {
   }) => {
     const { materialName, services, materialData } = data;
 
-    // Get selected company from localStorage
-    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    let companyId: string | undefined;
-    if (selectedCompany) {
-      try {
-        const parsedCompany = JSON.parse(selectedCompany);
-        companyId = parsedCompany.id; // UUID from localStorage
-      } catch {
-        // Silently fail if company data is invalid
-      }
-    }
+    // Get selected company ID using common function
+    const companyId = getCompanyId();
 
     // Use the actual material data from API response if available
     if (materialData) {

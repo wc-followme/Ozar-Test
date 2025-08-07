@@ -79,7 +79,7 @@ export default function JobDetailsPage() {
       }
     };
     if (uuid) fetchJobData();
-  }, [uuid, showErrorToast, handleAuthError]);
+  }, [uuid]); // Only depend on uuid to prevent duplicate calls
 
   const handleArchiveClick = () => {
     setShowArchiveConfirm(true);

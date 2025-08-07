@@ -8,12 +8,7 @@ import TradeForm from '@/components/shared/forms/TradeForm';
 import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  PAGINATION,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 
 import AccessDenied from '@/components/shared/common/AccessDenied';
@@ -22,6 +17,7 @@ import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -75,19 +71,8 @@ export default function TradeManagementPage() {
     async (targetPage = 1, append = false) => {
       setLoading(true);
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
 
         const response = await apiService.fetchTrades({
           page: targetPage,
@@ -232,17 +217,8 @@ export default function TradeManagementPage() {
   }) => {
     const { tradeName, category, tradeData } = data;
 
-    // Get selected company from localStorage
-    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    let companyId: string | undefined;
-    if (selectedCompany) {
-      try {
-        const parsedCompany = JSON.parse(selectedCompany);
-        companyId = parsedCompany.id; // UUID from localStorage
-      } catch (error) {
-        console.error('Error parsing selected company:', error);
-      }
-    }
+    // Get selected company ID using common function
+    const companyId = getCompanyId();
 
     // Use the actual trade data from API response if available
     if (tradeData) {
