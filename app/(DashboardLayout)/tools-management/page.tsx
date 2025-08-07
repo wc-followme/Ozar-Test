@@ -9,10 +9,12 @@ import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -23,6 +25,7 @@ import { TOOL_MESSAGES } from './tool-messages';
 export default function ToolsManagement() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState<string>('');
@@ -80,9 +83,13 @@ export default function ToolsManagement() {
       }
 
       try {
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
+
         const response = await apiService.fetchTools({
           page: targetPage,
           limit: PAGINATION.TOOLS_LIMIT,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         const { statusCode, data, message } = response;
@@ -144,13 +151,22 @@ export default function ToolsManagement() {
     [user, showErrorToast, handleAuthError]
   );
 
-  // Fetch first page of tools
-  useEffect(() => {
+  // Handle company changes
+  const refetchTools = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setTools([]);
     loadTools(1, false);
   }, [loadTools]);
+
+  useCompanyChange(refetchTools);
+
+  // Load initial tools when component mounts
+  useEffect(() => {
+    if (user) {
+      loadTools(1, false);
+    }
+  }, [user, loadTools]);
 
   // Infinite scroll
   useEffect(() => {
@@ -256,12 +272,16 @@ export default function ToolsManagement() {
 
     setFormLoading(true);
     try {
+      // Get selected company ID using common function
+      const companyId = getCompanyId();
+
       const payload: CreateToolRequest = {
         name,
         available_quantity,
         manufacturer,
         tool_assets: fileKey,
         service_ids,
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       const response = await apiService.createTool(payload);
@@ -272,41 +292,17 @@ export default function ToolsManagement() {
         setSideSheetOpen(false);
         setPhoto(null);
         setFileKey('');
-        // Refresh tools list - use the same API call as initial load
-        const refreshResponse = await apiService.fetchTools({
-          page: 1,
-          limit: PAGINATION.TOOLS_LIMIT,
-        });
-        const { statusCode: refreshStatusCode, data: refreshData } =
-          refreshResponse;
-
-        if (refreshStatusCode === 200) {
-          // Handle both possible response structures
-          let toolsData = refreshData;
-          if (
-            refreshData &&
-            typeof refreshData === 'object' &&
-            !Array.isArray(refreshData) &&
-            'data' in refreshData
-          ) {
-            const { data } = refreshData as any;
-            toolsData = data;
-          }
-          setTools(Array.isArray(toolsData) ? toolsData : []);
-        }
+        // Refresh tools list using existing loadTools function
+        await loadTools(1, false);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(message) || TOOL_MESSAGES.CREATE_ERROR
-        );
+        showErrorToast(message);
       }
     } catch (error: any) {
-      const { status, message: errorMessage } = error;
+      const { status } = error;
       if (status === 401) {
         handleAuthError(error);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.CREATE_ERROR
-        );
+        showErrorToast(extractApiErrorMessage(error));
       }
     } finally {
       setFormLoading(false);
@@ -346,6 +342,7 @@ export default function ToolsManagement() {
       };
 
       const response = await apiService.updateTool(editToolUuid!, payload);
+
       const { statusCode, message } = response;
 
       if (statusCode === 200) {
@@ -357,41 +354,19 @@ export default function ToolsManagement() {
         setEditToolData(null);
         setImageDeleted(false);
         setOriginalToolAssets('');
-        // Refresh tools list
-        const refreshResponse = await apiService.fetchTools({
-          page: 1,
-          limit: PAGINATION.TOOLS_LIMIT,
-        });
-        const { statusCode: refreshStatusCode, data: refreshData } =
-          refreshResponse;
-
-        if (refreshStatusCode === 200) {
-          // Handle both possible response structures
-          let toolsData = refreshData;
-          if (
-            refreshData &&
-            typeof refreshData === 'object' &&
-            !Array.isArray(refreshData) &&
-            'data' in refreshData
-          ) {
-            const { data } = refreshData as any;
-            toolsData = data;
-          }
-          setTools(Array.isArray(toolsData) ? toolsData : []);
-        }
+        // Refresh tools list using existing loadTools function
+        await loadTools(1, false);
       } else {
         showErrorToast(
           extractApiErrorMessage(message) || TOOL_MESSAGES.UPDATE_ERROR
         );
       }
     } catch (error: any) {
-      const { status, message: errorMessage } = error;
+      const { status } = error;
       if (status === 401) {
         handleAuthError(error);
       } else {
-        showErrorToast(
-          extractApiErrorMessage(errorMessage) || TOOL_MESSAGES.UPDATE_ERROR
-        );
+        showErrorToast(extractApiErrorMessage(error));
       }
     } finally {
       setFormLoading(false);

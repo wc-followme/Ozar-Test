@@ -9,25 +9,21 @@ import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  CUSTOM_EVENTS,
-  PAGINATION,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { roleIconOptions } from '@/constants/sidebar-items';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RoleCardSkeleton from '../../../components/shared/skeleton/RoleCardSkeleton';
 import { ROLE_MESSAGES } from './role-messages';
 import type { FetchRolesParams, Role, RoleApiResponse } from './types';
@@ -110,7 +106,6 @@ const RoleManagement = () => {
   const [name] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const selectedCompanyRef = useRef<string | null>(null);
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
@@ -120,31 +115,14 @@ const RoleManagement = () => {
   const canEdit = userPermissions?.roles?.edit;
   const canViewRoles = userPermissions?.roles?.view;
 
-  // Initialize selectedCompany from localStorage
-  useEffect(() => {
-    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    selectedCompanyRef.current = currentCompany;
-  }, []);
-
   const fetchRoles = useCallback(
     async (targetPage = 1, append = false) => {
       if (targetPage === 1) {
         setLoading(true);
       }
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let company_id: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            company_id = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            company_id = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const company_id = getCompanyId();
 
         const params: FetchRolesParams = {
           page: targetPage,
@@ -191,52 +169,18 @@ const RoleManagement = () => {
         setLoading(false);
       }
     },
-    [limit, search, name, handleAuthError, showErrorToast]
+    [limit, search, name]
   );
 
-  // Fetch first page of roles
-  useEffect(() => {
+  // Handle company changes
+  const refetchRoles = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setRoles([]);
     fetchRoles(1, false);
-  }, [fetchRoles]);
+  }, []);
 
-  // Watch for changes in selected company and refetch roles
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setPage(1);
-      setHasMore(true);
-      setRoles([]);
-      // Call fetchRoles directly without dependency
-      fetchRoles(1, false);
-    };
-
-    // Listen for storage events (when localStorage changes in other tabs/windows)
-    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-
-    // Listen for custom company change events
-    const handleCompanyChange = () => {
-      const currentCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      if (currentCompany !== selectedCompanyRef.current) {
-        selectedCompanyRef.current = currentCompany;
-        handleStorageChange();
-      }
-    };
-
-    // Add custom event listener for company changes
-    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
-
-    return () => {
-      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-      window.removeEventListener(
-        CUSTOM_EVENTS.COMPANY_CHANGED,
-        handleCompanyChange
-      );
-    };
-  }, []); // Remove fetchRoles from dependencies
+  useCompanyChange(refetchRoles);
 
   // Infinite scroll
   useEffect(() => {
@@ -254,7 +198,7 @@ const RoleManagement = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, fetchRoles, page]);
+  }, [loading, hasMore, page]);
 
   // Handler for deleting a role
   const handleDeleteRole = async (uuid: string) => {

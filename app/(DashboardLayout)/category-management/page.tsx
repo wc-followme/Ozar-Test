@@ -13,6 +13,7 @@ import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { catIconOptions } from '@/constants/icon-options';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { STATUS_CODES } from '@/constants/status-codes';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import {
   apiService,
   Category,
@@ -24,6 +25,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import {
@@ -98,10 +100,14 @@ const CategoryManagement = () => {
       }
 
       try {
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
         const res = await apiService.fetchCategories({
           page: targetPage,
           limit: PAGINATION.CATEGORIES_LIMIT,
           status: CommonStatus.ACTIVE, // Only fetch active categories
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -163,13 +169,15 @@ const CategoryManagement = () => {
     [handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of categories
-  useEffect(() => {
+  // Handle company changes
+  const refetchCategories = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setCategories([]);
     fetchCategories(1, false);
   }, [fetchCategories]);
+
+  useCompanyChange(refetchCategories);
 
   // Infinite scroll
   useEffect(() => {
@@ -281,6 +289,12 @@ const CategoryManagement = () => {
           icon,
         };
 
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          updateData.company_id = companyId;
+        }
+
         const response = await apiService.updateCategory(uuid, updateData);
         if (
           response.statusCode === STATUS_CODES.OK ||
@@ -315,6 +329,12 @@ const CategoryManagement = () => {
           status: CommonStatus.ACTIVE, // Default to ACTIVE when creating
           is_default: false, // New categories are not default
         };
+
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          categoryData.company_id = companyId;
+        }
 
         const response = await apiService.createCategory(categoryData);
         if (
@@ -441,7 +461,7 @@ const CategoryManagement = () => {
                 };
                 return (
                   <CategoryCard
-                    key={category.id || index}
+                    key={category.uuid || index}
                     name={category.name}
                     description={category.description}
                     iconSrc={props => {

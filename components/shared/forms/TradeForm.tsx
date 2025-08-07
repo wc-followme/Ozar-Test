@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { tradeFormSchema, TradeFormSchema } from '@/lib/validations/trade';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -41,7 +41,13 @@ export default function TradeForm({
     const fetchCategories = async () => {
       try {
         setLoadingCategories(true);
-        const response = await apiService.getCategoriesDropdown();
+
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        const response = await apiService.getCategoriesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setCategoriesOption(response.data);
         }
@@ -87,6 +93,9 @@ export default function TradeForm({
   const onFormSubmit = async (data: TradeFormSchema) => {
     const { tradeName, categories } = data;
     try {
+      // Get selected company ID using global utility function
+      const companyId = getCompanyId();
+
       const payload = {
         name: tradeName,
         description: '', // You can add a description field to the form if needed
@@ -94,6 +103,7 @@ export default function TradeForm({
         is_active: true,
         status: 'ACTIVE',
         category_ids: categories.join(','),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       if (initialTradeUuid) {

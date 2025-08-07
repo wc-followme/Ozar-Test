@@ -23,11 +23,13 @@ import {
   ROUTES,
 } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -62,6 +64,8 @@ export default function JobManagement() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const isInitialMount = useRef(true);
+  const isInitialDataLoaded = useRef(false);
+  const isInitialTabSet = useRef(false);
 
   // Get user permissions for jobs
   const userPermissions = getUserPermissionsFromStorage();
@@ -87,7 +91,11 @@ export default function JobManagement() {
   // Function to fetch filter counts
   const fetchFilterCounts = useCallback(async () => {
     try {
-      const response = await apiService.fetchJobStatistics();
+      // Get selected company ID using global utility function
+      const company_id = getCompanyId();
+
+      const params = company_id ? { company_id } : {};
+      const response = await apiService.fetchJobStatistics(params);
       if (response.data) {
         setFilterCounts(response.data);
       }
@@ -114,9 +122,13 @@ export default function JobManagement() {
         } else {
           setTabLoading(true);
         }
+        // Get selected company ID using global utility function
+        const company_id = getCompanyId();
+
         const params: any = {
           page: targetPage,
           limit: JOBS_LIMIT,
+          ...(company_id ? { company_id } : {}),
         };
 
         // Set parameters based on selected tab
@@ -235,10 +247,17 @@ export default function JobManagement() {
     ]
   );
 
-  // Effect to fetch filter counts on mount only
-  useEffect(() => {
+  // Handle company changes and initial data loading
+  const refetchJobs = useCallback(() => {
+    setPage(1);
+    setHasMore(true);
+    setJobs([]);
+    fetchJobsByTab(selectedTab, 1, false);
     fetchFilterCounts();
-  }, []); // Empty dependency array - only run on mount
+    isInitialDataLoaded.current = true;
+  }, [selectedTab]);
+
+  useCompanyChange(refetchJobs);
 
   // Fallback effect to ensure loading is turned off after a timeout
   useEffect(() => {
@@ -260,6 +279,17 @@ export default function JobManagement() {
       selectedTab === ONGOING_JOB ||
       selectedTab === WAITING_ON_CLIENT
     ) {
+      return;
+    }
+
+    // Skip initial call if this is the first time the tab is set
+    if (!isInitialTabSet.current) {
+      isInitialTabSet.current = true;
+      return;
+    }
+
+    // Skip if data is not yet loaded by useCompanyChange
+    if (!isInitialDataLoaded.current) {
       return;
     }
 
@@ -339,6 +369,12 @@ export default function JobManagement() {
         // Convert string to number if needed
         payload.client_id =
           typeof client_id === 'string' ? parseInt(client_id, 10) : client_id;
+      }
+
+      // Add company_id to payload
+      const companyId = getCompanyId();
+      if (companyId) {
+        payload.company_id = companyId;
       }
 
       // Call API using apiService

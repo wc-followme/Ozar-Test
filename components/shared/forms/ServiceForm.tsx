@@ -6,8 +6,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { serviceFormSchema } from '@/lib/validations/service';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -41,7 +42,13 @@ export default function ServiceForm({
     const fetchTrades = async () => {
       try {
         setLoadingTrades(true);
-        const response = await apiService.getTradesDropdown();
+
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        const response = await apiService.getTradesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setTradesOption(response.data);
         }
@@ -87,6 +94,9 @@ export default function ServiceForm({
   const onFormSubmit = async (data: any) => {
     const { serviceName, trades = [] } = data;
     try {
+      // Get selected company ID using global utility function
+      const companyId = getCompanyId();
+
       const payload = {
         name: serviceName,
         description: '', // You can add a description field to the form if needed
@@ -94,6 +104,7 @@ export default function ServiceForm({
         is_active: true,
         status: 'ACTIVE',
         trade_ids: trades.join(','),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       if (initialServiceUuid) {

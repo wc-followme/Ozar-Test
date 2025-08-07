@@ -6,13 +6,7 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  CommonStatus,
-  PAGINATION,
-  ROLE_IDS,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { CommonStatus, PAGINATION, ROLE_IDS, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateUserRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -20,6 +14,7 @@ import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCurrentUser,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -69,13 +64,9 @@ export default function AddCompanyUserPage() {
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [companyNumericId, setCompanyNumericId] = useState<number | null>(null);
-  const [loadingCompany, setLoadingCompany] = useState<boolean>(true);
 
   // Get company UUID from URL params or use default
-  const companyUuid =
-    searchParams.get('company_id') || '7aef8cc2-91ad-46ea-ba05-514d605eeff2';
-
+  const companyUuid = searchParams.get('company_id');
   const handleCancel = () => {
     // Redirect back to the company details page
     router.push(`${COMPANY_DETAILS}/${companyUuid}?tab=usermanagement`);
@@ -93,77 +84,26 @@ export default function AddCompanyUserPage() {
     );
   };
 
-  // Fetch company details to get numeric ID
-  useEffect(() => {
-    const fetchCompanyDetails = async () => {
-      setLoadingCompany(true);
-      try {
-        const companyRes = await apiService.getCompanyDetails(companyUuid);
-        const rawId = companyRes.data.id;
-
-        // Convert string ID to number
-        const numericId =
-          typeof rawId === 'string' ? parseInt(rawId, 10) : rawId;
-
-        if (isNaN(numericId) || typeof numericId !== 'number') {
-          showErrorToast(USER_MESSAGES.USER_NOT_FOUND_ERROR);
-          return;
-        }
-
-        setCompanyNumericId(numericId);
-      } catch (err: unknown) {
-        if (handleAuthError(err)) {
-          return; // Don't show toast if it's an auth error
-        }
-        showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
-      } finally {
-        setLoadingCompany(false);
-      }
-    };
-    fetchCompanyDetails();
-  }, [companyUuid, handleAuthError, showErrorToast]);
-
   useEffect(() => {
     const fetchRoles = async () => {
       setLoadingRoles(true);
       try {
-        // Get selected company from localStorage for roles
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
-
         const rolesRes = await apiService.fetchRoles({
           page: 1,
           limit: ROLES_DROPDOWN_LIMIT,
           status: ACTIVE, // Only fetch active roles for dropdown
-          ...(companyId ? { company_id: companyId } : {}),
+          ...(companyUuid ? { company_id: companyUuid } : {}),
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
 
-        // Get current user data from localStorage to determine admin role ID
-        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        // Get current user data using global utility function
+        const userData = getCurrentUser();
         let adminRoleId = null;
         let adminRoleUuid = null; // Default fallback
-        if (currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            // If current user is admin, use their role ID as reference
-            if (userData.role?.id) {
-              adminRoleId = userData.role.id;
-              adminRoleUuid = userData.role.uuid;
-            }
-          } catch (error) {
-            console.error('Error parsing user data from localStorage:', error);
-          }
+        if (userData?.role?.id) {
+          // If current user is admin, use their role ID as reference
+          adminRoleId = userData.role.id;
+          adminRoleUuid = userData.role.uuid;
         }
 
         setRoles(
@@ -232,12 +172,6 @@ export default function AddCompanyUserPage() {
   };
 
   const handleCreateUser = async (data: UserFormData) => {
-    // Prevent submission if company details are not loaded yet
-    if (loadingCompany || !companyNumericId) {
-      showErrorToast(USER_MESSAGES.FETCH_DETAILS_ERROR);
-      return;
-    }
-
     setFormLoading(true);
     try {
       // Ensure all required fields are provided for create operation
@@ -274,7 +208,7 @@ export default function AddCompanyUserPage() {
         city,
         pincode,
         profile_picture_url: fileKey,
-        company_id: companyNumericId!, // Pass the numeric company_id to associate user with specific company
+        ...(companyUuid ? { company_id: companyUuid } : {}),
       };
 
       const response = await apiService.createUser(payload);
@@ -325,7 +259,7 @@ export default function AddCompanyUserPage() {
             onValueChange={setSelectedTab}
             className='w-full'
           >
-            <TabsList className='grid w-full max-w-[328px] grid-cols-2 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+            <TabsList className='grid w-full max-w-[328px] grid-cols-1 bg-[var(--background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='info'
                 className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
@@ -355,18 +289,14 @@ export default function AddCompanyUserPage() {
 
                 {/* Right Column - Form Fields */}
                 <div className='flex-1 w-full'>
-                  {loadingCompany ? (
-                    <LoadingComponent variant='inline' />
-                  ) : (
-                    <UserInfoForm
-                      roles={roles}
-                      loadingRoles={loadingRoles}
-                      imageUrl={fileKey}
-                      onSubmit={handleCreateUser}
-                      onCancel={handleCancel}
-                      loading={formLoading}
-                    />
-                  )}
+                  <UserInfoForm
+                    roles={roles}
+                    loadingRoles={loadingRoles}
+                    imageUrl={fileKey}
+                    onSubmit={handleCreateUser}
+                    onCancel={handleCancel}
+                    loading={formLoading}
+                  />
                 </div>
               </div>
             </TabsContent>

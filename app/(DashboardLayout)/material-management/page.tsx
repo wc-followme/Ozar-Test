@@ -10,11 +10,13 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -72,12 +74,18 @@ export default function MaterialManagementPage() {
 
   const fetchMaterials = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
+
         const response = await apiService.fetchMaterials({
           page: targetPage,
           limit,
           name: search,
+          ...(companyId ? { company_id: companyId } : {}),
         });
 
         // Handle different possible response structures
@@ -137,13 +145,15 @@ export default function MaterialManagementPage() {
     [limit, search, handleAuthError, showErrorToast]
   );
 
-  // Fetch first page of materials
-  useEffect(() => {
+  // Handle company changes
+  const refetchMaterials = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setMaterials([]);
     fetchMaterials(1, false);
   }, [fetchMaterials]);
+
+  useCompanyChange(refetchMaterials);
 
   // Infinite scroll
   useEffect(() => {
@@ -217,6 +227,9 @@ export default function MaterialManagementPage() {
   }) => {
     const { materialName, services, materialData } = data;
 
+    // Get selected company ID using common function
+    const companyId = getCompanyId();
+
     // Use the actual material data from API response if available
     if (materialData) {
       // Add the new material to the beginning of the materials list
@@ -238,6 +251,7 @@ export default function MaterialManagementPage() {
           name: service.trim(),
           status: ACTIVE,
         })),
+        ...(companyId ? { company_id: companyId } : {}),
       };
 
       // Add the new material to the beginning of the materials list

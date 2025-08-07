@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { HambergerMenu, Key, UserOctagon } from 'iconsax-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '../../lib/utils';
+import { cn, getCompanyId } from '../../lib/utils';
 import { Search } from '../icons/Search';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import CompanyDropdown, { Company } from '../shared/common/CompanyDropdown';
@@ -65,22 +65,14 @@ export function Header() {
 
             setCompanies(transformedCompanies);
 
-            // Load selected company from localStorage
-            const savedCompany = localStorage.getItem(
-              STORAGE_KEYS.SELECTED_COMPANY
-            );
-            if (savedCompany) {
-              try {
-                const parsedCompany = JSON.parse(savedCompany);
-                // Check if saved company exists in fetched companies
-                const foundCompany = transformedCompanies.find(
-                  c => c.id === parsedCompany.id
-                );
-                setSelectedCompany(foundCompany || transformedCompanies[0]);
-              } catch (error) {
-                console.error('Error parsing saved company:', error);
-                setSelectedCompany(transformedCompanies[0]);
-              }
+            // Load selected company using global utility function
+            const savedCompanyId = getCompanyId();
+            if (savedCompanyId) {
+              // Check if saved company exists in fetched companies
+              const foundCompany = transformedCompanies.find(
+                c => c.id === savedCompanyId
+              );
+              setSelectedCompany(foundCompany || transformedCompanies[0]);
             } else {
               // Set first company as default and save to localStorage
               const defaultCompany = transformedCompanies[0];

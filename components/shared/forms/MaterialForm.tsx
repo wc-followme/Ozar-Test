@@ -6,8 +6,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { materialFormSchema } from '@/lib/validations/material';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -41,12 +42,18 @@ export default function MaterialForm({
     const fetchServices = async () => {
       try {
         setLoadingServices(true);
-        const response = await apiService.getServicesDropdown();
+
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        const response = await apiService.getServicesDropdown({
+          ...(companyId ? { company_id: companyId } : {}),
+        });
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setServicesOption(response.data);
         }
-      } catch (error) {
-        console.error('Failed to fetch services:', error);
+      } catch {
+        // Silently fail if services fetch fails
         setServicesOption([]);
       } finally {
         setLoadingServices(false);
@@ -77,9 +84,8 @@ export default function MaterialForm({
             services: serviceIds,
           });
         }
-      } catch (error) {
-        console.error('Failed to fetch material details:', error);
-        // Optionally show error toast
+      } catch {
+        // Silently fail if material details fetch fails
       }
     };
     fetchMaterial();
@@ -88,20 +94,20 @@ export default function MaterialForm({
   const onFormSubmit = async (data: any) => {
     const { materialName, services = [] } = data;
     try {
-      const payload = {
-        name: materialName,
-        description: '', // You can add a description field to the form if needed
-        is_default: false,
-        is_active: true,
-        status: 'ACTIVE',
-        service_ids: services.join(','),
-      };
-
       if (initialMaterialUuid) {
-        // Update existing material
+        // Update existing material (without company_id)
+        const updatePayload = {
+          name: materialName,
+          description: '', // You can add a description field to the form if needed
+          is_default: false,
+          is_active: true,
+          status: 'ACTIVE',
+          service_ids: services.join(','),
+        };
+
         const response = await apiService.updateMaterial(
           initialMaterialUuid,
-          payload
+          updatePayload
         );
         const { message, data } = response;
         showSuccessToast(message || MATERIAL_MESSAGES.UPDATE_SUCCESS);
@@ -115,8 +121,21 @@ export default function MaterialForm({
           });
         }
       } else {
-        // Create new material
-        const response = await apiService.createMaterial(payload);
+        // Create new material (with company_id)
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        const createPayload = {
+          name: materialName,
+          description: '', // You can add a description field to the form if needed
+          is_default: false,
+          is_active: true,
+          status: 'ACTIVE',
+          service_ids: services.join(','),
+          ...(companyId ? { company_id: companyId } : {}),
+        };
+
+        const response = await apiService.createMaterial(createPayload);
         const { message, data } = response;
         showSuccessToast(message || MATERIAL_MESSAGES.CREATE_SUCCESS);
 

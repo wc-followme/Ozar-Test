@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge';
 
 // --- Encryption Utilities ---
 import CryptoJS from 'crypto-js';
+import { STORAGE_KEYS } from '../constants/common';
 
 // Encrypts a string using AES and a secret key from env
 export function encryptData(data: string): string {
@@ -203,4 +204,37 @@ export const useDynamicWidth = (
   }, [options]);
 
   return width;
+};
+
+/**
+ * Get the selected company ID from localStorage
+ * @returns The company ID as a string, or undefined if not found or invalid
+ */
+export const getCompanyId = (): string | undefined => {
+  try {
+    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+    if (selectedCompany) {
+      const parsedCompany = JSON.parse(selectedCompany);
+      return parsedCompany.id; // UUID from localStorage
+    }
+  } catch {
+    // Silently fail if company data is invalid
+  }
+  return undefined;
+};
+
+/**
+ * Get the current user data from localStorage
+ * @returns The user data object, or null if not found or invalid
+ */
+export const getCurrentUser = (): any | null => {
+  try {
+    const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+    if (currentUser) {
+      return JSON.parse(currentUser);
+    }
+  } catch {
+    // Silently fail if user data is invalid
+  }
+  return null;
 };

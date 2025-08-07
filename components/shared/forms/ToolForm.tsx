@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiService, Service } from '@/lib/api';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -186,12 +186,17 @@ const ToolForm: React.FC<ToolFormProps> = ({
     const loadServices = async () => {
       setLoadingServices(true);
       try {
-        const response = await apiService.getServicesDropdown();
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        const response = await apiService.getServicesDropdown(
+          companyId ? { company_id: companyId } : undefined
+        );
         if (response.statusCode === 200 && Array.isArray(response.data)) {
           setServices(response.data);
         }
-      } catch (error) {
-        console.error('Error loading services:', error);
+      } catch {
+        // Silently fail if services fetch fails
         setServices([]);
       } finally {
         setLoadingServices(false);
