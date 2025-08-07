@@ -1,5 +1,8 @@
 'use client';
 
+import { useToast } from '@/components/ui/use-toast';
+import { apiService } from '@/lib/api';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { IconCategoryPlus, IconX } from '@tabler/icons-react';
 import { Add, AddCircle } from 'iconsax-react';
 import React, { useRef, useState } from 'react';
@@ -52,6 +55,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const [showJobSheet, setShowJobSheet] = useState(false);
   const todoComponentRef = useRef<TodoComponentRef>(null);
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const items = externalToolbarItems || toolbarItems;
 
@@ -93,8 +97,89 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     setShowTodoForm(false);
   };
 
-  const handleAppointmentFormSubmit = () => {
-    setShowAppointmentForm(false);
+  const handleAppointmentFormSubmit = async (data: any) => {
+    console.log(
+      'FloatingActionButton - handleAppointmentFormSubmit called with data:',
+      data
+    );
+
+    try {
+      // Format date to YYYY-MM-DD
+      const formattedDate = data.date
+        ? data.date.toISOString().split('T')[0]
+        : '';
+
+      if (!formattedDate) {
+        console.error('No valid date provided');
+        return;
+      }
+
+      // Convert employees array to comma-separated string
+      const userUuids = data.employees.join(',');
+
+      // Convert 12-hour format to 24-hour format
+      const convertTo24Hour = (time12h: string) => {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time12h;
+
+        const timeParts = time.split(':');
+        if (timeParts.length !== 2) return time12h;
+
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+
+        if (!hours || !minutes) return time12h;
+
+        if (hours === '12') {
+          hours = modifier === 'PM' ? '12' : '00';
+        } else if (modifier === 'PM') {
+          hours = String(parseInt(hours) + 12);
+        }
+
+        return `${hours.padStart(2, '0')}:${minutes}`;
+      };
+
+      const payload = {
+        agenda: data.agenda,
+        appointment_with: data.appointmentWith,
+        date: formattedDate,
+        start_time: convertTo24Hour(data.starts),
+        end_time: convertTo24Hour(data.ends),
+        address: data.address,
+        notes: data.notes || '',
+        user_uuids: userUuids,
+      };
+
+      console.log('FloatingActionButton - API payload:', payload);
+
+      // Create new appointment
+      const response = await apiService.createAppointment(payload);
+      console.log('FloatingActionButton - API response:', response);
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        console.log('FloatingActionButton - Appointment created successfully');
+        showSuccessToast(
+          extractApiSuccessMessage(response, 'Appointment created successfully')
+        );
+        setShowAppointmentForm(false);
+      } else {
+        console.error(
+          'FloatingActionButton - Failed to create appointment:',
+          response.message
+        );
+        showErrorToast(response.message || 'Failed to create appointment');
+      }
+    } catch (error) {
+      console.error(
+        'FloatingActionButton - Error creating appointment:',
+        error
+      );
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to create appointment'
+      );
+      showErrorToast(message);
+    }
   };
 
   const handleAppointmentFormCancel = () => {

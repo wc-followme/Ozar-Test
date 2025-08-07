@@ -256,6 +256,11 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   };
 
   const handleFormSubmit = async (data: AppointmentFormData) => {
+    console.log('AppointmentsComponent - handleFormSubmit START');
+    console.log(
+      'AppointmentsComponent - handleFormSubmit called with data:',
+      data
+    );
     setIsSubmitting(true);
 
     try {
@@ -305,9 +310,15 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         user_uuids: userUuids,
       };
 
+      console.log('AppointmentsComponent - API payload:', payload);
+
       let response;
       if (editingAppointment) {
         // Update existing appointment
+        console.log(
+          'AppointmentsComponent - Updating appointment:',
+          editingAppointment.uuid
+        );
         response = await apiService.updateAppointment(
           editingAppointment.uuid,
           payload
@@ -324,7 +335,9 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         }
       } else {
         // Create new appointment
+        console.log('AppointmentsComponent - Creating new appointment');
         response = await apiService.createAppointment(payload);
+        console.log('AppointmentsComponent - API response:', response);
         if (response.statusCode === 200 || response.statusCode === 201) {
           showSuccessToast(
             extractApiSuccessMessage(

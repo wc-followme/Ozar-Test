@@ -80,7 +80,8 @@ const appointmentFormSchema = yup.object({
     .array()
     .of(yup.string().required())
     .min(1, APPOINTMENT_MESSAGES.EMPLOYEES_REQUIRED)
-    .default([]),
+    .default([])
+    .optional(), // Temporarily make it optional to test form submission
 });
 
 interface AppointmentFormData {
@@ -107,6 +108,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   loading = false,
   editingAppointment = null,
 }) => {
+  console.log('AppointmentForm - onSubmit prop received:', onSubmit);
+  console.log('AppointmentForm - onSubmit type:', typeof onSubmit);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [employeesLoading, setEmployeesLoading] = useState(false);
@@ -129,7 +132,15 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       notes: '',
       employees: [],
     },
+    mode: 'onChange', // Add this to see validation errors immediately
   });
+
+  // Debug form state
+  console.log('AppointmentsForm - Form errors:', errors);
+  console.log(
+    'AppointmentsForm - Form is valid:',
+    Object.keys(errors).length === 0
+  );
 
   // Debug employees state
   React.useEffect(() => {
@@ -259,21 +270,38 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   }, []);
 
   const handleEmployeeChange = (employees: string[]) => {
+    console.log('AppointmentsForm - Employee selection changed:', employees);
     setSelectedEmployees(employees);
     setValue('employees', employees);
+    console.log('AppointmentsForm - Form value set for employees');
   };
 
   const handleFormSubmit = async (data: AppointmentFormData) => {
+    console.log('AppointmentsForm - handleFormSubmit called with data:', data);
+    console.log('AppointmentsForm - errors:', errors);
+    console.log('AppointmentsForm - selectedEmployees:', selectedEmployees);
+
     // Check for validation errors
     if (Object.keys(errors).length > 0) {
+      console.log(
+        'AppointmentsForm - Validation errors found, returning early'
+      );
+      console.log('AppointmentsForm - Validation errors details:', errors);
       return;
     }
 
     // Ensure employees data is included in the submission
     data.employees = selectedEmployees;
+    console.log('AppointmentsForm - Final data with employees:', data);
 
     try {
-      await onSubmit(data);
+      console.log('AppointmentsForm - Calling onSubmit');
+      console.log('AppointmentsForm - onSubmit function:', onSubmit);
+      const result = await onSubmit(data);
+      console.log(
+        'AppointmentsForm - onSubmit completed successfully, result:',
+        result
+      );
     } catch (error) {
       console.error('AppointmentsForm - Error calling onSubmit:', error);
     }
@@ -282,7 +310,10 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   return (
     <div className='w-full'>
       <form
-        onSubmit={handleSubmit(handleFormSubmit)}
+        onSubmit={e => {
+          console.log('Form submit event triggered');
+          handleSubmit(handleFormSubmit)(e);
+        }}
         className='space-y-2 md:space-y-4'
         noValidate
       >
@@ -526,6 +557,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             disabled={loading}
+            onClick={() => {
+              console.log('Submit button clicked');
+            }}
           >
             {loading
               ? APPOINTMENT_MESSAGES.SAVING_BUTTON
