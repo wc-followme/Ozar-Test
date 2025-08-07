@@ -32,6 +32,39 @@ interface Employee {
   status: string;
 }
 
+interface AppointmentEmployee {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  updated_by: number;
+  status: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+    phone_number: string;
+    profile_picture_url: string;
+  };
+}
+
+interface Appointment {
+  id: string;
+  uuid: string;
+  agenda: string;
+  appointment_with: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  address: string;
+  notes: string;
+  employees: AppointmentEmployee[];
+}
+
 // Validation schema
 const appointmentFormSchema = yup.object({
   agenda: yup.string().required(APPOINTMENT_MESSAGES.AGENDA_REQUIRED),
@@ -65,12 +98,14 @@ interface AppointmentFormProps {
   onSubmit: (data: AppointmentFormData) => void | Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  editingAppointment?: Appointment | null;
 }
 
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
+  editingAppointment = null,
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -109,6 +144,50 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       }))
     );
   }, [employees]);
+
+  // Prefill form when editingAppointment is provided
+  React.useEffect(() => {
+    if (editingAppointment && employees.length > 0) {
+      console.log(
+        'AppointmentsForm - Prefilling form with:',
+        editingAppointment
+      );
+
+      // Convert 24-hour time to 12-hour format for display
+      const convertTo12Hour = (time24h: string) => {
+        try {
+          const [hours, minutes] = time24h.split(':');
+          if (!hours || !minutes) return time24h;
+
+          const hour = parseInt(hours);
+          const ampm = hour >= 12 ? 'PM' : 'AM';
+          const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+          return `${displayHour}:${minutes} ${ampm}`;
+        } catch (error) {
+          return time24h;
+        }
+      };
+
+      // Set form values
+      setValue('agenda', editingAppointment.agenda);
+      setValue('appointmentWith', editingAppointment.appointment_with);
+      setValue('date', new Date(editingAppointment.date));
+      setValue('starts', convertTo12Hour(editingAppointment.start_time));
+      setValue('ends', convertTo12Hour(editingAppointment.end_time));
+      setValue('address', editingAppointment.address);
+      setValue('notes', editingAppointment.notes || '');
+
+      // Set selected employees
+      if (
+        editingAppointment.employees &&
+        editingAppointment.employees.length > 0
+      ) {
+        const employeeUuids = editingAppointment.employees.map(emp => emp.uuid);
+        setSelectedEmployees(employeeUuids);
+        setValue('employees', employeeUuids);
+      }
+    }
+  }, [editingAppointment, employees, setValue]);
 
   // Fetch employees on component mount
   React.useEffect(() => {

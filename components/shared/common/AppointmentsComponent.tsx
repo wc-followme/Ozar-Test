@@ -110,6 +110,9 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
   const { showSuccessToast, showErrorToast } = useToast();
 
   // Fetch appointments function
@@ -147,6 +150,31 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   useEffect(() => {
     fetchAppointments();
   }, []);
+
+  // Fetch appointment data for editing
+  const fetchAppointmentForEdit = async (appointmentUuid: string) => {
+    setEditLoading(true);
+    try {
+      const response = await apiService.fetchAppointmentById(appointmentUuid);
+      if (response.statusCode === 200 && response.data) {
+        setEditingAppointment(response.data);
+        setIsEditSheetOpen(true);
+      } else {
+        showErrorToast(
+          response.message || 'Failed to fetch appointment details'
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching appointment for edit:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to fetch appointment details'
+      );
+      showErrorToast(message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   // Helper function to format date display
   const formatDateDisplay = (dateString: string) => {
@@ -211,7 +239,13 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         // TODO: Implement mark as completed functionality
         break;
       case ACTIONS.EDIT:
-        setIsEditSheetOpen(true);
+        // Find the appointment by ID and get its UUID
+        const appointment = appointments.find(app => app.id === appointmentId);
+        if (appointment) {
+          fetchAppointmentForEdit(appointment.uuid);
+        } else {
+          showErrorToast('Appointment not found');
+        }
         break;
       case ACTIONS.DELETE:
         setDeletingAppointmentId(appointmentId);
@@ -271,23 +305,51 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         user_uuids: userUuids,
       };
 
-      const response = await apiService.createAppointment(payload);
+      let response;
+      if (editingAppointment) {
+        // Update existing appointment
+        response = await apiService.updateAppointment(
+          editingAppointment.uuid,
+          payload
+        );
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment updated successfully'
+            )
+          );
+        } else {
+          showErrorToast(response.message || 'Failed to update appointment');
+        }
+      } else {
+        // Create new appointment
+        response = await apiService.createAppointment(payload);
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment created successfully'
+            )
+          );
+        } else {
+          showErrorToast(response.message || 'Failed to create appointment');
+        }
+      }
 
       if (response.statusCode === 200 || response.statusCode === 201) {
-        showSuccessToast(
-          extractApiSuccessMessage(response, 'Appointment created successfully')
-        );
         setIsEditSheetOpen(false);
+        setEditingAppointment(null);
         // Refresh appointments list
         fetchAppointments();
-      } else {
-        showErrorToast(response.message || 'Failed to create appointment');
       }
     } catch (error) {
-      console.error('Error creating appointment:', error);
+      console.error('Error saving appointment:', error);
       const message = extractApiErrorMessage(
         error,
-        'Failed to create appointment'
+        editingAppointment
+          ? 'Failed to update appointment'
+          : 'Failed to create appointment'
       );
       showErrorToast(message);
     } finally {
@@ -297,6 +359,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
 
   const handleFormCancel = () => {
     setIsEditSheetOpen(false);
+    setEditingAppointment(null);
   };
 
   const handleDeleteConfirm = () => {
@@ -317,7 +380,10 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
       {/* Add Appointment Button */}
       <div className='flex justify-end mb-4'>
         <Button
-          onClick={() => setIsEditSheetOpen(true)}
+          onClick={() => {
+            setEditingAppointment(null);
+            setIsEditSheetOpen(true);
+          }}
           className='btn-primary'
           disabled={loading}
         >
@@ -495,19 +561,31 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         )
       )}
 
-      {/* Add Appointment SideSheet */}
+      {/* Add/Edit Appointment SideSheet */}
       <SideSheet
-        title='Add Appointment'
+        title={editingAppointment ? 'Edit Appointment' : 'Add Appointment'}
         open={isEditSheetOpen}
         onOpenChange={setIsEditSheetOpen}
         size='600px'
       >
         <div className='space-y-4'>
-          <AppointmentForm
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            loading={isSubmitting}
-          />
+          {editLoading ? (
+            <div className='flex justify-center items-center py-8'>
+              <div className='text-center'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+                <p className='text-sm text-muted-foreground'>
+                  Loading appointment details...
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AppointmentForm
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              loading={isSubmitting}
+              editingAppointment={editingAppointment}
+            />
+          )}
         </div>
       </SideSheet>
 

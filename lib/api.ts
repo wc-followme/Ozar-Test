@@ -1841,6 +1841,38 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Fetch single appointment by ID
+  async fetchAppointmentById(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update appointment
+  async updateAppointment(
+    uuid: string,
+    payload: {
+      agenda: string;
+      appointment_with: string;
+      date: string;
+      start_time: string;
+      end_time: string;
+      address: string;
+      notes: string;
+      user_uuids: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
 }
 
 export const apiService = new ApiService();
