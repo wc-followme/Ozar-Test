@@ -182,7 +182,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
         editingAppointment.employees &&
         editingAppointment.employees.length > 0
       ) {
-        const employeeUuids = editingAppointment.employees.map(emp => emp.uuid);
+        const employeeUuids = editingAppointment.employees.map(
+          emp => emp.user.uuid
+        );
         setSelectedEmployees(employeeUuids);
         setValue('employees', employeeUuids);
       }
