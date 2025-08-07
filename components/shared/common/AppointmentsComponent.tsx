@@ -377,20 +377,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
 
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {/* Add Appointment Button */}
-      <div className='flex justify-end mb-4'>
-        <Button
-          onClick={() => {
-            setEditingAppointment(null);
-            setIsEditSheetOpen(true);
-          }}
-          className='btn-primary'
-          disabled={loading}
-        >
-          Add New Appointment
-        </Button>
-      </div>
-
       {loading ? (
         <div className='flex justify-center items-center py-8'>
           <div className='text-center'>

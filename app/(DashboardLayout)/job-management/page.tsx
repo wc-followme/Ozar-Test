@@ -4,7 +4,7 @@ import NoDataFound from '@/components/shared/common/NoDataFound';
 
 import { JobCard } from '@/components/shared/cards/JobCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
-import { AppointmentsComponent } from '@/components/shared/common/AppointmentsComponent';
+
 import ComingSoon from '@/components/shared/common/ComingSoon';
 import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import SideSheet from '@/components/shared/common/SideSheet';
@@ -55,7 +55,7 @@ export default function JobManagement() {
 
   const [selectedTab, setSelectedTab] = useState<string>(NEW_LEADS_TAB);
   const [isOpen, setIsOpen] = useState(false);
-  const [isAppointmentsOpen, setIsAppointmentsOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [tabLoading, setTabLoading] = useState(false);
   const [jobs, setJobs] = useState<Job[]>([]); // Replace mockJobs
@@ -621,14 +621,6 @@ export default function JobManagement() {
                     {JOB_MESSAGES.ADD_JOB_BUTTON}
                   </span>
                 </button>
-                <button
-                  onClick={() => setIsAppointmentsOpen(true)}
-                  className='btn-secondary !hidden sm:!flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-base text-center !h-12 sm:!h-12 !w-12 sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-20 z-50 sm:z-auto w-14 h-14 sm:w-auto sm:h-12 shadow-2xl sm:shadow-none hover:shadow-3xl sm:hover:shadow-none shadow-[0_8px_25px_-5px_rgba(0,0,0,0.3)] sm:shadow-none hover:shadow-[0_12px_35px_-8px_rgba(0,0,0,0.4)] sm:hover:shadow-none'
-                >
-                  <span className='hidden sm:inline text-base'>
-                    Add Appointments
-                  </span>
-                </button>
               </div>
             )}
           </div>
@@ -737,18 +729,6 @@ export default function JobManagement() {
             setIsOpen(false);
           }}
         />
-      </SideSheet>
-
-      {/* Appointments Side Sheet */}
-      <SideSheet
-        open={isAppointmentsOpen}
-        onOpenChange={setIsAppointmentsOpen}
-        title='Add Appointments'
-        size='800px'
-      >
-        <div className='space-y-4'>
-          <AppointmentsComponent />
-        </div>
       </SideSheet>
     </div>
   );
