@@ -280,6 +280,7 @@ export const APPOINTMENT_MESSAGES = {
   DATE_LABEL: 'Date',
   DATE_PLACEHOLDER: 'Select Date',
   DATE_REQUIRED: 'Date is required',
+  DATE_FUTURE_REQUIRED: 'Only Future date should be allowed',
 
   STARTS_LABEL: 'Starts',
   STARTS_PLACEHOLDER: 'Select Time',
@@ -288,6 +289,7 @@ export const APPOINTMENT_MESSAGES = {
   ENDS_LABEL: 'Ends',
   ENDS_PLACEHOLDER: 'Select Time',
   ENDS_REQUIRED: 'End time is required',
+  ENDS_GREATER_THAN_STARTS: 'End time should be greater than start time',
 
   ADDRESS_LABEL: 'Address',
   ADDRESS_PLACEHOLDER: 'Enter Address',

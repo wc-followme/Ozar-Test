@@ -71,9 +71,67 @@ const appointmentFormSchema = yup.object({
   appointmentWith: yup
     .string()
     .required(APPOINTMENT_MESSAGES.APPOINTMENT_WITH_REQUIRED),
-  date: yup.date().required(APPOINTMENT_MESSAGES.DATE_REQUIRED),
+  date: yup
+    .date()
+    .required(APPOINTMENT_MESSAGES.DATE_REQUIRED)
+    .test(
+      'future-date',
+      APPOINTMENT_MESSAGES.DATE_FUTURE_REQUIRED,
+      function (value) {
+        if (!value) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return value >= today;
+      }
+    ),
   starts: yup.string().required(APPOINTMENT_MESSAGES.STARTS_REQUIRED),
-  ends: yup.string().required(APPOINTMENT_MESSAGES.ENDS_REQUIRED),
+  ends: yup
+    .string()
+    .required(APPOINTMENT_MESSAGES.ENDS_REQUIRED)
+    .test(
+      'end-time-greater',
+      APPOINTMENT_MESSAGES.ENDS_GREATER_THAN_STARTS,
+      function (value) {
+        const { starts } = this.parent;
+        if (!value || !starts) return true; // Let other validations handle required fields
+
+        // Convert times to minutes for comparison
+        const convertTimeToMinutes = (timeStr: string) => {
+          console.log('Converting time:', timeStr);
+
+          // Handle 12-hour format (e.g., "09:00 AM", "10:30 PM")
+          const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (timeMatch && timeMatch[1] && timeMatch[2] && timeMatch[3]) {
+            let hours = parseInt(timeMatch[1]!);
+            const minutes = parseInt(timeMatch[2]!);
+            const period = timeMatch[3]!.toUpperCase();
+
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0;
+            }
+
+            const totalMinutes = hours * 60 + minutes;
+            console.log(`Converted ${timeStr} to ${totalMinutes} minutes`);
+            return totalMinutes;
+          }
+
+          // Handle 24-hour format (e.g., "09:00", "14:30")
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          if (!hours || !minutes) return 0;
+          const totalMinutes = hours * 60 + minutes;
+          console.log(`Converted ${timeStr} to ${totalMinutes} minutes`);
+          return totalMinutes;
+        };
+
+        const startMinutes = convertTimeToMinutes(starts);
+        const endMinutes = convertTimeToMinutes(value);
+
+        return endMinutes > startMinutes;
+      }
+    ),
   address: yup.string().required(APPOINTMENT_MESSAGES.ADDRESS_REQUIRED),
   notes: yup.string().optional().default(''),
   employees: yup
@@ -119,6 +177,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     control,
     handleSubmit,
     setValue,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     resolver: yupResolver(appointmentFormSchema),
@@ -134,6 +194,17 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     },
     mode: 'onChange', // Add this to see validation errors immediately
   });
+
+  // Watch start time to trigger end time validation
+  const startTime = watch('starts');
+
+  // Trigger end time validation when start time changes
+  React.useEffect(() => {
+    if (startTime) {
+      console.log('Start time changed to:', startTime);
+      trigger('ends');
+    }
+  }, [startTime, trigger]);
 
   // Debug form state
   console.log('AppointmentsForm - Form errors:', errors);
@@ -433,6 +504,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       onSelect={date => {
                         field.onChange(date);
                         setDatePickerOpen(false);
+                      }}
+                      disabled={date => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
                       }}
                       initialFocus
                     />
