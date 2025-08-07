@@ -64,7 +64,7 @@ export function JobCard({ job }: JobCardProps) {
             onError={() => setImgSrc('/images/img-placeholder-md.png')}
           />
           <Badge
-            className={`absolute top-3 left-3 text-[12px]  font-medium gap-1 p-1 rounded-[30px] text-[#2D2D2D] border-0 bg-white`}
+            className={`absolute top-3 left-3 text-[12px]  font-medium gap-1 p-1 rounded-[30px] text-[var(--text-dark)] border-0 bg-white`}
           >
             <span
               className={`h-3 w-3 rounded-full ${getProgressColor(job.progress)}`}
@@ -103,13 +103,13 @@ export function JobCard({ job }: JobCardProps) {
 
           <div className='space-y-2'>
             <div className='flex items-center gap-2 text-sm text-[var(--text-dark)] font-normal'>
-              <Sms size='22' color='#EBB402' className='flex-shrink-0' />
+              <Sms size='22' className='flex-shrink-0 text-yellowbrand' />
               <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
                 {job.email}
               </span>
             </div>
             <div className='flex items-center gap-2 text-sm text-[var(--text-dark)] font-normal'>
-              <Location size='22' color='#34AD44' className='flex-shrink-0' />
+              <Location size='22' className='flex-shrink-0 text-greenbrand' />
               <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
                 {job.address}
               </span>
@@ -123,7 +123,7 @@ export function JobCard({ job }: JobCardProps) {
               </div>
               <Badge
                 variant='outline'
-                className='text-xs ml-auto px-3 py-[3px] text-[12px] font-medium text-[#2D2D2D] bg-[#F4F5F6] border-0 overflow-hidden text-ellipsis whitespace-nowrap'
+                className='text-xs ml-auto px-3 py-[3px] text-[12px] font-medium text-[var(--text-dark)] bg-[var(--border-light)] border-0 overflow-hidden text-ellipsis whitespace-nowrap'
               >
                 {job.daysLeft} Days left
               </Badge>

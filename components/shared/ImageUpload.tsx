@@ -24,7 +24,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div
       className={cn(
-        'aspect-square w-full mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-[#00A8BF26]',
+        'aspect-square w-full mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-cyanwave-light',
         className
       )}
     >

@@ -10,8 +10,8 @@ import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkele
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { catIconOptions } from '@/constants/icon-options';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
-import { catIconOptions } from '@/constants/sidebar-items';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import {

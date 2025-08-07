@@ -10,9 +10,9 @@ import FormErrorMessage from './FormErrorMessage';
 
 export type IconOption = {
   value: string;
-  label: string;
   icon: React.ElementType;
   color: string;
+  bgColor?: string;
 };
 
 interface IconFieldWrapperProps {
@@ -42,7 +42,9 @@ const IconFieldWrapper: React.FC<IconFieldWrapperProps> = ({
             <div
               className='flex w-8 h-8 items-center justify-center rounded-[10px]'
               style={{
-                backgroundColor: `${getSelectedIconOption()?.color ?? ''}26`,
+                backgroundColor:
+                  getSelectedIconOption()?.bgColor ??
+                  `${getSelectedIconOption()?.color ?? ''}26`,
                 color: getSelectedIconOption()?.color ?? '',
               }}
             >
@@ -56,12 +58,12 @@ const IconFieldWrapper: React.FC<IconFieldWrapperProps> = ({
           </SelectValue>
         </SelectTrigger>
         <SelectContent className='bg-[var(--white-background)] min-w-fit border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'>
-          {iconOptions.map(({ icon: IconComponent, value, color }) => (
+          {iconOptions.map(({ icon: IconComponent, value, color, bgColor }) => (
             <SelectItem key={value} value={value} className='cursor-pointer'>
               <div className='flex items-center gap-2'>
                 <div
                   className='flex w-8 h-8 items-center justify-center rounded-md'
-                  style={{ backgroundColor: `${color}26`, color }}
+                  style={{ backgroundColor: bgColor ?? `${color}26`, color }}
                 >
                   <IconComponent className='w-5 h-5' />
                 </div>
