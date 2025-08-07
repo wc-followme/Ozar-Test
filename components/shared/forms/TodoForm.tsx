@@ -39,7 +39,12 @@ const todoFormSchema = yup.object({
   date: yup
     .date()
     .required(TODO_MESSAGES.DATE_REQUIRED)
-    .min(new Date(), 'Date cannot be in the past'),
+    .test('future-date', TODO_MESSAGES.DATE_FUTURE_REQUIRED, function (value) {
+      if (!value) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return value >= today;
+    }),
   employees: yup
     .array()
     .of(yup.string().required())
@@ -601,6 +606,11 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                       onSelect={date => {
                         field.onChange(date);
                         setDatePickerOpen(false);
+                      }}
+                      disabled={date => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
                       }}
                       initialFocus
                     />

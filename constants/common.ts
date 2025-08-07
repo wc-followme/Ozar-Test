@@ -341,6 +341,7 @@ export const TODO_MESSAGES = {
   DATE_LABEL: 'Date',
   DATE_PLACEHOLDER: 'Select Date',
   DATE_REQUIRED: 'Date is required',
+  DATE_FUTURE_REQUIRED: 'Only Future date should be allowed',
 
   EMPLOYEES_LABEL: 'Select Employees',
   EMPLOYEES_PLACEHOLDER: 'Select employees',
