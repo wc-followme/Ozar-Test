@@ -108,7 +108,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                 return (
                   <span
                     key={tag}
-                    className={`bg-[#00A8BF26] text-[var(--text-dark)] rounded-full ${imageUrl ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
+                    className={`bg-cyanwave-light text-[var(--text-dark)] rounded-full ${imageUrl ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
                   >
                     {imageUrl && (
                       <Image
@@ -125,7 +125,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                 );
               })}
               {moreCount > 0 && value.length > maxTagsToShow && (
-                <span className='bg-[#00A8BF26] text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium flex items-center gap-2'>
+                <span className='bg-cyanwave-light text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium flex items-center gap-2'>
                   +{moreCount} more
                 </span>
               )}

@@ -36,7 +36,7 @@ export function TemplateCard({
             className='
             rounded-[6px] 
             border-2 
-            border-[#BFBFBF]
+            border-[var(--dark-border-other)]
             data-[state=checked]:bg-[--primary]
             data-[state=checked]:border-[--primary]
             data-[state=checked]:text-white
@@ -67,7 +67,9 @@ export function TemplateCard({
           className='inline-block px-3 py-2 rounded-full text-sm text-[var(--text-dark)] font-medium w-full text-center'
           style={{
             backgroundColor:
-              template.category === 'Interior' ? '#24338C26' : '#34AD4426',
+              template.category === 'Interior'
+                ? 'bg-blueicon-100'
+                : 'bg-greenbrand-100',
           }}
         >
           {template.category}

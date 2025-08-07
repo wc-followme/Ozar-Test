@@ -46,7 +46,7 @@ export function ConfirmDeleteModal({
   return (
     <Dialog open={open} onOpenChange={onCancel}>
       <CustomDialogContent className='!max-w-[95%] sm:!max-w-[519px] !rounded-[20px] py-[30px] px-[25px] flex flex-col items-center text-center bg-[var(--card-background)] !gap-0 border-[var(--border-dark)]'>
-        <div className='flex items-center justify-center w-16 md:w-[100px] h-16 md:h-[100px] rounded-full bg-[#D4323226] mb-6 mx-auto'>
+        <div className='flex items-center justify-center w-16 md:w-[100px] h-16 md:h-[100px] rounded-full bg-redbrand-100 mb-6 mx-auto'>
           <Trash size='40' color='var(--warning)' />
         </div>
         <DialogTitle className='text-base md:text-2xl text-[var(--text-dark)] font-medium mb-2 leading-[1.3] tracking-[-0.025em]'>

@@ -131,7 +131,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
         </div>
         {!isSidebarCollapsed && (
           <Button
-            className='btn-primary text-base !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)] w-full'
+            className='btn-primary text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] w-full'
             onClick={handleAddRoom}
           >
             <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />

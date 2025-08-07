@@ -87,7 +87,7 @@ export default function AddToolListForm({
           <Label className='field-label text-base font-semibold text-white'>
             Tools List
           </Label>
-          <button className='text-[#34AD44] hover:text-[var(--primary-dark)] text-sm font-semibold transition-colors'>
+          <button className='text-greenbrand hover:text-[var(--primary-dark)] text-sm font-semibold transition-colors'>
             + Add from Templates
           </button>
         </div>
@@ -108,7 +108,7 @@ export default function AddToolListForm({
               {selectedTools.map(tool => (
                 <div
                   key={tool.value}
-                  className='flex items-center gap-2 pl-4 pr-3 py-2 bg-[#00A8BF26]  rounded-full'
+                  className='flex items-center gap-2 pl-4 pr-3 py-2 bg-cyanwave-light  rounded-full'
                 >
                   <span className='text-base font-medium text-[var(--text-dark)]'>
                     {tool.label}

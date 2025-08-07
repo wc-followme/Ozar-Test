@@ -13,12 +13,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { CommonStatus } from '@/constants/common';
+import { catIconOptions } from '@/constants/icon-options';
 import { apiService } from '@/lib/api';
 import { yupResolver } from '@hookform/resolvers/yup';
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import { catIconOptions } from '../../../constants/sidebar-items';
 
 const projectTypeSchema = yup.object({
   selectedType: yup.string().required(STEP_MESSAGES.PROJECT_TYPE_REQUIRED),
@@ -193,11 +193,7 @@ export function StepProjectType({
                             }
                           >
                             <div
-                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
-                              style={{
-                                background: iconOption.bgColor,
-                                color: iconOption.color,
-                              }}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 ${iconOption.bgColor} ${iconOption.color}`}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;

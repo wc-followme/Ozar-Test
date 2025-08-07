@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import { roleIconOptions } from '@/constants/sidebar-items';
 import type { UserPermissions } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CreateRoleFormData, createRoleSchema } from '@/lib/validations/role';
@@ -13,9 +12,36 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { CatHomeIcon } from '../../icons/CatHomeIcon';
+import { HelmetIcon } from '../../icons/HelmetIcon';
+import { PeopleGroupIcon } from '../../icons/PeopleGroupIcon';
+import { UserCardIcon } from '../../icons/UserCardIcon';
 import FormErrorMessage from '../common/FormErrorMessage';
 import IconFieldWrapper from '../common/IconFieldWrapper';
 import AccessControlAccordion from '../CompanyManagementAddUser';
+
+// Local roleIconOptions array
+const roleIconOptions = [
+  { value: 'helmet', icon: HelmetIcon, color: '#24338C', bgColor: '#1A57BF1A' },
+  {
+    value: 'group',
+    icon: PeopleGroupIcon,
+    color: '#90C91D',
+    bgColor: '#90C91D26',
+  },
+  {
+    value: 'identification-badge',
+    icon: UserCardIcon,
+    color: '#34AD44',
+    bgColor: '#34AD4426',
+  },
+  {
+    value: 'home',
+    icon: CatHomeIcon,
+    color: '#00A8BF',
+    bgColor: '#00A8BF26',
+  },
+];
 
 interface RoleFormProps {
   initialValues?: Partial<CreateRoleFormData>;
@@ -242,7 +268,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
     };
 
     return (
-      <Card className='flex flex-col gap-8 p-4 md:p-6 flex-1 w-full border-1 border-[#E8EAED] rounded-[20px] bg-[var(--card-background)]'>
+      <Card className='flex flex-col gap-8 p-4 md:p-6 flex-1 w-full border-1 border-[var(--border-dark)] rounded-[20px] bg-[var(--card-background)]'>
         <form
           onSubmit={handleSubmit(data => {
             // Attach permissions to form data

@@ -1,6 +1,9 @@
 'use client';
 
+import { CatHomeIcon } from '@/components/icons/CatHomeIcon';
 import { HelmetIcon } from '@/components/icons/HelmetIcon';
+import { PeopleGroupIcon } from '@/components/icons/PeopleGroupIcon';
+import { UserCardIcon } from '@/components/icons/UserCardIcon';
 import { RoleCard } from '@/components/shared/cards/RoleCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
@@ -15,7 +18,6 @@ import {
   STORAGE_KEYS,
 } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
-import { roleIconOptions } from '@/constants/sidebar-items';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
@@ -29,6 +31,29 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import RoleCardSkeleton from '../../../components/shared/skeleton/RoleCardSkeleton';
 import { ROLE_MESSAGES } from './role-messages';
 import type { FetchRolesParams, Role, RoleApiResponse } from './types';
+
+// Local roleIconOptions array
+const roleIconOptions = [
+  { value: 'helmet', icon: HelmetIcon, color: '#24338C', bgColor: '#1A57BF1A' },
+  {
+    value: 'group',
+    icon: PeopleGroupIcon,
+    color: '#90C91D',
+    bgColor: '#90C91D26',
+  },
+  {
+    value: 'identification-badge',
+    icon: UserCardIcon,
+    color: '#34AD44',
+    bgColor: '#34AD4426',
+  },
+  {
+    value: 'home',
+    icon: CatHomeIcon,
+    color: '#00A8BF',
+    bgColor: '#00A8BF26',
+  },
+];
 
 interface MenuOption {
   label: string;

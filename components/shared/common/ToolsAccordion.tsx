@@ -82,7 +82,7 @@ export default function ToolsAccordion({
                   </h3>
                 </div>
                 <Button
-                  className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)]'
+                  className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
                   onClick={e => {
                     e.stopPropagation();
                     setIsSideSheetOpen(true);
@@ -103,7 +103,7 @@ export default function ToolsAccordion({
                   tools.map(tool => (
                     <div
                       key={tool.id}
-                      className='flex items-center gap-2 pl-4 pr-3 py-2 bg-[#00A8BF26]  rounded-full'
+                      className='flex items-center gap-2 pl-4 pr-3 py-2 bg-cyanwave-light  rounded-full'
                     >
                       <span className='text-base font-medium text-[var(--text-dark)]'>
                         {tool.name}

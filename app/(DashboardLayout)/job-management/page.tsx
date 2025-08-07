@@ -586,7 +586,7 @@ export default function JobManagement() {
           </div>
           <TabsContent
             value={NEW_LEADS_TAB}
-            className='pt-4 sm:pt-8 lg:max-h-[calc(100vh_-_298px)] overflow-auto'
+            className='pt-4 sm:pt-8 lg:max-h-[calc(100vh_-_218px)] overflow-auto'
           >
             {jobs.length === 0 && (loading || tabLoading) ? (
               // Show skeleton for initial loading or tab loading

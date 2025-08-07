@@ -149,7 +149,7 @@ export default function EstimationHeader({
         <div className='flex items-center space-x-2'>
           {!showAddService ? (
             <Button
-              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)]'
+              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={handleAddTrade}
             >
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
@@ -157,7 +157,7 @@ export default function EstimationHeader({
             </Button>
           ) : showServiceForm && selectedServiceData ? (
             <Button
-              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)]'
+              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={() => {
                 // Handle option template logic here
                 console.log('Option Template clicked');
@@ -168,7 +168,7 @@ export default function EstimationHeader({
             </Button>
           ) : (
             <Button
-              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-[#31A31D1A] !h-9 hover:!bg-[#31A31D1A] !text-[var(--secondary)]'
+              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={handleAddService}
             >
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />{' '}
