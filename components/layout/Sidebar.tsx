@@ -161,7 +161,7 @@ export function Sidebar() {
                               )}
                             >
                               <div className='stroke-[var(--text)] group-hover:text-white'>
-                                <Icon size='24' color='currentcolor' />
+                                <Icon size='24' color='currentcolor' cla />
                               </div>
                               <span className='opacity-0 max-w-0 overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white'>
                                 {title}

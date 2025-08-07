@@ -175,7 +175,7 @@ export function PermissionAwareSidebar() {
   ) => {
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const filteredSubmenu = hasSubmenu ? filterSubmenuItems(item.submenu) : [];
-    const showSubmenu = hasSubmenu && hoveredItem === item.menu_id && !isOpen;
+    const showSubmenu = hasSubmenu && hoveredItem === item.menu_id;
     const isActive =
       pathname === item.href ||
       (hasSubmenu &&
@@ -193,7 +193,7 @@ export function PermissionAwareSidebar() {
         const rect = event.currentTarget.getBoundingClientRect();
         setSubmenuPosition({
           top: rect.top,
-          left: rect.right, // Remove the 8px gap - stick to sidebar
+          left: rect.right + 16, // Remove the 8px gap - stick to sidebar
         });
       }
     };
@@ -208,7 +208,7 @@ export function PermissionAwareSidebar() {
     const menuItemContent = (
       <div
         className={cn(
-          'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group relative',
+          'flex items-center flex-nowrap w-full pl-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group relative',
           isActive && 'bg-[var(--primary)] text-white'
         )}
         onMouseEnter={handleMouseEnter}
@@ -219,32 +219,12 @@ export function PermissionAwareSidebar() {
         </div>
         <span
           className={cn(
-            'ml-2 max-w-[180px] overflow-hidden text-nowrap transition-all duration-300 group-hover:text-white',
+            'ml-2 max-w-[180px] overflow-hidden text-nowrap text-sm font-medium transition-all duration-300 group-hover:text-white',
             isOpen ? 'opacity-100' : 'opacity-0 max-w-0'
           )}
         >
           {item.title}
         </span>
-
-        {/* Submenu indicator */}
-        {hasSubmenu && (
-          <div
-            className={cn(
-              'ml-auto transition-transform duration-300',
-              isOpen ? 'opacity-100' : 'opacity-0'
-            )}
-          >
-            <svg width='12' height='12' viewBox='0 0 12 12' fill='none'>
-              <path
-                d='M4.5 3L7.5 6L4.5 9'
-                stroke='currentColor'
-                strokeWidth='1.5'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-          </div>
-        )}
       </div>
     );
 
@@ -268,7 +248,7 @@ export function PermissionAwareSidebar() {
       >
         <div className='flex flex-col h-screen max-h-[100dvh]'>
           {/* Burger Menu */}
-          <div className='w-[60px] h-[60px] flex items-center px-[18px] mx-4 mt-2'>
+          <div className='w-[60px] h-[60px] flex items-center pl-[18px] mx-4 mt-2'>
             <div
               className='w-[24px] h-[17px] cursor-pointer flex flex-col justify-between'
               onClick={handleSidebarToggle}
@@ -330,7 +310,6 @@ export function PermissionAwareSidebar() {
 
       {/* Portal for submenu */}
       {hoveredItem &&
-        !isOpen &&
         (() => {
           const item = sidebarItems.find(i => i.menu_id === hoveredItem);
           const hasSubmenu = item?.submenu && item.submenu.length > 0;
@@ -342,7 +321,7 @@ export function PermissionAwareSidebar() {
 
           return createPortal(
             <div
-              className='fixed bg-[var(--white-background)] border border-[var(--border-dark)] rounded-lg shadow-lg py-2 min-w-[200px] z-50'
+              className='fixed p-4 bg-[var(--white-background)] flex flex-col gap-1 rounded-2xl shadow-card-hover min-w-[200px] z-50'
               style={{
                 top: submenuPosition.top,
                 left: submenuPosition.left,
@@ -365,7 +344,7 @@ export function PermissionAwareSidebar() {
                   key={subItem.menu_id}
                   href={subItem.href || '#'}
                   className={cn(
-                    'flex items-center px-4 py-3 text-[var(--text-dark)] hover:bg-[var(--primary)] hover:text-white transition-colors',
+                    'flex items-center px-4 py-3 text-[var(--text-dark)] rounded-xl hover:bg-[var(--primary)] hover:text-white transition-colors',
                     pathname === subItem.href &&
                       'bg-[var(--primary)] text-white'
                   )}
@@ -374,7 +353,9 @@ export function PermissionAwareSidebar() {
                   <div className='mr-3'>
                     <subItem.icon size='20' color='currentcolor' />
                   </div>
-                  <span className='text-sm'>{subItem.title}</span>
+                  <span className='text-sm font-medium text-[var(--text-dark)])'>
+                    {subItem.title}
+                  </span>
                 </Link>
               ))}
             </div>,

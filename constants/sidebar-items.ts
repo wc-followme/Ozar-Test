@@ -1,4 +1,4 @@
-import { Home, Icon } from 'iconsax-react';
+import { Home, SecurityUser, Setting3 } from 'iconsax-react';
 import { Category } from './../components/icons/Category';
 import { Company } from './../components/icons/Company';
 import { JobIcon } from './../components/icons/JobIcon';
@@ -8,8 +8,17 @@ import { Tool } from './../components/icons/Tool';
 import { Trade } from './../components/icons/Trade';
 
 // Common icon options for roles and other modules
+import { CatCraneIcon } from '../components/icons/CatCraneIcon';
+import { CatHomeIcon } from '../components/icons/CatHomeIcon';
+import { CatPaintBrushIcon } from '../components/icons/CatPaintBrushIcon';
+import { CatSkrewDriveIcon } from '../components/icons/CatSkrewDriveIcon';
+import { CatToolIcon } from '../components/icons/CatToolIcon';
 import { CircleUsersStarIcon } from '../components/icons/CircleUsersStarIcon';
+import { HelmetIcon } from '../components/icons/HelmetIcon';
+import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
+import { TemplateIcon } from '../components/icons/TemplateIcon';
+import { UserCardIcon } from '../components/icons/UserCardIcon';
 
 // Sidebar title constants
 export const SIDEBAR_TITLES = {
@@ -19,6 +28,7 @@ export const SIDEBAR_TITLES = {
   COMPANY_MANAGEMENT: 'Company Management',
   CATALOGUE_MANAGEMENT: 'Catalogue Management',
   TEMPLATES_MANAGEMENT: 'Templates Management',
+  SETTINGS: 'Settings',
   // Submenu items
   ROLE_MANAGEMENT: 'Role Management',
   STAFF_MANAGEMENT: 'Staff Management',
@@ -53,7 +63,7 @@ type SidebarMenuItem = {
   menu_id: string;
   title: string;
   href?: string;
-  icon: Icon;
+  icon: ComponentType<any>;
   submenu?: SidebarMenuItem[];
 };
 
@@ -73,7 +83,7 @@ export const sidebarItems: SidebarMenuItem[] = [
   {
     menu_id: 'roles-accounts',
     title: SIDEBAR_TITLES.ROLES_ACCOUNTS,
-    icon: CircleUsersStarIcon,
+    icon: RoleIcon,
     submenu: [
       {
         menu_id: 'role-management',
@@ -85,13 +95,13 @@ export const sidebarItems: SidebarMenuItem[] = [
         menu_id: 'staff-management',
         title: SIDEBAR_TITLES.STAFF_MANAGEMENT,
         href: '/user-management',
-        icon: PeopleGroupIcon,
+        icon: CircleUsersStarIcon,
       },
       {
         menu_id: 'portal-users',
         title: SIDEBAR_TITLES.PORTAL_USERS,
         href: '/users',
-        icon: UserCardIcon,
+        icon: SecurityUser,
       },
     ],
   },
@@ -142,6 +152,56 @@ export const sidebarItems: SidebarMenuItem[] = [
     menu_id: 'templates-management',
     title: SIDEBAR_TITLES.TEMPLATES_MANAGEMENT,
     href: '/templates',
+    icon: TemplateIcon,
+  },
+  {
+    menu_id: 'settings',
+    title: SIDEBAR_TITLES.SETTINGS,
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+];
+
+export const catIconOptions = [
+  { value: 'home', icon: CatHomeIcon, color: '#F58B1E', bgColor: '#F58B1E1A' },
+  {
+    value: 'crane',
+    icon: CatCraneIcon,
+    color: '#90C91D',
+    bgColor: '#90C91D26',
+  },
+  {
+    value: 'paint',
     icon: CatPaintBrushIcon,
+    color: '#24338C',
+    bgColor: '#1A57BF1A',
+  },
+  {
+    value: 'skrew',
+    icon: CatSkrewDriveIcon,
+    color: '#EBB402',
+    bgColor: '#EBB4021A',
+  },
+  { value: 'tool', icon: CatToolIcon, color: '#00A8BF', bgColor: '#00A8BF26' },
+];
+export const roleIconOptions = [
+  { value: 'helmet', icon: HelmetIcon, color: '#24338C', bgColor: '#1A57BF1A' },
+  {
+    value: 'group',
+    icon: PeopleGroupIcon,
+    color: '#90C91D',
+    bgColor: '#90C91D26',
+  },
+  {
+    value: 'identification-badge',
+    icon: UserCardIcon,
+    color: '#34AD44',
+    bgColor: '#34AD4426',
+  },
+  {
+    value: 'home',
+    icon: CatHomeIcon,
+    color: '#00A8BF',
+    bgColor: '#00A8BF26',
   },
 ];
