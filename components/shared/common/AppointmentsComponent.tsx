@@ -5,7 +5,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
@@ -152,13 +152,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   const formatDateDisplay = (dateString: string) => {
     try {
       const date = parseISO(dateString);
-      if (isToday(date)) {
-        return 'Today';
-      } else if (isTomorrow(date)) {
-        return 'Tomorrow';
-      } else {
-        return format(date, 'MMM dd, yyyy');
-      }
+      return format(date, 'MMM dd, yyyy');
     } catch (error) {
       return dateString;
     }
@@ -374,8 +368,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
             address,
             notes,
             completionPercentage,
-            totalEmployees,
-            completedEmployees,
           }) => {
             const isExpanded = expandedAppointment === appointmentId;
 
