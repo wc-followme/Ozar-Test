@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
@@ -119,6 +120,7 @@ export const AppointmentsComponent = forwardRef<
     useState<Appointment | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const { showSuccessToast, showErrorToast } = useToast();
+  const { user } = useAuth();
 
   // Expose refresh method to parent components
   useImperativeHandle(ref, () => ({
@@ -221,27 +223,40 @@ export const AppointmentsComponent = forwardRef<
     );
   };
 
-  // Dropdown menu options
-  const menuOptions = [
-    {
-      id: 'completed',
-      label: CATEGORY_MESSAGES.COMPLETED_MENU,
-      icon: TickCircle,
-      action: ACTIONS.COMPLETED,
-    },
-    {
-      id: 'edit',
-      label: CATEGORY_MESSAGES.EDIT_MENU,
-      icon: Edit2,
-      action: ACTIONS.EDIT,
-    },
-    {
-      id: 'delete',
-      label: CATEGORY_MESSAGES.DELETE_MENU,
-      icon: Trash,
-      action: ACTIONS.DELETE,
-    },
-  ];
+  // Generate menu options based on appointment and current user
+  const getMenuOptions = (appointment: Appointment) => {
+    const options: Array<{
+      id: string;
+      label: string;
+      icon: React.ElementType;
+      action: string;
+    }> = [
+      {
+        id: 'completed',
+        label: CATEGORY_MESSAGES.COMPLETED_MENU,
+        icon: TickCircle,
+        action: ACTIONS.COMPLETED,
+      },
+      {
+        id: 'edit',
+        label: CATEGORY_MESSAGES.EDIT_MENU,
+        icon: Edit2,
+        action: ACTIONS.EDIT,
+      },
+    ];
+
+    // Only show delete option if current user is the creator
+    if (user && appointment.created_by === user.id) {
+      options.push({
+        id: 'delete',
+        label: CATEGORY_MESSAGES.DELETE_MENU,
+        icon: Trash,
+        action: ACTIONS.DELETE,
+      });
+    }
+
+    return options;
+  };
 
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
@@ -511,6 +526,8 @@ export const AppointmentsComponent = forwardRef<
             address,
             notes,
             completionPercentage,
+            created_by,
+            creator,
           }) => {
             const isExpanded = expandedAppointment === appointmentId;
 
@@ -542,7 +559,29 @@ export const AppointmentsComponent = forwardRef<
                     </p>
                   </div>
                   <Dropdown
-                    menuOptions={menuOptions}
+                    menuOptions={getMenuOptions({
+                      id: appointmentId,
+                      uuid: '',
+                      agenda: '',
+                      appointment_with: '',
+                      date: '',
+                      start_time: '',
+                      end_time: '',
+                      address: '',
+                      notes: '',
+                      created_by,
+                      updated_by: 0,
+                      created_at: '',
+                      updated_at: '',
+                      status: '',
+                      creator,
+                      employees: [],
+                      completions: [],
+                      completionPercentage: 0,
+                      totalEmployees: 0,
+                      completedEmployees: 0,
+                      currentUserCompleted: false,
+                    })}
                     onAction={action => handleMenuAction(action, appointmentId)}
                     trigger={
                       <Button
@@ -677,3 +716,5 @@ export const AppointmentsComponent = forwardRef<
     </div>
   );
 });
+
+AppointmentsComponent.displayName = 'AppointmentsComponent';
