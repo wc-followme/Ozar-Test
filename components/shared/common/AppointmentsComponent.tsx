@@ -452,7 +452,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                     </div>
 
                     {/* Time */}
-                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                    {/* <div className='border-t border-[var(--border-dark)] pt-2'>
                       <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
                         <div>
                           <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
@@ -472,7 +472,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
                           </p>
                         </div>
                       </div>
-                    </div>
+                    </div> */}
 
                     {/* Address */}
                     <div className='border-t border-[var(--border-dark)] pt-2'>
