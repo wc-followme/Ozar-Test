@@ -90,6 +90,10 @@ const config: Config = {
           DEFAULT: '#F58B1E',
           100: '#F58B1E1A',
         },
+        greenaccent: {
+          DEFAULT: '#31A31D',
+          100: '#31A31D1A',
+        },
         purplebrand: {
           DEFAULT: '#9c88ff',
         },
@@ -113,6 +117,9 @@ const config: Config = {
         },
         borderlight: {
           DEFAULT: '#E8EAED',
+        },
+        borderlightgray: {
+          DEFAULT: '#EAECF0',
         },
         placeholdergray: {
           DEFAULT: '#C0C6CD',

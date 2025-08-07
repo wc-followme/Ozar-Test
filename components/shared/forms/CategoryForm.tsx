@@ -1,5 +1,7 @@
 import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
-import IconFieldWrapper from '@/components/shared/common/IconFieldWrapper';
+import IconFieldWrapper, {
+  IconOption,
+} from '@/components/shared/common/IconFieldWrapper';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,7 +15,7 @@ interface CategoryFormProps {
   editingCategory: any;
   handleClose: () => void;
   CATEGORY_MESSAGES: any;
-  iconOptions: any[];
+  iconOptions: IconOption[];
   errors: {
     icon?: string;
     description?: string;

@@ -248,7 +248,7 @@ export function Header() {
               id='Search'
               type='Search'
               placeholder={HEADER_MESSAGES.SEARCH.PLACEHOLDER}
-              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] placeholder-[#C0C6CD] !placeholder-[var(--text-placeholder)]'
+              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] !placeholder-[var(--text-placeholder)]'
               required
             />
             {/* Type Selector */}
@@ -258,7 +258,7 @@ export function Header() {
             </div> */}
 
             {/* Search Button */}
-            <Button className='bg-[#263796] hover:bg-[#263796] text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
+            <Button className='bg-buttonblue hover:bg-buttonblue text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
               <Search />
             </Button>
           </div>

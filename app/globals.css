@@ -252,6 +252,7 @@ body {
     --destructive-foreground: 0 0% 98%;
     --radius: 0.5rem;
     --badge-bg: #6b77bf;
+    --dark-border-other: #bfbfbf;
   }
 
   .dark {
@@ -283,6 +284,7 @@ body {
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 86% 97%;
     --badge-bg: #6b77bf;
+    --dark-border-other: #bfbfbf;
   }
 }
 @layer utilities {

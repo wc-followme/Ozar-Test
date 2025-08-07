@@ -14,7 +14,7 @@ export function ModeToggle() {
       onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
     >
       <Moon
-        color='#2D2D2D'
+        color='var(--text-dark)'
         variant='Outline'
         className='!!h-4 md:h-[1.2rem] w-4 md:w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0'
       />
