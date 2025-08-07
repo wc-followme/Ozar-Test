@@ -1873,6 +1873,31 @@ class ApiService {
       body: JSON.stringify(payload),
     });
   }
+
+  // Mark appointment as completed
+  async markAppointmentCompleted(
+    uuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}/completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        is_completed: isCompleted,
+      }),
+    });
+  }
+
+  // Delete appointment
+  async deleteAppointment(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

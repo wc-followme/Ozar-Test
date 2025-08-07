@@ -246,13 +246,21 @@ export const AppointmentsComponent = forwardRef<
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
       case ACTIONS.COMPLETED:
-        // TODO: Implement mark as completed functionality
-        break;
-      case ACTIONS.EDIT:
         // Find the appointment by ID and get its UUID
         const appointment = appointments.find(app => app.id === appointmentId);
         if (appointment) {
-          fetchAppointmentForEdit(appointment.uuid);
+          handleMarkAsCompleted(appointment.uuid);
+        } else {
+          showErrorToast('Appointment not found');
+        }
+        break;
+      case ACTIONS.EDIT:
+        // Find the appointment by ID and get its UUID
+        const editAppointment = appointments.find(
+          app => app.id === appointmentId
+        );
+        if (editAppointment) {
+          fetchAppointmentForEdit(editAppointment.uuid);
         } else {
           showErrorToast('Appointment not found');
         }
@@ -385,17 +393,77 @@ export const AppointmentsComponent = forwardRef<
     setEditingAppointment(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deletingAppointmentId) {
-      // Remove the appointment from the state
+      try {
+        // Find the appointment by ID and get its UUID
+        const appointment = appointments.find(
+          app => app.id === deletingAppointmentId
+        );
+        if (!appointment) {
+          showErrorToast('Appointment not found');
+          setIsDeleteModalOpen(false);
+          setDeletingAppointmentId(null);
+          return;
+        }
+
+        const response = await apiService.deleteAppointment(appointment.uuid);
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment deleted successfully'
+            )
+          );
+          // Refresh the appointments list
+          fetchAppointments();
+        } else {
+          showErrorToast(response.message || 'Failed to delete appointment');
+        }
+      } catch (error) {
+        console.error('Error deleting appointment:', error);
+        const message = extractApiErrorMessage(
+          error,
+          'Failed to delete appointment'
+        );
+        showErrorToast(message);
+      } finally {
+        setIsDeleteModalOpen(false);
+        setDeletingAppointmentId(null);
+      }
     }
-    setIsDeleteModalOpen(false);
-    setDeletingAppointmentId(null);
   };
 
   const handleDeleteCancel = () => {
     setIsDeleteModalOpen(false);
     setDeletingAppointmentId(null);
+  };
+
+  const handleMarkAsCompleted = async (appointmentUuid: string) => {
+    try {
+      const response = await apiService.markAppointmentCompleted(
+        appointmentUuid,
+        true
+      );
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        showSuccessToast(
+          extractApiSuccessMessage(response, 'Appointment marked as completed')
+        );
+        // Refresh the appointments list
+        fetchAppointments();
+      } else {
+        showErrorToast(
+          response.message || 'Failed to mark appointment as completed'
+        );
+      }
+    } catch (error) {
+      console.error('Error marking appointment as completed:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to mark appointment as completed'
+      );
+      showErrorToast(message);
+    }
   };
 
   return (
