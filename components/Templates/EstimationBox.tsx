@@ -67,10 +67,10 @@ interface Room {
 }
 
 interface EstimationBoxProps {
-  onClose: () => void;
+  _onClose: () => void;
 }
 
-export default function EstimationBox({ onClose }: EstimationBoxProps) {
+export default function EstimationBox({}: EstimationBoxProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>([
@@ -910,7 +910,7 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
             selectedTradeData ? (
               <EstimationTradeForm
                 trade={selectedTradeData}
-                onTradeUpdate={updatedTrade => {
+                _onTradeUpdate={updatedTrade => {
                   // Handle trade update logic here
                   console.log('Trade updated:', updatedTrade);
                 }}
@@ -918,7 +918,7 @@ export default function EstimationBox({ onClose }: EstimationBoxProps) {
                   // Handle service selection logic here
                   handleServiceSelect(serviceId);
                 }}
-                onAddService={() => {
+                _onAddService={() => {
                   // Handle add service logic here
                   handleAddService();
                 }}

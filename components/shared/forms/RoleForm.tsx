@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
+import { roleIconOptions } from '@/constants/icon-options';
 import type { UserPermissions } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CreateRoleFormData, createRoleSchema } from '@/lib/validations/role';
@@ -12,36 +13,9 @@ import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { CatHomeIcon } from '../../icons/CatHomeIcon';
-import { HelmetIcon } from '../../icons/HelmetIcon';
-import { PeopleGroupIcon } from '../../icons/PeopleGroupIcon';
-import { UserCardIcon } from '../../icons/UserCardIcon';
 import FormErrorMessage from '../common/FormErrorMessage';
 import IconFieldWrapper from '../common/IconFieldWrapper';
 import AccessControlAccordion from '../CompanyManagementAddUser';
-
-// Local roleIconOptions array
-const roleIconOptions = [
-  { value: 'helmet', icon: HelmetIcon, color: '#24338C', bgColor: '#1A57BF1A' },
-  {
-    value: 'group',
-    icon: PeopleGroupIcon,
-    color: '#90C91D',
-    bgColor: '#90C91D26',
-  },
-  {
-    value: 'identification-badge',
-    icon: UserCardIcon,
-    color: '#34AD44',
-    bgColor: '#34AD4426',
-  },
-  {
-    value: 'home',
-    icon: CatHomeIcon,
-    color: '#00A8BF',
-    bgColor: '#00A8BF26',
-  },
-];
 
 interface RoleFormProps {
   initialValues?: Partial<CreateRoleFormData>;

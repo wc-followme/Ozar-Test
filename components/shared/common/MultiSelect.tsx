@@ -133,9 +133,9 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
             <ChevronDown className='ml-2 w-5 h-5 text-gray-400' />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className='w-full bg-white min-w-[var(--radix-popover-trigger-width)] p-0 rounded-lg border border-[var(--border-dark)]'>
+        <PopoverContent className='w-full bg-[var(--card-background)] min-w-[var(--radix-popover-trigger-width)] p-0 rounded-lg border border-[var(--border-dark)]'>
           {/* Search Field */}
-          <div className='p-2 border-b border-[var(--border-dark)]'>
+          <div className='p-2 border-b border-[var(--border-light)]'>
             <div className='relative'>
               <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-blue-500' />
               <Input
@@ -173,7 +173,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                 return (
                   <label
                     key={optionValue}
-                    className='flex items-center justify-between py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base font-medium border-b border-gray-200 last-of-type:border-b-0 hover:bg-gray-50'
+                    className='flex items-center justify-between py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base font-medium border-b border-[var(--border-light)] last-of-type:border-b-0 hover:bg-[var(--card-hover)]'
                   >
                     <div className='flex items-center gap-3'>
                       {getOptionImage(opt) && (
@@ -201,7 +201,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
           </div>
           {/* Clear Selection Button */}
           {value.length > 0 && (
-            <div className='py-2 px-4 border-t border-gray-200'>
+            <div className='py-2 px-4 border-t border-[var(--border-light)]'>
               <button
                 onClick={handleClearSelection}
                 className='flex items-center gap-2 text-[var(--warning)] text-sm font-medium w-full py-2'

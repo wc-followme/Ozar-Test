@@ -45,7 +45,7 @@ export default function EstimateComponent({
 
   // If EstimationBox is shown, render only that
   if (showEstimationBox) {
-    return <EstimationBox onClose={handleCloseEstimationBox} />;
+    return <EstimationBox _onClose={handleCloseEstimationBox} />;
   }
 
   return (

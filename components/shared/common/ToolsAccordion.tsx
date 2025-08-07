@@ -118,7 +118,7 @@ export default function ToolsAccordion({
                   ))
                 ) : (
                   <p className='text-gray-500 text-sm'>
-                    No tools added yet. Click "+ Tools" to add tools.
+                    No tools added yet. Click &quot;+ Tools&quot; to add tools.
                   </p>
                 )}
               </div>

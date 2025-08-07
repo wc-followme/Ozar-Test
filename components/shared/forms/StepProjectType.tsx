@@ -193,7 +193,11 @@ export function StepProjectType({
                             }
                           >
                             <div
-                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 ${iconOption.bgColor} ${iconOption.color}`}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
+                              style={{
+                                backgroundColor: iconOption.bgColor,
+                                color: iconOption.color,
+                              }}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;

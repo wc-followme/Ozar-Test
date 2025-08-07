@@ -20,24 +20,6 @@ import { format } from 'date-fns';
 import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useEffect, useState } from 'react';
 
-interface ServiceOption {
-  id: string;
-  name: string;
-  tradeTotal: number;
-}
-
-interface Material {
-  id: string;
-  name: string;
-  variant: string;
-  qty: number;
-  unit: string;
-  description: string;
-  rate: number;
-  markup: number;
-  lineTotal: number;
-}
-
 interface Trade {
   id: string;
   name: string;
@@ -53,18 +35,16 @@ interface Trade {
 
 interface EstimationTradeFormProps {
   trade: Trade;
-  onTradeUpdate?: (updatedTrade: Trade) => void;
+  _onTradeUpdate?: (updatedTrade: Trade) => void;
   onServiceSelect?: (serviceId: string) => void;
-  onAddService?: () => void;
+  _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
   onServiceReorder?: (reorderedServices: Service[]) => void;
 }
 
 export default function EstimationTradeForm({
   trade,
-  onTradeUpdate,
   onServiceSelect,
-  onAddService,
   onTradeNameChange,
   onServiceReorder,
 }: EstimationTradeFormProps) {

@@ -89,7 +89,8 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                             onClick={() => onCategorySelect(id)}
                           >
                             <div
-                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0 ${bgColor} ${color}`}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
+                              style={{ backgroundColor: bgColor, color: color }}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;
@@ -156,7 +157,11 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                               onClick={() => onCategorySelect(id)}
                             >
                               <div
-                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0 ${bgColor} ${color}`}
+                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
+                                style={{
+                                  backgroundColor: bgColor,
+                                  color: color,
+                                }}
                               >
                                 {(() => {
                                   const IconComponent = iconOption.icon;
@@ -213,7 +218,11 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                                 onClick={() => onCategorySelect(id)}
                               >
                                 <div
-                                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 transition-transform duration-200 ${bgColor} ${color}`}
+                                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 transition-transform duration-200`}
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    color: color,
+                                  }}
                                 >
                                   {(() => {
                                     const IconComponent = iconOption.icon;
@@ -270,7 +279,11 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                                   onClick={() => onCategorySelect(id)}
                                 >
                                   <div
-                                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 transition-transform duration-200 ${bgColor} ${color}`}
+                                    className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4 transition-transform duration-200`}
+                                    style={{
+                                      backgroundColor: bgColor,
+                                      color: color,
+                                    }}
                                   >
                                     {(() => {
                                       const IconComponent = iconOption.icon;
@@ -334,7 +347,11 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                               onClick={() => onCategorySelect(id)}
                             >
                               <div
-                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0 ${bgColor} ${color}`}
+                                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
+                                style={{
+                                  backgroundColor: bgColor,
+                                  color: color,
+                                }}
                               >
                                 {(() => {
                                   const IconComponent = iconOption.icon;
@@ -389,7 +406,11 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                                 onClick={() => onCategorySelect(id)}
                               >
                                 <div
-                                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0 ${bgColor} ${color}`}
+                                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0`}
+                                  style={{
+                                    backgroundColor: bgColor,
+                                    color: color,
+                                  }}
                                 >
                                   {(() => {
                                     const IconComponent = iconOption.icon;
@@ -445,7 +466,8 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                             onClick={() => onCategorySelect(id)}
                           >
                             <div
-                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0 ${bgColor} ${color}`}
+                              className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
+                              style={{ backgroundColor: bgColor, color: color }}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;
