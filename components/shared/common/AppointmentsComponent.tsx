@@ -5,23 +5,79 @@ import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Dropdown from '../common/Dropdown';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import SideSheet from './SideSheet';
 
+interface AppointmentEmployee {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  updated_by: number;
+  status: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+    phone_number: string;
+    profile_picture_url: string;
+  };
+}
+
+interface AppointmentCompletion {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+  };
+}
+
 interface Appointment {
   id: string;
+  uuid: string;
+  agenda: string;
+  appointment_with: string;
   date: string;
-  title: string;
-  timeRange: string;
-  appointmentWith: string;
-  appointmentDate: string;
+  start_time: string;
+  end_time: string;
   address: string;
   notes: string;
+  created_by: number;
+  updated_by: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  creator: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+  };
+  employees: AppointmentEmployee[];
+  completions: AppointmentCompletion[];
+  completionPercentage: number;
+  totalEmployees: number;
+  completedEmployees: number;
+  currentUserCompleted: boolean;
 }
 
 interface AppointmentFormData {
@@ -43,7 +99,7 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
   className,
 }) => {
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(
-    'appointment-2'
+    null
   );
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -51,61 +107,62 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     string | null
   >(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { showSuccessToast, showErrorToast } = useToast();
-  const [appointments] = useState<Appointment[]>([
-    {
-      id: 'appointment-1',
-      date: 'Tomorrow',
-      title: 'Door Fitting',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Esther Howard',
-      appointmentDate: '08/12/2024',
-      address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-      notes:
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit semper dalar dolor elementum tempus hac.',
-    },
-    {
-      id: 'appointment-2',
-      date: '01-05-2025',
-      title: 'Door Fitting',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Esther Howard',
-      appointmentDate: '08/12/2024',
-      address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-      notes:
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit semper dalar dolor elementum tempus hac.',
-    },
-    {
-      id: 'appointment-3',
-      date: 'Tomorrow',
-      title: 'Discuss door installation',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Jenny Wilson',
-      appointmentDate: '09/12/2024',
-      address: '123 Main St. Chicago, Illinois 60601',
-      notes: 'Review installation requirements and timeline.',
-    },
-    {
-      id: 'appointment-4',
-      date: 'Tomorrow',
-      title: 'Plan door upgrades',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'John Doe',
-      appointmentDate: '10/12/2024',
-      address: '456 Oak Ave. Springfield, Illinois 62701',
-      notes: 'Discuss upgrade options and pricing.',
-    },
-    {
-      id: 'appointment-5',
-      date: 'Tomorrow',
-      title: 'Review fitting options',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Jane Smith',
-      appointmentDate: '11/12/2024',
-      address: '789 Pine St. Peoria, Illinois 61601',
-      notes: 'Review different fitting styles and materials.',
-    },
-  ]);
+
+  // Fetch appointments function
+  const fetchAppointments = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiService.fetchAppointments({
+        page: 1,
+        limit: 50,
+      });
+
+      if (response.statusCode === 200 && response.data?.data) {
+        const appointmentsData: Appointment[] = response.data.data;
+        setAppointments(appointmentsData);
+      } else {
+        setError(response.message || 'Failed to fetch appointments');
+        showErrorToast(response.message || 'Failed to fetch appointments');
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to fetch appointments'
+      );
+      setError(message);
+      showErrorToast(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch appointments on component mount
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  // Helper function to format date display
+  const formatDateDisplay = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      if (isToday(date)) {
+        return 'Today';
+      } else if (isTomorrow(date)) {
+        return 'Tomorrow';
+      } else {
+        return format(date, 'MMM dd, yyyy');
+      }
+    } catch (error) {
+      return dateString;
+    }
+  };
 
   const handleAppointmentClick = (appointmentId: string) => {
     setExpandedAppointment(
@@ -173,7 +230,12 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         const [time, modifier] = time12h.split(' ');
         if (!time || !modifier) return time12h; // Return original if parsing fails
 
-        let [hours, minutes] = time.split(':');
+        const timeParts = time.split(':');
+        if (timeParts.length !== 2) return time12h; // Return original if parsing fails
+
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+
         if (!hours || !minutes) return time12h; // Return original if parsing fails
 
         if (hours === '12') {
@@ -203,7 +265,8 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
           extractApiSuccessMessage(response, 'Appointment created successfully')
         );
         setIsEditSheetOpen(false);
-        // TODO: Refresh appointments list if needed
+        // Refresh appointments list
+        fetchAppointments();
       } else {
         showErrorToast(response.message || 'Failed to create appointment');
       }
@@ -243,112 +306,158 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
         <Button
           onClick={() => setIsEditSheetOpen(true)}
           className='btn-primary'
+          disabled={loading}
         >
           Add New Appointment
         </Button>
       </div>
 
-      {appointments.map(
-        ({
-          id: appointmentId,
-          date,
-          title,
-          timeRange,
-          appointmentWith,
-          appointmentDate,
-          address,
-          notes,
-        }) => {
-          const isExpanded = expandedAppointment === appointmentId;
-
-          return (
-            <div
-              key={appointmentId}
-              className='bg-[var(--background)] p-3 rounded-[10px]'
-              onClick={() => handleAppointmentClick(appointmentId)}
+      {loading ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+            <p className='text-sm text-muted-foreground'>
+              Loading appointments...
+            </p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <p className='text-sm text-destructive'>{error}</p>
+            <Button
+              onClick={fetchAppointments}
+              variant='outline'
+              size='sm'
+              className='mt-2'
             >
-              {/* Basic Info - Always Visible */}
-              <div className='flex justify-between items-center'>
-                <div className='flex-1'>
-                  <div className='flex items-center gap-2 mb-2'>
-                    <span className='text-xs font-medium text-[var(--text-secondary)]'>
-                      {date}
-                    </span>
-                  </div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
-                    {title}
-                  </h3>
-                  <p className='text-sm text-[var(--text-dark)]'>{timeRange}</p>
-                </div>
-                <Dropdown
-                  menuOptions={menuOptions}
-                  onAction={action => handleMenuAction(action, appointmentId)}
-                  trigger={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 p-0 mt-auto mb-auto'
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <MoreVertical
-                        size={24}
-                        className='text-[var(--text-dark)] !w-5 !h-5'
-                      />
-                    </Button>
-                  }
-                  align='end'
-                />
-              </div>
+              Retry
+            </Button>
+          </div>
+        </div>
+      ) : appointments.length === 0 ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <p className='text-sm text-muted-foreground'>
+              No appointments found
+            </p>
+          </div>
+        </div>
+      ) : (
+        appointments.map(
+          ({
+            id: appointmentId,
+            agenda,
+            appointment_with,
+            date,
+            start_time,
+            end_time,
+            address,
+            notes,
+            completionPercentage,
+            totalEmployees,
+            completedEmployees,
+          }) => {
+            const isExpanded = expandedAppointment === appointmentId;
 
-              {/* Expanded Details */}
-              {isExpanded && (
-                <div className='mt-4 space-y-2'>
-                  {/* Appointment Details */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                      <div>
-                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                          Appointment with
-                        </p>
-                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                          {appointmentWith}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                          Date
-                        </p>
-                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                          {appointmentDate}
-                        </p>
+            return (
+              <div
+                key={appointmentId}
+                className='bg-[var(--background)] p-3 rounded-[10px]'
+                onClick={() => handleAppointmentClick(appointmentId)}
+              >
+                {/* Basic Info - Always Visible */}
+                <div className='flex justify-between items-center'>
+                  <div className='flex-1'>
+                    <div className='flex items-center gap-2 mb-2'>
+                      <span className='text-xs font-medium text-[var(--text-secondary)]'>
+                        {formatDateDisplay(date)}
+                      </span>
+                      {completionPercentage > 0 && (
+                        <span className='text-xs font-medium text-green-600'>
+                          {completionPercentage}% Complete
+                        </span>
+                      )}
+                    </div>
+                    <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
+                      {agenda}
+                    </h3>
+                    <p className='text-sm text-[var(--text-dark)]'>
+                      {start_time} - {end_time}
+                    </p>
+                  </div>
+                  <Dropdown
+                    menuOptions={menuOptions}
+                    onAction={action => handleMenuAction(action, appointmentId)}
+                    trigger={
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 p-0 mt-auto mb-auto'
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <MoreVertical
+                          size={24}
+                          className='text-[var(--text-dark)] !w-5 !h-5'
+                        />
+                      </Button>
+                    }
+                    align='end'
+                  />
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className='mt-4 space-y-2'>
+                    {/* Appointment Details */}
+                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Appointment with
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {appointment_with}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Employees ({totalEmployees})
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {completedEmployees} completed
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Address */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
-                      Address
-                    </p>
-                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                      {address}
-                    </p>
-                  </div>
+                    {/* Address */}
+                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                        Address
+                      </p>
+                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                        {address}
+                      </p>
+                    </div>
 
-                  {/* Notes */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                      Notes
-                    </p>
-                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                      {notes}
-                    </p>
+                    {/* Notes */}
+                    {notes && (
+                      <div className='border-t border-[var(--border-dark)] pt-2'>
+                        <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                          Notes
+                        </p>
+                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                          {notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        }
+                )}
+              </div>
+            );
+          }
+        )
       )}
 
       {/* Add Appointment SideSheet */}
