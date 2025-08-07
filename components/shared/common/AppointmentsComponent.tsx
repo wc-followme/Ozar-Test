@@ -6,7 +6,7 @@ import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
@@ -189,11 +189,27 @@ export const AppointmentsComponent = forwardRef<
     }
   };
 
-  // Helper function to format date display
+  // Helper function to format date display (full date format)
   const formatDateDisplay = (dateString: string) => {
     try {
       const date = parseISO(dateString);
       return format(date, 'MMM dd, yyyy');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Helper function to format relative date display (Today/Tomorrow)
+  const formatRelativeDateDisplay = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      if (isToday(date)) {
+        return 'Today';
+      } else if (isTomorrow(date)) {
+        return 'Tomorrow';
+      } else {
+        return format(date, 'MMM dd, yyyy');
+      }
     } catch (error) {
       return dateString;
     }
@@ -560,7 +576,7 @@ export const AppointmentsComponent = forwardRef<
                   <div className='flex-1'>
                     <div className='flex items-center gap-2 mb-2'>
                       <span className='text-xs font-medium text-[var(--text-secondary)]'>
-                        {formatDateDisplay(date)}
+                        {formatRelativeDateDisplay(date)}
                       </span>
                       {is_completed && (
                         <span className='text-xs font-medium text-green-600'>
