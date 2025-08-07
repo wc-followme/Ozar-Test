@@ -256,16 +256,16 @@ export const AppointmentsComponent = forwardRef<
         icon: TickCircle,
         action: ACTIONS.COMPLETED,
       },
-      {
+    ];
+
+    // Only show edit and delete options if current user is the creator
+    if (user && appointment.created_by === user.id) {
+      options.push({
         id: 'edit',
         label: CATEGORY_MESSAGES.EDIT_MENU,
         icon: Edit2,
         action: ACTIONS.EDIT,
-      },
-    ];
-
-    // Only show delete option if current user is the creator
-    if (user && appointment.created_by === user.id) {
+      });
       options.push({
         id: 'delete',
         label: CATEGORY_MESSAGES.DELETE_MENU,
