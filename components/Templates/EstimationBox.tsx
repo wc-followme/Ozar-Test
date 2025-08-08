@@ -9,7 +9,9 @@ import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
 import { Tool } from '@/components/shared/forms/estimation-types';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
-import { useState } from 'react';
+import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 
 interface Material {
@@ -70,7 +72,7 @@ interface EstimationBoxProps {
   _onClose: () => void;
 }
 
-export default function EstimationBox({}: EstimationBoxProps) {
+export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>([
@@ -98,6 +100,11 @@ export default function EstimationBox({}: EstimationBoxProps) {
     },
   ]);
 
+  // Trades dropdown options from API
+  const [tradeOptions, setTradeOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+
   const selectedRoom =
     rooms.find(room => room.id === selectedRoomId) || rooms[0];
 
@@ -114,6 +121,79 @@ export default function EstimationBox({}: EstimationBoxProps) {
           service => service.id === selectedService
         )
       : undefined;
+
+  const fetchTrades = async (companyUuid: string | null) => {
+    try {
+      const response = await apiService.fetchTrades({
+        page: 1,
+        limit: 10,
+        is_active: true,
+        company_id: companyUuid || '',
+      });
+      type TradeItem = { id?: string | number; uuid?: string; name?: string };
+      const payload = response as unknown as {
+        data?: TradeItem[] | { data?: TradeItem[] };
+      };
+      const list: TradeItem[] = Array.isArray(payload?.data)
+        ? (payload.data as TradeItem[])
+        : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
+          ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
+          : [];
+      const options = list
+        .filter(t => !!t?.name)
+        .map(t => ({
+          value: String(t.uuid || t.id || t.name),
+          label: String(t.name),
+        }));
+      setTradeOptions(options);
+    } catch {
+      setTradeOptions([]);
+    }
+  };
+
+  // Load trades on mount and when company changes
+  useEffect(() => {
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+    fetchTrades(companyUuid);
+
+    const handleCompanyChanged = () => {
+      const raw = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+      let uuid = '';
+      if (raw) {
+        try {
+          const parsed: { uuid?: string; id?: string | number } =
+            JSON.parse(raw);
+          uuid = parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+        } catch {}
+      }
+      fetchTrades(uuid);
+    };
+
+    window.addEventListener(
+      CUSTOM_EVENTS.COMPANY_CHANGED,
+      handleCompanyChanged as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChanged as EventListener
+      );
+    };
+  }, []);
 
   const handleAddRoom = () => {
     // If no rooms exist, create the default Home 1 room
@@ -137,7 +217,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
 
     // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newRoom: Room = {
       id: uniqueId,
       name: `Room ${rooms.length + 1}`,
@@ -167,10 +247,11 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
   const handleAddTrade = () => {
     // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `trade-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `trade-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    const defaultTradeName = tradeOptions[0]?.label || 'New Trade';
     const newTrade: Trade = {
       id: uniqueId,
-      name: 'New Trade',
+      name: defaultTradeName,
       services: 0,
       dateRange: '',
       type: '2D',
@@ -203,7 +284,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
   const handleAddService = () => {
     // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `service-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newService: Service = {
       id: uniqueId,
       name: 'New Service',
@@ -279,12 +360,12 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
   const handleServiceSelect = (serviceId: string) => {
     // Find which room and trade contains this service across ALL rooms
-    let foundRoom = null;
-    let foundTrade = null;
+    let foundRoom: Room | null = null;
+    let foundTrade: Trade | null = null;
 
     for (const room of rooms) {
-      const trade = room.trades.find(trade =>
-        trade.serviceList.some(service => service.id === serviceId)
+      const trade = room.trades.find(tr =>
+        tr.serviceList.some(service => service.id === serviceId)
       );
       if (trade) {
         foundRoom = room;
@@ -418,7 +499,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
   };
 
-  const handleMaterialAdd = (newMaterial: any) => {
+  const handleMaterialAdd = (newMaterial: Material) => {
     if (selectedTrade && selectedService) {
       setRooms(prev =>
         prev.map(room =>
@@ -447,7 +528,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
   };
 
-  const handleFinishAdd = (newFinish: any) => {
+  const handleFinishAdd = (newFinish: Material) => {
     if (selectedTrade && selectedService) {
       setRooms(prev =>
         prev.map(room =>
@@ -476,7 +557,10 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
   };
 
-  const handleMaterialUpdate = (materialId: string, updatedMaterial: any) => {
+  const handleMaterialUpdate = (
+    materialId: string,
+    updatedMaterial: Material
+  ) => {
     if (selectedTrade && selectedService) {
       setRooms(prev =>
         prev.map(room =>
@@ -540,7 +624,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
   };
 
-  const handleFinishUpdate = (finishId: string, updatedFinish: any) => {
+  const handleFinishUpdate = (finishId: string, updatedFinish: Material) => {
     if (selectedTrade && selectedService) {
       setRooms(prev =>
         prev.map(room =>
@@ -877,12 +961,8 @@ export default function EstimationBox({}: EstimationBoxProps) {
               <EstimationServiceForm
                 service={selectedServiceData}
                 onServiceUpdate={handleServiceUpdate}
-                onAddMaterial={() => {
-                  console.log('Add material clicked');
-                }}
-                onAddFinish={() => {
-                  console.log('Add finish clicked');
-                }}
+                onAddMaterial={() => {}}
+                onAddFinish={() => {}}
                 onServiceNameChange={handleServiceNameChange}
                 onMaterialAdd={handleMaterialAdd}
                 onFinishAdd={handleFinishAdd}
@@ -910,20 +990,12 @@ export default function EstimationBox({}: EstimationBoxProps) {
             selectedTradeData ? (
               <EstimationTradeForm
                 trade={selectedTradeData}
-                _onTradeUpdate={updatedTrade => {
-                  // Handle trade update logic here
-                  console.log('Trade updated:', updatedTrade);
-                }}
+                onTradeNameChange={handleTradeNameChange}
                 onServiceSelect={serviceId => {
-                  // Handle service selection logic here
                   handleServiceSelect(serviceId);
                 }}
-                _onAddService={() => {
-                  // Handle add service logic here
-                  handleAddService();
-                }}
-                onTradeNameChange={handleTradeNameChange}
                 onServiceReorder={handleServiceReorder}
+                tradeOptions={tradeOptions}
               />
             ) : (
               <div className='text-center py-12'>

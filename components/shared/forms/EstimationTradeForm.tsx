@@ -40,6 +40,7 @@ interface EstimationTradeFormProps {
   _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
   onServiceReorder?: (reorderedServices: Service[]) => void;
+  tradeOptions?: Array<{ value: string; label: string }>;
 }
 
 export default function EstimationTradeForm({
@@ -47,8 +48,9 @@ export default function EstimationTradeForm({
   onServiceSelect,
   onTradeNameChange,
   onServiceReorder,
+  tradeOptions = [],
 }: EstimationTradeFormProps) {
-  const [selectedTrade, setSelectedTrade] = useState(trade.name || 'Plumbing');
+  const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date('2024-03-20')
@@ -59,6 +61,9 @@ export default function EstimationTradeForm({
   const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
 
+  // Use provided tradeOptions or show nothing if no trades available
+  const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
+
   // Sync selectedTrade with trade prop to avoid duplicates
   useEffect(() => {
     if (
@@ -66,10 +71,12 @@ export default function EstimationTradeForm({
       tradeOptions.some(option => option.value === trade.name)
     ) {
       setSelectedTrade(trade.name);
+    } else if (tradeOptions.length > 0 && tradeOptions[0]) {
+      setSelectedTrade(tradeOptions[0].value); // Default to first trade option
     } else {
-      setSelectedTrade('Plumbing'); // Default to first option if trade.name is not in options
+      setSelectedTrade(''); // Empty string if no trades available
     }
-  }, [trade.name]);
+  }, [trade.name, tradeOptions]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -77,16 +84,6 @@ export default function EstimationTradeForm({
       currency: 'USD',
     }).format(amount);
   };
-
-  // Sample options for the select fields - avoid duplicates
-  const tradeOptions = [
-    { value: 'Plumbing', label: 'Plumbing' },
-    { value: 'Electrical', label: 'Electrical' },
-    { value: 'HVAC', label: 'HVAC' },
-    { value: 'Carpentry', label: 'Carpentry' },
-    { value: 'Roofing', label: 'Roofing' },
-    { value: 'Painting', label: 'Painting' },
-  ];
 
   const currencyOptions = [
     { value: '$', label: '$' },
@@ -101,17 +98,20 @@ export default function EstimationTradeForm({
         <div className='space-y-4'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex-1'>
-              <SelectField
-                label='Trade'
-                value={selectedTrade}
-                onValueChange={newValue => {
-                  setSelectedTrade(newValue);
-                  onTradeNameChange?.(newValue);
-                }}
-                options={tradeOptions}
-                placeholder='Select a trade'
-                className='mb-0'
-              />
+              {/* Trade dropdown - only show if trades are available */}
+              {finalTradeOptions.length > 0 && (
+                <SelectField
+                  label='Trade'
+                  value={selectedTrade}
+                  onValueChange={newValue => {
+                    setSelectedTrade(newValue);
+                    onTradeNameChange?.(newValue);
+                  }}
+                  options={finalTradeOptions}
+                  placeholder='Select a trade'
+                  className='mb-0'
+                />
+              )}
             </div>
             <div className='min-w-[240px] pt-7 ml-auto'>
               <div className='grid grid-cols-3 gap-4'>
