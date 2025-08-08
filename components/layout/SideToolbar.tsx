@@ -257,20 +257,24 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
 
                       {/* Content */}
                       <div className='flex-1 p-4 overflow-y-auto'>
-                        {activeItem === 'todoList' && (
-                          <TodoComponent ref={todoComponentRef} />
-                        )}
-                        {activeItem === 'appointmentList' && (
-                          <AppointmentsComponent
-                            ref={appointmentsComponentRef}
-                          />
-                        )}
-                        {activeItem === 'toolChecklist' && (
-                          <ToolsChecklistComponent />
-                        )}
-                        {activeItem === 'materialChecklist' && (
-                          <MaterialChecklistComponent />
-                        )}
+                        {(() => {
+                          switch (activeItem) {
+                            case 'todoList':
+                              return <TodoComponent ref={todoComponentRef} />;
+                            case 'appointmentList':
+                              return (
+                                <AppointmentsComponent
+                                  ref={appointmentsComponentRef}
+                                />
+                              );
+                            case 'toolChecklist':
+                              return <ToolsChecklistComponent />;
+                            case 'materialChecklist':
+                              return <MaterialChecklistComponent />;
+                            default:
+                              return null;
+                          }
+                        })()}
                       </div>
                     </div>
                   </div>
