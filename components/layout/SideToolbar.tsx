@@ -184,14 +184,10 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
         user_uuids: userUuids,
       };
 
-      console.log('SideToolbar - API payload:', payload);
-
       // Create new appointment
       const response = await apiService.createAppointment(payload);
-      console.log('SideToolbar - API response:', response);
 
       if (response.statusCode === 200 || response.statusCode === 201) {
-        console.log('SideToolbar - Appointment created successfully');
         showSuccessToast(
           extractApiSuccessMessage(response, 'Appointment created successfully')
         );
@@ -199,10 +195,6 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
         // Refresh appointments list
         appointmentsComponentRef.current?.refreshAppointments();
       } else {
-        console.error(
-          'SideToolbar - Failed to create appointment:',
-          response.message
-        );
         showErrorToast(response.message || 'Failed to create appointment');
       }
     } catch (error) {
