@@ -5,6 +5,7 @@ import { RoleCard } from '@/components/shared/cards/RoleCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { roleIconOptions } from '@/constants/icon-options';
@@ -80,6 +81,7 @@ const RoleManagement = () => {
   const [name] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('roles');
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
@@ -227,97 +229,140 @@ const RoleManagement = () => {
   }
 
   return (
-    <section className=''>
-      <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+    <div className='w-full'>
+      {/* Header */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>{ROLE_MESSAGES.PAGE_TITLE}</h2>
-          {canEdit && (
-            <button
-              onClick={handleCreateRole}
-              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              disabled={loading}
-            >
-              <Add size='24' color='#fff' className='sm:hidden' />
-              <span className='hidden sm:inline'>
-                {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
-              </span>
-            </button>
-          )}
         </div>
-      </header>
+      </div>
 
-      {/* Initial Loading State */}
-      {roles.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-          {[...Array(8)].map((_, i) => (
-            <RoleCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Roles Grid */}
-          <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
-            {roles.length === 0 && !loading ? (
-              <div className='w-full col-span-full h-full md:h-[calc(100vh_-_220px)]'>
-                <NoDataFound
-                  buttonText={ROLE_MESSAGES.CREATE_ROLE_BUTTON}
-                  onButtonClick={handleCreateRole}
-                  description={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
-                  showButton={canEdit ?? false}
-                />
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='roles'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Roles
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <button
+                  onClick={handleCreateRole}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                  disabled={loading}
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Roles Tab Content */}
+          <TabsContent value='roles' className='mt-6'>
+            {/* Initial Loading State */}
+            {roles.length === 0 && loading ? (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
+                {[...Array(8)].map((_, i) => (
+                  <RoleCardSkeleton key={i} />
+                ))}
               </div>
             ) : (
-              roles?.map(
-                ({
-                  uuid,
-                  icon,
-                  name,
-                  description,
-                  total_permissions,
-                  is_default,
-                }) => {
-                  // Use the icon component directly if it matches the expected signature
-                  const iconOptionRaw = safeIconOptions.find(
-                    (opt: any) => opt.value === icon
-                  );
-                  const iconOption = iconOptionRaw
-                    ? {
-                        ...iconOptionRaw,
-                        icon: IconAdapter(iconOptionRaw.icon),
-                      }
-                    : {
-                        icon: IconAdapter(HelmetIcon),
-                        color: '#00a8bf',
-                      };
-                  return (
-                    <div key={uuid}>
-                      <RoleCard
-                        menuOptions={getMenuOptions(is_default ?? false)}
-                        iconSrc={iconOption.icon}
-                        iconBgColor={iconOption.color + '26'}
-                        title={name}
-                        description={description}
-                        permissionCount={total_permissions || 0}
-                        iconColor={iconOption.color}
-                        onEdit={() => handleEditRole(uuid)}
-                        onDelete={() => handleDeleteRole(uuid)}
+              <>
+                {/* Roles Grid */}
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
+                  {roles.length === 0 && !loading ? (
+                    <div className='w-full col-span-full h-full md:h-[calc(100vh_-_220px)]'>
+                      <NoDataFound
+                        buttonText={ROLE_MESSAGES.CREATE_ROLE_BUTTON}
+                        onButtonClick={handleCreateRole}
+                        description={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
+                        showButton={canEdit ?? false}
                       />
                     </div>
-                  );
-                }
-              )
+                  ) : (
+                    roles?.map(
+                      ({
+                        uuid,
+                        icon,
+                        name,
+                        description,
+                        total_permissions,
+                        is_default,
+                      }) => {
+                        // Use the icon component directly if it matches the expected signature
+                        const iconOptionRaw = safeIconOptions.find(
+                          (opt: any) => opt.value === icon
+                        );
+                        const iconOption = iconOptionRaw
+                          ? {
+                              ...iconOptionRaw,
+                              icon: IconAdapter(iconOptionRaw.icon),
+                            }
+                          : {
+                              icon: IconAdapter(HelmetIcon),
+                              color: '#00a8bf',
+                            };
+                        return (
+                          <div key={uuid}>
+                            <RoleCard
+                              menuOptions={getMenuOptions(is_default ?? false)}
+                              iconSrc={iconOption.icon}
+                              iconBgColor={iconOption.color + '26'}
+                              title={name}
+                              description={description}
+                              permissionCount={total_permissions || 0}
+                              iconColor={iconOption.color}
+                              onEdit={() => handleEditRole(uuid)}
+                              onDelete={() => handleDeleteRole(uuid)}
+                            />
+                          </div>
+                        );
+                      }
+                    )
+                  )}
+                </div>
+              </>
             )}
-          </div>
-        </>
-      )}
+            {loading && roles.length > 0 && (
+              <div className='w-full text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
 
-      {/* Loading more roles */}
-      {loading && roles.length > 0 && (
-        <div className='w-full text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
-    </section>
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+              <NoDataFound
+                title='Archived Roles'
+                description='No archived roles found'
+                buttonText=''
+                showButton={false}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 };
 

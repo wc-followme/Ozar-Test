@@ -1,21 +1,21 @@
-// User management module static messages
-export const USER_MESSAGES = {
+// Portal user management module static messages
+export const PORTAL_USER_MESSAGES = {
   // Success Messages
-  CREATE_SUCCESS: 'User created successfully.',
-  UPDATE_SUCCESS: 'User updated successfully.',
-  DELETE_SUCCESS: 'User deleted successfully.',
-  STATUS_UPDATE_SUCCESS: 'User status updated successfully.',
+  CREATE_SUCCESS: 'Portal user created successfully.',
+  UPDATE_SUCCESS: 'Portal user updated successfully.',
+  DELETE_SUCCESS: 'Portal user deleted successfully.',
+  STATUS_UPDATE_SUCCESS: 'Portal user status updated successfully.',
 
   // Error Messages
-  CREATE_ERROR: 'Failed to create user.',
-  UPDATE_ERROR: 'Failed to update user.',
-  DELETE_ERROR: 'Failed to delete user.',
-  FETCH_ERROR: 'Failed to fetch users.',
-  FETCH_DETAILS_ERROR: 'Failed to fetch user details.',
-  STATUS_UPDATE_ERROR: 'Failed to update user status.',
+  CREATE_ERROR: 'Failed to create portal user.',
+  UPDATE_ERROR: 'Failed to update portal user.',
+  DELETE_ERROR: 'Failed to delete portal user.',
+  FETCH_ERROR: 'Failed to fetch portal users.',
+  FETCH_DETAILS_ERROR: 'Failed to fetch portal user details.',
+  STATUS_UPDATE_ERROR: 'Failed to update portal user status.',
   UPLOAD_ERROR: 'Failed to upload image',
   LOAD_ROLES_ERROR: 'Failed to load roles.',
-  USER_NOT_FOUND_ERROR: 'User UUID not found',
+  USER_NOT_FOUND_ERROR: 'Portal user UUID not found',
 
   // Validation Messages
   ROLE_REQUIRED: 'Role is required.',
@@ -37,11 +37,10 @@ export const USER_MESSAGES = {
   UPLOADING: 'Uploading...',
 
   // Status Messages
-  NO_USERS_FOUND: 'No users found.',
-  NO_USERS_FOUND_DESCRIPTION:
-    "You haven't created any users yet. Start by adding your first one to organize your users.",
-  NO_MORE_USERS: 'No more users to load.',
-  USER_NOT_FOUND: 'User not found',
+  NO_USERS_FOUND: 'No portal users found.',
+  NO_USERS_FOUND_DESCRIPTION: "You haven't created any portal users yet.",
+  NO_MORE_USERS: 'No more portal users to load.',
+  USER_NOT_FOUND: 'Portal user not found',
 
   // Form Placeholders
   SELECT_ROLE: 'Select role',
@@ -75,23 +74,23 @@ export const USER_MESSAGES = {
   CREATE_BUTTON: 'Create',
   UPDATE_BUTTON: 'Update',
   CANCEL_BUTTON: 'Cancel',
-  DELETE_USER_BUTTON: 'Delete User',
+  DELETE_USER_BUTTON: 'Delete Portal User',
   ARCHIVE_BUTTON: 'Archive',
-  ADD_ADMIN_USER_BUTTON: 'Create User',
+  ADD_ADMIN_USER_BUTTON: 'Create Portal User',
   REMOVE_PHOTO_ARIA: 'Remove photo',
 
   // Page Titles and Headers
-  USER_MANAGEMENT_TITLE: 'Staff Management',
-  ADD_USER_TITLE: 'Add User',
+  PORTAL_USERS_TITLE: 'Portal Users',
+  ADD_USER_TITLE: 'Add Portal User',
   EDIT_USER_TITLE: 'Edit',
 
   // Breadcrumb
-  USER_MANAGEMENT_BREADCRUMB: 'User Management',
-  ADD_USER_BREADCRUMB: 'Add User',
-  EDIT_USER_BREADCRUMB: 'Edit User',
+  PORTAL_USERS_BREADCRUMB: 'Portal Users',
+  ADD_USER_BREADCRUMB: 'Add Portal User',
+  EDIT_USER_BREADCRUMB: 'Edit Portal User',
 
   // Filter Options
-  ALL_USERS: 'All Users',
+  ALL_USERS: 'All Portal Users',
 
   // Tab Labels
   INFO_TAB: 'Info',
@@ -113,16 +112,16 @@ export const USER_MESSAGES = {
   VALIDATION_ERROR: 'Validation failed. Please check your input.',
   UNEXPECTED_ERROR: 'An unexpected error occurred',
   UNAUTHORIZED: 'You are not authorized to perform this action.',
-  INVALID_DATA: 'Invalid user data. Please check your input.',
+  INVALID_DATA: 'Invalid portal user data. Please check your input.',
 
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
   DELETE_CONFIRM_SUBTITLE: 'This action cannot be undone.',
 
   // Permissions Messages
-  PERMISSIONS_UPDATE_SUCCESS: 'User permissions updated successfully.',
-  PERMISSIONS_UPDATE_ERROR: 'Failed to update user permissions.',
-  PERMISSIONS_FETCH_ERROR: 'Failed to fetch user permissions.',
+  PERMISSIONS_UPDATE_SUCCESS: 'Portal user permissions updated successfully.',
+  PERMISSIONS_UPDATE_ERROR: 'Failed to update portal user permissions.',
+  PERMISSIONS_FETCH_ERROR: 'Failed to fetch portal user permissions.',
   PERMISSIONS_LOADING: 'Loading permissions...',
 };
 
