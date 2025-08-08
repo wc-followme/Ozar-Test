@@ -222,7 +222,7 @@ export const MaterialChecklistComponent: React.FC<
                         key={materialId}
                         className={`bg-[var(--white-background)] rounded-lg p-3 border ${
                           isQuantityInsufficient(required, available)
-                            ? 'border-[#D4323226]'
+                            ? 'border-redbrand-100'
                             : 'border-transparent'
                         }`}
                       >
@@ -233,7 +233,7 @@ export const MaterialChecklistComponent: React.FC<
                               className={`
                           rounded-[6px]
                           border-2
-                          border-[#BFBFBF]
+                          border-[var(--dark-border-other)]
                           data-[state=checked]:bg-[--primary]
                           data-[state=checked]:border-[var(--primary)]
                           data-[state=checked]:text-white

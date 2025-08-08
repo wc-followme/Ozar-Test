@@ -150,7 +150,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                             }
                             className='ml-auto p-1 rounded transition-colors'
                           >
-                            <AddCircle size='20' color='#34AD44' />
+                            <AddCircle size='20' className='text-greenbrand' />
                           </button>
                         )}
                         <button
@@ -189,8 +189,8 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                   <button
                     onClick={() => handleItemClick(item.id)}
                     className={cn(
-                      'h-[60px] w-[60px] text-[var(--text-dark)] flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426] group relative',
-                      isActive && 'bg-[#34AD4426] text-[#34AD44]',
+                      'h-[60px] w-[60px] text-[var(--text-dark)] flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-greenbrand-100 group relative',
+                      isActive && 'bg-greenbrand-100 text-greenbrand',
                       item.id === 'settings' && 'mt-auto'
                     )}
                     title={item.label}
@@ -200,10 +200,12 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                       className={cn(
                         'transition-colors duration-200',
                         isActive
-                          ? 'text-[#34AD44]'
-                          : 'text-[var(--text-dark)] group-hover:text-[#34AD44]'
+                          ? 'text-greenbrand'
+                          : 'text-[var(--text-dark)] group-hover:text-greenbrand'
                       )}
-                      color={isActive ? '#34AD44' : 'var(--text-dark)'}
+                      color={
+                        isActive ? 'var(--greenbrand)' : 'var(--text-dark)'
+                      }
                     />
                   </button>
                 </React.Fragment>
@@ -211,7 +213,7 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
             })}
             <button
               className={
-                'h-[60px] w-[60px] text-[var(--text-dark)] !mt-auto flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-[#34AD4426]'
+                'h-[60px] w-[60px] text-[var(--text-dark)] !mt-auto flex items-center justify-center rounded-2xl transition-all duration-200 hover:bg-greenbrand-100'
               }
             >
               <Setting4

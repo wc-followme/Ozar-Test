@@ -13,6 +13,7 @@ import {
 } from '@/components/shared/forms/CreateQuestionForm';
 import { SlugPageSkeleton } from '@/components/shared/skeleton/SlugPageSkeleton';
 import CategoryComponent from '@/components/Templates/CategoryComponent';
+import EstimateComponent from '@/components/Templates/EstimateComponent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
@@ -303,11 +304,8 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   };
 
   const handleAddRoom = () => {
-    // Here you would handle adding a room
-  };
-
-  const handleAddFromTemplate = () => {
-    // Here you would handle adding from template
+    // Handle adding a room
+    console.log('Add room clicked');
   };
 
   // Special handling for category page
@@ -331,115 +329,10 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   // Special handling for estimate page
   if (slug === FIVE_BOX_SLUGS.ESTIMATION) {
     return (
-      <section className=''>
-        {/* Breadcrumb */}
-        <div className='mb-6'>
-          <Breadcrumb items={breadcrumbData} />
-        </div>
-
-        {/* Estimate Empty State */}
-        <div className='p-4 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
-          <div className='flex flex-col items-center justify-center min-h-[60vh] text-center'>
-            {/* Icon */}
-            <div className='mb-4 md:mb-8'>
-              <div className='w-32 h-32 md:w-40 md:h-40 bg-gray-100 rounded-full flex items-center justify-center'>
-                <svg
-                  className='w-16 h-16 md:w-20 md:h-20 text-gray-400'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={1.5}
-                    d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
-                  />
-                  <text
-                    x='12'
-                    y='16'
-                    textAnchor='middle'
-                    className='text-xs font-bold fill-current'
-                  >
-                    ??
-                  </text>
-                </svg>
-              </div>
-            </div>
-
-            {/* Title */}
-            <h2 className='text-xl md:text-2xl font-bold text-[var(--text-dark)] mb-2'>
-              {SLUG_MESSAGES.NOTHING_HERE_YET}
-            </h2>
-
-            {/* Description */}
-            <p className='text-base md:text-lg text-[var(--text-secondary)] mb-8 max-w-md'>
-              {SLUG_MESSAGES.ESTIMATION_DESCRIPTION}
-            </p>
-
-            {/* Action Buttons */}
-            <div className='flex flex-col sm:flex-row gap-4 mb-8'>
-              <Button
-                onClick={handleAddRoom}
-                className='btn-primary flex items-center gap-2'
-              >
-                <svg
-                  className='w-5 h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z'
-                  />
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z'
-                  />
-                </svg>
-                {SLUG_MESSAGES.ADD_ROOM}
-              </Button>
-
-              <Button
-                onClick={handleAddFromTemplate}
-                variant='outline'
-                className='flex items-center gap-2'
-              >
-                <svg
-                  className='w-5 h-5'
-                  fill='none'
-                  stroke='currentColor'
-                  viewBox='0 0 24 24'
-                >
-                  <path
-                    strokeLinecap='round'
-                    strokeLinejoin='round'
-                    strokeWidth={2}
-                    d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
-                  />
-                </svg>
-                {SLUG_MESSAGES.ADD_FROM_TEMPLATE}
-              </Button>
-            </div>
-          </div>
-
-          {/* Previous Button */}
-          <div className='flex justify-start'>
-            <Button
-              variant='outline'
-              onClick={handleBack}
-              className='btn-secondary'
-            >
-              {SLUG_MESSAGES.PREVIOUS}
-            </Button>
-          </div>
-        </div>
-      </section>
+      <EstimateComponent
+        breadcrumbData={breadcrumbData}
+        onAddRoom={handleAddRoom}
+      />
     );
   }
 
