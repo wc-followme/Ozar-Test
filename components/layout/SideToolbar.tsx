@@ -248,7 +248,11 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                             }
                             className='ml-auto p-1 rounded transition-colors'
                           >
-                            <AddCircle size='20' className='text-greenbrand' />
+                            <AddCircle
+                              size='20'
+                              className='text-greenbrand'
+                              color='var(--secondary)'
+                            />
                           </button>
                         )}
                         <button
