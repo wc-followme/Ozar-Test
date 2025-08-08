@@ -24,7 +24,7 @@ export interface MultiSelectOption {
 interface MultiSelectProps<OptionType = MultiSelectOption> {
   label?: string;
   options: OptionType[];
-  value: string[];
+  value?: string[]; // Make optional with default
   onChange: (value: string[]) => void;
   placeholder?: string;
   error?: string;
@@ -39,7 +39,7 @@ interface MultiSelectProps<OptionType = MultiSelectOption> {
 const MultiSelect = <OptionType = MultiSelectOption,>({
   label,
   options,
-  value,
+  value = [], // Add default empty array
   onChange,
   placeholder = 'Select',
   error,
@@ -53,9 +53,10 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   const isMobile = useIsMobile();
 
   const handleToggle = (optionValue: string) => {
-    const newValue = value.includes(optionValue)
-      ? value.filter(v => v !== optionValue)
-      : [...value, optionValue];
+    const currentValue = value || [];
+    const newValue = currentValue.includes(optionValue)
+      ? currentValue.filter(v => v !== optionValue)
+      : [...currentValue, optionValue];
     onChange(newValue);
   };
 
@@ -78,9 +79,11 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
 
   // Show different number of tags based on screen size
   const maxTagsToShow = isMobile ? 1 : 3;
-  const displayTags = value.slice(0, maxTagsToShow);
+  const displayTags = (value || []).slice(0, maxTagsToShow);
   const moreCount =
-    value.length > maxTagsToShow ? value.length - maxTagsToShow : 0;
+    (value || []).length > maxTagsToShow
+      ? (value || []).length - maxTagsToShow
+      : 0;
 
   return (
     <div className='space-y-1 md:space-y-2 w-full'>
@@ -99,7 +102,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
             )}
           >
             <div className='flex flex-wrap gap-2 text-left'>
-              {value.length === 0 && (
+              {(value || []).length === 0 && (
                 <span className='text-gray-400'>{placeholder}</span>
               )}
               {displayTags.map(tag => {
@@ -124,7 +127,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                   </span>
                 );
               })}
-              {moreCount > 0 && value.length > maxTagsToShow && (
+              {moreCount > 0 && (value || []).length > maxTagsToShow && (
                 <span className='bg-cyanwave-light text-[var(--text-dark)] rounded-full px-3 py-1 text-sm font-medium flex items-center gap-2'>
                   +{moreCount} more
                 </span>
@@ -190,7 +193,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                       <span>{getOptionLabel(opt)}</span>
                     </div>
                     <Checkbox
-                      checked={value.includes(optionValue)}
+                      checked={(value || []).includes(optionValue)}
                       onCheckedChange={() => handleToggle(optionValue)}
                       className='rounded-md border-2 border-[var(--dark-border-other)] data-[state=checked]:bg-[var(--primary)] data-[state=checked]:border-[var(--primary)] data-[state=checked]:text-white text-white w-5 h-5 flex items-center justify-center'
                     />
