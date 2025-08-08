@@ -23,10 +23,10 @@ export function CustomerSection() {
             ))}
           </div>
           <div>
-            <p className='font-semibold text-[#2d2d2d] text-[18px]'>
+            <p className='font-semibold text-[var(--text-dark)] text-[18px]'>
               Join with 20k+ Users!
             </p>
-            <p className='text-[#818181] text-[18px]'>
+            <p className='text-[var(--text-secondary)] text-[18px]'>
               Let&apos;s see our happy customers
             </p>
           </div>

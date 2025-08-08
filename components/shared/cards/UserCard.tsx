@@ -145,7 +145,7 @@ export function UserCard({
               />
               <span className='truncate'>{phone}</span>
             </div>
-            <div className='flex items-center gap-2 text-xs font-medium text-[#818181]'>
+            <div className='flex items-center gap-2 text-xs font-medium text-[var(--text-secondary)]'>
               <Sms
                 size='13'
                 color='var(--text-dark)'

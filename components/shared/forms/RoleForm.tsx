@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import { roleIconOptions } from '@/constants/sidebar-items';
+import { roleIconOptions } from '@/constants/icon-options';
 import type { UserPermissions } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { CreateRoleFormData, createRoleSchema } from '@/lib/validations/role';
@@ -242,7 +242,7 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
     };
 
     return (
-      <Card className='flex flex-col gap-8 p-4 md:p-6 flex-1 w-full border-1 border-[#E8EAED] rounded-[20px] bg-[var(--card-background)]'>
+      <Card className='flex flex-col gap-8 p-4 md:p-6 flex-1 w-full border-1 border-[var(--border-dark)] rounded-[20px] bg-[var(--card-background)]'>
         <form
           onSubmit={handleSubmit(data => {
             // Attach permissions to form data

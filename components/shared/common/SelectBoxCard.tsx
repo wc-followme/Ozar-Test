@@ -47,7 +47,7 @@ export function SelectBoxCard({
             className='
             rounded-[6px] 
             border-2 
-            border-[#BFBFBF]
+            border-[var(--dark-border-other)]
             data-[state=checked]:bg-[--primary]
             data-[state=checked]:border-[--primary]
             data-[state=checked]:text-white

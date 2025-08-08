@@ -680,7 +680,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
             <button
               type='button'
               onClick={addListItem}
-              className='text-[#34AD44] hover:text-[var(--primary-dark)] text-sm font-semibold transition-colors'
+              className='text-greenbrand hover:text-[var(--primary-dark)] text-sm font-semibold transition-colors'
             >
               {TODO_MESSAGES.ADD_ANOTHER_BUTTON}
             </button>
@@ -714,7 +714,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     onClick={() => removeListItem(index)}
                     className='w-[42px] h-[42px] shrink-0 flex items-center justify-center text-gray-400  border-2 border-[var(--border-dark)] rounded-[10px]'
                   >
-                    <Trash color='#2D2D2D' size={24} />
+                    <Trash color='var(--text-dark)' size={24} />
                   </button>
                 )}
               </div>
