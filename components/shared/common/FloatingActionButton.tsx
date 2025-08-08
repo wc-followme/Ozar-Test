@@ -176,7 +176,11 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
             data-tooltip='Jobs'
             onClick={handleJobClick}
           >
-            <Add size='32' className='text-greenbrand sm:hidden' />
+            <Add
+              size='32'
+              className='text-greenbrand sm:hidden'
+              color='var(--secondary)'
+            />
           </button>
         </div>
       </div>
@@ -206,7 +210,11 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
                     }
                     className='ml-auto p-1 rounded transition-colors'
                   >
-                    <AddCircle size='20' className='text-greenbrand' />
+                    <AddCircle
+                      size='20'
+                      className='text-[var(--secondary)]'
+                      color='var(--secondary)'
+                    />
                   </button>
                 )}
               </div>

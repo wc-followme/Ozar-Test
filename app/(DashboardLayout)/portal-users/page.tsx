@@ -6,7 +6,7 @@ import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
@@ -19,14 +19,14 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
+import { PORTAL_USER_MESSAGES } from './portal-user-messages';
 import { MenuOption, Role, RoleApiResponse } from './types';
-import { USER_MESSAGES } from './user-messages';
 
-export default function UserManagement() {
+export default function PortalUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [filter, setFilter] = useState('all');
@@ -41,7 +41,6 @@ export default function UserManagement() {
 
   // Get user permissions for users
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.users?.create;
   const canViewUsers = userPermissions?.users?.view;
 
   const isRoleApiResponse = (obj: unknown): obj is RoleApiResponse => {
@@ -115,7 +114,10 @@ export default function UserManagement() {
         if (handleAuthError(err)) {
           return;
         }
-        const message = extractApiErrorMessage(err, USER_MESSAGES.FETCH_ERROR);
+        const message = extractApiErrorMessage(
+          err,
+          PORTAL_USER_MESSAGES.FETCH_ERROR
+        );
         showErrorToast(message);
         if (!append) setUsers([]);
         setHasMore(false);
@@ -161,7 +163,7 @@ export default function UserManagement() {
     try {
       const user = users.find(u => u.id === id);
       if (!user || !user.uuid)
-        throw new Error(USER_MESSAGES.USER_NOT_FOUND_ERROR);
+        throw new Error(PORTAL_USER_MESSAGES.USER_NOT_FOUND_ERROR);
       const newStatus = currentStatus
         ? CommonStatus.INACTIVE
         : CommonStatus.ACTIVE;
@@ -170,7 +172,10 @@ export default function UserManagement() {
         users.map(u => (u.id === id ? { ...u, status: newStatus } : u))
       );
       showSuccessToast(
-        extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
+        extractApiSuccessMessage(
+          response,
+          PORTAL_USER_MESSAGES.STATUS_UPDATE_SUCCESS
+        )
       );
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -179,7 +184,9 @@ export default function UserManagement() {
       }
 
       const message =
-        err instanceof Error ? err.message : USER_MESSAGES.STATUS_UPDATE_ERROR;
+        err instanceof Error
+          ? err.message
+          : PORTAL_USER_MESSAGES.STATUS_UPDATE_ERROR;
       showErrorToast(message);
     }
   };
@@ -190,7 +197,7 @@ export default function UserManagement() {
       const response = await apiService.deleteUser(uuid);
       setUsers(users => users.filter(user => user.uuid !== uuid));
       showSuccessToast(
-        extractApiSuccessMessage(response, USER_MESSAGES.DELETE_SUCCESS)
+        extractApiSuccessMessage(response, PORTAL_USER_MESSAGES.DELETE_SUCCESS)
       );
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -199,26 +206,20 @@ export default function UserManagement() {
       }
 
       const message =
-        err instanceof Error ? err.message : USER_MESSAGES.DELETE_ERROR;
+        err instanceof Error ? err.message : PORTAL_USER_MESSAGES.DELETE_ERROR;
       showErrorToast(message);
     }
   };
 
-  // Handler for create user navigation with loading state
-  const handleCreateUser = useCallback(() => {
-    setIsNavigating(true);
-    router.push(ROUTES.CREATE_USER);
-  }, [router]);
-
   const menuOptions: MenuOption[] = [
     {
-      label: USER_MESSAGES.EDIT_USER_TITLE,
+      label: PORTAL_USER_MESSAGES.EDIT_USER_TITLE,
       action: ACTIONS.EDIT,
       icon: Edit2,
       variant: 'default',
     },
     {
-      label: USER_MESSAGES.ARCHIVE_BUTTON,
+      label: PORTAL_USER_MESSAGES.ARCHIVE_BUTTON,
       action: ACTIONS.DELETE,
       icon: Trash,
       variant: 'destructive',
@@ -246,7 +247,9 @@ export default function UserManagement() {
       {/* Header */}
       <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
         <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
-          <h2 className='page-title'>{USER_MESSAGES.USER_MANAGEMENT_TITLE}</h2>
+          <h2 className='page-title'>
+            {PORTAL_USER_MESSAGES.PORTAL_USERS_TITLE}
+          </h2>
         </div>
       </div>
 
@@ -278,29 +281,23 @@ export default function UserManagement() {
                 value={filter}
                 onValueChange={setFilter}
                 options={[
-                  { value: 'all', label: USER_MESSAGES.ALL_USERS },
-                  ...roles.map(({ uuid, name }) => ({
-                    value: String(uuid),
-                    label: name,
-                  })),
+                  { value: 'all', label: PORTAL_USER_MESSAGES.ALL_USERS },
+                  ...roles
+                    .filter(({ name }) =>
+                      ['homeowner', 'vendor', 'admin'].includes(
+                        name.toLowerCase()
+                      )
+                    )
+                    .map(({ uuid, name }) => ({
+                      value: String(uuid),
+                      label: name,
+                    })),
                 ]}
-                placeholder={USER_MESSAGES.ALL_USERS}
+                placeholder={PORTAL_USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40'
                 triggerClassName='bg-[var(--white-background)] rounded-[30px] border-2 border-[var(--border-dark)] h-[42px] shadow-sm sm:shadow-none'
                 optionClassName='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
               />
-              {canEdit && (
-                <button
-                  onClick={handleCreateUser}
-                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-                  disabled={loading}
-                >
-                  <Add size='24' color='#fff' className='sm:hidden' />
-                  <span className='hidden sm:inline'>
-                    {USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
-                  </span>
-                </button>
-              )}
             </div>
           </div>
           {/* Users Tab Content */}
@@ -318,10 +315,11 @@ export default function UserManagement() {
                 {users.length === 0 && !loading ? (
                   <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
                     <NoDataFound
-                      description={USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION}
-                      buttonText={USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
-                      onButtonClick={handleCreateUser}
-                      showButton={canEdit ?? false}
+                      description={
+                        PORTAL_USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION
+                      }
+                      buttonText=''
+                      showButton={false}
                     />
                   </div>
                 ) : (

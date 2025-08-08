@@ -114,7 +114,7 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
           {/* Main Menu */}
           <nav
             className={cn(
-              'py-8 absolute inset-0 w-full transition-transform duration-300 ease-in-out',
+              'pt-10 pb-8 absolute inset-0 w-full transition-transform duration-300 ease-in-out',
               activeSubmenu ? '-translate-x-[120%]' : 'translate-x-0'
             )}
           >
@@ -189,7 +189,7 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
           {/* Submenu */}
           <nav
             className={cn(
-              'py-8 absolute inset-0 w-full transition-transform duration-300 ease-in-out',
+              'pt-10 pb-8 absolute inset-0 w-full transition-transform duration-300 ease-in-out',
               activeSubmenu ? 'translate-x-0' : 'translate-x-[120%]'
             )}
           >
@@ -197,9 +197,15 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
             <div className='mb-2'>
               <button
                 onClick={handleBackClick}
-                className='flex items-center absolute left-4 top-4 text-[var(--text-dark)] hover:bg-[var(--border-light)] rounded-xl transition-colors'
+                className='flex items-center absolute left-0 top-4 text-[var(--text-dark)] rounded-xl transition-colors'
               >
-                <ArrowLeft2 size='20' strokeWidth={2} color='var(--text)' />
+                <ArrowLeft2
+                  size='16'
+                  className='mr-1'
+                  strokeWidth={2}
+                  color='var(--text)'
+                />{' '}
+                Back
               </button>
             </div>
 

@@ -100,7 +100,7 @@ export const sidebarItems: SidebarMenuItem[] = [
       {
         menu_id: 'portal-users',
         title: SIDEBAR_TITLES.PORTAL_USERS,
-        href: '/users',
+        href: '/portal-users',
         icon: SecurityUser,
       },
     ],

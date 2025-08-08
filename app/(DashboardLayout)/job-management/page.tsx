@@ -485,7 +485,7 @@ export default function JobManagement() {
 
   return (
     <div className=''>
-      <h2 className='page-title mb-6'>Projects</h2>
+      <h2 className='page-title sm:mb-6 mb-4 xl:mb-8'>Projects</h2>
       {/* Stats Cards */}
       {/* <div className='grid grid-cols-2 lg:grid-cols-4 md:gap-6 sm:gap-4 gap-2 mb-8'>
         {stats.map(stat => {
