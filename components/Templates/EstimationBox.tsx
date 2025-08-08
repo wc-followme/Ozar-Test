@@ -817,6 +817,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
         selectedService={selectedService}
         handleServiceSelect={handleServiceSelect}
         formatCurrency={formatCurrency}
+        selectedRoomId={selectedRoomId}
       />
 
       {/* Main Content */}

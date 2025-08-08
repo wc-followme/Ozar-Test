@@ -51,6 +51,8 @@ export const ROUTES = {
   MATERIAL_MANAGEMENT: '/material-management',
   SERVICE_MANAGEMENT: '/service-management',
   TRADE_MANAGEMENT: '/trade-management',
+  TEMPLATES_MANAGEMENT: '/templates',
+  CREATE_TEMPLATE: '/templates/create',
 } as const;
 
 // Action constants for menu options and permissions

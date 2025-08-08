@@ -4,6 +4,7 @@ import { Company } from './../components/icons/Company';
 import { JobIcon } from './../components/icons/JobIcon';
 import { Material } from './../components/icons/Material';
 import { RoleIcon } from './../components/icons/RoleIcon';
+import { TemplateIcon } from './../components/icons/TemplateIcon';
 import { Tool } from './../components/icons/Tool';
 import { Trade } from './../components/icons/Trade';
 
@@ -23,6 +24,7 @@ export const SIDEBAR_TITLES = {
   SERVICE_MANAGEMENT: 'Service Management',
   MATERIAL_MANAGEMENT: 'Material Management',
   TOOLS_MANAGEMENT: 'Tools Management',
+  TEMPLATES_MANAGEMENT: 'Templates Management',
 } as const;
 
 // Permission categories constants
@@ -36,6 +38,7 @@ export const PERMISSION_CATEGORIES = {
   MATERIALS: 'materials',
   TOOLS: 'tools',
   JOBS: 'jobs',
+  TEMPLATES: 'templates',
 } as const;
 
 // Permission actions constants
@@ -111,5 +114,11 @@ export const sidebarItems: SidebarMenuItem[] = [
     title: SIDEBAR_TITLES.TOOLS_MANAGEMENT,
     href: '/tools-management',
     icon: Tool,
+  },
+  {
+    menu_id: 'templates-management',
+    title: SIDEBAR_TITLES.TEMPLATES_MANAGEMENT,
+    href: '/templates',
+    icon: TemplateIcon,
   },
 ];

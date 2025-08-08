@@ -87,6 +87,7 @@ interface EstimationBoxSidebarProps {
   selectedService: string | null;
   handleServiceSelect: (serviceId: string) => void;
   formatCurrency: (amount: number) => string;
+  selectedRoomId: string;
 }
 
 export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
@@ -103,6 +104,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
   selectedService,
   handleServiceSelect,
   formatCurrency,
+  selectedRoomId,
 }) => {
   return (
     <div
@@ -141,7 +143,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
       </div>
 
       {!isSidebarCollapsed && (
-        <div className='h-[calc(100vh_-_200px)] overflow-y-auto'>
+        <div className='h-[calc(100vh_-_200px)] overflow-y-auto px-4 py-2'>
           <Accordion
             type='multiple'
             value={expandedRooms}
@@ -156,7 +158,11 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
               >
                 <AccordionPrimitive.Header className='flex'>
                   <AccordionPrimitive.Trigger
-                    className='flex items-center justify-between py-2 px-4 rounded cursor-pointer transition-colors hover:no-underline hover:bg-[var(--card-hover)] w-full'
+                    className={`flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full ${
+                      selectedRoomId === room.id
+                        ? 'bg-[var(--card-hover)]'
+                        : 'hover:bg-[var(--card-hover)]'
+                    }`}
                     onClick={() => handleRoomSelect(room.id)}
                   >
                     <div className='flex items-center flex-1 min-w-0'>
@@ -165,13 +171,21 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                         className={`mr-2 transition-transform duration-200 ${
                           expandedRooms.includes(room.id) ? 'rotate-180' : ''
                         }`}
-                        color='var(--text-dark)'
+                        color={'var(--text-dark)'}
                         strokeWidth={2}
                       />
-                      <span className='font-medium text-sm truncate text-[var(--text-dark)]'>
+                      <span
+                        className={`font-medium text-sm truncate ${
+                          selectedRoomId === room.id
+                            ? 'text-[var(--primary)]'
+                            : 'text-[var(--text-dark)]'
+                        }`}
+                      >
                         {room.name}
                       </span>
-                      <span className='ml-auto text-xs font-semibold text-[var(--text-dark)]'>
+                      <span
+                        className={`ml-auto text-xs font-semibold var(--text-dark)`}
+                      >
                         {formatCurrency(room.total)}
                       </span>
                     </div>

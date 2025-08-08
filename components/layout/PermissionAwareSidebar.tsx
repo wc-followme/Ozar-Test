@@ -107,6 +107,11 @@ export function PermissionAwareSidebar() {
           PERMISSION_CATEGORIES.TOOLS,
           PERMISSION_ACTIONS.VIEW
         );
+      case SIDEBAR_TITLES.TEMPLATES_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.TEMPLATES,
+          PERMISSION_ACTIONS.VIEW
+        );
       case SIDEBAR_TITLES.JOBS:
         return (
           hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
