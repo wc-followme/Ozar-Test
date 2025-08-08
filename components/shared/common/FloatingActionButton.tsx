@@ -102,11 +102,6 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   };
 
   const handleAppointmentFormSubmit = async (data: any) => {
-    console.log(
-      'FloatingActionButton - handleAppointmentFormSubmit called with data:',
-      data
-    );
-
     try {
       // Format date to YYYY-MM-DD
       const formattedDate = data.date
@@ -114,7 +109,6 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         : '';
 
       if (!formattedDate) {
-        console.error('No valid date provided');
         return;
       }
 
@@ -154,14 +148,10 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         user_uuids: userUuids,
       };
 
-      console.log('FloatingActionButton - API payload:', payload);
-
       // Create new appointment
       const response = await apiService.createAppointment(payload);
-      console.log('FloatingActionButton - API response:', response);
 
       if (response.statusCode === 200 || response.statusCode === 201) {
-        console.log('FloatingActionButton - Appointment created successfully');
         showSuccessToast(
           extractApiSuccessMessage(response, 'Appointment created successfully')
         );
@@ -169,17 +159,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         // Refresh appointments list
         appointmentsComponentRef.current?.refreshAppointments();
       } else {
-        console.error(
-          'FloatingActionButton - Failed to create appointment:',
-          response.message
-        );
         showErrorToast(response.message || 'Failed to create appointment');
       }
     } catch (error) {
-      console.error(
-        'FloatingActionButton - Error creating appointment:',
-        error
-      );
       const message = extractApiErrorMessage(
         error,
         'Failed to create appointment'
