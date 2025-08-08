@@ -6,13 +6,13 @@ import {
 import React, { useMemo, useState } from 'react';
 
 export const AVATAR_COLORS = [
-  { bg: '#1A57BF1A', color: '#24338C' }, // Orange
+  { bg: '#1A57BF1A', color: '#1A57BF' }, // Orange
   { bg: '#34AD4426', color: '#34AD44' }, // Green
   { bg: '#00A8BF26', color: '#00A8BF' }, // Blue
   { bg: '#90C91D26', color: '#90C91D' }, // Red
   { bg: '#EBB40226', color: '#EBB402' }, // Bright Green
   { bg: '#D4323226', color: '#D43232' }, // Teal
-  { bg: '#F58B1E1A', color: '#F58B1E' }, // Brown
+  { bg: '#FF6B3526', color: '#FF6B35' }, // Brown
 ];
 
 export interface AvatarProps {
@@ -82,28 +82,28 @@ export const Avatar: React.FC<AvatarProps> = ({
           src={image}
           alt={name}
           className='rounded-[10px] object-cover text-6 font-bold'
-          onError={() => setImgError(true)}
           style={{
-            background: color.bg ?? '#ccc',
+            backgroundColor: color.bg ?? '#ccc',
             color: color.color ?? '#222',
           }}
+          onError={() => setImgError(true)}
         />
       ) : placeholderImage && !placeholderError ? (
         <AvatarImage
           src={placeholderImage}
           alt='placeholder'
           className='rounded-[10px] object-cover text-6 font-bold'
-          onError={() => setPlaceholderError(true)}
           style={{
-            background: color.bg ?? '#ccc',
+            backgroundColor: color.bg ?? '#ccc',
             color: color.color ?? '#222',
           }}
+          onError={() => setPlaceholderError(true)}
         />
       ) : (
         <AvatarFallback
           className='rounded-[10px] object-cover text-6 font-bold'
           style={{
-            background: color.bg ?? '#ccc',
+            backgroundColor: color.bg ?? '#ccc',
             color: color.color ?? '#222',
           }}
         >

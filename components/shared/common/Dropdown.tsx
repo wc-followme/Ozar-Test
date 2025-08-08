@@ -37,7 +37,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     <DropdownMenuContent
       align={align}
       className={cn(
-        'bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]',
+        'bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A]',
         className
       )}
     >
@@ -49,7 +49,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             onAction(action);
           }}
           className={cn(
-            'text-sm xl:text-base p-2 xl:p-[10px] rounded-md cursor-pointer transition-colors flex font-medium items-center gap-2 hover:!bg-[var(--select-option)]',
+            'text-sm xl:text-base p-2 xl:p-[10px] cursor-pointer transition-colors rounded-none flex font-medium items-center gap-2 hover:!bg-[var(--select-option)]',
             itemsClass,
             index !== menuOptions.length - 1 &&
               'border-b border-[var(--border-dark)]'

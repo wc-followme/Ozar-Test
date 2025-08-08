@@ -6,9 +6,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants/common';
+
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { materialFormSchema } from '@/lib/validations/material';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -43,19 +43,8 @@ export default function MaterialForm({
       try {
         setLoadingServices(true);
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            // Silently fail if company data is invalid
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const response = await apiService.getServicesDropdown({
           ...(companyId ? { company_id: companyId } : {}),
@@ -133,19 +122,8 @@ export default function MaterialForm({
         }
       } else {
         // Create new material (with company_id)
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            // Silently fail if company data is invalid
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const createPayload = {
           name: materialName,

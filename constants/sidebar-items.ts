@@ -1,4 +1,5 @@
-import { Home, Icon } from 'iconsax-react';
+import { Home, SecurityUser, Setting3 } from 'iconsax-react';
+import { ComponentType } from 'react';
 import { Category } from './../components/icons/Category';
 import { Company } from './../components/icons/Company';
 import { JobIcon } from './../components/icons/JobIcon';
@@ -17,15 +18,22 @@ import { CircleUsersStarIcon } from '../components/icons/CircleUsersStarIcon';
 import { HelmetIcon } from '../components/icons/HelmetIcon';
 import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
+import { TemplateIcon } from '../components/icons/TemplateIcon';
 import { UserCardIcon } from '../components/icons/UserCardIcon';
 
 // Sidebar title constants
 export const SIDEBAR_TITLES = {
   HOME: 'Home',
-  JOBS: 'Jobs',
-  ROLE_MANAGEMENT: 'Role Management',
-  USER_MANAGEMENT: 'Employee Management',
+  PROJECTS: 'Projects',
+  ROLES_ACCOUNTS: 'Roles & Accounts',
   COMPANY_MANAGEMENT: 'Company Management',
+  CATALOGUE_MANAGEMENT: 'Catalogue Management',
+  TEMPLATES_MANAGEMENT: 'Templates Management',
+  SETTINGS: 'Settings',
+  // Submenu items
+  ROLE_MANAGEMENT: 'Role Management',
+  STAFF_MANAGEMENT: 'Staff Management',
+  PORTAL_USERS: 'Portal Users',
   CATEGORY_MANAGEMENT: 'Category Management',
   TRADE_MANAGEMENT: 'Trade Management',
   SERVICE_MANAGEMENT: 'Service Management',
@@ -55,8 +63,9 @@ export const PERMISSION_ACTIONS = {
 type SidebarMenuItem = {
   menu_id: string;
   title: string;
-  href: string;
-  icon: Icon;
+  href?: string;
+  icon: ComponentType<any>;
+  submenu?: SidebarMenuItem[];
 };
 
 export const sidebarItems: SidebarMenuItem[] = [
@@ -67,22 +76,35 @@ export const sidebarItems: SidebarMenuItem[] = [
     icon: Home,
   },
   {
-    menu_id: 'jobs',
-    title: SIDEBAR_TITLES.JOBS,
+    menu_id: 'projects',
+    title: SIDEBAR_TITLES.PROJECTS,
     href: '/job-management',
     icon: JobIcon,
   },
   {
-    menu_id: 'role-management',
-    title: SIDEBAR_TITLES.ROLE_MANAGEMENT,
-    href: '/role-management',
+    menu_id: 'roles-accounts',
+    title: SIDEBAR_TITLES.ROLES_ACCOUNTS,
     icon: RoleIcon,
-  },
-  {
-    menu_id: 'user-management',
-    title: SIDEBAR_TITLES.USER_MANAGEMENT,
-    href: '/user-management',
-    icon: CircleUsersStarIcon,
+    submenu: [
+      {
+        menu_id: 'role-management',
+        title: SIDEBAR_TITLES.ROLE_MANAGEMENT,
+        href: '/role-management',
+        icon: RoleIcon,
+      },
+      {
+        menu_id: 'staff-management',
+        title: SIDEBAR_TITLES.STAFF_MANAGEMENT,
+        href: '/user-management',
+        icon: CircleUsersStarIcon,
+      },
+      {
+        menu_id: 'portal-users',
+        title: SIDEBAR_TITLES.PORTAL_USERS,
+        href: '/portal-users',
+        icon: SecurityUser,
+      },
+    ],
   },
   {
     menu_id: 'company-management',
@@ -91,34 +113,53 @@ export const sidebarItems: SidebarMenuItem[] = [
     icon: Company,
   },
   {
-    menu_id: 'category-management',
-    title: SIDEBAR_TITLES.CATEGORY_MANAGEMENT,
-    href: '/category-management',
+    menu_id: 'catalogue-management',
+    title: SIDEBAR_TITLES.CATALOGUE_MANAGEMENT,
     icon: Category,
+    submenu: [
+      {
+        menu_id: 'category-management',
+        title: SIDEBAR_TITLES.CATEGORY_MANAGEMENT,
+        href: '/category-management',
+        icon: Category,
+      },
+      {
+        menu_id: 'trade-management',
+        title: SIDEBAR_TITLES.TRADE_MANAGEMENT,
+        href: '/trade-management',
+        icon: Trade,
+      },
+      {
+        menu_id: 'service-management',
+        title: SIDEBAR_TITLES.SERVICE_MANAGEMENT,
+        href: '/service-management',
+        icon: Service,
+      },
+      {
+        menu_id: 'material-management',
+        title: SIDEBAR_TITLES.MATERIAL_MANAGEMENT,
+        href: '/material-management',
+        icon: Material,
+      },
+      {
+        menu_id: 'tools-management',
+        title: SIDEBAR_TITLES.TOOLS_MANAGEMENT,
+        href: '/tools-management',
+        icon: Tool,
+      },
+    ],
   },
   {
-    menu_id: 'trade-management',
-    title: SIDEBAR_TITLES.TRADE_MANAGEMENT,
-    href: '/trade-management',
-    icon: Trade,
+    menu_id: 'templates-management',
+    title: SIDEBAR_TITLES.TEMPLATES_MANAGEMENT,
+    href: '/templates',
+    icon: TemplateIcon,
   },
   {
-    menu_id: 'service-management',
-    title: SIDEBAR_TITLES.SERVICE_MANAGEMENT,
-    href: '/service-management',
-    icon: Service,
-  },
-  {
-    menu_id: 'material-management',
-    title: SIDEBAR_TITLES.MATERIAL_MANAGEMENT,
-    href: '/material-management',
-    icon: Material,
-  },
-  {
-    menu_id: 'tools-management',
-    title: SIDEBAR_TITLES.TOOLS_MANAGEMENT,
-    href: '/tools-management',
-    icon: Tool,
+    menu_id: 'settings',
+    title: SIDEBAR_TITLES.SETTINGS,
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
   },
 ];
 

@@ -5,6 +5,7 @@ import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import CompanyCardSkeleton from '@/components/shared/skeleton/CompanyCardSkeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
@@ -27,6 +28,7 @@ export default function CompanyManagement() {
   const [_page, _setPage] = useState<number>(1);
   const [_hasMore, _setHasMore] = useState<boolean>(true);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('companies');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const router = useRouter();
@@ -219,89 +221,134 @@ export default function CompanyManagement() {
   }
 
   return (
-    <div className='w-full pb-4'>
+    <div className='w-full'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
-          <h1 className='page-title'>
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
+          <h2 className='page-title'>
             {COMPANY_MESSAGES.COMPANY_MANAGEMENT_TITLE}
-          </h1>
-          <div className='flex items-center gap-4 justify-end'>
-            {canEdit && (
-              <button
-                onClick={handleCreateCompany}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
-                </span>
-              </button>
-            )}
-          </div>
+          </h2>
         </div>
       </div>
 
-      {/* Initial Loading State */}
-      {companies.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-          {[...Array(8)].map((_, i) => (
-            <CompanyCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Company Grid */}
-          {companies.length === 0 && !loading ? (
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                description={COMPANY_MESSAGES.NO_COMPANIES_FOUND_DESCRIPTION}
-                buttonText={COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
-                onButtonClick={handleCreateCompany}
-                showButton={canEdit ?? false}
-              />
-            </div>
-          ) : (
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {companies.map(
-                ({
-                  name,
-                  created_at,
-                  expiry_date,
-                  image,
-                  status,
-                  is_default,
-                  uuid,
-                }) => (
-                  <CompanyCard
-                    key={uuid}
-                    name={name}
-                    createdOn={formatDate(created_at)}
-                    subsEnd={formatDate(expiry_date)}
-                    image={
-                      image
-                        ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') + image
-                        : ''
-                    }
-                    status={status === 'ACTIVE'}
-                    onToggle={() => handleToggleStatus(uuid, status)}
-                    menuOptions={menuOptions}
-                    isDefault={is_default}
-                    companyUuid={uuid}
-                    onDelete={() => handleDeleteCompany(uuid)}
-                  />
-                )
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='companies'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Companies
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <button
+                  onClick={handleCreateCompany}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
+                  </span>
+                </button>
               )}
             </div>
-          )}
-        </>
-      )}
+          </div>
 
-      {loading && companies.length > 0 && (
-        <div className='text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
+          {/* Companies Tab Content */}
+          <TabsContent value='companies' className='mt-6'>
+            {/* Initial Loading State */}
+            {companies.length === 0 && loading ? (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {[...Array(8)].map((_, i) => (
+                  <CompanyCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Company Grid */}
+                {companies.length === 0 && !loading ? (
+                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+                    <NoDataFound
+                      description={
+                        COMPANY_MESSAGES.NO_COMPANIES_FOUND_DESCRIPTION
+                      }
+                      buttonText={COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
+                      onButtonClick={handleCreateCompany}
+                      showButton={canEdit ?? false}
+                    />
+                  </div>
+                ) : (
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {companies.map(
+                      ({
+                        name,
+                        created_at,
+                        expiry_date,
+                        image,
+                        status,
+                        is_default,
+                        uuid,
+                      }) => (
+                        <CompanyCard
+                          key={uuid}
+                          name={name}
+                          createdOn={formatDate(created_at)}
+                          subsEnd={formatDate(expiry_date)}
+                          image={
+                            image
+                              ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
+                                image
+                              : ''
+                          }
+                          status={status === 'ACTIVE'}
+                          onToggle={() => handleToggleStatus(uuid, status)}
+                          menuOptions={menuOptions}
+                          isDefault={is_default}
+                          companyUuid={uuid}
+                          onDelete={() => handleDeleteCompany(uuid)}
+                        />
+                      )
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+
+            {loading && companies.length > 0 && (
+              <div className='text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+              <NoDataFound
+                title='Archived Companies'
+                description='No archived companies found'
+                buttonText=''
+                showButton={false}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

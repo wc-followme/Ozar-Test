@@ -73,9 +73,10 @@ const CompanyProfile = () => {
                             <Star1
                               key={index}
                               size='16'
-                              color={index < 4 ? '#EBB402' : '#C0C6CD'}
                               className={
-                                index < 4 ? 'fill-[#EBB402]' : 'fill-[#C0C6CD]'
+                                index < 4
+                                  ? 'text-yellowbrand fill-yellowbrand'
+                                  : 'text-placeholdergray fill-placeholdergray'
                               }
                             />
                           ))}

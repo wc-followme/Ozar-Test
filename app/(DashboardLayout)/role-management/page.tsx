@@ -5,27 +5,23 @@ import { RoleCard } from '@/components/shared/cards/RoleCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  CUSTOM_EVENTS,
-  PAGINATION,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
+import { roleIconOptions } from '@/constants/icon-options';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
-import { roleIconOptions } from '@/constants/sidebar-items';
+import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import RoleCardSkeleton from '../../../components/shared/skeleton/RoleCardSkeleton';
 import { ROLE_MESSAGES } from './role-messages';
 import type { FetchRolesParams, Role, RoleApiResponse } from './types';
@@ -85,7 +81,7 @@ const RoleManagement = () => {
   const [name] = useState('');
   const [hasMore, setHasMore] = useState(true);
   const [isNavigating, setIsNavigating] = useState(false);
-  const selectedCompanyRef = useRef<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState('roles');
   const router = useRouter();
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
@@ -95,31 +91,14 @@ const RoleManagement = () => {
   const canEdit = userPermissions?.roles?.edit;
   const canViewRoles = userPermissions?.roles?.view;
 
-  // Initialize selectedCompany from localStorage
-  useEffect(() => {
-    const currentCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    selectedCompanyRef.current = currentCompany;
-  }, []);
-
   const fetchRoles = useCallback(
     async (targetPage = 1, append = false) => {
       if (targetPage === 1) {
         setLoading(true);
       }
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let company_id: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            company_id = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            company_id = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const company_id = getCompanyId();
 
         const params: FetchRolesParams = {
           page: targetPage,
@@ -166,52 +145,18 @@ const RoleManagement = () => {
         setLoading(false);
       }
     },
-    [limit, search, name, handleAuthError, showErrorToast]
+    [limit, search, name]
   );
 
-  // Fetch first page of roles
-  useEffect(() => {
+  // Handle company changes
+  const refetchRoles = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setRoles([]);
     fetchRoles(1, false);
-  }, [fetchRoles]);
+  }, []);
 
-  // Watch for changes in selected company and refetch roles
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setPage(1);
-      setHasMore(true);
-      setRoles([]);
-      // Call fetchRoles directly without dependency
-      fetchRoles(1, false);
-    };
-
-    // Listen for storage events (when localStorage changes in other tabs/windows)
-    window.addEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-
-    // Listen for custom company change events
-    const handleCompanyChange = () => {
-      const currentCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      if (currentCompany !== selectedCompanyRef.current) {
-        selectedCompanyRef.current = currentCompany;
-        handleStorageChange();
-      }
-    };
-
-    // Add custom event listener for company changes
-    window.addEventListener(CUSTOM_EVENTS.COMPANY_CHANGED, handleCompanyChange);
-
-    return () => {
-      window.removeEventListener(CUSTOM_EVENTS.STORAGE, handleStorageChange);
-      window.removeEventListener(
-        CUSTOM_EVENTS.COMPANY_CHANGED,
-        handleCompanyChange
-      );
-    };
-  }, []); // Remove fetchRoles from dependencies
+  useCompanyChange(refetchRoles);
 
   // Infinite scroll
   useEffect(() => {
@@ -229,7 +174,7 @@ const RoleManagement = () => {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, fetchRoles, page]);
+  }, [loading, hasMore, page]);
 
   // Handler for deleting a role
   const handleDeleteRole = async (uuid: string) => {
@@ -284,97 +229,140 @@ const RoleManagement = () => {
   }
 
   return (
-    <section className=''>
-      <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+    <div className='w-full'>
+      {/* Header */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>{ROLE_MESSAGES.PAGE_TITLE}</h2>
-          {canEdit && (
-            <button
-              onClick={handleCreateRole}
-              className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              disabled={loading}
-            >
-              <Add size='24' color='#fff' className='sm:hidden' />
-              <span className='hidden sm:inline'>
-                {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
-              </span>
-            </button>
-          )}
         </div>
-      </header>
+      </div>
 
-      {/* Initial Loading State */}
-      {roles.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-          {[...Array(8)].map((_, i) => (
-            <RoleCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Roles Grid */}
-          <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
-            {roles.length === 0 && !loading ? (
-              <div className='w-full col-span-full h-full md:h-[calc(100vh_-_220px)]'>
-                <NoDataFound
-                  buttonText={ROLE_MESSAGES.CREATE_ROLE_BUTTON}
-                  onButtonClick={handleCreateRole}
-                  description={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
-                  showButton={canEdit ?? false}
-                />
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='roles'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Roles
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <button
+                  onClick={handleCreateRole}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                  disabled={loading}
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {ROLE_MESSAGES.CREATE_ROLE_BUTTON}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Roles Tab Content */}
+          <TabsContent value='roles' className='mt-6'>
+            {/* Initial Loading State */}
+            {roles.length === 0 && loading ? (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
+                {[...Array(8)].map((_, i) => (
+                  <RoleCardSkeleton key={i} />
+                ))}
               </div>
             ) : (
-              roles?.map(
-                ({
-                  uuid,
-                  icon,
-                  name,
-                  description,
-                  total_permissions,
-                  is_default,
-                }) => {
-                  // Use the icon component directly if it matches the expected signature
-                  const iconOptionRaw = safeIconOptions.find(
-                    (opt: any) => opt.value === icon
-                  );
-                  const iconOption = iconOptionRaw
-                    ? {
-                        ...iconOptionRaw,
-                        icon: IconAdapter(iconOptionRaw.icon),
-                      }
-                    : {
-                        icon: IconAdapter(HelmetIcon),
-                        color: '#00a8bf',
-                      };
-                  return (
-                    <div key={uuid}>
-                      <RoleCard
-                        menuOptions={getMenuOptions(is_default ?? false)}
-                        iconSrc={iconOption.icon}
-                        iconBgColor={iconOption.color + '26'}
-                        title={name}
-                        description={description}
-                        permissionCount={total_permissions || 0}
-                        iconColor={iconOption.color}
-                        onEdit={() => handleEditRole(uuid)}
-                        onDelete={() => handleDeleteRole(uuid)}
+              <>
+                {/* Roles Grid */}
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
+                  {roles.length === 0 && !loading ? (
+                    <div className='w-full col-span-full h-full md:h-[calc(100vh_-_220px)]'>
+                      <NoDataFound
+                        buttonText={ROLE_MESSAGES.CREATE_ROLE_BUTTON}
+                        onButtonClick={handleCreateRole}
+                        description={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
+                        showButton={canEdit ?? false}
                       />
                     </div>
-                  );
-                }
-              )
+                  ) : (
+                    roles?.map(
+                      ({
+                        uuid,
+                        icon,
+                        name,
+                        description,
+                        total_permissions,
+                        is_default,
+                      }) => {
+                        // Use the icon component directly if it matches the expected signature
+                        const iconOptionRaw = safeIconOptions.find(
+                          (opt: any) => opt.value === icon
+                        );
+                        const iconOption = iconOptionRaw
+                          ? {
+                              ...iconOptionRaw,
+                              icon: IconAdapter(iconOptionRaw.icon),
+                            }
+                          : {
+                              icon: IconAdapter(HelmetIcon),
+                              color: '#00a8bf',
+                            };
+                        return (
+                          <div key={uuid}>
+                            <RoleCard
+                              menuOptions={getMenuOptions(is_default ?? false)}
+                              iconSrc={iconOption.icon}
+                              iconBgColor={iconOption.color + '26'}
+                              title={name}
+                              description={description}
+                              permissionCount={total_permissions || 0}
+                              iconColor={iconOption.color}
+                              onEdit={() => handleEditRole(uuid)}
+                              onDelete={() => handleDeleteRole(uuid)}
+                            />
+                          </div>
+                        );
+                      }
+                    )
+                  )}
+                </div>
+              </>
             )}
-          </div>
-        </>
-      )}
+            {loading && roles.length > 0 && (
+              <div className='w-full text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
 
-      {/* Loading more roles */}
-      {loading && roles.length > 0 && (
-        <div className='w-full text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
-    </section>
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+              <NoDataFound
+                title='Archived Roles'
+                description='No archived roles found'
+                buttonText=''
+                showButton={false}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
   );
 };
 

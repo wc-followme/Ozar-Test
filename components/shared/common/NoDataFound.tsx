@@ -17,7 +17,7 @@ const NoDataFound: React.FC<NoDataFoundProps> = ({
   showButton = true,
 }) => {
   return (
-    <div className='flex flex-col items-center justify-center min-h-[60vh] h-full text-center'>
+    <div className='flex flex-col items-center justify-center min-h-[55vh] sm:min-h-[60vh] h-full text-center'>
       <div className='mb-4 md:mb-8'>
         <Image
           src='/images/no-data-found.svg'

@@ -6,14 +6,16 @@ import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION, STORAGE_KEYS } from '@/constants/common';
+import { ACTIONS, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, CreateToolRequest, Tool } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Add, Edit2, Trash } from 'iconsax-react';
@@ -24,6 +26,7 @@ import { TOOL_MESSAGES } from './tool-messages';
 export default function ToolsManagement() {
   const [tools, setTools] = useState<Tool[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
   const [fileKey, setFileKey] = useState<string>('');
@@ -39,6 +42,7 @@ export default function ToolsManagement() {
   const [imageDeleted, setImageDeleted] = useState(false);
   // Track the original tool assets from the API to preserve them
   const [originalToolAssets, setOriginalToolAssets] = useState<string>('');
+  const [selectedTab, setSelectedTab] = useState('tools');
 
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError, user } = useAuth();
@@ -81,19 +85,8 @@ export default function ToolsManagement() {
       }
 
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
 
         const response = await apiService.fetchTools({
           page: targetPage,
@@ -281,19 +274,8 @@ export default function ToolsManagement() {
 
     setFormLoading(true);
     try {
-      // Get selected company from localStorage
-      const selectedCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      let companyId: string | undefined;
-      if (selectedCompany) {
-        try {
-          const parsedCompany = JSON.parse(selectedCompany);
-          companyId = parsedCompany.id; // UUID from localStorage
-        } catch {
-          companyId = undefined;
-        }
-      }
+      // Get selected company ID using common function
+      const companyId = getCompanyId();
 
       const payload: CreateToolRequest = {
         name,
@@ -443,81 +425,123 @@ export default function ToolsManagement() {
   return (
     <div className='w-full'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
-          <h1 className='page-title'>Tools Management</h1>
-          <div className='flex items-center gap-4 justify-end'>
-            {canEdit && (
-              <button
-                onClick={handleOpenCreateForm}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>Create Tool</span>
-              </button>
-            )}
-          </div>
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
+          <h2 className='page-title'>Tools Management</h2>
         </div>
       </div>
 
-      {/* Initial Loading State */}
-      {tools.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-          {[...Array(8)].map((_, i) => (
-            <ToolCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* Tools Grid */}
-          {tools.length === 0 && !loading ? (
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='tools'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Tools
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <button
+                  onClick={handleOpenCreateForm}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>Add Tool</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Tools Tab Content */}
+          <TabsContent value='tools' className='mt-6'>
+            {/* Initial Loading State */}
+            {tools.length === 0 && loading ? (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {[...Array(8)].map((_, i) => (
+                  <ToolCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Tools Grid */}
+                {tools.length === 0 && !loading ? (
+                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+                    <NoDataFound
+                      title='No Tools Found'
+                      description="You haven't created any tools yet. Start by adding your first one to organize your tools."
+                      buttonText='Add Tool'
+                      onButtonClick={handleOpenCreateForm}
+                      showButton={canEdit ?? false}
+                    />
+                  </div>
+                ) : (
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {tools.map((tool, index) => {
+                      const {
+                        id,
+                        name,
+                        manufacturer,
+                        available_quantity,
+                        assets,
+                        uuid,
+                      } = tool;
+                      const imageUrl =
+                        assets && assets[0]?.media_url
+                          ? cdnPrefix + assets[0].media_url
+                          : '/images/img-placeholder-sm.png';
+                      return (
+                        <ToolCard
+                          key={id ?? `${name}-${manufacturer}-${index}`}
+                          image={imageUrl}
+                          name={name}
+                          brand={manufacturer}
+                          quantity={available_quantity}
+                          videoCount={0} // Static 0 for now as requested
+                          menuOptions={menuOptions}
+                          onDelete={() => handleDelete(uuid)}
+                          onEdit={() => handleEdit(uuid)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+            {loading && tools.length > 0 && (
+              <div className='text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
             <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
               <NoDataFound
-                title='No Tools Found'
-                description="You haven't created any tools yet. Start by adding your first one to organize your tools."
-                buttonText='Create Tool'
-                onButtonClick={handleOpenCreateForm}
-                showButton={canEdit ?? false}
+                title='Archived Tools'
+                description='No archived tools found'
+                buttonText=''
+                showButton={false}
               />
             </div>
-          ) : (
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {tools.map((tool, index) => {
-                const {
-                  id,
-                  name,
-                  manufacturer,
-                  available_quantity,
-                  assets,
-                  uuid,
-                } = tool;
-                const imageUrl =
-                  assets && assets[0]?.media_url
-                    ? cdnPrefix + assets[0].media_url
-                    : '/images/img-placeholder-sm.png';
-                return (
-                  <ToolCard
-                    key={id ?? `${name}-${manufacturer}-${index}`}
-                    image={imageUrl}
-                    name={name}
-                    brand={manufacturer}
-                    quantity={available_quantity}
-                    videoCount={0} // Static 0 for now as requested
-                    menuOptions={menuOptions}
-                    onDelete={() => handleDelete(uuid)}
-                    onEdit={() => handleEdit(uuid)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-      {loading && tools.length > 0 && (
-        <div className='text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Side Sheet for Create Tool */}
       <SideSheet

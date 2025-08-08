@@ -10,7 +10,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Textarea } from '@/components/ui/textarea';
-import { APPOINTMENT_MESSAGES, MOCK_EMPLOYEES } from '@/constants/common';
+import { APPOINTMENT_MESSAGES, STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
@@ -22,22 +23,123 @@ import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
 import { TimePicker } from '../common/TimePicker';
 
+interface Employee {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  profile_picture_url: string;
+  status: string;
+}
+
+interface AppointmentEmployee {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  updated_by: number;
+  status: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+    phone_number: string;
+    profile_picture_url: string;
+  };
+}
+
+interface Appointment {
+  id: string;
+  uuid: string;
+  agenda: string;
+  appointment_with: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  address: string;
+  notes: string;
+  employees: AppointmentEmployee[];
+}
+
 // Validation schema
 const appointmentFormSchema = yup.object({
   agenda: yup.string().required(APPOINTMENT_MESSAGES.AGENDA_REQUIRED),
   appointmentWith: yup
     .string()
     .required(APPOINTMENT_MESSAGES.APPOINTMENT_WITH_REQUIRED),
-  date: yup.date().required(APPOINTMENT_MESSAGES.DATE_REQUIRED),
+  date: yup
+    .date()
+    .required(APPOINTMENT_MESSAGES.DATE_REQUIRED)
+    .test(
+      'future-date',
+      APPOINTMENT_MESSAGES.DATE_FUTURE_REQUIRED,
+      function (value) {
+        if (!value) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return value >= today;
+      }
+    ),
   starts: yup.string().required(APPOINTMENT_MESSAGES.STARTS_REQUIRED),
-  ends: yup.string().required(APPOINTMENT_MESSAGES.ENDS_REQUIRED),
+  ends: yup
+    .string()
+    .required(APPOINTMENT_MESSAGES.ENDS_REQUIRED)
+    .test(
+      'end-time-greater',
+      APPOINTMENT_MESSAGES.ENDS_GREATER_THAN_STARTS,
+      function (value) {
+        const { starts } = this.parent;
+        if (!value || !starts) return true; // Let other validations handle required fields
+
+        // Convert times to minutes for comparison
+        const convertTimeToMinutes = (timeStr: string) => {
+          console.log('Converting time:', timeStr);
+
+          // Handle 12-hour format (e.g., "09:00 AM", "10:30 PM")
+          const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (timeMatch && timeMatch[1] && timeMatch[2] && timeMatch[3]) {
+            let hours = parseInt(timeMatch[1]!);
+            const minutes = parseInt(timeMatch[2]!);
+            const period = timeMatch[3]!.toUpperCase();
+
+            // Convert to 24-hour format
+            if (period === 'PM' && hours !== 12) {
+              hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+              hours = 0;
+            }
+
+            const totalMinutes = hours * 60 + minutes;
+            console.log(`Converted ${timeStr} to ${totalMinutes} minutes`);
+            return totalMinutes;
+          }
+
+          // Handle 24-hour format (e.g., "09:00", "14:30")
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          if (!hours || !minutes) return 0;
+          const totalMinutes = hours * 60 + minutes;
+          console.log(`Converted ${timeStr} to ${totalMinutes} minutes`);
+          return totalMinutes;
+        };
+
+        const startMinutes = convertTimeToMinutes(starts);
+        const endMinutes = convertTimeToMinutes(value);
+
+        return endMinutes > startMinutes;
+      }
+    ),
   address: yup.string().required(APPOINTMENT_MESSAGES.ADDRESS_REQUIRED),
   notes: yup.string().optional().default(''),
   employees: yup
     .array()
     .of(yup.string().required())
     .min(1, APPOINTMENT_MESSAGES.EMPLOYEES_REQUIRED)
-    .default([]),
+    .default([])
+    .optional(), // Temporarily make it optional to test form submission
 });
 
 interface AppointmentFormData {
@@ -52,23 +154,31 @@ interface AppointmentFormData {
 }
 
 interface AppointmentFormProps {
-  onSubmit: (data: AppointmentFormData) => void;
+  onSubmit: (data: AppointmentFormData) => void | Promise<void>;
   onCancel: () => void;
   loading?: boolean;
+  editingAppointment?: Appointment | null;
 }
 
 export const AppointmentForm: React.FC<AppointmentFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
+  editingAppointment = null,
 }) => {
+  console.log('AppointmentForm - onSubmit prop received:', onSubmit);
+  console.log('AppointmentForm - onSubmit type:', typeof onSubmit);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
 
   const {
     control,
     handleSubmit,
-    watch,
     setValue,
+    watch,
+    trigger,
     formState: { errors },
   } = useForm<AppointmentFormData>({
     resolver: yupResolver(appointmentFormSchema),
@@ -82,22 +192,199 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       notes: '',
       employees: [],
     },
+    mode: 'onChange', // Add this to see validation errors immediately
   });
 
-  const selectedEmployees = watch('employees');
+  // Watch start time to trigger end time validation
+  const startTime = watch('starts');
 
-  const handleEmployeeChange = (value: string[]) => {
-    setValue('employees', value);
+  // Trigger end time validation when start time changes
+  React.useEffect(() => {
+    if (startTime) {
+      console.log('Start time changed to:', startTime);
+      trigger('ends');
+    }
+  }, [startTime, trigger]);
+
+  // Debug form state
+  console.log('AppointmentsForm - Form errors:', errors);
+  console.log(
+    'AppointmentsForm - Form is valid:',
+    Object.keys(errors).length === 0
+  );
+
+  // Debug employees state
+  React.useEffect(() => {
+    console.log('AppointmentsForm - Employees array length:', employees.length);
+    console.log('AppointmentsForm - Employees data:', employees);
+    console.log(
+      'AppointmentsForm - MultiSelect options:',
+      employees.map(employee => ({
+        value: employee.uuid,
+        label: employee.name,
+        image: employee.profile_picture_url || '/images/profile.jpg',
+      }))
+    );
+  }, [employees]);
+
+  // Prefill form when editingAppointment is provided
+  React.useEffect(() => {
+    if (editingAppointment && employees.length > 0) {
+      console.log(
+        'AppointmentsForm - Prefilling form with:',
+        editingAppointment
+      );
+
+      // Convert 24-hour time to 12-hour format for display
+      const convertTo12Hour = (time24h: string) => {
+        try {
+          const [hours, minutes] = time24h.split(':');
+          if (!hours || !minutes) return time24h;
+
+          const hour = parseInt(hours);
+          const ampm = hour >= 12 ? 'PM' : 'AM';
+          const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+          return `${displayHour}:${minutes} ${ampm}`;
+        } catch (error) {
+          return time24h;
+        }
+      };
+
+      // Set form values
+      setValue('agenda', editingAppointment.agenda);
+      setValue('appointmentWith', editingAppointment.appointment_with);
+      setValue('date', new Date(editingAppointment.date));
+      setValue('starts', convertTo12Hour(editingAppointment.start_time));
+      setValue('ends', convertTo12Hour(editingAppointment.end_time));
+      setValue('address', editingAppointment.address);
+      setValue('notes', editingAppointment.notes || '');
+
+      // Set selected employees
+      if (
+        editingAppointment.employees &&
+        editingAppointment.employees.length > 0
+      ) {
+        const employeeUuids = editingAppointment.employees.map(
+          emp => emp.user.uuid
+        );
+        setSelectedEmployees(employeeUuids);
+        setValue('employees', employeeUuids);
+      }
+    }
+  }, [editingAppointment, employees, setValue]);
+
+  // Fetch employees on component mount
+  React.useEffect(() => {
+    const fetchEmployees = async () => {
+      setEmployeesLoading(true);
+      try {
+        // Get company ID from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        const companyId = selectedCompany
+          ? JSON.parse(selectedCompany)?.id
+          : null;
+
+        if (!companyId) {
+          console.warn(
+            'No company ID found in localStorage - employees will not be loaded'
+          );
+          setEmployees([]);
+          return;
+        }
+
+        const response = await apiService.fetchUsersDropdown({
+          company_id: companyId,
+          page: 1,
+          limit: 50,
+        });
+
+        if (response.data) {
+          console.log('AppointmentsForm API Response:', response);
+          console.log('AppointmentsForm Response data:', response.data);
+
+          // The response structure is: { data: [...], total: 1, page: 1, limit: 50, totalPages: 1 }
+          let employeesData = [];
+          if (response.data && Array.isArray(response.data)) {
+            employeesData = response.data;
+          } else if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            employeesData = response.data.data;
+          }
+
+          const mappedEmployees = employeesData.map((employee: any) => ({
+            id: employee.id,
+            uuid: employee.uuid,
+            name: employee.name,
+            email: employee.email,
+            profile_picture_url:
+              employee.profile_picture_url || '/images/profile.jpg',
+            status: employee.status || 'ACTIVE',
+          }));
+
+          console.log('AppointmentsForm Mapped employees:', mappedEmployees);
+          setEmployees(mappedEmployees);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+        setEmployees([]);
+      } finally {
+        setEmployeesLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  const handleEmployeeChange = (employees: string[]) => {
+    console.log('AppointmentsForm - Employee selection changed:', employees);
+    setSelectedEmployees(employees);
+    setValue('employees', employees);
+    console.log('AppointmentsForm - Form value set for employees');
   };
 
-  const handleFormSubmit = (data: AppointmentFormData) => {
-    onSubmit(data);
+  const handleFormSubmit = async (data: AppointmentFormData) => {
+    console.log('AppointmentsForm - handleFormSubmit called with data:', data);
+    console.log('AppointmentsForm - errors:', errors);
+    console.log('AppointmentsForm - selectedEmployees:', selectedEmployees);
+
+    // Check for validation errors
+    if (Object.keys(errors).length > 0) {
+      console.log(
+        'AppointmentsForm - Validation errors found, returning early'
+      );
+      console.log('AppointmentsForm - Validation errors details:', errors);
+      return;
+    }
+
+    // Ensure employees data is included in the submission
+    data.employees = selectedEmployees;
+    console.log('AppointmentsForm - Final data with employees:', data);
+
+    try {
+      console.log('AppointmentsForm - Calling onSubmit');
+      console.log('AppointmentsForm - onSubmit function:', onSubmit);
+      const result = await onSubmit(data);
+      console.log(
+        'AppointmentsForm - onSubmit completed successfully, result:',
+        result
+      );
+    } catch (error) {
+      console.error('AppointmentsForm - Error calling onSubmit:', error);
+    }
   };
 
   return (
     <div className='w-full'>
       <form
-        onSubmit={handleSubmit(handleFormSubmit)}
+        onSubmit={e => {
+          console.log('Form submit event triggered');
+          handleSubmit(handleFormSubmit)(e);
+        }}
         className='space-y-2 md:space-y-4'
         noValidate
       >
@@ -132,10 +419,18 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             {APPOINTMENT_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={MOCK_EMPLOYEES}
+            options={employees.map(employee => ({
+              value: employee.uuid,
+              label: employee.name,
+              image: employee.profile_picture_url || '/images/profile.jpg',
+            }))}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder={APPOINTMENT_MESSAGES.EMPLOYEES_PLACEHOLDER}
+            placeholder={
+              employeesLoading
+                ? 'Loading employees...'
+                : APPOINTMENT_MESSAGES.EMPLOYEES_PLACEHOLDER
+            }
             error={errors.employees?.message || ''}
           />
         </div>
@@ -209,6 +504,11 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       onSelect={date => {
                         field.onChange(date);
                         setDatePickerOpen(false);
+                      }}
+                      disabled={date => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
                       }}
                       initialFocus
                     />
@@ -333,6 +633,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             disabled={loading}
+            onClick={() => {
+              console.log('Submit button clicked');
+            }}
           >
             {loading
               ? APPOINTMENT_MESSAGES.SAVING_BUTTON

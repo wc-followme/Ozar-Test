@@ -851,7 +851,7 @@ class ApiService {
     role_id?: string | number;
     company_id?: string | number;
     search?: string;
-    status?: 'ACTIVE' | 'INACTIVE' | '';
+    status?: 'ACTIVE' | 'INACTIVE';
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -940,6 +940,29 @@ class ApiService {
     if (role_id) params.append('role_id', String(role_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
+    return this.makeRequest(`/users/dropdown?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  /**
+   * Get users dropdown for forms (simplified version)
+   */
+  async fetchUsersDropdown({
+    company_id,
+    page = 1,
+    limit = 10,
+  }: {
+    company_id: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('company_id', company_id);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1564,6 +1587,7 @@ class ApiService {
     status?: string;
     type?: string;
     job_status?: string;
+    company_id?: string | number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -1571,6 +1595,26 @@ class ApiService {
     if (params?.status) queryParams.append('status', params.status);
     if (params?.type) queryParams.append('type', params.type);
     if (params?.job_status) queryParams.append('job_status', params.job_status);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch jobs for dropdown (for todo form)
+  async fetchJobsDropdown(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.type) queryParams.append('type', params.type);
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -1593,8 +1637,19 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
-  async fetchJobStatistics(): Promise<any> {
-    return this.makeRequest('/jobs/statistics', {
+  async fetchJobStatistics(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/jobs/statistics?${queryParams.toString()}`
+      : '/jobs/statistics';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1672,7 +1727,177 @@ class ApiService {
     });
   }
 
-  // Removed testConnection and all debug code
+  // Create todo list
+  async createTodoList(payload: {
+    job_uuid: string;
+    title: string;
+    date: string;
+    user_uuids: string[];
+    items: Array<{ description: string }>;
+  }): Promise<any> {
+    return this.makeRequest('/todo-lists', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch todo lists
+  async fetchTodoLists(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update todo item completion status
+  async updateTodoItemCompletion(
+    itemUuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/items/${itemUuid}/set-completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ is_completed: isCompleted }),
+    });
+  }
+
+  // Fetch single todo list by ID
+  async fetchTodoListById(uuid: string): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update todo list
+  async updateTodoList(
+    uuid: string,
+    payload: {
+      title: string;
+      date: string;
+      user_uuids: string[];
+      items: Array<{
+        uuid?: string; // Optional for new items
+        description: string;
+      }>;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Create appointment
+  async createAppointment(payload: {
+    agenda: string;
+    appointment_with: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    address: string;
+    notes: string;
+    user_uuids: string;
+  }): Promise<any> {
+    return this.makeRequest('/appointments', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch appointments
+  async fetchAppointments(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.makeRequest(`/appointments?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch single appointment by ID
+  async fetchAppointmentById(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update appointment
+  async updateAppointment(
+    uuid: string,
+    payload: {
+      agenda: string;
+      appointment_with: string;
+      date: string;
+      start_time: string;
+      end_time: string;
+      address: string;
+      notes: string;
+      user_uuids: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Mark appointment as completed
+  async markAppointmentCompleted(
+    uuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}/completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        is_completed: isCompleted,
+      }),
+    });
+  }
+
+  // Delete appointment
+  async deleteAppointment(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

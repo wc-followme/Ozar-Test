@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { HambergerMenu, Key, UserOctagon } from 'iconsax-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '../../lib/utils';
+import { cn, getCompanyId } from '../../lib/utils';
 import { Search } from '../icons/Search';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import CompanyDropdown, { Company } from '../shared/common/CompanyDropdown';
@@ -65,22 +65,14 @@ export function Header() {
 
             setCompanies(transformedCompanies);
 
-            // Load selected company from localStorage
-            const savedCompany = localStorage.getItem(
-              STORAGE_KEYS.SELECTED_COMPANY
-            );
-            if (savedCompany) {
-              try {
-                const parsedCompany = JSON.parse(savedCompany);
-                // Check if saved company exists in fetched companies
-                const foundCompany = transformedCompanies.find(
-                  c => c.id === parsedCompany.id
-                );
-                setSelectedCompany(foundCompany || transformedCompanies[0]);
-              } catch (error) {
-                console.error('Error parsing saved company:', error);
-                setSelectedCompany(transformedCompanies[0]);
-              }
+            // Load selected company using global utility function
+            const savedCompanyId = getCompanyId();
+            if (savedCompanyId) {
+              // Check if saved company exists in fetched companies
+              const foundCompany = transformedCompanies.find(
+                c => c.id === savedCompanyId
+              );
+              setSelectedCompany(foundCompany || transformedCompanies[0]);
             } else {
               // Set first company as default and save to localStorage
               const defaultCompany = transformedCompanies[0];
@@ -256,7 +248,7 @@ export function Header() {
               id='Search'
               type='Search'
               placeholder={HEADER_MESSAGES.SEARCH.PLACEHOLDER}
-              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] placeholder-[#C0C6CD] !placeholder-[var(--text-placeholder)]'
+              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] !placeholder-[var(--text-placeholder)]'
               required
             />
             {/* Type Selector */}
@@ -266,7 +258,7 @@ export function Header() {
             </div> */}
 
             {/* Search Button */}
-            <Button className='bg-[#263796] hover:bg-[#263796] text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
+            <Button className='bg-buttonblue hover:bg-buttonblue text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
               <Search />
             </Button>
           </div>
