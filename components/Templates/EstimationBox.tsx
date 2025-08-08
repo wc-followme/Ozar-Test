@@ -844,6 +844,31 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     }).format(amount);
   };
 
+  // Calculate project total across all rooms
+  const calculateProjectTotal = () => {
+    return rooms.reduce((total, room) => {
+      const roomTotal = room.trades.reduce((tradeTotal, trade) => {
+        const serviceTotal = trade.serviceList.reduce((serviceSum, service) => {
+          return serviceSum + service.lineTotal;
+        }, 0);
+        return tradeTotal + serviceTotal;
+      }, 0);
+      return total + roomTotal;
+    }, 0);
+  };
+
+  const projectTotal = calculateProjectTotal();
+
+  const handleSave = () => {
+    // TODO: Implement save functionality
+    console.log('Saving estimation...');
+  };
+
+  const handleReviewAndSend = () => {
+    // TODO: Implement review and send functionality
+    console.log('Reviewing and sending estimation...');
+  };
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
@@ -1003,6 +1028,31 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
               </div>
             )
           ) : null}
+        </div>
+
+        {/* Project Total and Submit Buttons */}
+        <div className='p-6 bg-white border-t border-gray-200 shadow-sm'>
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center gap-4'>
+              <h3 className='text-xl font-semibold text-gray-900'>
+                Project Total:
+              </h3>
+              <span className='text-2xl font-bold text-gray-900'>
+                {formatCurrency(projectTotal)}
+              </span>
+            </div>
+            <div className='flex gap-3'>
+              <button onClick={handleSave} className='btn-secondary'>
+                Save
+              </button>
+              <button
+                onClick={handleReviewAndSend}
+                className='px-6 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium'
+              >
+                Review & Send
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
