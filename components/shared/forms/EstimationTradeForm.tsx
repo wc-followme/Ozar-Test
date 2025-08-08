@@ -66,15 +66,18 @@ export default function EstimationTradeForm({
 
   // Sync selectedTrade with trade prop to avoid duplicates
   useEffect(() => {
-    if (
-      trade.name &&
-      tradeOptions.some(option => option.value === trade.name)
-    ) {
-      setSelectedTrade(trade.name);
+    // Prefer matching by label (human-readable name). Fallback to matching by value.
+    const matchingOption = tradeOptions.find(
+      option => option.label === trade.name || option.value === trade.name
+    );
+
+    if (matchingOption) {
+      setSelectedTrade(matchingOption.value);
     } else if (tradeOptions.length > 0 && tradeOptions[0]) {
-      setSelectedTrade(tradeOptions[0].value); // Default to first trade option
+      // Default to first available option when nothing matches
+      setSelectedTrade(tradeOptions[0].value);
     } else {
-      setSelectedTrade(''); // Empty string if no trades available
+      setSelectedTrade('');
     }
   }, [trade.name, tradeOptions]);
 
@@ -105,7 +108,13 @@ export default function EstimationTradeForm({
                   value={selectedTrade}
                   onValueChange={newValue => {
                     setSelectedTrade(newValue);
-                    onTradeNameChange?.(newValue);
+                    // Convert the selected value (uuid) to its display label (name)
+                    const selectedOption = finalTradeOptions.find(
+                      option => option.value === newValue
+                    );
+                    onTradeNameChange?.(
+                      selectedOption ? selectedOption.label : newValue
+                    );
                   }}
                   options={finalTradeOptions}
                   placeholder='Select a trade'
