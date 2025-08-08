@@ -4,6 +4,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 
+import { useAuth } from '@/lib/auth-context';
 import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { Edit2 } from 'iconsax-react';
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
@@ -90,6 +91,7 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
     );
     const [editLoading, setEditLoading] = useState(false);
     const { showSuccessToast, showErrorToast } = useToast();
+    const { user } = useAuth();
 
     // Fetch todo lists function
     const fetchTodoLists = async () => {
@@ -431,11 +433,9 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
                     </p>
                   </div>
                   {(() => {
-                    // TODO: Update API to include created_by field
-                    // For now, show edit button to all users since creator info is not available
-                    const isCreator = true; // Temporarily enable edit for all users
-
-                    return isCreator;
+                    if (!user) return false;
+                    // Show edit button only if current user is the creator
+                    return String(todo.created_by) === String(user.id);
                   })() && (
                     <button
                       onClick={() => handleEditSection(sectionId)}

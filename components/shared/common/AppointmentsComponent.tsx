@@ -261,15 +261,10 @@ export const AppointmentsComponent = forwardRef<
     // Only show edit and delete options if current user is the creator
     // Check both user.id and user.uuid since we don't know which one the API uses
 
-    console.log('AppointmentsComponent - user.uuid:', user.uuid);
-    console.log(
-      'AppointmentsComponent - appointment.created_by:',
-      appointment.creator.uuid
-    );
     if (
       user &&
       (String(appointment.created_by) === String(user.id) ||
-        String(appointment.creator.uuid) === user.uuid)
+        String(appointment.creator?.uuid) === user.uuid)
     ) {
       options.push({
         id: 'edit',
