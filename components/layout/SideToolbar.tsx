@@ -1,14 +1,26 @@
 'use client';
-import { AppointmentsComponent } from '@/components/shared/common/AppointmentsComponent';
+import {
+  AppointmentsComponent,
+  AppointmentsComponentRef,
+} from '@/components/shared/common/AppointmentsComponent';
 import { MaterialChecklistComponent } from '@/components/shared/common/MaterialChecklistComponent';
 import SideSheet from '@/components/shared/common/SideSheet';
-import { TodoComponent } from '@/components/shared/common/TodoComponent';
+import {
+  TodoComponent,
+  TodoComponentRef,
+} from '@/components/shared/common/TodoComponent';
 import { AppointmentForm } from '@/components/shared/forms/AppointmentsForm';
 import { TodoForm } from '@/components/shared/forms/TodoForm';
-import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
+import { apiService } from '@/lib/api';
+import {
+  cn,
+  extractApiErrorMessage,
+  extractApiSuccessMessage,
+} from '@/lib/utils';
 import { IconX } from '@tabler/icons-react';
 import { AddCircle, Setting4 } from 'iconsax-react';
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { MaterialCheckListIcon } from '../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../icons/SupportIcon';
 import { TodoListIcon } from '../icons/TodoListIcon';
@@ -88,7 +100,10 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [showTodoForm, setShowTodoForm] = useState(false);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+  const todoComponentRef = useRef<TodoComponentRef>(null);
+  const appointmentsComponentRef = useRef<AppointmentsComponentRef>(null);
   const { isOpen, setIsOpen } = useSideToolbar();
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const handleItemClick = (itemId: string) => {
     setActiveItem(itemId);
@@ -106,15 +121,90 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
   const handleTodoFormSubmit = () => {
     // Handle form submission here
     setShowTodoForm(false);
+    // Refresh the todo list after successful form submission
+    if (todoComponentRef.current) {
+      todoComponentRef.current.refresh();
+    }
   };
 
   const handleTodoFormCancel = () => {
     setShowTodoForm(false);
   };
 
-  const handleAppointmentFormSubmit = () => {
-    // Handle form submission here
-    setShowAppointmentForm(false);
+  const handleAppointmentFormSubmit = async (data: any) => {
+    console.log(
+      'SideToolbar - handleAppointmentFormSubmit called with data:',
+      data
+    );
+
+    try {
+      // Format date to YYYY-MM-DD
+      const formattedDate = data.date
+        ? data.date.toISOString().split('T')[0]
+        : '';
+
+      if (!formattedDate) {
+        console.error('No valid date provided');
+        return;
+      }
+
+      // Convert employees array to comma-separated string
+      const userUuids = data.employees.join(',');
+
+      // Convert 12-hour format to 24-hour format
+      const convertTo24Hour = (time12h: string) => {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time12h;
+
+        const timeParts = time.split(':');
+        if (timeParts.length !== 2) return time12h;
+
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+
+        if (!hours || !minutes) return time12h;
+
+        if (hours === '12') {
+          hours = modifier === 'PM' ? '12' : '00';
+        } else if (modifier === 'PM') {
+          hours = String(parseInt(hours) + 12);
+        }
+
+        return `${hours.padStart(2, '0')}:${minutes}`;
+      };
+
+      const payload = {
+        agenda: data.agenda,
+        appointment_with: data.appointmentWith,
+        date: formattedDate,
+        start_time: convertTo24Hour(data.starts),
+        end_time: convertTo24Hour(data.ends),
+        address: data.address,
+        notes: data.notes || '',
+        user_uuids: userUuids,
+      };
+
+      // Create new appointment
+      const response = await apiService.createAppointment(payload);
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        showSuccessToast(
+          extractApiSuccessMessage(response, 'Appointment created successfully')
+        );
+        setShowAppointmentForm(false);
+        // Refresh appointments list
+        appointmentsComponentRef.current?.refreshAppointments();
+      } else {
+        showErrorToast(response.message || 'Failed to create appointment');
+      }
+    } catch (error) {
+      console.error('SideToolbar - Error creating appointment:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to create appointment'
+      );
+      showErrorToast(message);
+    }
   };
 
   const handleAppointmentFormCancel = () => {
@@ -150,7 +240,11 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
                             }
                             className='ml-auto p-1 rounded transition-colors'
                           >
-                            <AddCircle size='20' className='text-greenbrand' />
+                            <AddCircle
+                              size='20'
+                              className='text-greenbrand'
+                              color='var(--secondary)'
+                            />
                           </button>
                         )}
                         <button
@@ -163,16 +257,24 @@ export function SideToolbar({ items, className }: SideToolbarProps) {
 
                       {/* Content */}
                       <div className='flex-1 p-4 overflow-y-auto'>
-                        {activeItem === 'todoList' && <TodoComponent />}
-                        {activeItem === 'appointmentList' && (
-                          <AppointmentsComponent />
-                        )}
-                        {activeItem === 'toolChecklist' && (
-                          <ToolsChecklistComponent />
-                        )}
-                        {activeItem === 'materialChecklist' && (
-                          <MaterialChecklistComponent />
-                        )}
+                        {(() => {
+                          switch (activeItem) {
+                            case 'todoList':
+                              return <TodoComponent ref={todoComponentRef} />;
+                            case 'appointmentList':
+                              return (
+                                <AppointmentsComponent
+                                  ref={appointmentsComponentRef}
+                                />
+                              );
+                            case 'toolChecklist':
+                              return <ToolsChecklistComponent />;
+                            case 'materialChecklist':
+                              return <MaterialChecklistComponent />;
+                            default:
+                              return null;
+                          }
+                        })()}
                       </div>
                     </div>
                   </div>

@@ -1,95 +1,238 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CATEGORY_MESSAGES } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import { format, isToday, isTomorrow, parseISO } from 'date-fns';
 import { Edit2, TickCircle, Trash } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
-import React, { useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import Dropdown from '../common/Dropdown';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import SideSheet from './SideSheet';
 
+interface AppointmentEmployee {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  created_at: string;
+  updated_at: string;
+  created_by: number;
+  updated_by: number;
+  status: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+    phone_number: string;
+    profile_picture_url: string;
+  };
+}
+
+interface AppointmentCompletion {
+  id: string;
+  uuid: string;
+  appointment_id: string;
+  user_id: number;
+  is_completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+  };
+}
+
 interface Appointment {
   id: string;
+  uuid: string;
+  agenda: string;
+  appointment_with: string;
   date: string;
-  title: string;
-  timeRange: string;
-  appointmentWith: string;
-  appointmentDate: string;
+  start_time: string;
+  end_time: string;
   address: string;
   notes: string;
+  created_by: number;
+  updated_by: number;
+  created_at: string;
+  updated_at: string;
+  status: string;
+  is_completed: boolean;
+  creator: {
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+  };
+  employees: AppointmentEmployee[];
+  completions: AppointmentCompletion[];
+  completionPercentage: number;
+  totalEmployees: number;
+  completedEmployees: number;
+  currentUserCompleted: boolean;
+}
+
+interface AppointmentFormData {
+  agenda: string;
+  appointmentWith: string;
+  date: Date;
+  starts: string;
+  ends: string;
+  address: string;
+  notes: string;
+  employees: string[];
 }
 
 interface AppointmentsComponentProps {
   className?: string;
 }
 
-export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
-  className,
-}) => {
+export interface AppointmentsComponentRef {
+  refreshAppointments: () => void;
+}
+
+export const AppointmentsComponent = forwardRef<
+  AppointmentsComponentRef,
+  AppointmentsComponentProps
+>(({ className }, ref) => {
   const [expandedAppointment, setExpandedAppointment] = useState<string | null>(
-    'appointment-2'
+    null
   );
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deletingAppointmentId, setDeletingAppointmentId] = useState<
     string | null
   >(null);
-  const [appointments] = useState<Appointment[]>([
-    {
-      id: 'appointment-1',
-      date: 'Tomorrow',
-      title: 'Door Fitting',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Esther Howard',
-      appointmentDate: '08/12/2024',
-      address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-      notes:
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit semper dalar dolor elementum tempus hac.',
-    },
-    {
-      id: 'appointment-2',
-      date: '01-05-2025',
-      title: 'Door Fitting',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Esther Howard',
-      appointmentDate: '08/12/2024',
-      address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-      notes:
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit semper dalar dolor elementum tempus hac.',
-    },
-    {
-      id: 'appointment-3',
-      date: 'Tomorrow',
-      title: 'Discuss door installation',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Jenny Wilson',
-      appointmentDate: '09/12/2024',
-      address: '123 Main St. Chicago, Illinois 60601',
-      notes: 'Review installation requirements and timeline.',
-    },
-    {
-      id: 'appointment-4',
-      date: 'Tomorrow',
-      title: 'Plan door upgrades',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'John Doe',
-      appointmentDate: '10/12/2024',
-      address: '456 Oak Ave. Springfield, Illinois 62701',
-      notes: 'Discuss upgrade options and pricing.',
-    },
-    {
-      id: 'appointment-5',
-      date: 'Tomorrow',
-      title: 'Review fitting options',
-      timeRange: '11:00 PM-12:00 PM',
-      appointmentWith: 'Jane Smith',
-      appointmentDate: '11/12/2024',
-      address: '789 Pine St. Peoria, Illinois 61601',
-      notes: 'Review different fitting styles and materials.',
-    },
-  ]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const { showSuccessToast, showErrorToast } = useToast();
+  const { user } = useAuth();
+
+  // Expose refresh method to parent components
+  useImperativeHandle(ref, () => ({
+    refreshAppointments: fetchAppointments,
+  }));
+
+  // Fetch appointments function
+  const fetchAppointments = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await apiService.fetchAppointments({
+        page: 1,
+        limit: 50,
+      });
+
+      if (response.statusCode === 200 && response.data?.data) {
+        const appointmentsData: Appointment[] = response.data.data;
+        setAppointments(appointmentsData);
+      } else {
+        setError(response.message || 'Failed to fetch appointments');
+        showErrorToast(response.message || 'Failed to fetch appointments');
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to fetch appointments'
+      );
+      setError(message);
+      showErrorToast(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch appointments on component mount
+  useEffect(() => {
+    fetchAppointments();
+  }, []);
+
+  // Fetch appointment data for editing
+  const fetchAppointmentForEdit = async (appointmentUuid: string) => {
+    setEditLoading(true);
+    try {
+      const response = await apiService.fetchAppointmentById(appointmentUuid);
+      if (response.statusCode === 200 && response.data) {
+        setEditingAppointment(response.data);
+        setIsEditSheetOpen(true);
+      } else {
+        showErrorToast(
+          response.message || 'Failed to fetch appointment details'
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching appointment for edit:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to fetch appointment details'
+      );
+      showErrorToast(message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  // Helper function to format date display (full date format)
+  const formatDateDisplay = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      return format(date, 'MMM dd, yyyy');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Helper function to format relative date display (Today/Tomorrow)
+  const formatRelativeDateDisplay = (dateString: string) => {
+    try {
+      const date = parseISO(dateString);
+      if (isToday(date)) {
+        return 'Today';
+      } else if (isTomorrow(date)) {
+        return 'Tomorrow';
+      } else {
+        return format(date, 'MMM dd, yyyy');
+      }
+    } catch (error) {
+      return dateString;
+    }
+  };
+
+  // Helper function to convert 24-hour format to 12-hour AM/PM format
+  const formatTimeDisplay = (timeString: string) => {
+    try {
+      // Remove seconds if present (e.g., "09:30:00" -> "09:30")
+      const timeWithoutSeconds = timeString.split(':').slice(0, 2).join(':');
+      const [hours, minutes] = timeWithoutSeconds.split(':');
+
+      if (!hours || !minutes) return timeString;
+
+      const hour = parseInt(hours);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+
+      return `${displayHour}:${minutes} ${ampm}`;
+    } catch (error) {
+      return timeString;
+    }
+  };
 
   const handleAppointmentClick = (appointmentId: string) => {
     setExpandedAppointment(
@@ -97,35 +240,70 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     );
   };
 
-  // Dropdown menu options
-  const menuOptions = [
-    {
-      id: 'completed',
-      label: CATEGORY_MESSAGES.COMPLETED_MENU,
-      icon: TickCircle,
-      action: ACTIONS.COMPLETED,
-    },
-    {
-      id: 'edit',
-      label: CATEGORY_MESSAGES.EDIT_MENU,
-      icon: Edit2,
-      action: ACTIONS.EDIT,
-    },
-    {
-      id: 'delete',
-      label: CATEGORY_MESSAGES.DELETE_MENU,
-      icon: Trash,
-      action: ACTIONS.DELETE,
-    },
-  ];
+  // Generate menu options based on appointment and current user
+  const getMenuOptions = (appointment: Appointment) => {
+    const options: Array<{
+      id: string;
+      label: string;
+      icon: React.ElementType;
+      action: string;
+    }> = [
+      {
+        id: 'completed',
+        label: appointment.is_completed
+          ? 'Mark as Incomplete'
+          : CATEGORY_MESSAGES.COMPLETED_MENU,
+        icon: TickCircle,
+        action: ACTIONS.COMPLETED,
+      },
+    ];
+
+    // Only show edit and delete options if current user is the creator
+    // Check both user.id and user.uuid since we don't know which one the API uses
+
+    if (
+      user &&
+      (String(appointment.created_by) === String(user.id) ||
+        String(appointment.creator?.uuid) === user.uuid)
+    ) {
+      options.push({
+        id: 'edit',
+        label: CATEGORY_MESSAGES.EDIT_MENU,
+        icon: Edit2,
+        action: ACTIONS.EDIT,
+      });
+      options.push({
+        id: 'delete',
+        label: CATEGORY_MESSAGES.DELETE_MENU,
+        icon: Trash,
+        action: ACTIONS.DELETE,
+      });
+    }
+
+    return options;
+  };
 
   const handleMenuAction = (action: string, appointmentId: string) => {
     switch (action) {
       case ACTIONS.COMPLETED:
-        // TODO: Implement mark as completed functionality
+        // Find the appointment by ID and get its UUID
+        const appointment = appointments.find(app => app.id === appointmentId);
+        if (appointment) {
+          handleMarkAsCompleted(appointment.uuid);
+        } else {
+          showErrorToast('Appointment not found');
+        }
         break;
       case ACTIONS.EDIT:
-        setIsEditSheetOpen(true);
+        // Find the appointment by ID and get its UUID
+        const editAppointment = appointments.find(
+          app => app.id === appointmentId
+        );
+        if (editAppointment) {
+          fetchAppointmentForEdit(editAppointment.uuid);
+        } else {
+          showErrorToast('Appointment not found');
+        }
         break;
       case ACTIONS.DELETE:
         setDeletingAppointmentId(appointmentId);
@@ -135,22 +313,165 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     }
   };
 
-  const handleFormSubmit = () => {
-    // Here you would typically update the appointment data
-    // For now, just close the sidesheet
-    setIsEditSheetOpen(false);
+  const handleFormSubmit = async (data: AppointmentFormData) => {
+    console.log('AppointmentsComponent - handleFormSubmit START');
+    console.log(
+      'AppointmentsComponent - handleFormSubmit called with data:',
+      data
+    );
+    setIsSubmitting(true);
+
+    try {
+      // Format date to YYYY-MM-DD
+      const formattedDate = data.date
+        ? data.date.toISOString().split('T')[0]
+        : '';
+
+      if (!formattedDate) {
+        showErrorToast('Please select a valid date');
+        return;
+      }
+
+      // Convert employees array to comma-separated string
+      const userUuids = data.employees.join(',');
+
+      // Convert 12-hour format to 24-hour format
+      const convertTo24Hour = (time12h: string) => {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time12h; // Return original if parsing fails
+
+        const timeParts = time.split(':');
+        if (timeParts.length !== 2) return time12h; // Return original if parsing fails
+
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+
+        if (!hours || !minutes) return time12h; // Return original if parsing fails
+
+        if (hours === '12') {
+          hours = modifier === 'PM' ? '12' : '00';
+        } else if (modifier === 'PM') {
+          hours = String(parseInt(hours) + 12);
+        }
+
+        return `${hours.padStart(2, '0')}:${minutes}`;
+      };
+
+      const payload = {
+        agenda: data.agenda,
+        appointment_with: data.appointmentWith,
+        date: formattedDate,
+        start_time: convertTo24Hour(data.starts),
+        end_time: convertTo24Hour(data.ends),
+        address: data.address,
+        notes: data.notes || '',
+        user_uuids: userUuids,
+      };
+
+      console.log('AppointmentsComponent - API payload:', payload);
+
+      let response;
+      if (editingAppointment) {
+        // Update existing appointment
+        console.log(
+          'AppointmentsComponent - Updating appointment:',
+          editingAppointment.uuid
+        );
+        response = await apiService.updateAppointment(
+          editingAppointment.uuid,
+          payload
+        );
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment updated successfully'
+            )
+          );
+        } else {
+          showErrorToast(response.message || 'Failed to update appointment');
+        }
+      } else {
+        // Create new appointment
+        console.log('AppointmentsComponent - Creating new appointment');
+        response = await apiService.createAppointment(payload);
+        console.log('AppointmentsComponent - API response:', response);
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment created successfully'
+            )
+          );
+        } else {
+          showErrorToast(response.message || 'Failed to create appointment');
+        }
+      }
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        setIsEditSheetOpen(false);
+        setEditingAppointment(null);
+        // Refresh appointments list
+        fetchAppointments();
+      }
+    } catch (error) {
+      console.error('Error saving appointment:', error);
+      const message = extractApiErrorMessage(
+        error,
+        editingAppointment
+          ? 'Failed to update appointment'
+          : 'Failed to create appointment'
+      );
+      showErrorToast(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleFormCancel = () => {
     setIsEditSheetOpen(false);
+    setEditingAppointment(null);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (deletingAppointmentId) {
-      // Remove the appointment from the state
+      try {
+        // Find the appointment by ID and get its UUID
+        const appointment = appointments.find(
+          app => app.id === deletingAppointmentId
+        );
+        if (!appointment) {
+          showErrorToast('Appointment not found');
+          setIsDeleteModalOpen(false);
+          setDeletingAppointmentId(null);
+          return;
+        }
+
+        const response = await apiService.deleteAppointment(appointment.uuid);
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          showSuccessToast(
+            extractApiSuccessMessage(
+              response,
+              'Appointment deleted successfully'
+            )
+          );
+          // Refresh the appointments list
+          fetchAppointments();
+        } else {
+          showErrorToast(response.message || 'Failed to delete appointment');
+        }
+      } catch (error) {
+        console.error('Error deleting appointment:', error);
+        const message = extractApiErrorMessage(
+          error,
+          'Failed to delete appointment'
+        );
+        showErrorToast(message);
+      } finally {
+        setIsDeleteModalOpen(false);
+        setDeletingAppointmentId(null);
+      }
     }
-    setIsDeleteModalOpen(false);
-    setDeletingAppointmentId(null);
   };
 
   const handleDeleteCancel = () => {
@@ -158,124 +479,270 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
     setDeletingAppointmentId(null);
   };
 
+  const handleMarkAsCompleted = async (appointmentUuid: string) => {
+    try {
+      // Find the appointment to get its current completion status
+      const appointment = appointments.find(
+        app => app.uuid === appointmentUuid
+      );
+      if (!appointment) {
+        showErrorToast('Appointment not found');
+        return;
+      }
+
+      // Toggle the completion status
+      const newCompletionStatus = !appointment.is_completed;
+
+      const response = await apiService.markAppointmentCompleted(
+        appointmentUuid,
+        newCompletionStatus
+      );
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        showSuccessToast(
+          extractApiSuccessMessage(
+            response,
+            `Appointment ${newCompletionStatus ? 'marked as completed' : 'marked as incomplete'} successfully`
+          )
+        );
+        // Refresh the appointments list
+        fetchAppointments();
+      } else {
+        showErrorToast(
+          response.message || 'Failed to update appointment completion status'
+        );
+      }
+    } catch (error) {
+      console.error('Error updating appointment completion status:', error);
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to update appointment completion status'
+      );
+      showErrorToast(message);
+    }
+  };
+
   return (
     <div className={`flex flex-col gap-3 ${className}`}>
-      {appointments.map(
-        ({
-          id: appointmentId,
-          date,
-          title,
-          timeRange,
-          appointmentWith,
-          appointmentDate,
-          address,
-          notes,
-        }) => {
-          const isExpanded = expandedAppointment === appointmentId;
-
-          return (
-            <div
-              key={appointmentId}
-              className='bg-[var(--background)] p-3 rounded-[10px]'
-              onClick={() => handleAppointmentClick(appointmentId)}
+      {loading ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+            <p className='text-sm text-muted-foreground'>
+              Loading appointments...
+            </p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <p className='text-sm text-destructive'>{error}</p>
+            <Button
+              onClick={fetchAppointments}
+              variant='outline'
+              size='sm'
+              className='mt-2'
             >
-              {/* Basic Info - Always Visible */}
-              <div className='flex justify-between items-center'>
-                <div className='flex-1'>
-                  <div className='flex items-center gap-2 mb-2'>
-                    <span className='text-xs font-medium text-[var(--text-secondary)]'>
-                      {date}
-                    </span>
-                  </div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
-                    {title}
-                  </h3>
-                  <p className='text-sm text-[var(--text-dark)]'>{timeRange}</p>
-                </div>
-                <Dropdown
-                  menuOptions={menuOptions}
-                  onAction={action => handleMenuAction(action, appointmentId)}
-                  trigger={
-                    <Button
-                      variant='ghost'
-                      size='icon'
-                      className='h-8 w-8 p-0 mt-auto mb-auto'
-                      onClick={e => e.stopPropagation()}
-                    >
-                      <MoreVertical
-                        size={24}
-                        className='text-[var(--text-dark)] !w-5 !h-5'
-                      />
-                    </Button>
-                  }
-                  align='end'
-                />
-              </div>
+              Retry
+            </Button>
+          </div>
+        </div>
+      ) : appointments.length === 0 ? (
+        <div className='flex justify-center items-center py-8'>
+          <div className='text-center'>
+            <p className='text-sm text-muted-foreground'>
+              No appointments found
+            </p>
+          </div>
+        </div>
+      ) : (
+        appointments.map(
+          ({
+            id: appointmentId,
+            agenda,
+            appointment_with,
+            date,
+            start_time,
+            end_time,
+            address,
+            notes,
+            is_completed,
+            created_by,
+            creator,
+          }) => {
+            const isExpanded = expandedAppointment === appointmentId;
 
-              {/* Expanded Details */}
-              {isExpanded && (
-                <div className='mt-4 space-y-2'>
-                  {/* Appointment Details */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-                      <div>
-                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                          Appointment with
-                        </p>
-                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                          {appointmentWith}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                          Date
-                        </p>
-                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                          {appointmentDate}
-                        </p>
+            return (
+              <div
+                key={appointmentId}
+                className='bg-[var(--background)] p-3 rounded-[10px]'
+                onClick={() => handleAppointmentClick(appointmentId)}
+              >
+                {/* Basic Info - Always Visible */}
+                <div className='flex justify-between items-center'>
+                  <div className='flex-1'>
+                    <div className='flex items-center gap-2 mb-2'>
+                      <span className='text-xs font-medium text-[var(--text-secondary)]'>
+                        {formatRelativeDateDisplay(date)}
+                      </span>
+                      {is_completed && (
+                        <span className='text-xs font-medium text-green-600'>
+                          Complete
+                        </span>
+                      )}
+                    </div>
+                    <h3 className='text-base font-semibold text-[var(--text-dark)] mb-1'>
+                      {agenda}
+                    </h3>
+                    <p className='text-sm text-[var(--text-dark)]'>
+                      {formatTimeDisplay(start_time)} -{' '}
+                      {formatTimeDisplay(end_time)}
+                    </p>
+                  </div>
+                  <Dropdown
+                    menuOptions={getMenuOptions({
+                      id: appointmentId,
+                      uuid: '',
+                      agenda: '',
+                      appointment_with: '',
+                      date: '',
+                      start_time: '',
+                      end_time: '',
+                      address: '',
+                      notes: '',
+                      created_by,
+                      updated_by: 0,
+                      created_at: '',
+                      updated_at: '',
+                      status: '',
+                      is_completed,
+                      creator,
+                      employees: [],
+                      completions: [],
+                      completionPercentage: 0,
+                      totalEmployees: 0,
+                      completedEmployees: 0,
+                      currentUserCompleted: false,
+                    })}
+                    onAction={action => handleMenuAction(action, appointmentId)}
+                    trigger={
+                      <Button
+                        variant='ghost'
+                        size='icon'
+                        className='h-8 w-8 p-0 mt-auto mb-auto'
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <MoreVertical
+                          size={24}
+                          className='text-[var(--text-dark)] !w-5 !h-5'
+                        />
+                      </Button>
+                    }
+                    align='end'
+                  />
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className='mt-4 space-y-2'>
+                    {/* Appointment Details */}
+                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Appointment with
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {appointment_with}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Date
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {formatDateDisplay(date)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Address */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
-                      Address
-                    </p>
-                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                      {address}
-                    </p>
-                  </div>
+                    {/* Time */}
+                    {/* <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Time
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {formatTimeDisplay(start_time)} -{' '}
+                            {formatTimeDisplay(end_time)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                            Employees ({totalEmployees})
+                          </p>
+                          <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                            {completedEmployees} completed
+                          </p>
+                        </div>
+                      </div>
+                    </div> */}
 
-                  {/* Notes */}
-                  <div className='border-t border-[var(--border-dark)] pt-2'>
-                    <p className='text-[12px] font-medium text-[var()] leading-[100%] tracking-[0%] mb-1'>
-                      Notes
-                    </p>
-                    <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
-                      {notes}
-                    </p>
+                    {/* Address */}
+                    <div className='border-t border-[var(--border-dark)] pt-2'>
+                      <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                        Address
+                      </p>
+                      <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                        {address}
+                      </p>
+                    </div>
+
+                    {/* Notes */}
+                    {notes && (
+                      <div className='border-t border-[var(--border-dark)] pt-2'>
+                        <p className='text-[12px] font-medium text-[var(--text-secondary)] leading-[100%] tracking-[0%] mb-1'>
+                          Notes
+                        </p>
+                        <p className='text-[14px] font-medium text-[var(--text-dark)] leading-[22px] tracking-[0px]'>
+                          {notes}
+                        </p>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        }
+                )}
+              </div>
+            );
+          }
+        )
       )}
 
-      {/* Edit Appointment SideSheet */}
+      {/* Add/Edit Appointment SideSheet */}
       <SideSheet
-        title='Edit Appointment'
+        title={editingAppointment ? 'Edit Appointment' : 'Add Appointment'}
         open={isEditSheetOpen}
         onOpenChange={setIsEditSheetOpen}
         size='600px'
       >
         <div className='space-y-4'>
-          <AppointmentForm
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            loading={false}
-          />
+          {editLoading ? (
+            <div className='flex justify-center items-center py-8'>
+              <div className='text-center'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+                <p className='text-sm text-muted-foreground'>
+                  Loading appointment details...
+                </p>
+              </div>
+            </div>
+          ) : (
+            <AppointmentForm
+              onSubmit={handleFormSubmit}
+              onCancel={handleFormCancel}
+              loading={isSubmitting}
+              editingAppointment={editingAppointment}
+            />
+          )}
         </div>
       </SideSheet>
 
@@ -289,4 +756,6 @@ export const AppointmentsComponent: React.FC<AppointmentsComponentProps> = ({
       />
     </div>
   );
-};
+});
+
+AppointmentsComponent.displayName = 'AppointmentsComponent';
