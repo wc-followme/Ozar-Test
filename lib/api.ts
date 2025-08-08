@@ -1686,6 +1686,47 @@ class ApiService {
     });
   }
 
+  // Five-box system API methods
+  async getBoxSettings(params?: {
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateBoxSettings(payload: {
+    default_selected_json?: Array<{ id: string; enabled: boolean }>;
+    field_status_json?: any;
+    question_json?: any;
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (payload.company_id) {
+      queryParams.append('company_id', payload.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Removed testConnection and all debug code
 }
 

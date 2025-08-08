@@ -1,8 +1,9 @@
+import { FIVE_BOX_SLUGS } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import { PROJECT_MESSAGES } from '@/constants/messages';
 import { FormConfig } from './DynamicForm';
 
 export const formConfigs: Record<string, FormConfig> = {
-  'general-information': {
+  [FIVE_BOX_SLUGS.GENERAL_INFORMATION]: {
     id: '01',
     number: '01',
     color: '#10B981',
@@ -110,7 +111,7 @@ export const formConfigs: Record<string, FormConfig> = {
       },
     ],
   },
-  'property-information': {
+  [FIVE_BOX_SLUGS.PROPERTY_INFORMATION]: {
     id: '02',
     number: '02',
     color: '#3B82F6',
@@ -207,7 +208,7 @@ export const formConfigs: Record<string, FormConfig> = {
       },
     ],
   },
-  'project-information': {
+  [FIVE_BOX_SLUGS.PROJECT_INFORMATION]: {
     id: '03',
     number: '03',
     color: '#06B6D4',

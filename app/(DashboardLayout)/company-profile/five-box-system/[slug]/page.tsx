@@ -11,108 +11,132 @@ import {
   CreateQuestionForm,
   QuestionFormData,
 } from '@/components/shared/forms/CreateQuestionForm';
+import { SlugPageSkeleton } from '@/components/shared/skeleton/SlugPageSkeleton';
 import CategoryComponent from '@/components/Templates/CategoryComponent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/components/ui/use-toast';
+import { ROUTES } from '@/constants/common';
+import { useCompanyChange } from '@/hooks/use-company-change';
+import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { use, useMemo, useState } from 'react';
-
-interface PageProps {
-  params: Promise<{
-    slug: string;
-  }>;
-}
+import { use, useCallback, useMemo, useState } from 'react';
+import { FIVE_BOX_SLUGS, SLUG_TITLES } from '../five-box-slug-constants';
+import { CATEGORY_DATA } from './slug-constants';
+import { SLUG_MESSAGES } from './slug-messages';
+import { PageProps, QuestionItem } from './slug-types';
 
 const DynamicBoxPage = ({ params }: PageProps) => {
   const router = useRouter();
   const { slug } = use(params);
   const config = getFormConfig(slug);
+  const { handleAuthError } = useAuth();
+  const { showSuccessToast, showErrorToast } = useToast();
   const [isQuestionSheetOpen, setIsQuestionSheetOpen] = useState(false);
   const [isFieldManagementOpen, setIsFieldManagementOpen] = useState(false);
-  const [questions, setQuestions] = useState<
-    Array<{
-      id: number;
-      text: string;
-      answer: string;
-    }>
-  >([]);
+  const [questions, setQuestions] = useState<QuestionItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [questionJson, setQuestionJson] = useState<any>({});
+  const [fieldStatusJson, setFieldStatusJson] = useState<any>({});
+  // Category data from constants
+  const categoryData = [...CATEGORY_DATA];
 
-  // Category data based on the image
-  const categoryData = [
-    {
-      id: 'full-home-build',
-      name: 'Full Home Build/Addition',
-      description:
-        'Start a new home from scratch or add a room, floor, or extension to your existing space.',
-      icon: 'home',
-      color: '#10B981',
-      bgColor: '#10B9811A',
-    },
-    {
-      id: 'interior',
-      name: 'Interior',
-      description:
-        'Renovate or upgrade interiors like kitchen, bathroom, living room, or complete home redesign.',
-      icon: 'paint',
-      color: '#3B82F6',
-      bgColor: '#3B82F61A',
-    },
-    {
-      id: 'exterior',
-      name: 'Exterior',
-      description:
-        'Enhance outdoor spaces including roofing, siding, painting, landscaping, or fencing work.',
-      icon: 'crane',
-      color: '#F97316',
-      bgColor: '#F973161A',
-    },
-    {
-      id: 'single-multi-trade',
-      name: 'Single/Multi Trade',
-      description:
-        'Get help with one or more specific trades like plumbing, electrical, flooring, or carpentry.',
-      icon: 'tool',
-      color: '#EAB308',
-      bgColor: '#EAB3081A',
-    },
-    {
-      id: 'repair',
-      name: 'Repair',
-      description:
-        'Fix issues like leaks, cracks, broken fixtures, or any small-scale home damage.',
-      icon: 'skrew',
-      color: '#06B6D4',
-      bgColor: '#06B6D41A',
-    },
-    {
-      id: 'landscaping',
-      name: 'Landscaping',
-      description:
-        'Design and maintain outdoor spaces including gardens, lawns, and hardscaping.',
-      icon: 'home',
-      color: '#059669',
-      bgColor: '#0596691A',
-    },
-    {
-      id: 'electrical',
-      name: 'Electrical Work',
-      description:
-        'Install, repair, or upgrade electrical systems, wiring, and fixtures.',
-      icon: 'tool',
-      color: '#DC2626',
-      bgColor: '#DC26261A',
-    },
-    {
-      id: 'plumbing',
-      name: 'Plumbing',
-      description:
-        'Install, repair, or maintain plumbing systems, pipes, and fixtures.',
-      icon: 'crane',
-      color: '#2563EB',
-      bgColor: '#2563EB1A',
-    },
-  ];
+  // Fetch box settings from API
+  const fetchBoxSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Get fresh company ID inside the function
+      const currentCompanyId = getCompanyId();
+
+      const response = await apiService.getBoxSettings({
+        company_id: currentCompanyId,
+      });
+
+      if (response.statusCode === 200 && response.data) {
+        const { field_status_json, question_json } = response.data;
+
+        // Handle field_status_json for the current slug
+        if (field_status_json) {
+          setFieldStatusJson(field_status_json);
+          if (field_status_json[slug]) {
+            const slugFieldStatus = field_status_json[slug];
+
+            // Update field states based on API response
+            setFieldStates(prev =>
+              prev.map(field => {
+                const fieldStatus = slugFieldStatus[field.id];
+                return fieldStatus
+                  ? { ...field, enabled: fieldStatus.enabled }
+                  : field;
+              })
+            );
+          }
+        }
+
+        // Handle question_json for the current slug
+        if (question_json) {
+          setQuestionJson(question_json);
+          if (question_json[slug]) {
+            setQuestions(question_json[slug]);
+          }
+        }
+
+        // Box settings fetched successfully
+      } else {
+        showErrorToast(response?.message ?? SLUG_MESSAGES.FETCH_ERROR);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      const errorMessage = extractApiErrorMessage(
+        err,
+        SLUG_MESSAGES.FETCH_ERROR
+      );
+      showErrorToast(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [slug, handleAuthError, showErrorToast]);
+
+  // Update box settings via API
+  const updateBoxSettings = async (updatedData: any) => {
+    try {
+      // Get fresh company ID inside the function
+      const currentCompanyId = getCompanyId();
+
+      const response = await apiService.updateBoxSettings({
+        ...updatedData,
+        company_id: currentCompanyId,
+      });
+
+      if (response.statusCode === 200) {
+        // Update related state values based on what was updated
+        if (updatedData.question_json) {
+          setQuestionJson(updatedData.question_json);
+        }
+        if (updatedData.field_status_json) {
+          setFieldStatusJson(updatedData.field_status_json);
+        }
+        showSuccessToast(response?.message ?? SLUG_MESSAGES.UPDATE_SUCCESS);
+      } else {
+        showErrorToast(response?.message ?? SLUG_MESSAGES.UPDATE_ERROR);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      const errorMessage = extractApiErrorMessage(
+        err,
+        SLUG_MESSAGES.UPDATE_ERROR
+      );
+      showErrorToast(errorMessage);
+    }
+  };
 
   // Generate form fields from the actual configuration
   const formFields = useMemo(() => {
@@ -127,55 +151,73 @@ const DynamicBoxPage = ({ params }: PageProps) => {
 
   const [fieldStates, setFieldStates] = useState<FieldItem[]>(formFields);
 
+  // Handle company changes
+  const refetchBoxSettings = useCallback(() => {
+    setFieldStates(formFields);
+    fetchBoxSettings();
+  }, [fetchBoxSettings, formFields]);
+
+  useCompanyChange(refetchBoxSettings);
+
+  // Initial fetch handled by useCompanyChange hook
+
   // Get enabled field names for the DynamicForm
   const enabledFieldNames = useMemo(() => {
     return fieldStates.filter(({ enabled }) => enabled).map(({ id }) => id);
   }, [fieldStates]);
 
   // Special handling for pages that don't use DynamicForm (category and estimation)
-  if (slug === 'category' || slug === 'estimation') {
+  if (slug === FIVE_BOX_SLUGS.CATEGORY || slug === FIVE_BOX_SLUGS.ESTIMATION) {
     // These pages don't need config, so we handle them separately
   } else if (!config) {
     // If slug doesn't match any config, show 404
     return (
       <div className='flex flex-col items-center justify-center min-h-[400px]'>
-        <h1 className='text-2xl font-bold text-gray-900 mb-4'>Box Not Found</h1>
+        <h1 className='text-2xl font-bold text-gray-900 mb-4'>
+          {SLUG_MESSAGES.BOX_NOT_FOUND}
+        </h1>
         <p className='text-gray-600 mb-6'>
-          The requested box configuration does not exist.
+          {SLUG_MESSAGES.BOX_NOT_FOUND_DESCRIPTION}
         </p>
-        <Button onClick={() => router.push('/company-profile/five-box-system')}>
-          Back to 5-Box System
+        <Button onClick={() => router.push(ROUTES.FIVE_BOX_SYSTEM)}>
+          {SLUG_MESSAGES.BACK_TO_SYSTEM}
         </Button>
       </div>
     );
   }
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: 'Company Profile', href: '/company-profile' },
-    { name: '5-box system', href: '/company-profile/five-box-system' },
+    { name: SLUG_MESSAGES.COMPANY_PROFILE, href: ROUTES.COMPANY_PROFILE },
+    { name: SLUG_MESSAGES.FIVE_BOX_SYSTEM, href: ROUTES.FIVE_BOX_SYSTEM },
     {
       name:
-        slug === 'category'
-          ? 'Category'
-          : slug === 'estimation'
-            ? 'Estimate'
-            : config?.title || 'Unknown',
+        SLUG_TITLES[slug as keyof typeof SLUG_TITLES] ||
+        config?.title ||
+        SLUG_MESSAGES.UNKNOWN,
     },
   ];
 
-  const handleSave = () => {
-    // Here you would make an API call to save the data
+  // Loading skeleton
+  if (loading) {
+    return <SlugPageSkeleton breadcrumbData={breadcrumbData} />;
+  }
+
+  const handleSave = async (formData: any) => {
+    // Update box settings via API
+    await updateBoxSettings({
+      default_selected_json: formData,
+    });
   };
 
   const handleBack = () => {
-    router.push('/company-profile/five-box-system');
+    router.push(ROUTES.FIVE_BOX_SYSTEM);
   };
 
   const handleAddQuestion = () => {
     setIsQuestionSheetOpen(true);
   };
 
-  const handleQuestionSave = (questionData: QuestionFormData) => {
+  const handleQuestionSave = async (questionData: QuestionFormData) => {
     // Get the next available ID by finding the maximum existing ID
     const maxId =
       questions.length > 0 ? Math.max(...questions.map(q => q.id)) : 0;
@@ -187,29 +229,73 @@ const DynamicBoxPage = ({ params }: PageProps) => {
       answer: '', // Reset answers for new questions
     }));
 
-    // Add new questions to existing ones
-    setQuestions(prev => [...prev, ...newQuestions]);
+    // Add new questions to existing ones for current slug
+    const updatedQuestions = [...newQuestions];
+    setQuestions(updatedQuestions);
     setIsQuestionSheetOpen(false);
+
+    // Merge with existing question_json state to preserve other slugs' questions
+    const updatedQuestionJson = {
+      ...questionJson,
+      [slug]: updatedQuestions,
+    };
+
+    // Update via API with merged data
+    await updateBoxSettings({
+      question_json: updatedQuestionJson,
+    });
   };
 
   const handleQuestionCancel = () => {
     setIsQuestionSheetOpen(false);
   };
 
-  const handleAnswerChange = (questionId: number, answer: string) => {
-    setQuestions(prev =>
-      prev.map(q => (q.id === questionId ? { ...q, answer } : q))
+  const handleAnswerChange = async (questionId: number, answer: string) => {
+    const updatedQuestions = questions.map(q =>
+      q.id === questionId ? { ...q, answer } : q
     );
+    setQuestions(updatedQuestions);
+
+    // Merge with existing question_json state to preserve other slugs' questions
+    const updatedQuestionJson = {
+      ...questionJson,
+      [slug]: updatedQuestions,
+    };
+
+    // Update via API with merged data
+    await updateBoxSettings({
+      question_json: updatedQuestionJson,
+    });
   };
 
   const handleManageFields = () => {
     setIsFieldManagementOpen(true);
   };
 
-  const handleFieldToggle = (fieldId: string, enabled: boolean) => {
+  const handleFieldToggle = async (fieldId: string, enabled: boolean) => {
+    // Update local state
     setFieldStates(prev =>
       prev.map(field => (field.id === fieldId ? { ...field, enabled } : field))
     );
+
+    // Use existing field status from state
+    const existingFieldStatus = fieldStatusJson || {};
+    const existingSlugStatus = existingFieldStatus[slug] || {};
+
+    const updatedFieldStatusJson = {
+      ...existingFieldStatus,
+      [slug]: {
+        ...existingSlugStatus,
+        [fieldId]: {
+          enabled: enabled,
+          required: false, // You can make this configurable if needed
+        },
+      },
+    };
+    // Update via API with merged data
+    await updateBoxSettings({
+      field_status_json: updatedFieldStatusJson,
+    });
   };
 
   const handleCategorySelect = (categoryId: string) => {
@@ -225,7 +311,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   };
 
   // Special handling for category page
-  if (slug === 'category') {
+  if (slug === FIVE_BOX_SLUGS.CATEGORY) {
     return (
       <section className=''>
         {/* Breadcrumb */}
@@ -243,7 +329,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   }
 
   // Special handling for estimate page
-  if (slug === 'estimation') {
+  if (slug === FIVE_BOX_SLUGS.ESTIMATION) {
     return (
       <section className=''>
         {/* Breadcrumb */}
@@ -283,13 +369,12 @@ const DynamicBoxPage = ({ params }: PageProps) => {
 
             {/* Title */}
             <h2 className='text-xl md:text-2xl font-bold text-[var(--text-dark)] mb-2'>
-              Nothing Here Yet
+              {SLUG_MESSAGES.NOTHING_HERE_YET}
             </h2>
 
             {/* Description */}
             <p className='text-base md:text-lg text-[var(--text-secondary)] mb-8 max-w-md'>
-              You haven&apos;t created any estimate yet. Start by adding your
-              first one to organize your estimate.
+              {SLUG_MESSAGES.ESTIMATION_DESCRIPTION}
             </p>
 
             {/* Action Buttons */}
@@ -317,7 +402,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
                     d='M8 5a2 2 0 012-2h4a2 2 0 012 2v2H8V5z'
                   />
                 </svg>
-                Add Room
+                {SLUG_MESSAGES.ADD_ROOM}
               </Button>
 
               <Button
@@ -338,7 +423,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
                     d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'
                   />
                 </svg>
-                Add From Template
+                {SLUG_MESSAGES.ADD_FROM_TEMPLATE}
               </Button>
             </div>
           </div>
@@ -350,7 +435,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
               onClick={handleBack}
               className='btn-secondary'
             >
-              Previous
+              {SLUG_MESSAGES.PREVIOUS}
             </Button>
           </div>
         </div>
@@ -368,7 +453,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
           className='btn-primary ml-auto shrink-0'
           onClick={handleAddQuestion}
         >
-          Add Question
+          {SLUG_MESSAGES.ADD_QUESTION}
         </Button>
       </div>
 
@@ -406,7 +491,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
                         {text}
                       </h3>
                       <Textarea
-                        placeholder='Type you answer here..'
+                        placeholder={SLUG_MESSAGES.ANSWER_PLACEHOLDER}
                         value={answer || ''}
                         onChange={e => handleAnswerChange(id, e.target.value)}
                         className='min-h-[80px] sm:min-h-[100px] resize-none input-field'
@@ -424,7 +509,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
             className='btn-secondary text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2'
             onClick={handleManageFields}
           >
-            Manage Fields
+            {SLUG_MESSAGES.MANAGE_FIELDS}
           </Button>
         </div>
       </div>
@@ -433,7 +518,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
       <SideSheet
         open={isQuestionSheetOpen}
         onOpenChange={setIsQuestionSheetOpen}
-        title='Add Question'
+        title={SLUG_MESSAGES.ADD_QUESTION_TITLE}
         size='600px'
       >
         <CreateQuestionForm
@@ -447,7 +532,7 @@ const DynamicBoxPage = ({ params }: PageProps) => {
       <SideSheet
         open={isFieldManagementOpen}
         onOpenChange={setIsFieldManagementOpen}
-        title='Manage Fields'
+        title={SLUG_MESSAGES.MANAGE_FIELDS_TITLE}
         size='500px'
       >
         <FieldManagementSwitch
