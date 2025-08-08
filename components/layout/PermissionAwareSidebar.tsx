@@ -169,13 +169,9 @@ export function PermissionAwareSidebar() {
     });
   };
 
-  const renderMenuItem = (
-    item: (typeof sidebarItems)[0],
-    isSubmenu = false
-  ) => {
+  const renderMenuItem = (item: (typeof sidebarItems)[0]) => {
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const filteredSubmenu = hasSubmenu ? filterSubmenuItems(item.submenu) : [];
-    const showSubmenu = hasSubmenu && hoveredItem === item.menu_id;
     const isActive =
       pathname === item.href ||
       (hasSubmenu &&

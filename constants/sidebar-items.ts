@@ -1,4 +1,5 @@
 import { Home, SecurityUser, Setting3 } from 'iconsax-react';
+import { ComponentType } from 'react';
 import { Category } from './../components/icons/Category';
 import { Company } from './../components/icons/Company';
 import { JobIcon } from './../components/icons/JobIcon';

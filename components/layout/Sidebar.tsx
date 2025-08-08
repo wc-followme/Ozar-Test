@@ -47,7 +47,7 @@ export function Sidebar() {
           PERMISSION_CATEGORIES.ROLES,
           PERMISSION_ACTIONS.VIEW
         );
-      case SIDEBAR_TITLES.USER_MANAGEMENT:
+      case SIDEBAR_TITLES.STAFF_MANAGEMENT:
         return hasPermission(
           PERMISSION_CATEGORIES.USERS,
           PERMISSION_ACTIONS.VIEW
@@ -77,7 +77,7 @@ export function Sidebar() {
           PERMISSION_CATEGORIES.TOOLS,
           PERMISSION_ACTIONS.VIEW
         );
-      case SIDEBAR_TITLES.JOBS:
+      case SIDEBAR_TITLES.PROJECTS:
         return (
           hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
           hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT)
@@ -134,7 +134,7 @@ export function Sidebar() {
                       {isOpen ? (
                         // When sidebar is open, show link without tooltip
                         <Link
-                          href={href}
+                          href={href || '#'}
                           className={cn(
                             'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
                             pathname === href &&
@@ -153,7 +153,7 @@ export function Sidebar() {
                         <Tooltip delayDuration={100}>
                           <TooltipTrigger asChild>
                             <Link
-                              href={href}
+                              href={href || '#'}
                               className={cn(
                                 'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
                                 pathname === href &&

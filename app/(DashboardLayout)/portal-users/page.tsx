@@ -20,7 +20,6 @@ import {
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Edit2, Trash } from 'iconsax-react';
-import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
 import { PORTAL_USER_MESSAGES } from './portal-user-messages';
@@ -33,11 +32,9 @@ export default function PortalUsers() {
   const [loading, setLoading] = useState(true);
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
-  const [isNavigating, setIsNavigating] = useState(false);
   const [selectedTab, setSelectedTab] = useState('users');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
-  const router = useRouter();
 
   // Get user permissions for users
   const userPermissions = getUserPermissionsFromStorage();
@@ -235,11 +232,6 @@ export default function PortalUsers() {
         redirectText={ACCESS_DENIED_MESSAGES.USER_DETAILS_REDIRECT_TEXT}
       />
     );
-  }
-
-  // Show navigation loading state
-  if (isNavigating) {
-    return <LoadingComponent variant='fullscreen' text='Loading form...' />;
   }
 
   return (
