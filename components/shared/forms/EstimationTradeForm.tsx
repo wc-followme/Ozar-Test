@@ -184,6 +184,7 @@ export default function EstimationTradeForm({
                       setStartDate(date);
                       setStartDatePickerOpen(false);
                     }}
+                    disabled={date => date < new Date()}
                     initialFocus
                   />
                 </PopoverContent>
@@ -225,6 +226,20 @@ export default function EstimationTradeForm({
                     onSelect={date => {
                       setEndDate(date);
                       setEndDatePickerOpen(false);
+                    }}
+                    disabled={date => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const startDateOnly = startDate
+                        ? new Date(startDate.getTime())
+                        : null;
+                      if (startDateOnly) {
+                        startDateOnly.setHours(0, 0, 0, 0);
+                      }
+                      return (
+                        date < today ||
+                        (startDateOnly ? date <= startDateOnly : false)
+                      );
                     }}
                     initialFocus
                   />
