@@ -3,9 +3,9 @@
 import { HomeOwnerHeader } from '@/components/layout/HomeOwnerHeader';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ThankYouComponent } from '@/components/shared/common/ThankYouComponent';
-import { StepGeneralInfo } from '@/components/shared/forms/StepGeneralInfo';
 import { StepOptionalDetails } from '@/components/shared/forms/StepOptionalDetails';
 import { StepProjectType } from '@/components/shared/forms/StepProjectType';
+import EstimateComponent from '@/components/Templates/EstimateComponent';
 import { showErrorToast, showSuccessToast } from '@/components/ui/use-toast';
 import { ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -389,6 +389,14 @@ export default function HomeOwnerWizardPage() {
   const cancelButtonClass =
     'h-[48px] px-8 border-2 border-[var(--border-dark)] bg-transparent rounded-full font-semibold text-[var(--text-dark)] flex items-center';
 
+  // Breadcrumb data for estimate component
+  const breadcrumbData: { name: string; href?: string }[] = [];
+
+  // Handle add room for estimate component
+  const handleAddRoom = () => {
+    console.log('Add room clicked');
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -439,34 +447,39 @@ export default function HomeOwnerWizardPage() {
               <div className='w-full flex justify-center mb-4 md:mb-8'>
                 <div className='flex items-center justify-center w-full max-w-2xl'>
                   {steps.map((s, idx) => (
-                    <>
+                    <div
+                      key={s.key}
+                      className={`flex items-center ${idx !== 0 ? 'ml-0' : ''}`}
+                    >
+                      {/* Circle */}
                       <div
-                        key={s.key}
-                        className={`flex items-center ${idx !== 0 ? 'ml-0' : ''}`}
-                      >
-                        {/* Circle */}
+                        className={`w-4 md:w-6 h-4 md:h-6 rounded-full flex items-center justify-center z-10 ${stepIndex >= idx ? 'bg-green-600' : 'bg-gray-300'}`}
+                      />
+                      {/* Line (except after last circle) */}
+                      {idx < totalSteps - 1 && (
                         <div
-                          className={`w-4 md:w-6 h-4 md:h-6 rounded-full flex items-center justify-center z-10 ${stepIndex >= idx ? 'bg-green-600' : 'bg-gray-300'}`}
+                          className={`h-1 md:h-2 w-[50px] md:w-[120px] -mx-[1px] xl:w-[180px] ${stepIndex > idx ? 'bg-green-600' : 'bg-gray-300'}`}
                         />
-                        {/* Line (except after last circle) */}
-                        {idx < totalSteps - 1 && (
-                          <div
-                            className={`h-1 md:h-2 w-[50px] md:w-[120px] -mx-[1px] xl:w-[180px] ${stepIndex > idx ? 'bg-green-600' : 'bg-gray-300'}`}
-                          />
-                        )}
-                      </div>
-                    </>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
             )}
+
             {/* Wizard Steps */}
             {step === WIZARD_STEPS.GENERAL && (
-              <StepGeneralInfo
-                onNext={handleGeneralInfoSubmit}
-                defaultValues={generalInfoData}
-                isLastStep={jobBoxesStep === JOB_BOXES_STEPS.FIRST}
+              // Temporary estimate component
+              <EstimateComponent
+                breadcrumbData={breadcrumbData}
+                onAddRoom={handleAddRoom}
               />
+              // Commented out for now
+              // <StepGeneralInfo
+              //   onNext={handleGeneralInfoSubmit}
+              //   defaultValues={generalInfoData}
+              //   isLastStep={jobBoxesStep === JOB_BOXES_STEPS.FIRST}
+              // />
             )}
             {step === WIZARD_STEPS.OPTIONAL && (
               <StepOptionalDetails
@@ -499,6 +512,7 @@ export default function HomeOwnerWizardPage() {
                   </div>
                 </div>
               ))}
+            {/* Special handling for estimate page */}
           </div>
         </div>
       </div>
