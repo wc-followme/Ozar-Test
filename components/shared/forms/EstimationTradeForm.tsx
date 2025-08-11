@@ -53,12 +53,12 @@ export default function EstimationTradeForm({
   const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
   const [markupAmount, setMarkupAmount] = useState('');
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    new Date('2024-03-20')
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    new Date('2024-03-23')
-  );
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  });
   const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
 
