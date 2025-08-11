@@ -1,5 +1,6 @@
 'use client';
 
+import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { IconShare } from '@tabler/icons-react';
@@ -130,6 +131,9 @@ const CompanyProfile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Company Bottom Block with Tabs */}
+      <CompanyBottomBlock />
     </div>
   );
 };
