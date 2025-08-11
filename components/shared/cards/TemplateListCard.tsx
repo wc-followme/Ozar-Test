@@ -3,7 +3,6 @@
 import { TemplateListCardProps } from '@/app/(DashboardLayout)/templates/template-types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ACTIONS } from '@/constants/common';
-import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { Edit2, Refresh, Trash } from 'iconsax-react';
 import React, { useState } from 'react';
@@ -48,8 +47,6 @@ export function TemplateListCard({
 }: TemplateListCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Get user permissions for templates
-  const userPermissions = getUserPermissionsFromStorage();
   // For now, allow edit and delete by default since templates permissions might not be set up yet
   const canEdit = true; // userPermissions?.templates?.edit || true;
   const canArchive = true; // userPermissions?.templates?.archive || true;

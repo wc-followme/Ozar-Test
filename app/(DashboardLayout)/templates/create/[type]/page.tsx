@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useRouter } from 'next/navigation';
+
 import { use, useState } from 'react';
 import { TemplateData } from '../../template-types';
 
@@ -24,7 +24,6 @@ interface CreateTemplatePageProps {
 export default function CreateTemplatePage({
   params,
 }: CreateTemplatePageProps) {
-  const router = useRouter();
   const { type } = use(params);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
@@ -39,45 +38,6 @@ export default function CreateTemplatePage({
     warranty: '',
     duration: '',
   });
-
-  // Tool management state
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
-  const [selectedTools, setSelectedTools] = useState<
-    Array<{ id: string; name: string }>
-  >([
-    { id: '1', name: 'Tool Name' },
-    { id: '2', name: 'Tool Name' },
-    { id: '3', name: 'Tool Name' },
-    { id: '4', name: 'Tool Name' },
-    { id: '5', name: 'Tool Name' },
-    { id: '6', name: 'Tool Name' },
-    { id: '7', name: 'Tool Name' },
-    { id: '8', name: 'Tool Name' },
-    { id: '9', name: 'Tool Name' },
-    { id: '10', name: 'Tool Name' },
-    { id: '11', name: 'Tool Name' },
-    { id: '12', name: 'Tool Name' },
-    { id: '13', name: 'Tool Name' },
-  ]);
-
-  // Available tools for selection
-  const AVAILABLE_TOOLS = [
-    { value: 'tool-1', label: 'Nail Master 3000' },
-    { value: 'tool-2', label: 'Drill Wizard' },
-    { value: 'tool-3', label: 'Saw Xpert' },
-    { value: 'tool-4', label: 'Level Right' },
-    { value: 'tool-5', label: 'Hammer Pro' },
-    { value: 'tool-6', label: 'Safety Goggles' },
-    { value: 'tool-7', label: 'Measuring Tape' },
-    { value: 'tool-8', label: 'Screwdriver Set' },
-    { value: 'tool-9', label: 'Circular Saw' },
-    { value: 'tool-10', label: 'Impact Driver' },
-    { value: 'tool-11', label: 'Angle Grinder' },
-    { value: 'tool-12', label: 'Jigsaw' },
-    { value: 'tool-13', label: 'Router' },
-    { value: 'tool-14', label: 'Planer' },
-    { value: 'tool-15', label: 'Chisel Set' },
-  ];
 
   // Mock template data based on type
   const getMockTemplates = (): TemplateData[] => {
@@ -191,23 +151,6 @@ export default function CreateTemplatePage({
     }
   };
 
-  const handleRemoveTool = (toolId: string) => {
-    setSelectedTools(prev => prev.filter(tool => tool.id !== toolId));
-  };
-
-  const handleToolSelectionChange = (selectedIds: string[]) => {
-    setSelectedToolIds(selectedIds);
-    // Update selectedTools based on selected IDs
-    const newSelectedTools = selectedIds.map(toolId => {
-      const toolData = AVAILABLE_TOOLS.find(tool => tool.value === toolId);
-      return {
-        id: toolId,
-        name: toolData?.label || 'Unknown Tool',
-      };
-    });
-    setSelectedTools(newSelectedTools);
-  };
-
   // Template selection handlers
   const handleTemplateSelectionChange = (
     templateId: string,
@@ -247,37 +190,12 @@ export default function CreateTemplatePage({
   };
 
   // Get template type icon
-  const getTemplateTypeIcon = (type: string) => {
-    switch (type) {
-      case 'estimate':
-        return '📊';
-      case 'option-bid':
-        return '📄';
-      case 'tools':
-        return '🔧';
-      case 'disclaimers':
-        return '🛡️';
-      default:
-        return '📋';
-    }
-  };
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Creating template:', { type, formData });
-    // TODO: Implement API call to create template
-    router.push('/templates');
-  };
-
-  const handleBack = () => {
-    router.push('/templates');
   };
 
   const renderFormFields = () => {
@@ -410,7 +328,7 @@ export default function CreateTemplatePage({
                 initialData={{
                   templateName: formData.templateName,
                   service: formData.service,
-                  tools: selectedToolIds,
+                  tools: [],
                 }}
               />
             </div>
@@ -478,14 +396,14 @@ export default function CreateTemplatePage({
       >
         <div className='space-y-4'>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto'>
-            {getMockTemplates().map(template => (
+            {getMockTemplates().map(({ id, ...template }) => (
               <TemplateListCard
-                key={template.id}
-                template={template}
+                key={id}
+                template={{ id, ...template }}
                 isSelectionMode={true}
-                isSelected={selectedTemplates.includes(template.id)}
+                isSelected={selectedTemplates.includes(id)}
                 onSelectionChange={handleTemplateSelectionChange}
-                onEdit={() => handleTemplateSelect(template)}
+                onEdit={() => handleTemplateSelect({ id, ...template })}
                 className='hover:shadow-md transition-shadow'
               />
             ))}

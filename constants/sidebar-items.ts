@@ -39,7 +39,6 @@ export const SIDEBAR_TITLES = {
   SERVICE_MANAGEMENT: 'Service Management',
   MATERIAL_MANAGEMENT: 'Material Management',
   TOOLS_MANAGEMENT: 'Tools Management',
-  TEMPLATES_MANAGEMENT: 'Templates Management',
 } as const;
 
 // Permission categories constants

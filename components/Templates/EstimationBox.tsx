@@ -100,10 +100,18 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const handleAccordionChange = (value: string[]) => {
+    // If main accordion is collapsed, don't allow individual changes
+    if (!isMainAccordionExpanded) {
+      return;
+    }
     setExpandedRooms(value);
   };
 
   const handleTradeAccordionChange = (value: string[]) => {
+    // If main accordion is collapsed, don't allow individual changes
+    if (!isMainAccordionExpanded) {
+      return;
+    }
     setExpandedTrades(value);
   };
 
@@ -707,10 +715,28 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const toggleMainAccordion = () => {
-    setIsMainAccordionExpanded(!isMainAccordionExpanded);
-    // When collapsing main accordion, also collapse all trade accordions
-    if (isMainAccordionExpanded) {
+    // Check if all accordions are currently expanded
+    const allRoomIds = rooms.map(room => room.id);
+    const allTradeIds = rooms.flatMap(room =>
+      room.trades.map(trade => trade.id)
+    );
+
+    const allRoomsExpanded = allRoomIds.every(id => expandedRooms.includes(id));
+    const allTradesExpanded = allTradeIds.every(id =>
+      expandedTrades.includes(id)
+    );
+    const allExpanded = allRoomsExpanded && allTradesExpanded;
+
+    if (allExpanded) {
+      // All are expanded, so collapse all
       setExpandedTrades([]);
+      setExpandedRooms([]);
+      setIsMainAccordionExpanded(false);
+    } else {
+      // Some or none are expanded, so expand all
+      setExpandedTrades(allTradeIds);
+      setExpandedRooms(allRoomIds);
+      setIsMainAccordionExpanded(true);
     }
   };
 
@@ -768,7 +794,6 @@ export default function EstimationBox({}: EstimationBoxProps) {
         handleServiceSelect={handleServiceSelect}
         formatCurrency={formatCurrency}
         selectedRoomId={selectedRoomId}
-        isMainAccordionExpanded={isMainAccordionExpanded}
         toggleMainAccordion={toggleMainAccordion}
       />
 

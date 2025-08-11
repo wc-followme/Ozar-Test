@@ -89,7 +89,6 @@ interface EstimationBoxSidebarProps {
   handleServiceSelect: (serviceId: string) => void;
   formatCurrency: (amount: number) => string;
   selectedRoomId: string;
-  isMainAccordionExpanded: boolean;
   toggleMainAccordion: () => void;
 }
 
@@ -108,7 +107,6 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
   handleServiceSelect,
   formatCurrency,
   selectedRoomId,
-  isMainAccordionExpanded,
   toggleMainAccordion,
 }) => {
   return (
@@ -153,152 +151,158 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
           <div className='flex items-center justify-between mb-2 px-2 py-2'>
             <button
               onClick={toggleMainAccordion}
-              className='flex items-center gap-2 text-sm font-medium text-[var(--text-dark)] hover:text-[var(--primary)] transition-all duration-200 ease-in-out hover:scale-105 active:scale-95'
+              className='flex items-center gap-2 text-sm font-medium text-[var(--text-dark)] hover:text-[var(--primary)] transition-all duration-200 ease-in-out'
             >
               <div className={`transition-transform`}>
                 <ExpandAllIcon />
               </div>
-              {isMainAccordionExpanded ? 'Collapse All' : 'View All'}
+              {(() => {
+                const allRoomIds = rooms.map(room => room.id);
+                const allTradeIds = rooms.flatMap(room =>
+                  room.trades.map(trade => trade.id)
+                );
+                const allRoomsExpanded = allRoomIds.every(id =>
+                  expandedRooms.includes(id)
+                );
+                const allTradesExpanded = allTradeIds.every(id =>
+                  expandedTrades.includes(id)
+                );
+                const allExpanded = allRoomsExpanded && allTradesExpanded;
+
+                return allExpanded ? 'Collapse All' : 'Expand All';
+              })()}
             </button>
           </div>
 
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isMainAccordionExpanded
-                ? 'max-h-[calc(100vh_-_250px)] opacity-100'
-                : 'max-h-0 opacity-0'
-            }`}
+          <Accordion
+            type='multiple'
+            value={expandedRooms}
+            onValueChange={handleAccordionChange}
+            className='w-full'
           >
-            <Accordion
-              type='multiple'
-              value={expandedRooms}
-              onValueChange={handleAccordionChange}
-              className='w-full'
-            >
-              {rooms.map(room => (
-                <AccordionItem
-                  key={room.id}
-                  value={room.id}
-                  className='border-none'
-                >
-                  <AccordionPrimitive.Header className='flex'>
-                    <AccordionPrimitive.Trigger
-                      className={`flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full ${
-                        selectedRoomId === room.id
-                          ? 'bg-[var(--card-hover)]'
-                          : 'hover:bg-[var(--card-hover)]'
-                      }`}
-                      onClick={() => handleRoomSelect(room.id)}
-                    >
-                      <div className='flex items-center flex-1 min-w-0'>
-                        <IconChevronDown
-                          size={16}
-                          className={`mr-2 transition-transform duration-200 ${
-                            expandedRooms.includes(room.id) ? 'rotate-180' : ''
-                          } ${
-                            selectedRoomId === room.id
-                              ? 'text-[var(--primary)]'
-                              : 'text-[var(--text-dark)]'
-                          }`}
-                          strokeWidth={2}
-                        />
-                        <span
-                          className={`font-medium text-sm truncate ${
-                            selectedRoomId === room.id
-                              ? 'text-[var(--primary)]'
-                              : 'text-[var(--text-dark)]'
-                          }`}
-                        >
-                          {room.name}
-                        </span>
-                        <span
-                          className={`ml-auto text-xs font-semibold var(--text-dark)`}
-                        >
-                          {formatCurrency(room.total)}
-                        </span>
-                      </div>
-                    </AccordionPrimitive.Trigger>
-                  </AccordionPrimitive.Header>
-                  <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
-                    {room.trades.length > 0 && (
-                      <div className='ml-4 mt-1 animate-in slide-in-from-top-2 duration-200'>
-                        <Accordion
-                          type='multiple'
-                          value={isMainAccordionExpanded ? expandedTrades : []}
-                          onValueChange={handleTradeAccordionChange}
-                          className='w-full'
-                        >
-                          {room.trades.map(trade => (
-                            <AccordionItem
-                              key={trade.id}
-                              value={trade.id}
-                              className='border-none'
-                            >
-                              <AccordionPrimitive.Header className='flex'>
-                                <AccordionPrimitive.Trigger
-                                  className={`flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full `}
-                                  onClick={() => handleTradeSelect(trade.id)}
-                                >
-                                  <div className='flex items-center flex-1 min-w-0'>
-                                    <IconChevronDown
-                                      size={16}
-                                      className={`mr-2 transition-transform duration-200 ${
-                                        expandedTrades.includes(trade.id)
-                                          ? 'rotate-180'
+            {rooms.map(room => (
+              <AccordionItem
+                key={room.id}
+                value={room.id}
+                className='border-none'
+              >
+                <AccordionPrimitive.Header className='flex'>
+                  <AccordionPrimitive.Trigger
+                    className={`flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full ${
+                      selectedRoomId === room.id
+                        ? 'bg-[var(--card-hover)]'
+                        : 'hover:bg-[var(--card-hover)]'
+                    }`}
+                    onClick={() => handleRoomSelect(room.id)}
+                  >
+                    <div className='flex items-center flex-1 min-w-0'>
+                      <IconChevronDown
+                        size={16}
+                        className={`mr-2 transition-transform duration-200 ${
+                          expandedRooms.includes(room.id) ? 'rotate-180' : ''
+                        } ${
+                          selectedRoomId === room.id
+                            ? 'text-[var(--primary)]'
+                            : 'text-[var(--text-dark)]'
+                        }`}
+                        strokeWidth={2}
+                      />
+                      <span
+                        className={`font-medium text-sm truncate ${
+                          selectedRoomId === room.id
+                            ? 'text-[var(--primary)]'
+                            : 'text-[var(--text-dark)]'
+                        }`}
+                      >
+                        {room.name}
+                      </span>
+                      <span
+                        className={`ml-auto text-xs font-semibold var(--text-dark)`}
+                      >
+                        {formatCurrency(room.total)}
+                      </span>
+                    </div>
+                  </AccordionPrimitive.Trigger>
+                </AccordionPrimitive.Header>
+                <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
+                  {room.trades.length > 0 && (
+                    <div className='ml-4 mt-1 animate-in slide-in-from-top-2 duration-200'>
+                      <Accordion
+                        type='multiple'
+                        value={expandedTrades}
+                        onValueChange={handleTradeAccordionChange}
+                        className='w-full'
+                      >
+                        {room.trades.map(trade => (
+                          <AccordionItem
+                            key={trade.id}
+                            value={trade.id}
+                            className='border-none'
+                          >
+                            <AccordionPrimitive.Header className='flex'>
+                              <AccordionPrimitive.Trigger
+                                className={`flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full `}
+                                onClick={() => handleTradeSelect(trade.id)}
+                              >
+                                <div className='flex items-center flex-1 min-w-0'>
+                                  <IconChevronDown
+                                    size={16}
+                                    className={`mr-2 transition-transform duration-200 ${
+                                      expandedTrades.includes(trade.id)
+                                        ? 'rotate-180'
+                                        : ''
+                                    } text-[var(--text-dark)]`}
+                                  />
+                                  <span className='text-sm font-medium text-[var(--text-dark)]'>
+                                    {trade.name}
+                                  </span>
+                                  <span className='ml-auto text-xs font-semibold text-[var(--text-dark)]'>
+                                    {formatCurrency(trade.tradeTotal)}
+                                  </span>
+                                </div>
+                              </AccordionPrimitive.Trigger>
+                            </AccordionPrimitive.Header>
+                            <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
+                              {trade.serviceList.length > 0 && (
+                                <div className='ml-6 mt-1 animate-in slide-in-from-top-2 duration-200'>
+                                  {trade.serviceList.map(service => (
+                                    <div
+                                      key={service.id}
+                                      className={`flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg ${
+                                        selectedService === service.id
+                                          ? 'bg-[var(--background)]'
                                           : ''
-                                      } text-[var(--text-dark)]`}
-                                    />
-                                    <span className='text-sm font-medium text-[var(--text-dark)]'>
-                                      {trade.name}
-                                    </span>
-                                    <span className='ml-auto text-xs font-semibold text-[var(--text-dark)]'>
-                                      {formatCurrency(trade.tradeTotal)}
-                                    </span>
-                                  </div>
-                                </AccordionPrimitive.Trigger>
-                              </AccordionPrimitive.Header>
-                              <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
-                                {trade.serviceList.length > 0 && (
-                                  <div className='ml-6 mt-1 animate-in slide-in-from-top-2 duration-200'>
-                                    {trade.serviceList.map(service => (
-                                      <div
-                                        key={service.id}
-                                        className={`flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg ${
+                                      }`}
+                                      onClick={() =>
+                                        handleServiceSelect(service.id)
+                                      }
+                                    >
+                                      <span
+                                        className={`text-sm font-medium group-hover:text-[var(--primary)] ${
                                           selectedService === service.id
-                                            ? 'bg-[var(--background)]'
-                                            : ''
+                                            ? 'text-[var(--primary)]'
+                                            : 'text-[var(--text-dark)]'
                                         }`}
-                                        onClick={() =>
-                                          handleServiceSelect(service.id)
-                                        }
                                       >
-                                        <span
-                                          className={`text-sm font-medium group-hover:text-[var(--primary)] ${
-                                            selectedService === service.id
-                                              ? 'text-[var(--primary)]'
-                                              : 'text-[var(--text-dark)]'
-                                          }`}
-                                        >
-                                          {service.name}
-                                        </span>
-                                        <span className='text-xs font-semibold text-[var(--text-dark)]'>
-                                          {formatCurrency(service.tradeTotal)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                              </AccordionContent>
-                            </AccordionItem>
-                          ))}
-                        </Accordion>
-                      </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              ))}
-            </Accordion>
-          </div>
+                                        {service.name}
+                                      </span>
+                                      <span className='text-xs font-semibold text-[var(--text-dark)]'>
+                                        {formatCurrency(service.tradeTotal)}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       )}
     </div>

@@ -220,12 +220,12 @@ export default function TemplatesPage() {
           {/* Estimate Tab Content */}
           <TabsContent value='estimate' className='mt-6'>
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {estimateTemplates.map(template => (
+              {estimateTemplates.map(({ id, ...template }) => (
                 <TemplateListCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => console.log(`Edit template ${template.id}`)}
-                  onDelete={() => console.log(`Delete template ${template.id}`)}
+                  key={id}
+                  template={{ id, ...template }}
+                  onEdit={() => console.log(`Edit template ${id}`)}
+                  onDelete={() => console.log(`Delete template ${id}`)}
                 />
               ))}
             </div>
@@ -234,12 +234,12 @@ export default function TemplatesPage() {
           {/* Option Bid Tab Content */}
           <TabsContent value='option-bid' className='mt-6'>
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {optionBidTemplates.map(template => (
+              {optionBidTemplates.map(({ id, ...template }) => (
                 <TemplateListCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => console.log(`Edit template ${template.id}`)}
-                  onDelete={() => console.log(`Delete template ${template.id}`)}
+                  key={id}
+                  template={{ id, ...template }}
+                  onEdit={() => console.log(`Edit template ${id}`)}
+                  onDelete={() => console.log(`Delete template ${id}`)}
                 />
               ))}
             </div>
@@ -248,12 +248,12 @@ export default function TemplatesPage() {
           {/* Tools Tab Content */}
           <TabsContent value='tools' className='mt-6'>
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {toolsTemplates.map(template => (
+              {toolsTemplates.map(({ id, ...template }) => (
                 <TemplateListCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => console.log(`Edit template ${template.id}`)}
-                  onDelete={() => console.log(`Delete template ${template.id}`)}
+                  key={id}
+                  template={{ id, ...template }}
+                  onEdit={() => console.log(`Edit template ${id}`)}
+                  onDelete={() => console.log(`Delete template ${id}`)}
                 />
               ))}
             </div>
@@ -262,12 +262,12 @@ export default function TemplatesPage() {
           {/* Disclaimers Tab Content */}
           <TabsContent value='disclaimers' className='mt-6'>
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {disclaimersTemplates.map(template => (
+              {disclaimersTemplates.map(({ id, ...template }) => (
                 <TemplateListCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => console.log(`Edit template ${template.id}`)}
-                  onDelete={() => console.log(`Delete template ${template.id}`)}
+                  key={id}
+                  template={{ id, ...template }}
+                  onEdit={() => console.log(`Edit template ${id}`)}
+                  onDelete={() => console.log(`Delete template ${id}`)}
                 />
               ))}
             </div>
@@ -283,14 +283,14 @@ export default function TemplatesPage() {
                 </h3>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                   {archiveTemplates
-                    .filter(template => template.type === 'estimate')
-                    .map(template => (
+                    .filter(({ type }) => type === 'estimate')
+                    .map(({ id, ...template }) => (
                       <TemplateListCard
-                        key={template.id}
-                        template={template}
+                        key={id}
+                        template={{ id, ...template }}
                         isArchived={true}
                         onRetrieve={() =>
-                          console.log(`Retrieve template ${template.id}`)
+                          console.log(`Retrieve template ${id}`)
                         }
                       />
                     ))}
@@ -304,14 +304,14 @@ export default function TemplatesPage() {
                 </h3>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                   {archiveTemplates
-                    .filter(template => template.type === 'option-bid')
-                    .map(template => (
+                    .filter(({ type }) => type === 'option-bid')
+                    .map(({ id, ...template }) => (
                       <TemplateListCard
-                        key={template.id}
-                        template={template}
+                        key={id}
+                        template={{ id, ...template }}
                         isArchived={true}
                         onRetrieve={() =>
-                          console.log(`Retrieve template ${template.id}`)
+                          console.log(`Retrieve template ${id}`)
                         }
                       />
                     ))}
@@ -325,14 +325,14 @@ export default function TemplatesPage() {
                 </h3>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                   {archiveTemplates
-                    .filter(template => template.type === 'tools')
-                    .map(template => (
+                    .filter(({ type }) => type === 'tools')
+                    .map(({ id, ...template }) => (
                       <TemplateListCard
-                        key={template.id}
-                        template={template}
+                        key={id}
+                        template={{ id, ...template }}
                         isArchived={true}
                         onRetrieve={() =>
-                          console.log(`Retrieve template ${template.id}`)
+                          console.log(`Retrieve template ${id}`)
                         }
                       />
                     ))}
@@ -346,14 +346,14 @@ export default function TemplatesPage() {
                 </h3>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                   {archiveTemplates
-                    .filter(template => template.type === 'disclaimer')
-                    .map(template => (
+                    .filter(({ type }) => type === 'disclaimer')
+                    .map(({ id, ...template }) => (
                       <TemplateListCard
-                        key={template.id}
-                        template={template}
+                        key={id}
+                        template={{ id, ...template }}
                         isArchived={true}
                         onRetrieve={() =>
-                          console.log(`Retrieve template ${template.id}`)
+                          console.log(`Retrieve template ${id}`)
                         }
                       />
                     ))}
