@@ -252,7 +252,7 @@ export default function PortalUsers() {
           onValueChange={setSelectedTab}
           className='w-full'
         >
-          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between gap-3'>
             <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
               <TabsTrigger
                 value='users'

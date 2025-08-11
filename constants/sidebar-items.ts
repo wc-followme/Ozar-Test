@@ -19,7 +19,6 @@ import { CircleUsersStarIcon } from '../components/icons/CircleUsersStarIcon';
 import { HelmetIcon } from '../components/icons/HelmetIcon';
 import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
-import { TemplateIcon } from '../components/icons/TemplateIcon';
 import { UserCardIcon } from '../components/icons/UserCardIcon';
 
 // Sidebar title constants

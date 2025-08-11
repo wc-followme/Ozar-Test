@@ -1,16 +1,8 @@
 'use client';
 
+import { CategoryItem } from '@/app/(DashboardLayout)/templates/template-types';
 import { catIconOptions } from '@/constants/icon-options';
 import React from 'react';
-
-interface CategoryItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-}
 
 interface CategoryComponentProps {
   categoryData: CategoryItem[];

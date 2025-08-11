@@ -1,4 +1,13 @@
-import { TemplateData } from './template-types';
+import {
+  CategoryItem,
+  Material,
+  Room,
+  Service,
+  ServiceOption,
+  TemplateData,
+  Tool,
+  Trade,
+} from './template-types';
 
 // Estimate templates data
 export const estimateTemplates: TemplateData[] = [
@@ -347,3 +356,222 @@ export const archiveTemplates: TemplateData[] = [
     createdDate: '28/11/2024',
   },
 ];
+
+// Tools data from ToolsDemo.tsx
+export const demoTools: Tool[] = [
+  {
+    id: 'tool-1',
+    name: 'Nail Master 3000',
+    category: 'power-tools',
+    description: 'Professional nail gun for construction projects',
+    status: 'available',
+  },
+  {
+    id: 'tool-2',
+    name: 'Drill Wizard',
+    category: 'power-tools',
+    description: 'High-performance cordless drill',
+    status: 'in-use',
+  },
+  {
+    id: 'tool-3',
+    name: 'Saw Xpert',
+    category: 'power-tools',
+    description: 'Precision circular saw for cutting',
+    status: 'available',
+  },
+  {
+    id: 'tool-4',
+    name: 'Level Right',
+    category: 'measuring-tools',
+    description: 'Digital level for accurate measurements',
+    status: 'maintenance',
+  },
+];
+
+// Initial rooms data from EstimationBox.tsx
+export const initialRooms: Room[] = [
+  {
+    id: 'room-1',
+    name: 'Home 1',
+    total: 0.0,
+    trades: [],
+    isExpanded: true,
+  },
+];
+
+// Category data for CategoryComponent.tsx
+export const categoryData: CategoryItem[] = [
+  {
+    id: 'interior',
+    name: 'Interior',
+    description: 'Indoor renovations and improvements',
+    icon: 'interior',
+    color: '#8B5CF6',
+    bgColor: '#8B5CF61A',
+  },
+  {
+    id: 'exterior',
+    name: 'Exterior',
+    description: 'Outdoor projects and maintenance',
+    icon: 'exterior',
+    color: '#F59E0B',
+    bgColor: '#F59E0B1A',
+  },
+  {
+    id: 'full-home',
+    name: 'Full Home Build/Addition',
+    description: 'Complete home construction or major additions',
+    icon: 'home',
+    color: '#10B981',
+    bgColor: '#10B9811A',
+  },
+  {
+    id: 'general',
+    name: 'General',
+    description: 'General maintenance and repairs',
+    icon: 'general',
+    color: '#6B7280',
+    bgColor: '#6B72801A',
+  },
+];
+
+// Service options data
+export const serviceOptions: ServiceOption[] = [
+  {
+    id: 'option-1',
+    name: 'Basic Service',
+    tradeTotal: 1500.0,
+  },
+  {
+    id: 'option-2',
+    name: 'Premium Service',
+    tradeTotal: 2500.0,
+  },
+  {
+    id: 'option-3',
+    name: 'Deluxe Service',
+    tradeTotal: 3500.0,
+  },
+];
+
+// Sample materials data
+export const sampleMaterials: Material[] = [
+  {
+    id: 'material-1',
+    name: 'Premium Paint',
+    variant: 'Interior Wall Paint',
+    qty: 5,
+    unit: 'gallons',
+    description: 'High-quality interior wall paint',
+    rate: 45.0,
+    markup: 10,
+    lineTotal: 247.5,
+  },
+  {
+    id: 'material-2',
+    name: 'Drywall Sheets',
+    variant: '4x8 Standard',
+    qty: 10,
+    unit: 'sheets',
+    description: 'Standard 4x8 drywall sheets',
+    rate: 12.5,
+    markup: 15,
+    lineTotal: 143.75,
+  },
+];
+
+// Sample services data
+export const sampleServices: Service[] = [
+  {
+    id: 'service-1',
+    name: 'Wall Painting',
+    description: 'Interior wall painting service',
+    qty: 1,
+    rate: 2.5,
+    lineTotal: 2.5,
+    serviceTotal: 2.5,
+    tradeTotal: 2.5,
+    serviceOptions: serviceOptions,
+    materials: sampleMaterials,
+    finishes: [],
+    tools: [],
+  },
+  {
+    id: 'service-2',
+    name: 'Drywall Installation',
+    description: 'Drywall installation and finishing',
+    qty: 1,
+    rate: 3.75,
+    lineTotal: 3.75,
+    serviceTotal: 3.75,
+    tradeTotal: 3.75,
+    serviceOptions: serviceOptions,
+    materials: sampleMaterials,
+    finishes: [],
+    tools: [],
+  },
+];
+
+// Sample trades data
+export const sampleTrades: Trade[] = [
+  {
+    id: 'trade-1',
+    name: 'Painting',
+    services: 2,
+    dateRange: 'Jan 15 - Jan 20',
+    type: 'Interior',
+    laborCost: 800.0,
+    materialCost: 400.0,
+    tradeTotal: 1200.0,
+    serviceList: sampleServices,
+    isExpanded: false,
+  },
+  {
+    id: 'trade-2',
+    name: 'Carpentry',
+    services: 1,
+    dateRange: 'Jan 21 - Jan 25',
+    type: 'Interior',
+    laborCost: 600.0,
+    materialCost: 300.0,
+    tradeTotal: 900.0,
+    serviceList: sampleServices,
+    isExpanded: false,
+  },
+];
+
+// Template form options
+export const templateFormOptions = {
+  categories: [
+    { value: 'interior', label: 'Interior' },
+    { value: 'exterior', label: 'Exterior' },
+    { value: 'general', label: 'General' },
+    { value: 'full-home-build', label: 'Full Home Build/Addition' },
+  ],
+  services: [
+    { value: 'painting', label: 'Painting' },
+    { value: 'plumbing', label: 'Plumbing' },
+    { value: 'electrical', label: 'Electrical' },
+    { value: 'carpentry', label: 'Carpentry' },
+    { value: 'general', label: 'General' },
+    { value: 'warranty', label: 'Warranty' },
+  ],
+  durations: [
+    { value: '1-year', label: '1 Year' },
+    { value: '2-years', label: '2 Years' },
+    { value: '3-years', label: '3 Years' },
+    { value: '5-years', label: '5 Years' },
+    { value: 'lifetime', label: 'Lifetime' },
+  ],
+  propertyTypes: [
+    { value: 'residential', label: 'Residential' },
+    { value: 'commercial', label: 'Commercial' },
+    { value: 'industrial', label: 'Industrial' },
+  ],
+  toolCategories: [
+    { value: 'power-tools', label: 'Power Tools' },
+    { value: 'measuring-tools', label: 'Measuring Tools' },
+    { value: 'hand-tools', label: 'Hand Tools' },
+  ],
+};

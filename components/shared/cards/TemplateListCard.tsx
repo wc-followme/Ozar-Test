@@ -1,58 +1,14 @@
 'use client';
 
+import { TemplateListCardProps } from '@/app/(DashboardLayout)/templates/template-types';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ACTIONS } from '@/constants/common';
 import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { Edit2, Trash } from 'iconsax-react';
+import { Edit2, Refresh, Trash } from 'iconsax-react';
 import React, { useState } from 'react';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
 import { Dropdown } from '../common/Dropdown';
-
-// Template types
-export type TemplateType = 'disclaimer' | 'tools' | 'option-bid' | 'estimate';
-
-// Base template interface
-interface BaseTemplate {
-  id: string;
-  templateName: string;
-  createdDate: string;
-}
-
-// Disclaimer template interface
-interface DisclaimerTemplate extends BaseTemplate {
-  type: 'disclaimer';
-  service: string;
-  material: string;
-}
-
-// Tools template interface
-interface ToolsTemplate extends BaseTemplate {
-  type: 'tools';
-  service: string;
-  material: string;
-}
-
-// Option bid template interface
-interface OptionBidTemplate extends BaseTemplate {
-  type: 'option-bid';
-  service: string;
-  material: string;
-}
-
-// Estimate template interface
-interface EstimateTemplate extends BaseTemplate {
-  type: 'estimate';
-  propertyType: string;
-  category: string;
-  categoryColor: string;
-}
-
-// Union type for all template types
-export type TemplateData =
-  | DisclaimerTemplate
-  | ToolsTemplate
-  | OptionBidTemplate
-  | EstimateTemplate;
 
 interface MenuOption {
   label: string;
@@ -64,13 +20,6 @@ interface MenuOption {
     variant?: 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
     className?: string;
   }>;
-}
-
-interface TemplateListCardProps {
-  template: TemplateData;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  className?: string;
 }
 
 // Function to get background color based on category text
@@ -90,7 +39,12 @@ export function TemplateListCard({
   template,
   onEdit,
   onDelete,
+  onRetrieve,
+  isArchived = false,
   className = '',
+  isSelectionMode = false,
+  isSelected = false,
+  onSelectionChange,
 }: TemplateListCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -100,20 +54,28 @@ export function TemplateListCard({
   const canEdit = true; // userPermissions?.templates?.edit || true;
   const canArchive = true; // userPermissions?.templates?.archive || true;
 
-  // Menu options for the dropdown
-  const menuOptions: MenuOption[] = [
-    {
-      label: 'Edit',
-      action: ACTIONS.EDIT,
-      icon: Edit2,
-    },
-    {
-      label: 'Archive',
-      action: ACTIONS.DELETE,
-      variant: 'destructive',
-      icon: Trash,
-    },
-  ];
+  // Menu options for the dropdown - different for archived vs active templates
+  const menuOptions: MenuOption[] = isArchived
+    ? [
+        {
+          label: 'Retrieve',
+          action: 'retrieve',
+          icon: Refresh,
+        },
+      ]
+    : [
+        {
+          label: 'Edit',
+          action: ACTIONS.EDIT,
+          icon: Edit2,
+        },
+        {
+          label: 'Archive',
+          action: ACTIONS.DELETE,
+          variant: 'destructive',
+          icon: Trash,
+        },
+      ];
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {
@@ -139,6 +101,11 @@ export function TemplateListCard({
       case ACTIONS.DELETE:
         setShowDeleteModal(true);
         break;
+      case 'retrieve':
+        if (onRetrieve) {
+          onRetrieve();
+        }
+        break;
       default:
         break;
     }
@@ -151,6 +118,12 @@ export function TemplateListCard({
     setShowDeleteModal(false);
   };
 
+  const handleCardClick = () => {
+    if (isSelectionMode && onSelectionChange) {
+      onSelectionChange(template.id, !isSelected);
+    }
+  };
+
   const renderContent = () => {
     switch (template.type) {
       case 'disclaimer':
@@ -158,15 +131,15 @@ export function TemplateListCard({
         return (
           <>
             <div className='flex justify-between items-start'>
-              <div>
+              <div className='flex-1 max-w-[60%]'>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Service
                 </p>
-                <p className='text-sm text-[var(--text-dark)] font-medium'>
+                <p className='text-sm text-[var(--text-dark)] font-medium truncate'>
                   {template.service}
                 </p>
               </div>
-              <div className='text-right'>
+              <div className='ml-auto'>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Created on
                 </p>
@@ -182,15 +155,15 @@ export function TemplateListCard({
         return (
           <>
             <div className='flex justify-between items-start mb-3'>
-              <div>
+              <div className='max-w-[60%] flex-1'>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Service
                 </p>
-                <p className='text-sm text-[var(--text-dark)] font-medium'>
+                <p className='text-sm text-[var(--text-dark)] font-medium truncate'>
                   {template.service}
                 </p>
               </div>
-              <div className='text-right'>
+              <div className='ml-auto'>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Created on
                 </p>
@@ -213,16 +186,16 @@ export function TemplateListCard({
       case 'estimate':
         return (
           <div className='flex flex-col gap-3'>
-            <div className='flex justify-between items-start mb-3'>
+            <div className='flex justify-between items-start'>
               <div>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Property Type
                 </p>
-                <p className='text-sm text-[var(--text-dark)] font-medium'>
+                <p className='text-sm text-[var(--text-dark)] font-medium truncate'>
                   {template.propertyType}
                 </p>
               </div>
-              <div className='text-right'>
+              <div className='ml-auto'>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Created on
                 </p>
@@ -254,35 +227,60 @@ export function TemplateListCard({
   return (
     <>
       <div
-        className={`bg-white rounded-[10px] shadow-sm border border-[var(--border-dark)] p-4 hover:shadow-md transition-shadow ${className}`}
+        className={`bg-[var(--card-background)] rounded-[10px] shadow-sm border border-[var(--border-dark)] p-4 hover:shadow-md transition-shadow ${
+          isSelectionMode ? 'cursor-pointer' : ''
+        } ${className}`}
+        onClick={handleCardClick}
       >
         <div className='flex justify-between items-start mb-4'>
-          <h3 className='font-bold text-[var(--text-dark)] text-lg'>
+          <h3 className='font-bold text-[var(--text-dark)] text-lg truncate'>
             {template.templateName}
           </h3>
 
-          {showMenu && (
-            <Dropdown
-              trigger={
-                <button className='h-8 w-fit p-0 flex-shrink-0 text-[var(--text)] hover:text-[var(--text-dark)] transition-colors'>
-                  <IconDotsVertical
-                    className='!w-6 !h-6'
-                    strokeWidth={2}
-                    color='var(--text)'
-                  />
-                </button>
+          {isSelectionMode ? (
+            <Checkbox
+              id={`template-${template.id}`}
+              className='
+                rounded-[6px] 
+                border-2 
+                border-[var(--dark-border-other)]
+                data-[state=checked]:bg-[--primary]
+                data-[state=checked]:border-[--primary]
+                data-[state=checked]:text-white
+                text-white 
+                w-6 h-6
+                flex items-center justify-center -mt-0.4
+                ml-auto
+              '
+              checked={isSelected}
+              onCheckedChange={() =>
+                onSelectionChange?.(template.id, !isSelected)
               }
-              menuOptions={filteredMenuOptions.map(
-                ({ icon: IconComponent, action, label }) => ({
-                  label,
-                  action,
-                  icon: IconComponent,
-                })
-              )}
-              onAction={handleMenuAction}
-              align='end'
-              className='bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
             />
+          ) : (
+            showMenu && (
+              <Dropdown
+                trigger={
+                  <button className='h-8 w-fit p-0 flex-shrink-0 text-[var(--text)] hover:text-[var(--text-dark)] transition-colors'>
+                    <IconDotsVertical
+                      className='!w-6 !h-6'
+                      strokeWidth={2}
+                      color='var(--text)'
+                    />
+                  </button>
+                }
+                menuOptions={filteredMenuOptions.map(
+                  ({ icon: IconComponent, action, label }) => ({
+                    label,
+                    action,
+                    icon: IconComponent,
+                  })
+                )}
+                onAction={handleMenuAction}
+                align='end'
+                className='bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
+              />
+            )
           )}
         </div>
         {renderContent()}
@@ -292,7 +290,7 @@ export function TemplateListCard({
         open={showDeleteModal}
         onCancel={() => setShowDeleteModal(false)}
         onDelete={handleDelete}
-        title='Are you sure you want to delete this template?'
+        title='Are you sure you want to Archive this template?'
         subtitle='This action cannot be undone.'
       />
     </>

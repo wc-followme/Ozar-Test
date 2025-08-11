@@ -1,16 +1,19 @@
 'use client';
 
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
-import MultiSelect from '@/components/shared/common/MultiSelect';
+import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
 import SelectField from '@/components/shared/common/SelectField';
+import SideSheet from '@/components/shared/common/SideSheet';
+import { DisclaimerForm } from '@/components/shared/forms/DisclaimerForm';
+import { EstimationTemplateForm } from '@/components/shared/forms/EstimationTemplateForm';
+import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { CloseCircle, Edit2 } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { use, useState } from 'react';
-import EstimationBox from '../../../../../components/Templates/EstimationBox';
+import { TemplateData } from '../../template-types';
 
 interface CreateTemplatePageProps {
   params: Promise<{
@@ -23,6 +26,8 @@ export default function CreateTemplatePage({
 }: CreateTemplatePageProps) {
   const router = useRouter();
   const { type } = use(params);
+  const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
+  const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     templateName: '',
     service: '',
@@ -74,6 +79,118 @@ export default function CreateTemplatePage({
     { value: 'tool-15', label: 'Chisel Set' },
   ];
 
+  // Mock template data based on type
+  const getMockTemplates = (): TemplateData[] => {
+    switch (type) {
+      case 'estimate':
+        return [
+          {
+            id: '1',
+            type: 'estimate',
+            templateName: 'Interior Design Template',
+            createdDate: '30/12/2024',
+            propertyType: 'Residential',
+            category: 'Interior',
+            categoryColor: '#24338C26',
+          },
+          {
+            id: '2',
+            type: 'estimate',
+            templateName: 'Full Home Build Template',
+            createdDate: '29/12/2024',
+            propertyType: 'Residential',
+            category: 'Full Home Build/Addition',
+            categoryColor: '#34AD4426',
+          },
+          {
+            id: '3',
+            type: 'estimate',
+            templateName: 'Kitchen Renovation',
+            createdDate: '28/12/2024',
+            propertyType: 'Residential',
+            category: 'Interior',
+            categoryColor: '#24338C26',
+          },
+          {
+            id: '4',
+            type: 'estimate',
+            templateName: 'Bathroom Remodel',
+            createdDate: '27/12/2024',
+            propertyType: 'Residential',
+            category: 'Full Home Build/Addition',
+            categoryColor: '#34AD4426',
+          },
+        ];
+      case 'tools':
+        return [
+          {
+            id: '1',
+            type: 'tools',
+            templateName: 'Basic Tool Set',
+            createdDate: '30/12/2024',
+            service: 'Carpentry',
+            material: 'Wood',
+          },
+          {
+            id: '2',
+            type: 'tools',
+            templateName: 'Electrical Tools',
+            createdDate: '29/12/2024',
+            service: 'Electrical',
+            material: 'Copper',
+          },
+          {
+            id: '3',
+            type: 'tools',
+            templateName: 'Plumbing Tools',
+            createdDate: '28/12/2024',
+            service: 'Plumbing',
+            material: 'PVC',
+          },
+        ];
+      case 'disclaimers':
+        return [
+          {
+            id: '1',
+            type: 'disclaimer',
+            templateName: 'Standard Disclaimer',
+            createdDate: '30/12/2024',
+            service: 'General',
+            material: 'N/A',
+          },
+          {
+            id: '2',
+            type: 'disclaimer',
+            templateName: 'Warranty Disclaimer',
+            createdDate: '29/12/2024',
+            service: 'Warranty',
+            material: 'N/A',
+          },
+        ];
+      case 'option-bid':
+        return [
+          {
+            id: '1',
+            type: 'option-bid',
+            templateName: 'Basic Option Bid',
+            createdDate: '30/12/2024',
+            service: 'General',
+            material: 'Standard',
+          },
+          {
+            id: '2',
+            type: 'option-bid',
+            templateName: 'Premium Option Bid',
+            createdDate: '29/12/2024',
+            service: 'Premium',
+            material: 'High-end',
+          },
+        ];
+      default:
+        return [];
+    }
+  };
+
   const handleRemoveTool = (toolId: string) => {
     setSelectedTools(prev => prev.filter(tool => tool.id !== toolId));
   };
@@ -89,6 +206,28 @@ export default function CreateTemplatePage({
       };
     });
     setSelectedTools(newSelectedTools);
+  };
+
+  // Template selection handlers
+  const handleTemplateSelectionChange = (
+    templateId: string,
+    selected: boolean
+  ) => {
+    setSelectedTemplates(prev =>
+      selected ? [...prev, templateId] : prev.filter(id => id !== templateId)
+    );
+  };
+
+  const handleAddSelectedTemplates = () => {
+    console.log('Adding selected templates:', selectedTemplates);
+    // TODO: Implement logic to add selected templates to the form
+    setIsTemplateSheetOpen(false);
+    setSelectedTemplates([]);
+  };
+
+  const handleTemplateSelect = (template: TemplateData) => {
+    // TODO: Implement logic to populate form with template data
+    console.log('Template selected:', template);
   };
 
   // Get template type display name
@@ -146,73 +285,35 @@ export default function CreateTemplatePage({
       case 'estimate':
         return (
           <div className='w-full'>
+            <div className='flex items-end sm:items-center justify-between mb-6 sm:flex-row flex-col gap-3'>
+              <Breadcrumb
+                items={[
+                  { name: 'Templates', href: '/templates' },
+                  { name: 'Estimate Templates' },
+                ]}
+                className='mb-6'
+              />
+              <Button
+                className='btn-primary'
+                onClick={() => setIsTemplateSheetOpen(true)}
+              >
+                Add From Templates
+              </Button>
+            </div>
             {/* Breadcrumb */}
-            <Breadcrumb
-              items={[
-                { name: 'Templates', href: '/templates' },
-                { name: 'Estimate Templates' },
-              ]}
-              className='mb-6'
-            />
 
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                <div className='space-y-2 col-span-2'>
-                  <Label htmlFor='templateName' className='field-label'>
-                    Template Name
-                  </Label>
-                  <Input
-                    id='templateName'
-                    value={formData.templateName}
-                    onChange={e =>
-                      handleInputChange('templateName', e.target.value)
-                    }
-                    placeholder='Enter template name'
-                    className='input-field'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <SelectField
-                    label='Category'
-                    value={formData.category}
-                    onValueChange={value =>
-                      handleInputChange('category', value)
-                    }
-                    options={[
-                      { value: 'interior', label: 'Interior' },
-                      { value: 'exterior', label: 'Exterior' },
-                      { value: 'general', label: 'General' },
-                    ]}
-                    placeholder='Select Category'
-                  />
-                </div>
-              </div>
-              <div className='flex justify-end my-4'>
-                <Button variant='outline' size='sm' className='btn-secondary'>
-                  <Edit2 size={16} color='var(--text)' />
-                  Edit
-                </Button>
-              </div>
-              {/* EstimationBox Component */}
-              <div className='mb-6'>
-                <EstimationBox _onClose={() => {}} />
-              </div>
-
-              {/* Footer */}
-              <div className='flex justify-between items-center '>
-                <div className='flex items-center gap-2'>
-                  <span className='text-base font-semibold text-[var(--text-dark)]'>
-                    Project Total:
-                  </span>
-                  <span className='ml-2 text-xl font-bold text-[var(--primary)]'>
-                    $0.00
-                  </span>
-                </div>
-                <Button onClick={handleSubmit} className='btn-primary'>
-                  Save Template
-                </Button>
-              </div>
+              <EstimationTemplateForm
+                onSubmit={data => {
+                  console.log('Estimate form submitted:', data);
+                  // Handle form submission here
+                }}
+                initialData={{
+                  templateName: formData.templateName,
+                  category: formData.category,
+                }}
+              />
             </div>
           </div>
         );
@@ -284,86 +385,34 @@ export default function CreateTemplatePage({
         return (
           <div className='w-full'>
             {/* Header with Breadcrumb and Add From Templates Button */}
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-end sm:items-center justify-between mb-6 sm:flex-row flex-col gap-3'>
               <Breadcrumb
                 items={[
                   { name: 'Templates', href: '/templates' },
                   { name: 'Tools Template' },
                 ]}
               />
-              <Button className='btn-primary'>Add From Templates</Button>
+              <Button
+                className='btn-primary'
+                onClick={() => setIsTemplateSheetOpen(true)}
+              >
+                Add From Templates
+              </Button>
             </div>
 
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='templateName' className='field-label'>
-                    Template Name
-                  </Label>
-                  <Input
-                    id='templateName'
-                    value={formData.templateName}
-                    onChange={e =>
-                      handleInputChange('templateName', e.target.value)
-                    }
-                    placeholder='Enter name'
-                    className='input-field'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <SelectField
-                    label='Service'
-                    value={formData.service}
-                    onValueChange={value => handleInputChange('service', value)}
-                    options={[
-                      { value: 'painting', label: 'Painting' },
-                      { value: 'plumbing', label: 'Plumbing' },
-                      { value: 'electrical', label: 'Electrical' },
-                      { value: 'carpentry', label: 'Carpentry' },
-                    ]}
-                    placeholder='Select Service'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <MultiSelect
-                    label='Tools'
-                    options={AVAILABLE_TOOLS}
-                    value={selectedToolIds}
-                    onChange={handleToolSelectionChange}
-                    placeholder='Select Tools'
-                  />
-                </div>
-              </div>
-
-              {/* Tool Tags Section */}
-              <div className='mt-6'>
-                <div className='flex flex-wrap gap-2'>
-                  {selectedTools.map(tool => (
-                    <div
-                      key={tool.id}
-                      className='flex items-center gap-2 pl-4 pr-3 py-2 bg-cyanwave-light rounded-full'
-                    >
-                      <span className='text-base font-medium text-[var(--text-dark)]'>
-                        {tool.name}
-                      </span>
-                      <button
-                        onClick={() => handleRemoveTool(tool.id)}
-                        className='w-5 h-5 rounded-full flex items-center justify-center transition-colors'
-                      >
-                        <CloseCircle size={24} color='#6B7280' />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className='flex justify-end mt-6'>
-                <Button onClick={handleSubmit} className='btn-primary'>
-                  Save Template
-                </Button>
-              </div>
+              <TemplateToolForm
+                onSubmit={data => {
+                  console.log('Tools form submitted:', data);
+                  // Handle form submission here
+                }}
+                initialData={{
+                  templateName: formData.templateName,
+                  service: formData.service,
+                  tools: selectedToolIds,
+                }}
+              />
             </div>
           </div>
         );
@@ -372,121 +421,36 @@ export default function CreateTemplatePage({
         return (
           <div className='w-full'>
             {/* Header with Breadcrumb and Add From Templates Button */}
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-end sm:items-center justify-between mb-6 sm:flex-row flex-col gap-3'>
               <Breadcrumb
                 items={[
                   { name: 'Templates', href: '/templates' },
                   { name: 'Disclaimer' },
                 ]}
               />
-              <Button className='btn-primary'>Add From Templates</Button>
+              <Button
+                className='btn-primary'
+                onClick={() => setIsTemplateSheetOpen(true)}
+              >
+                Add From Templates
+              </Button>
             </div>
 
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mb-6'>
-                <div className='space-y-2'>
-                  <Label htmlFor='templateName' className='field-label'>
-                    Template Name
-                  </Label>
-                  <Input
-                    id='templateName'
-                    value={formData.templateName}
-                    onChange={e =>
-                      handleInputChange('templateName', e.target.value)
-                    }
-                    placeholder='Enter name'
-                    className='input-field'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <SelectField
-                    label='Service'
-                    value={formData.service}
-                    onValueChange={value => handleInputChange('service', value)}
-                    options={[
-                      { value: 'painting', label: 'Painting' },
-                      { value: 'plumbing', label: 'Plumbing' },
-                      { value: 'electrical', label: 'Electrical' },
-                      { value: 'carpentry', label: 'Carpentry' },
-                    ]}
-                    placeholder='Select Service'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='warranty' className='field-label'>
-                    Warranty
-                  </Label>
-                  <Input
-                    id='warranty'
-                    value={formData.warranty}
-                    onChange={e =>
-                      handleInputChange('warranty', e.target.value)
-                    }
-                    placeholder='Enter Warranty'
-                    className='input-field'
-                  />
-                </div>
-              </div>
-
-              {/* Disclaimer Text Area */}
-              <div className='space-y-2 mb-6'>
-                <Label htmlFor='description' className='field-label'>
-                  Disclaimer
-                </Label>
-                <Textarea
-                  id='description'
-                  value={formData.description}
-                  onChange={e =>
-                    handleInputChange('description', e.target.value)
-                  }
-                  placeholder='Enter Disclaimer Here'
-                  rows={16}
-                  className='input-field min-h-[300px]'
-                />
-              </div>
-
-              {/* Duration Field */}
-              <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-                <div className='space-y-2 mb-6 col-span-2'>
-                  <Label htmlFor='duration' className='field-label'>
-                    Warranty
-                  </Label>
-                  <Input
-                    id='duration'
-                    value={formData.duration}
-                    onChange={e =>
-                      handleInputChange('duration', e.target.value)
-                    }
-                    placeholder='Select Duration'
-                    className='input-field'
-                  />
-                </div>
-                <div className='space-y-2 mb-6'>
-                  <SelectField
-                    label='Duration'
-                    value={formData.duration}
-                    onValueChange={value =>
-                      handleInputChange('duration', value)
-                    }
-                    options={[
-                      { value: '1-year', label: '1 Year' },
-                      { value: '2-years', label: '2 Years' },
-                      { value: '3-years', label: '3 Years' },
-                      { value: '5-years', label: '5 Years' },
-                      { value: 'lifetime', label: 'Lifetime' },
-                    ]}
-                    placeholder='Select Duration'
-                  />
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className='flex justify-end'>
-                <Button onClick={handleSubmit} className='btn-primary'>
-                  Save Template
-                </Button>
-              </div>
+              <DisclaimerForm
+                onSubmit={data => {
+                  console.log('Disclaimer form submitted:', data);
+                  // Handle form submission here
+                }}
+                initialData={{
+                  templateName: formData.templateName,
+                  service: formData.service,
+                  warranty: formData.warranty,
+                  description: formData.description,
+                  duration: formData.duration,
+                }}
+              />
             </div>
           </div>
         );
@@ -502,5 +466,49 @@ export default function CreateTemplatePage({
     }
   };
 
-  return <div className='w-full'>{renderFormFields()}</div>;
+  return (
+    <div className='w-full'>
+      {renderFormFields()}
+
+      <SideSheet
+        open={isTemplateSheetOpen}
+        onOpenChange={setIsTemplateSheetOpen}
+        title={`${getTemplateTypeName(type)}s`}
+        size='718px'
+      >
+        <div className='space-y-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto'>
+            {getMockTemplates().map(template => (
+              <TemplateListCard
+                key={template.id}
+                template={template}
+                isSelectionMode={true}
+                isSelected={selectedTemplates.includes(template.id)}
+                onSelectionChange={handleTemplateSelectionChange}
+                onEdit={() => handleTemplateSelect(template)}
+                className='hover:shadow-md transition-shadow'
+              />
+            ))}
+          </div>
+
+          <div className='flex gap-3 items-center pt-4'>
+            <Button
+              variant='outline'
+              onClick={() => setIsTemplateSheetOpen(false)}
+              className='btn-secondary'
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddSelectedTemplates}
+              disabled={selectedTemplates.length === 0}
+              className='btn-primary'
+            >
+              Add Selected ({selectedTemplates.length})
+            </Button>
+          </div>
+        </div>
+      </SideSheet>
+    </div>
+  );
 }
