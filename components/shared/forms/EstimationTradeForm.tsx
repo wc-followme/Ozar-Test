@@ -52,6 +52,7 @@ export default function EstimationTradeForm({
 }: EstimationTradeFormProps) {
   const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
+  const [markupAmount, setMarkupAmount] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(
     new Date('2024-03-20')
   );
@@ -93,6 +94,12 @@ export default function EstimationTradeForm({
     { value: '€', label: '€' },
     { value: '£', label: '£' },
   ];
+
+  const handleInputChange = (field: string, value: number) => {
+    if (field === 'markup') {
+      setMarkupAmount(value.toString());
+    }
+  };
 
   return (
     <div className='space-y-6'>
@@ -261,9 +268,13 @@ export default function EstimationTradeForm({
                 </div>
                 <Input
                   type='text'
-                  value=''
-                  placeholder='00.00'
-                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
+                  value={markupAmount}
+                  onChange={e => {
+                    const numericValue =
+                      parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
+                    handleInputChange('markup', numericValue);
+                  }}
+                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
                 />
               </div>
             </div>
