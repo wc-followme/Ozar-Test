@@ -44,6 +44,7 @@ export const ROUTES = {
   TOOLS_MANAGEMENT: '/tools-management',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
+  PORTAL_USERS: '/portal-users',
   ROLE_MANAGEMENT: '/role-management',
   CREATE_ROLE: '/role-management/create-role',
   EDIT_ROLE: '/role-management/edit-role',

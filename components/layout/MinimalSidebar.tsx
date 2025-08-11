@@ -65,7 +65,7 @@ export function MinimalSidebar() {
                     {isOpen ? (
                       // When sidebar is open, show link without tooltip
                       <Link
-                        href={href}
+                        href={href || '/'}
                         className={cn(
                           'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
                           pathname === href && 'bg-[var(--primary)] text-white'
@@ -83,7 +83,7 @@ export function MinimalSidebar() {
                       <Tooltip delayDuration={100}>
                         <TooltipTrigger asChild>
                           <Link
-                            href={href}
+                            href={href || '/'}
                             className={cn(
                               'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
                               pathname === href &&

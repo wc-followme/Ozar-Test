@@ -7,6 +7,7 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import TradeForm from '@/components/shared/forms/TradeForm';
 import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
@@ -59,6 +60,7 @@ export default function TradeManagementPage() {
   const [editingTradeUuid, setEditingTradeUuid] = useState<string | undefined>(
     undefined
   );
+  const [selectedTab, setSelectedTab] = useState('trade');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
 
@@ -299,65 +301,108 @@ export default function TradeManagementPage() {
   return (
     <div className='w-full'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>
             {TRADE_MESSAGES.TRADE_MANAGEMENT_TITLE}
           </h2>
-          {canEdit && (
-            <div className='flex justify-end'>
-              <Button
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-                onClick={() => setSideSheetOpen(true)}
-              >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {TRADE_MESSAGES.ADD_TRADE_BUTTON}
-                </span>
-              </Button>
-            </div>
-          )}
         </div>
-      </div>
-      {/* Trade Grid */}
-      <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-        {trades.length === 0 && loading ? (
-          // Initial loading state with skeleton cards
-          Array.from({ length: 10 }).map((_, idx) => (
-            <TradeCardSkeleton key={idx} />
-          ))
-        ) : trades.length === 0 && !loading ? (
-          <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
-            <NoDataFound
-              buttonText={TRADE_MESSAGES.ADD_TRADE_BUTTON}
-              onButtonClick={() => setSideSheetOpen(true)}
-              description={TRADE_MESSAGES.NO_TRADES_FOUND_DESCRIPTION}
-              showButton={canEdit ?? false}
-            />
-          </div>
-        ) : (
-          trades.map((trade, idx) => {
-            const { uuid, name, categories } = trade;
-            return (
-              <InfoCard
-                key={uuid}
-                tradeName={name || ''}
-                category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
-                menuOptions={menuOptions}
-                onMenuAction={action => handleMenuAction(action, idx)}
-                module='trades'
-              />
-            );
-          })
-        )}
       </div>
 
-      {/* Loading more trades */}
-      {loading && trades.length > 0 && (
-        <div className='w-full text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='trade'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Trade
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <Button
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                  onClick={() => setSideSheetOpen(true)}
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {TRADE_MESSAGES.ADD_TRADE_BUTTON}
+                  </span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Trade Tab Content */}
+          <TabsContent value='trade' className='mt-6'>
+            {/* Trade Grid */}
+            <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
+              {trades.length === 0 && loading ? (
+                // Initial loading state with skeleton cards
+                Array.from({ length: 10 }).map((_, idx) => (
+                  <TradeCardSkeleton key={idx} />
+                ))
+              ) : trades.length === 0 && !loading ? (
+                <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
+                  <NoDataFound
+                    buttonText={TRADE_MESSAGES.ADD_TRADE_BUTTON}
+                    onButtonClick={() => setSideSheetOpen(true)}
+                    description={TRADE_MESSAGES.NO_TRADES_FOUND_DESCRIPTION}
+                    showButton={canEdit ?? false}
+                  />
+                </div>
+              ) : (
+                trades.map((trade, idx) => {
+                  const { uuid, name, categories } = trade;
+                  return (
+                    <InfoCard
+                      key={uuid}
+                      tradeName={name || ''}
+                      category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
+                      menuOptions={menuOptions}
+                      onMenuAction={action => handleMenuAction(action, idx)}
+                      module='trades'
+                    />
+                  );
+                })
+              )}
+            </div>
+
+            {/* Loading more trades */}
+            {loading && trades.length > 0 && (
+              <div className='w-full text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+              <NoDataFound
+                title='Archived Trades'
+                description='No archived trades found'
+                buttonText=''
+                showButton={false}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
 
       <ConfirmDeleteModal
         open={modalOpen}

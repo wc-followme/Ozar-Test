@@ -8,6 +8,7 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import CategoryForm from '@/components/shared/forms/CategoryForm';
 import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { catIconOptions } from '@/constants/icon-options';
@@ -46,6 +47,7 @@ const CategoryManagement = () => {
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [selectedTab, setSelectedTab] = useState('category');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
 
@@ -410,89 +412,138 @@ const CategoryManagement = () => {
   }
 
   return (
-    <section className='w-full pb-4'>
-      <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+    <div className='w-full'>
+      {/* Header */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>
             {CATEGORY_MESSAGES.CATEGORY_MANAGEMENT_TITLE}
           </h2>
-          {canEdit && (
-            <div className='flex justify-end'>
-              <Button
-                onClick={handleOpenCreateForm}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
-                </span>
-              </Button>
-            </div>
-          )}
         </div>
-      </header>
+      </div>
 
-      {/* Categories Grid */}
-      {categories.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-          {[...Array(8)].map((_, i) => (
-            <CategoryCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {categories.length === 0 && !loading ? (
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='category'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Category
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <Button
+                  onClick={handleOpenCreateForm}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
+                  </span>
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Tab Content */}
+          <TabsContent value='category' className='mt-6'>
+            {/* Initial Loading State */}
+            {categories.length === 0 && loading ? (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
+                {[...Array(8)].map((_, i) => (
+                  <CategoryCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* Categories Grid */}
+                {categories.length === 0 && !loading ? (
+                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
+                    <NoDataFound
+                      description={
+                        CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION
+                      }
+                      buttonText={CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
+                      onButtonClick={handleOpenCreateForm}
+                      showButton={canEdit ?? false}
+                    />
+                  </div>
+                ) : (
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
+                    {categories.map((category, index) => {
+                      const iconOption = catIconOptions.find(
+                        opt => opt.value === category.icon
+                      ) || {
+                        icon: () => null,
+                        color: '#00a8bf',
+                      };
+                      return (
+                        <CategoryCard
+                          key={category.uuid || index}
+                          name={category.name}
+                          description={category.description}
+                          iconSrc={props => {
+                            const Icon = iconOption.icon;
+                            // Map size prop to Tailwind class, and color to a text color class
+                            const sizeClass = props.size
+                              ? `w-[${props.size}px] h-[${props.size}px]`
+                              : 'w-8 h-8';
+                            const colorClass = props.color
+                              ? `text-[${props.color}]`
+                              : '';
+                            return (
+                              <Icon className={`${sizeClass} ${colorClass}`} />
+                            );
+                          }}
+                          iconColor={iconOption.color}
+                          iconBgColor={iconOption.color + '26'}
+                          menuOptions={menuOptions}
+                          categoryUuid={category.uuid}
+                          onDelete={() => handleDeleteCategory(category.uuid)}
+                          onEdit={() => handleEditCategory(category.uuid)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+
+            {loading && categories.length > 0 && (
+              <div className='text-center py-4'>
+                <LoadingComponent variant='inline' size='md' text={''} />
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
             <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
               <NoDataFound
-                description={CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION}
-                buttonText={CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
-                onButtonClick={handleOpenCreateForm}
-                showButton={canEdit ?? false}
+                title='Archived Categories'
+                description='No archived categories found'
+                buttonText=''
+                showButton={false}
               />
             </div>
-          ) : (
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-              {categories.map((category, index) => {
-                const iconOption = catIconOptions.find(
-                  opt => opt.value === category.icon
-                ) || {
-                  icon: () => null,
-                  color: '#00a8bf',
-                };
-                return (
-                  <CategoryCard
-                    key={category.uuid || index}
-                    name={category.name}
-                    description={category.description}
-                    iconSrc={props => {
-                      const Icon = iconOption.icon;
-                      // Map size prop to Tailwind class, and color to a text color class
-                      const sizeClass = props.size
-                        ? `w-[${props.size}px] h-[${props.size}px]`
-                        : 'w-8 h-8';
-                      const colorClass = props.color
-                        ? `text-[${props.color}]`
-                        : '';
-                      return <Icon className={`${sizeClass} ${colorClass}`} />;
-                    }}
-                    iconColor={iconOption.color}
-                    iconBgColor={iconOption.color + '26'}
-                    menuOptions={menuOptions}
-                    categoryUuid={category.uuid}
-                    onDelete={() => handleDeleteCategory(category.uuid)}
-                    onEdit={() => handleEditCategory(category.uuid)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-      {loading && categories.length > 0 && (
-        <div className='text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Create/Edit Category Side Sheet */}
       <SideSheet
@@ -534,7 +585,7 @@ const CategoryManagement = () => {
           )}
         </div>
       </SideSheet>
-    </section>
+    </div>
   );
 };
 
