@@ -100,6 +100,8 @@ export default function EstimationServiceForm({
       setServiceOptions(options);
     } catch (error) {
       console.error('Error fetching services:', error);
+      console.error('Trade UUID:', tradeUuid);
+      console.error('Company UUID:', companyUuid);
       setServiceOptions([]);
     } finally {
       setLoading(false);
@@ -143,8 +145,25 @@ export default function EstimationServiceForm({
             <div className='flex-1 space-y-2'>
               <Label className='field-label'>Service</Label>
               <SelectField
-                value={service.name}
-                onValueChange={newName => {
+                value={(() => {
+                  // Find the option that matches the current service name
+                  const matchingOption = serviceOptions.find(
+                    option => option.label === service.name
+                  );
+                  return matchingOption ? matchingOption.value : service.name;
+                })()}
+                onValueChange={newValue => {
+                  // Find the selected option to get the display name and UUID
+                  const selectedOption = serviceOptions.find(
+                    option => option.value === newValue
+                  );
+                  const newName = selectedOption
+                    ? selectedOption.label
+                    : newValue;
+                  const serviceUuid = selectedOption
+                    ? selectedOption.value
+                    : undefined;
+
                   if (onServiceNameChange) {
                     onServiceNameChange(newName);
                   }
@@ -152,6 +171,7 @@ export default function EstimationServiceForm({
                     onServiceUpdate({
                       ...service,
                       name: newName,
+                      ...(serviceUuid && { uuid: serviceUuid }), // Only add uuid if it exists
                     });
                   }
                 }}
@@ -305,6 +325,7 @@ export default function EstimationServiceForm({
         onItemUpdate={onMaterialUpdate || (() => {})}
         onItemDelete={onMaterialDelete || (() => {})}
         defaultExpanded={true}
+        serviceId={service.uuid || service.id}
       />
 
       {/* Finishes Accordion */}

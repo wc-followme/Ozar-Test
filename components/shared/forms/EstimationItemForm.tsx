@@ -1,25 +1,107 @@
 'use client';
 
+import { MATERIAL_MESSAGES } from '@/app/(DashboardLayout)/material-management/material-messages';
 import SelectField from '@/components/shared/common/SelectField';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EstimationItem } from './estimation-types';
 
 interface EstimationItemFormProps {
   item: EstimationItem;
   onItemUpdate?: (updatedItem: EstimationItem) => void;
   onDelete?: () => void;
+  serviceId?: string | undefined; // Add service ID prop for fetching materials
 }
 
 export default function EstimationItemForm({
   item,
   onItemUpdate,
   onDelete,
+  serviceId, // Add service ID prop
 }: EstimationItemFormProps) {
   const [selectedCurrency, setSelectedCurrency] = useState('$');
+  const [materialOptions, setMaterialOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch materials from API based on service UUID and company UUID
+  const fetchMaterials = async (
+    serviceUuid: string | null,
+    companyUuid: string | null
+  ) => {
+    if (!serviceUuid || !companyUuid) {
+      setMaterialOptions([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiService.fetchMaterials({
+        page: 1,
+        limit: 50,
+        service_uuid: serviceUuid,
+        company_id: companyUuid,
+        status: 'ACTIVE',
+      });
+
+      type MaterialItem = {
+        id?: string | number;
+        uuid?: string;
+        name?: string;
+      };
+      const payload = response as unknown as {
+        data?: MaterialItem[] | { data?: MaterialItem[] };
+      };
+      const list: MaterialItem[] = Array.isArray(payload?.data)
+        ? (payload.data as MaterialItem[])
+        : Array.isArray((payload?.data as { data?: MaterialItem[] })?.data)
+          ? ((payload.data as { data?: MaterialItem[] }).data as MaterialItem[])
+          : [];
+
+      const options = list
+        .filter(m => !!m?.name)
+        .map(m => ({
+          value: String(m.uuid || m.id || m.name),
+          label: String(m.name),
+        }));
+
+      setMaterialOptions(options);
+    } catch (error) {
+      console.error('Error fetching materials:', error);
+      console.error('Service UUID:', serviceUuid);
+      console.error('Company UUID:', companyUuid);
+      setMaterialOptions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load materials when component mounts or when service/company changes
+  useEffect(() => {
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+
+    fetchMaterials(serviceId || null, companyUuid);
+  }, [serviceId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -52,11 +134,29 @@ export default function EstimationItemForm({
         <div className='space-y-2 flex-1'>
           <Label className='field-label text-sm'>Material Name</Label>
           <SelectField
-            value={item.name}
-            onValueChange={value => handleInputChange('name', value)}
-            options={[{ value: item.name, label: item.name }]}
-            placeholder='Select material'
+            value={(() => {
+              // Find the option that matches the current material name
+              const matchingOption = materialOptions.find(
+                option => option.label === item.name
+              );
+              return matchingOption ? matchingOption.value : item.name;
+            })()}
+            onValueChange={newValue => {
+              // Find the selected option to get the display name
+              const selectedOption = materialOptions.find(
+                option => option.value === newValue
+              );
+              const newName = selectedOption ? selectedOption.label : newValue;
+              handleInputChange('name', newName);
+            }}
+            options={materialOptions}
+            placeholder={
+              loading
+                ? MATERIAL_MESSAGES.LOADING_MATERIALS_DROPDOWN
+                : 'Select material'
+            }
             className='mb-0'
+            disabled={loading}
           />
         </div>
         <div className='space-y-2 flex-1'>

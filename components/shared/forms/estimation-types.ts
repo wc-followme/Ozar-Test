@@ -26,6 +26,7 @@ export interface Tool {
 
 export interface Service {
   id: string;
+  uuid?: string; // Add UUID field for database service UUID
   name: string;
   description: string;
   qty: number;

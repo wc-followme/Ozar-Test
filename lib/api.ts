@@ -1459,6 +1459,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     service_id = '',
+    service_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1468,6 +1469,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     service_id?: string | number;
+    service_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1478,6 +1480,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/materials?${params.toString()}`, {
       method: 'GET',

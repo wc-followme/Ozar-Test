@@ -20,6 +20,7 @@ interface EstimationItemsAccordionProps {
   onItemUpdate: (itemId: string, updatedItem: EstimationItem) => void;
   onItemDelete: (itemId: string) => void;
   defaultExpanded?: boolean;
+  serviceId?: string; // Add service ID prop for fetching materials
 }
 
 export default function EstimationItemsAccordion({
@@ -30,6 +31,7 @@ export default function EstimationItemsAccordion({
   onItemUpdate,
   onItemDelete,
   defaultExpanded = true,
+  serviceId, // Add service ID prop
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -86,6 +88,7 @@ export default function EstimationItemsAccordion({
                     handleItemUpdate(item.id, updatedItem)
                   }
                   onDelete={() => handleItemDelete(item.id)}
+                  serviceId={serviceId}
                 />
               ))}
             </div>

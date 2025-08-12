@@ -4,7 +4,10 @@ import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardC
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
 import EstimationHeader from '@/components/shared/common/EstimationHeader';
-import { Tool } from '@/components/shared/forms/estimation-types';
+import {
+  EstimationItem,
+  Tool,
+} from '@/components/shared/forms/estimation-types';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
 import { Sortable } from '@/components/ui/sortable';
@@ -151,12 +154,15 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
   const fetchTrades = async (companyUuid: string | null) => {
     try {
+      console.log('Fetching trades for company:', companyUuid);
       const response = await apiService.fetchTrades({
         page: 1,
         limit: 10,
         is_active: true,
         company_id: companyUuid || '',
       });
+      console.log('Trades API response:', response);
+
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
         data?: TradeItem[] | { data?: TradeItem[] };
@@ -166,14 +172,34 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
           ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
           : [];
+      console.log('Parsed trades list:', list);
+
       const options = list
         .filter(t => !!t?.name)
         .map(t => ({
           value: String(t.uuid || t.id || t.name),
           label: String(t.name),
         }));
+      console.log('Trade options:', options);
       setTradeOptions(options);
-    } catch {
+    } catch (error) {
+      console.error('Error fetching trades:', error);
+      console.error('Error type:', typeof error);
+      console.error(
+        'Error message:',
+        error instanceof Error ? error.message : 'No message'
+      );
+      console.error(
+        'Error stack:',
+        error instanceof Error ? error.stack : 'No stack'
+      );
+      console.error('Company UUID:', companyUuid);
+      console.error('API URL being called: /trades with params:', {
+        page: 1,
+        limit: 10,
+        is_active: true,
+        company_id: companyUuid || '',
+      });
       setTradeOptions([]);
     }
   };
@@ -288,6 +314,41 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
       console.error('No trade options available');
+      // Create a default trade if no options are available
+      const defaultTrade: Trade = {
+        id: 'default-trade',
+        uniqueKey: generateUniqueKey(
+          'trade',
+          'default-trade',
+          selectedRoomId,
+          0
+        ),
+        name: 'Default Trade',
+        services: 0,
+        dateRange: '',
+        type: '2D',
+        laborCost: 0.0,
+        materialCost: 0.0,
+        tradeTotal: 0.0,
+        serviceList: [],
+        isExpanded: true,
+      };
+
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: [...room.trades, defaultTrade],
+                total: room.total + defaultTrade.tradeTotal,
+              }
+            : room
+        )
+      );
+
+      setExpandedTrades(prev => [...prev, defaultTrade.uniqueKey]);
+      setSelectedTrade(defaultTrade.id);
+      setShowAddService(true);
       return;
     }
 
@@ -663,7 +724,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     }
   };
 
-  const handleMaterialAdd = (newMaterial: Material) => {
+  const handleMaterialAdd = (newMaterial: EstimationItem) => {
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
@@ -694,7 +755,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
   const handleMaterialUpdate = (
     materialId: string,
-    updatedMaterial: Material
+    updatedMaterial: EstimationItem
   ) => {
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
