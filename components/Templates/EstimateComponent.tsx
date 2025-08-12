@@ -108,7 +108,6 @@ export const updateLocalStorageFromState = (
     }));
 
     localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
-    console.log('Updated localStorage from state:', jobRooms);
     return true;
   } catch (error) {
     console.error('Error updating localStorage from state:', error);
@@ -156,7 +155,6 @@ export const replaceTradeInRoom = (
     });
 
     localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
-    console.log('Replaced trade in localStorage:', jobRooms);
     return true;
   } catch (error) {
     console.error('Error replacing trade in room:', error);
@@ -168,7 +166,6 @@ export const replaceTradeInRoom = (
 export const resetRoomTradeData = () => {
   try {
     localStorage.removeItem('job_rooms');
-    console.log('Reset room trade data in localStorage');
     return true;
   } catch (error) {
     console.error('Error resetting room trade data:', error);
@@ -191,7 +188,6 @@ export const getRoomTradeData = () => {
 export const clearRoomTradeData = () => {
   try {
     localStorage.removeItem('job_rooms');
-    console.log('Cleared room trade data from localStorage');
     return true;
   } catch (error) {
     console.error('Error clearing room trade data:', error);
@@ -211,7 +207,6 @@ export default function EstimateComponent({
   };
 
   const handleTemplateSave = (selectedTemplates: string[]) => {
-    console.log('Selected templates:', selectedTemplates);
     setIsTemplateSheetOpen(false);
   };
 

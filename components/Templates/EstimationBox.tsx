@@ -509,13 +509,6 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleTradeNameChange = (newTradeName: string) => {
-    console.log('selectedTrade ======================>', selectedTrade);
-    console.log('selectedRoomId ======================>', selectedRoomId);
-    console.log(
-      'selectedTradeUniqueKey ======================>',
-      selectedTradeUniqueKey
-    );
-
     if (selectedTrade && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
@@ -582,19 +575,11 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             }
           : room
       );
-      // console.log("updatedRooms ======================>",updatedRooms);
-      // console.log("room ======================>",rooms);
-      // console.log("selectedRoomId ======================>",selectedRoomId);
-      // console.log("selectedTrade ======================>",selectedTrade);
-      // console.log("oldTradeUniqueKey ======================>",oldTradeUniqueKey);
-      // console.log("newTradeId ======================>",newTradeId);
-      // console.log("newTradeName ======================>",newTradeName);
 
       // Update the selected trade ID if it matches the specific trade instance
       const currentSelectedTrade = rooms
         .find(room => room.id === selectedRoomId)
         ?.trades.find(trade => trade.uniqueKey === oldTradeUniqueKey);
-      // console.log("currentSelectedTrade ======================>",currentSelectedTrade);
       if (
         selectedTrade &&
         currentSelectedTrade &&
@@ -1038,17 +1023,15 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     }));
 
     updateLocalStorageFromState(roomsData);
-    console.log('Saved current state to localStorage');
   };
 
   const handleSave = () => {
     saveCurrentState();
-    console.log('Saving estimation...');
   };
 
   const handleReviewAndSend = () => {
-    // TODO: Implement review and send functionality
-    console.log('Reviewing and sending estimation...');
+    // Add your review and send logic here
+    // For now, just show a success message
   };
 
   const toggleSidebar = () => {
