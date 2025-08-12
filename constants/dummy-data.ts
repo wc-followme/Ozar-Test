@@ -114,3 +114,212 @@ export const fiveBoxSystemData = [
     slug: 'estimation',
   },
 ];
+
+export const customerReviews = [
+  {
+    id: '1',
+    reviewTitle: 'Transformed Our Home!',
+    rating: 5,
+    reviewText:
+      'We hired [Contractor Name] for a complete home renovation, and they exceeded our expectations! From design to execution, everything was flawless. The team was professional, on time, and ensured quality craftsmanship. Highly recommended!',
+    reviewerName: 'Emma & Michael R.',
+  },
+  {
+    id: '2',
+    reviewTitle: 'Outstanding Kitchen Remodel',
+    rating: 5,
+    reviewText:
+      'The kitchen renovation project was completed perfectly. The attention to detail was incredible, and the quality of work exceeded our expectations. The team was punctual and professional throughout.',
+    reviewerName: 'Sarah Johnson',
+  },
+  {
+    id: '3',
+    reviewTitle: 'Professional Bathroom Upgrade',
+    rating: 4,
+    reviewText:
+      'Great work on our bathroom renovation. The team was skilled and efficient. The only minor issue was a slight delay in material delivery, but overall very satisfied with the results.',
+    reviewerName: 'David Chen',
+  },
+  {
+    id: '4',
+    reviewTitle: 'Excellent Exterior Painting',
+    rating: 5,
+    reviewText:
+      'The exterior painting job was done beautifully. The color selection was perfect and the finish is outstanding. The crew was careful and cleaned up thoroughly after completion.',
+    reviewerName: 'Lisa Thompson',
+  },
+  {
+    id: '5',
+    reviewTitle: 'Quality Roofing Work',
+    rating: 4,
+    reviewText:
+      'The roofing project was completed efficiently and with high quality materials. The team was knowledgeable and addressed all our concerns. Very reliable service.',
+    reviewerName: 'Robert Williams',
+  },
+];
+
+export const portfolioProjects = [
+  {
+    id: '1',
+    title: 'Modern Kitchen Renovation',
+    type: 'Interior',
+    year: '2024',
+    image: '/images/company-management/company-img-1.png',
+    imageCount: 20,
+    videoCount: 2,
+  },
+  {
+    id: '2',
+    title: 'Luxury Bathroom Design',
+    type: 'Interior',
+    year: '2023',
+    image: '/images/company-management/company-img-2.png',
+    imageCount: 15,
+    videoCount: 1,
+  },
+  {
+    id: '3',
+    title: 'Custom Home Build',
+    type: 'Full Home',
+    year: '2023',
+    image: '/images/company-management/company-img-3.png',
+    imageCount: 35,
+    videoCount: 3,
+  },
+  {
+    id: '4',
+    title: 'Outdoor Kitchen Project',
+    type: 'Exterior',
+    year: '2023',
+    image: '/images/company-management/company-img-4.png',
+    imageCount: 12,
+    videoCount: 0,
+  },
+  {
+    id: '5',
+    title: 'Office Renovation',
+    type: 'Commercial',
+    year: '2022',
+    imageCount: 8,
+    videoCount: 1,
+  },
+  {
+    id: '6',
+    title: 'Basement Finishing',
+    type: 'Interior',
+    year: '2022',
+    imageCount: 18,
+    videoCount: 2,
+  },
+  {
+    id: '7',
+    title: 'Deck Construction',
+    type: 'Exterior',
+    year: '2022',
+    imageCount: 10,
+    videoCount: 0,
+  },
+  {
+    id: '8',
+    title: 'Garage Addition',
+    type: 'Addition',
+    year: '2021',
+    imageCount: 6,
+    videoCount: 1,
+  },
+];
+
+export const warranties = [
+  {
+    id: '1',
+    title: 'Workmanship Warranty',
+    duration: '2 Years',
+    description:
+      'Covers all workmanship and installation quality. Ensures that all work performed meets industry standards and specifications.',
+    type: 'Workmanship',
+  },
+  {
+    id: '2',
+    title: 'Timeframe Warranty',
+    duration: '5 Years',
+    description:
+      'Covers warranty periods and time-based guarantees. Ensures coverage for specified time periods.',
+    type: 'Timeframe',
+  },
+  {
+    id: '3',
+    title: 'Product Warranty',
+    duration: '3 Years',
+    description:
+      'Covers product quality and manufacturing defects. Ensures products meet quality standards.',
+    type: 'Product',
+  },
+  {
+    id: '4',
+    title: 'Brand Warranty',
+    duration: '1 Year',
+    description:
+      'Covers brand-specific guarantees and manufacturer warranties. Ensures brand quality assurance.',
+    type: 'Brand',
+  },
+  {
+    id: '5',
+    title: 'Extended Workmanship Warranty',
+    duration: '10 Years',
+    description:
+      'Extended coverage for workmanship quality. Provides long-term protection for installation work.',
+    type: 'Workmanship',
+  },
+  {
+    id: '6',
+    title: 'Premium Timeframe Warranty',
+    duration: '15 Years',
+    description:
+      'Premium time-based warranty coverage. Offers extended protection periods.',
+    type: 'Timeframe',
+  },
+  {
+    id: '7',
+    title: 'Standard Product Warranty',
+    duration: '2 Years',
+    description:
+      'Standard product warranty coverage. Ensures basic product quality protection.',
+    type: 'Product',
+  },
+  {
+    id: '8',
+    title: 'Premium Brand Warranty',
+    duration: '5 Years',
+    description:
+      'Premium brand warranty with extended coverage. Ensures comprehensive brand protection.',
+    type: 'Brand',
+  },
+];
+
+export const warrantyTabs = [
+  {
+    id: 'all',
+    label: 'All Warranties',
+    value: 'all',
+  },
+  {
+    id: 'workmanship',
+    label: 'Workmanship',
+    value: 'workmanship',
+  },
+  {
+    id: 'timeframe',
+    label: 'Timeframe',
+    value: 'timeframe',
+  },
+  {
+    id: 'product',
+    label: 'Product',
+    value: 'product',
+  },
+  {
+    id: 'brand',
+    label: 'Brand',
+    value: 'brand',
+  },
+];

@@ -1,47 +1,67 @@
 'use client';
 
+import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
+import { PortfolioBox } from '@/components/shared/common/PortfolioBox';
+import { portfolioProjects } from '@/constants/dummy-data';
+import { useState } from 'react';
+
 export const PortfolioTab = () => {
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
+
+  const handleEdit = (id: string) => {
+    console.log('Edit portfolio project:', id);
+    // Add your edit logic here
+  };
+
+  const handleDelete = (id: string) => {
+    setProjectToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (projectToDelete) {
+      console.log('Deleting portfolio project:', projectToDelete);
+      // Add your delete logic here
+      // You can filter out the project from the list or make an API call
+    }
+    setIsDeleteModalOpen(false);
+    setProjectToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setProjectToDelete(null);
+  };
+
   return (
     <div className='space-y-6'>
-      <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-        Our Portfolio
-      </h3>
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-        {[
-          {
-            title: 'Modern Kitchen Renovation',
-            type: 'Interior',
-            year: '2024',
-          },
-          { title: 'Luxury Bathroom Design', type: 'Interior', year: '2023' },
-          { title: 'Custom Home Build', type: 'Full Home', year: '2023' },
-          { title: 'Outdoor Kitchen Project', type: 'Exterior', year: '2023' },
-          { title: 'Office Renovation', type: 'Commercial', year: '2022' },
-          { title: 'Basement Finishing', type: 'Interior', year: '2022' },
-          { title: 'Deck Construction', type: 'Exterior', year: '2022' },
-          { title: 'Garage Addition', type: 'Addition', year: '2021' },
-        ].map((project, index) => (
-          <div
-            key={index}
-            className='bg-white rounded-lg border border-[var(--border-dark)] overflow-hidden'
-          >
-            <div className='h-48 bg-gray-200 flex items-center justify-center'>
-              <span className='text-[var(--text-secondary)]'>
-                Project Image
-              </span>
-            </div>
-            <div className='p-4'>
-              <h4 className='font-semibold text-[var(--text-dark)] mb-2'>
-                {project.title}
-              </h4>
-              <div className='flex justify-between text-sm text-[var(--text-secondary)]'>
-                <span>{project.type}</span>
-                <span>{project.year}</span>
-              </div>
-            </div>
-          </div>
+      <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+        {portfolioProjects.map(project => (
+          <PortfolioBox
+            key={project.id}
+            id={project.id}
+            title={project.title}
+            type={project.type}
+            year={project.year}
+            {...(project.image && { image: project.image })}
+            imageCount={project.imageCount}
+            videoCount={project.videoCount}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmDeleteModal
+        open={isDeleteModalOpen}
+        onCancel={cancelDelete}
+        onDelete={confirmDelete}
+        title='Delete Portfolio Project'
+        subtitle='Are you sure you want to delete this portfolio project? This action cannot be undone.'
+        archiveButtonText='Delete'
+      />
     </div>
   );
 };
