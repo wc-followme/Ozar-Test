@@ -1197,6 +1197,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
                 onRemoveTool={handleToolRemove}
                 roomName={selectedRoom?.name || 'Room'}
                 tradeName={selectedTradeData?.name || 'Trade'}
+                tradeId={selectedTrade || undefined}
               />
             ) : (
               // Service selected but data not found

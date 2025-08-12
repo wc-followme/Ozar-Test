@@ -1,5 +1,6 @@
 'use client';
 
+import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
 import EstimationItemsAccordion from '@/components/shared/common/EstimationItemsAccordion';
 import SelectField from '@/components/shared/common/SelectField';
 import ToolsAccordion from '@/components/shared/common/ToolsAccordion';
@@ -7,26 +8,10 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { useEffect, useState } from 'react';
 import { EstimationItem, Service, Tool } from './estimation-types';
-
-// Service options for the dropdown
-const SERVICE_OPTIONS = [
-  { value: 'Install Shower', label: 'Install Shower' },
-  { value: 'Install Bathtub', label: 'Install Bathtub' },
-  { value: 'Install Toilet', label: 'Install Toilet' },
-  { value: 'Install Sink', label: 'Install Sink' },
-  { value: 'Install Faucet', label: 'Install Faucet' },
-  { value: 'Install Vanity', label: 'Install Vanity' },
-  { value: 'Install Mirror', label: 'Install Mirror' },
-  { value: 'Install Lighting', label: 'Install Lighting' },
-  { value: 'Install Tile', label: 'Install Tile' },
-  { value: 'Install Flooring', label: 'Install Flooring' },
-  { value: 'Install Paint', label: 'Install Paint' },
-  { value: 'Install Drywall', label: 'Install Drywall' },
-  { value: 'Install Electrical', label: 'Install Electrical' },
-  { value: 'Install Plumbing', label: 'Install Plumbing' },
-  { value: 'Install HVAC', label: 'Install HVAC' },
-];
 
 interface EstimationServiceFormProps {
   service: Service;
@@ -48,6 +33,7 @@ interface EstimationServiceFormProps {
   onRemoveTool?: (toolId: string) => void;
   roomName?: string;
   tradeName?: string;
+  tradeId?: string | undefined; // Add trade ID prop
 }
 
 export default function EstimationServiceForm({
@@ -67,7 +53,80 @@ export default function EstimationServiceForm({
   onRemoveTool,
   roomName = 'Room',
   tradeName = 'Trade',
+  tradeId, // Add trade ID prop
 }: EstimationServiceFormProps) {
+  const [serviceOptions, setServiceOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch services from API based on trade UUID and company UUID
+  const fetchServices = async (
+    tradeUuid: string | null,
+    companyUuid: string | null
+  ) => {
+    if (!tradeUuid || !companyUuid) {
+      setServiceOptions([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await apiService.fetchServices({
+        page: 1,
+        limit: 50,
+        trade_uuid: tradeUuid,
+        company_id: companyUuid,
+        status: 'ACTIVE',
+      });
+
+      type ServiceItem = { id?: string | number; uuid?: string; name?: string };
+      const payload = response as unknown as {
+        data?: ServiceItem[] | { data?: ServiceItem[] };
+      };
+      const list: ServiceItem[] = Array.isArray(payload?.data)
+        ? (payload.data as ServiceItem[])
+        : Array.isArray((payload?.data as { data?: ServiceItem[] })?.data)
+          ? ((payload.data as { data?: ServiceItem[] }).data as ServiceItem[])
+          : [];
+
+      const options = list
+        .filter(s => !!s?.name)
+        .map(s => ({
+          value: String(s.uuid || s.id || s.name),
+          label: String(s.name),
+        }));
+
+      setServiceOptions(options);
+    } catch (error) {
+      console.error('Error fetching services:', error);
+      setServiceOptions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load services when component mounts or when trade/company changes
+  useEffect(() => {
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+
+    fetchServices(tradeId || null, companyUuid);
+  }, [tradeId]);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -96,9 +155,14 @@ export default function EstimationServiceForm({
                     });
                   }
                 }}
-                options={SERVICE_OPTIONS}
-                placeholder='Select a service'
+                options={serviceOptions}
+                placeholder={
+                  loading
+                    ? SERVICE_MESSAGES.LOADING_SERVICES_DROPDOWN
+                    : 'Select a service'
+                }
                 className='mb-0'
+                disabled={loading}
               />
             </div>
             <div className='space-y-2 w-[100px]'>

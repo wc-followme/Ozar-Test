@@ -1329,6 +1329,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     trade_id = '',
+    trade_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1338,6 +1339,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     trade_id?: string | number;
+    trade_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1348,6 +1350,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (trade_id) params.append('trade_id', String(trade_id));
+    if (trade_uuid) params.append('trade_uuid', trade_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/services?${params.toString()}`, {
       method: 'GET',
