@@ -13,7 +13,7 @@ import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
-import { saveCompleteRoomTradeData } from './EstimateComponent';
+import { updateLocalStorageFromState } from './EstimateComponent';
 
 interface Material {
   id: string;
@@ -199,7 +199,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-      saveCurrentState();
+      updateLocalStorageFromState(rooms);
     }
   }, [rooms]);
 
@@ -254,12 +254,19 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleAddTrade = () => {
-    // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `trade-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-    const defaultTradeName = tradeOptions[0]?.label || 'New Trade';
+    // Use the UUID from the first trade option in the dropdown
+    const defaultTradeOption = tradeOptions[0];
+    if (!defaultTradeOption) {
+      console.error('No trade options available');
+      return;
+    }
+
+    const tradeUuid = defaultTradeOption.value; // This is the UUID from database
+    const tradeName = defaultTradeOption.label; // This is the trade name
+
     const newTrade: Trade = {
-      id: uniqueId,
-      name: defaultTradeName,
+      id: tradeUuid, // Use the UUID from database instead of generated ID
+      name: tradeName,
       services: 0,
       dateRange: '',
       type: '2D',
@@ -456,15 +463,17 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       // Save complete state after trade name change
       setTimeout(() => {
         const roomsData = rooms.map(room => ({
+          id: room.id,
           name: room.name,
           trades: room.trades.map(trade => ({
             id: trade.id,
+            name: trade.name,
             startDate: new Date(),
             endDate: new Date(Date.now() + 86400000),
             markup: 0,
           })),
         }));
-        saveCompleteRoomTradeData(roomsData);
+        updateLocalStorageFromState(roomsData);
       }, 0);
     }
   };
@@ -500,15 +509,17 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         // Save complete state after trade replacement
         setTimeout(() => {
           const roomsData = updatedRooms.map(room => ({
+            id: room.id,
             name: room.name,
             trades: room.trades.map(trade => ({
               id: trade.id,
+              name: trade.name,
               startDate: new Date(),
               endDate: new Date(Date.now() + 86400000),
               markup: 0,
             })),
           }));
-          saveCompleteRoomTradeData(roomsData);
+          updateLocalStorageFromState(roomsData);
         }, 0);
 
         return updatedRooms;
@@ -931,16 +942,18 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const saveCurrentState = () => {
     // Save all rooms and trades to localStorage
     const roomsData = rooms.map(room => ({
+      id: room.id,
       name: room.name,
       trades: room.trades.map(trade => ({
         id: trade.id,
+        name: trade.name,
         startDate: new Date(), // You can get actual dates from trade state
         endDate: new Date(Date.now() + 86400000), // You can get actual dates from trade state
         markup: 0, // You can get actual markup from trade state
       })),
     }));
 
-    saveCompleteRoomTradeData(roomsData);
+    updateLocalStorageFromState(roomsData);
     console.log('Saved current state to localStorage');
   };
 
@@ -1107,6 +1120,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
                   handleServiceSelect(serviceId);
                 }}
                 onServiceReorder={handleServiceReorder}
+                onLocalStorageUpdate={saveCurrentState}
                 tradeOptions={tradeOptions}
               />
             ) : (

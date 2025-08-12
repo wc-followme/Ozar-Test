@@ -3,10 +3,6 @@
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Service } from '@/components/shared/forms/estimation-types';
-import {
-  replaceTradeInRoom,
-  saveRoomTradeData,
-} from '@/components/Templates/EstimateComponent';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card } from '@/components/ui/card';
@@ -51,6 +47,7 @@ interface EstimationTradeFormProps {
   ) => void;
   onServiceReorder?: (reorderedServices: Service[]) => void;
   tradeOptions?: Array<{ value: string; label: string }>;
+  onLocalStorageUpdate?: () => void; // New prop to trigger localStorage update
 }
 
 export default function EstimationTradeForm({
@@ -60,6 +57,7 @@ export default function EstimationTradeForm({
   onTradeNameChange,
   onTradeReplacement,
   onServiceReorder,
+  onLocalStorageUpdate,
   tradeOptions = [],
 }: EstimationTradeFormProps) {
   const [selectedTrade, setSelectedTrade] = useState('');
@@ -100,9 +98,9 @@ export default function EstimationTradeForm({
       const updates: any = { markup: parseFloat(markupAmount) || 0 };
       if (startDate) updates.start_date = startDate.toISOString();
       if (endDate) updates.end_date = endDate.toISOString();
-      saveRoomTradeData(roomName, selectedTrade, updates);
+      onLocalStorageUpdate?.();
     }
-  }, [selectedTrade, startDate, endDate, markupAmount]);
+  }, [selectedTrade, startDate, endDate, markupAmount, onLocalStorageUpdate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -123,7 +121,7 @@ export default function EstimationTradeForm({
       const updates: any = { markup: value };
       if (startDate) updates.start_date = startDate.toISOString();
       if (endDate) updates.end_date = endDate.toISOString();
-      saveRoomTradeData(roomName, selectedTrade, updates);
+      onLocalStorageUpdate?.();
     }
   };
 
@@ -168,14 +166,7 @@ export default function EstimationTradeForm({
                     };
                     if (startDate) updates.start_date = startDate.toISOString();
                     if (endDate) updates.end_date = endDate.toISOString();
-
-                    // Replace the trade in localStorage
-                    replaceTradeInRoom(
-                      roomName,
-                      currentTradeId,
-                      newValue,
-                      updates
-                    );
+                    onLocalStorageUpdate?.();
                   }}
                   options={finalTradeOptions}
                   placeholder='Select a trade'
@@ -246,9 +237,7 @@ export default function EstimationTradeForm({
                       setStartDatePickerOpen(false);
                       // Save data immediately with the new date
                       if (date) {
-                        saveRoomTradeData(roomName, selectedTrade, {
-                          start_date: date.toISOString(),
-                        });
+                        onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => date < new Date()}
@@ -295,30 +284,7 @@ export default function EstimationTradeForm({
                       setEndDatePickerOpen(false);
                       // Save data immediately with the new date
                       if (date) {
-                        const existingData = localStorage.getItem('job_rooms');
-                        const jobRooms = existingData
-                          ? JSON.parse(existingData)
-                          : [];
-
-                        let roomIndex = jobRooms.findIndex(
-                          (room: any) => room.room_name === 'Living Room'
-                        );
-                        if (roomIndex === -1) {
-                          jobRooms.push({
-                            room_name: 'Living Room',
-                            trades: [],
-                          });
-                          roomIndex = jobRooms.length - 1;
-                        }
-
-                        const tradeIndex = jobRooms[roomIndex].trades.findIndex(
-                          (trade: any) => trade.trade_id === selectedTrade
-                        );
-                        if (tradeIndex !== -1) {
-                          saveRoomTradeData(roomName, selectedTrade, {
-                            end_date: date.toISOString(),
-                          });
-                        }
+                        onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => {
