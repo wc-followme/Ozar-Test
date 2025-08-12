@@ -1,7 +1,10 @@
 'use client';
 
 import { Avatar } from '@/components/shared/common/Avatar';
-import { Star1 } from 'iconsax-react';
+import Dropdown from '@/components/shared/common/Dropdown';
+import { Button } from '@/components/ui/button';
+import { Edit2, Star1, Trash } from 'iconsax-react';
+import { MoreVertical } from 'lucide-react';
 
 interface CustomerReviewBoxProps {
   profileImage?: string;
@@ -10,6 +13,9 @@ interface CustomerReviewBoxProps {
   reviewText: string;
   reviewerName: string;
   isLast?: boolean;
+  isCurrentUser?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export const CustomerReviewBox = ({
@@ -19,7 +25,23 @@ export const CustomerReviewBox = ({
   reviewText,
   reviewerName,
   isLast = false,
+  isCurrentUser = false,
+  onEdit,
+  onDelete,
 }: CustomerReviewBoxProps) => {
+  const menuOptions = [
+    { label: 'Edit', action: 'edit', icon: Edit2 },
+    { label: 'Delete', action: 'delete', icon: Trash },
+  ];
+
+  const handleAction = (action: string) => {
+    if (action === 'edit' && onEdit) {
+      onEdit();
+    } else if (action === 'delete' && onDelete) {
+      onDelete();
+    }
+  };
+
   return (
     <div
       className={`flex items-start gap-4 py-4  ${!isLast ? 'border-b border-[var(--border-dark)]' : ''}`}
@@ -38,7 +60,7 @@ export const CustomerReviewBox = ({
       {/* Review Content */}
       <div className='flex-1 min-w-0'>
         {/* Review Title and Stars */}
-        <div className='flex items-center gap-4 mb-2'>
+        <div className='flex md:items-center md:flex-row flex-col md:gap-4 gap-2 mb-2'>
           <h4 className='font-bold text-[var(--text-dark)] text-lg'>
             "{reviewTitle}"
           </h4>
@@ -55,6 +77,27 @@ export const CustomerReviewBox = ({
               />
             ))}
           </div>
+          {/* Three Dots Menu - Only show for current user */}
+          {isCurrentUser && (
+            <Dropdown
+              menuOptions={menuOptions}
+              onAction={handleAction}
+              trigger={
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='!p-1 !h-8 !w-8 hover:!bg-gray-100 ml-auto'
+                >
+                  <MoreVertical
+                    size={16}
+                    className='text-gray-500 !h-6 !w-6'
+                    color='var(--text-dark)'
+                  />
+                </Button>
+              }
+              align='end'
+            />
+          )}
         </div>
 
         {/* Review Text */}

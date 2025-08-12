@@ -123,6 +123,7 @@ export const customerReviews = [
     reviewText:
       'We hired [Contractor Name] for a complete home renovation, and they exceeded our expectations! From design to execution, everything was flawless. The team was professional, on time, and ensured quality craftsmanship. Highly recommended!',
     reviewerName: 'Emma & Michael R.',
+    reviewDate: '2024-01-15T10:30:00Z',
   },
   {
     id: '2',
@@ -131,6 +132,7 @@ export const customerReviews = [
     reviewText:
       'The kitchen renovation project was completed perfectly. The attention to detail was incredible, and the quality of work exceeded our expectations. The team was punctual and professional throughout.',
     reviewerName: 'Sarah Johnson',
+    reviewDate: '2024-01-10T14:20:00Z',
   },
   {
     id: '3',
@@ -139,6 +141,7 @@ export const customerReviews = [
     reviewText:
       'Great work on our bathroom renovation. The team was skilled and efficient. The only minor issue was a slight delay in material delivery, but overall very satisfied with the results.',
     reviewerName: 'David Chen',
+    reviewDate: '2024-01-05T09:15:00Z',
   },
   {
     id: '4',
@@ -147,6 +150,7 @@ export const customerReviews = [
     reviewText:
       'The exterior painting job was done beautifully. The color selection was perfect and the finish is outstanding. The crew was careful and cleaned up thoroughly after completion.',
     reviewerName: 'Lisa Thompson',
+    reviewDate: '2023-12-28T16:45:00Z',
   },
   {
     id: '5',
@@ -155,6 +159,7 @@ export const customerReviews = [
     reviewText:
       'The roofing project was completed efficiently and with high quality materials. The team was knowledgeable and addressed all our concerns. Very reliable service.',
     reviewerName: 'Robert Williams',
+    reviewDate: '2023-12-20T11:30:00Z',
   },
 ];
 

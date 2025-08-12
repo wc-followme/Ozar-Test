@@ -6,10 +6,10 @@ import { Button } from '../../ui/button';
 
 export const ProfileDetailsComponent = () => {
   return (
-    <div className='bg-[var(--card-background)] rounded-lg p-5 border border-[var(--border-dark)]'>
-      <div className='flex gap-6'>
+    <div className='bg-[var(--card-background)] rounded-lg p-5 border border-[var(--border-dark)] w-full'>
+      <div className='flex gap-6 lg:flex-row flex-col'>
         {/* Left Section - Text Content */}
-        <div className='flex-1'>
+        <div className='flex-1 max-w-full'>
           <h3 className='text-sm text-[var(--text-secondary)] mb-2'>About</h3>
           <div className='text-[var(--text-dark)] leading-snug font-medium space-y-3'>
             <p>

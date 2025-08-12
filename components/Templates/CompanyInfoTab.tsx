@@ -6,7 +6,7 @@ import { ProfileOtherDetailsComponent } from '../shared/common/ProfileOtherDetai
 
 export const CompanyInfoTab = () => {
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 w-full'>
       {/* About Section */}
       <div className='space-y-4'>
         <ProfileDetailsComponent />

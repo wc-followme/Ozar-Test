@@ -119,7 +119,7 @@ export const WarrantiesTab = () => {
     <div className='space-y-6'>
       {/* Header with Search, Filter, and Add Button */}
       <div className='flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between'>
-        <div className='relative flex-1 sm:flex-initial'>
+        <div className='relative flex-1 sm:flex-initial w-full'>
           <SearchNormal1
             className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]'
             color='var(--primary)'
@@ -129,10 +129,10 @@ export const WarrantiesTab = () => {
             placeholder='Search here...'
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className='pl-10 pr-4 w-[360px] h-[42px] border-2 border-[var(--border-dark)] rounded-[30px]'
+            className='pl-10 pr-4 lg:w-[360px] w-full h-[42px] border-2 border-[var(--border-dark)] rounded-[30px]'
           />
         </div>
-        <div className='flex flex-col sm:flex-row gap-3 w-full lg:w-auto'>
+        <div className='flex flex-col items-start lg:items-center sm:flex-row gap-3 w-full lg:w-auto'>
           {/* Search Input */}
 
           {/* Filter Dropdown */}
@@ -141,12 +141,15 @@ export const WarrantiesTab = () => {
             value={filterType}
             onValueChange={value => setFilterType(value)}
             placeholder='Filter by type'
-            className='w-full sm:w-48'
+            className='w-full lg:w-48'
             triggerClassName='rounded-[30px] h-[42px]'
           />
 
           {/* Add Button */}
-          <Button onClick={handleAddWarranty} className='btn-primary h-10 px-4'>
+          <Button
+            onClick={handleAddWarranty}
+            className='btn-primary h-10 px-4 ml-auto'
+          >
             Add Warranty
           </Button>
         </div>
@@ -159,23 +162,41 @@ export const WarrantiesTab = () => {
           onValueChange={setSelectedTab}
           className='w-full'
         >
-          <div className='flex gap-6'>
-            <div className='w-[280px] shrink-0 p-4'>
-              <TabsList className='flex flex-col w-full rounded-lg h-auto'>
-                {warrantyTabs.map((tab, index) => (
-                  <TabsTrigger
-                    key={tab.id}
-                    value={tab.value}
-                    className={`w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[#F5F7FA] data-[state=active]:text-[#24338C] rounded-lg font-medium ${
-                      index !== warrantyTabs.length - 1
-                        ? 'border-b border-[var(--border-dark)]'
-                        : ''
-                    }`}
-                  >
-                    {tab.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+          <div className='flex gap-6 lg:flex-row flex-col'>
+            <div className='lg:w-[280px] w-full shrink-0 p-4'>
+              {/* Mobile Select Dropdown */}
+              <div className='lg:hidden'>
+                <SelectField
+                  options={warrantyTabs.map(tab => ({
+                    value: tab.value,
+                    label: tab.label,
+                  }))}
+                  value={selectedTab}
+                  onValueChange={setSelectedTab}
+                  placeholder='Select warranty type'
+                  className='w-full'
+                  triggerClassName='rounded-lg h-[42px]'
+                />
+              </div>
+
+              {/* Desktop Tabs */}
+              <div className='hidden lg:block'>
+                <TabsList className='flex flex-col w-full rounded-lg h-auto'>
+                  {warrantyTabs.map((tab, index) => (
+                    <TabsTrigger
+                      key={tab.id}
+                      value={tab.value}
+                      className={`w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[#F5F7FA] data-[state=active]:text-[#24338C] rounded-lg font-medium ${
+                        index !== warrantyTabs.length - 1
+                          ? 'border-b border-[var(--border-dark)]'
+                          : ''
+                      }`}
+                    >
+                      {tab.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </div>
             </div>
 
             <div className='flex-1 p-4 bg-[var(--background)] rounded-r-[20px]'>

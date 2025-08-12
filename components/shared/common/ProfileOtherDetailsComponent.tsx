@@ -4,9 +4,9 @@ import { RedirectionIcon } from '../../icons/RedirectionIcon';
 
 export const ProfileOtherDetailsComponent = () => {
   return (
-    <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-5'>
-      <div className='flex flex-wrap gap-6'>
-        <div className='min-w-[280px]'>
+    <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-5 w-full'>
+      <div className='flex lg:flex-row flex-col flex-wrap gap-6'>
+        <div className='lg:min-w-[280px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Business Name
           </label>
@@ -14,7 +14,7 @@ export const ProfileOtherDetailsComponent = () => {
             Envision Construction
           </p>
         </div>
-        <div className='min-w-[320px]'>
+        <div className='lg:min-w-[320px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Email
           </label>
@@ -22,7 +22,7 @@ export const ProfileOtherDetailsComponent = () => {
             envison.construction@example.com
           </p>
         </div>
-        <div className='min-w-[200px]'>
+        <div className='lg:min-w-[200px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Phone Number
           </label>
@@ -30,7 +30,7 @@ export const ProfileOtherDetailsComponent = () => {
             +1(239) 555-0108
           </p>
         </div>
-        <div className='min-w-[260px]'>
+        <div className='lg:min-w-[260px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Communication
           </label>
@@ -38,13 +38,13 @@ export const ProfileOtherDetailsComponent = () => {
             Email, Text, In App Messages
           </p>
         </div>
-        <div className='min-w-[160px]'>
+        <div className='lg:min-w-[160px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Projects
           </label>
           <p className='text-[var(--text-dark)] font-medium text-sm'>100+</p>
         </div>
-        <div className='min-w-[240px]'>
+        <div className='lg:min-w-[240px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Website
           </label>
@@ -55,7 +55,7 @@ export const ProfileOtherDetailsComponent = () => {
             <RedirectionIcon className='text-[var(--text-secondary)] cursor-pointer hover:text-[var(--primary)]' />
           </div>
         </div>
-        <div className='min-w-[600px]'>
+        <div className='lg:min-w-[600px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             Address
           </label>

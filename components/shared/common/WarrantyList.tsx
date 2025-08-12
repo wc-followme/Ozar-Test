@@ -52,7 +52,7 @@ export const WarrantyList = ({
   return (
     <div className='bg-[var(--card-background)] rounded-[10px] p-4 hover:shadow-md transition-shadow'>
       <div className='flex items-start justify-between'>
-        <div className='flex items-center gap-3 flex-1'>
+        <div className='flex lg:flex-row flex-col items-start lg:items-center gap-3 flex-1'>
           <div className='flex-1 min-w-0'>
             <div className='flex items-center justify-between mb-2'>
               <h4 className='font-semibold text-[var(--text-dark)] text-base'>
@@ -63,7 +63,7 @@ export const WarrantyList = ({
               {description}
             </p>
           </div>
-          <div className='flex flex-col gap-1 items-center min-w-[120px] border-l border-[var(--border-dark)] pl-4'>
+          <div className='flex flex-col gap-1 lg:items-center min-w-[120px] border-0 lg:border-l border-[var(--border-dark)] lg:pl-4'>
             <Label className='text-[var(--text-dark)] text-sm font-semibold'>
               Duration
             </Label>
@@ -75,7 +75,7 @@ export const WarrantyList = ({
         </div>
 
         {/* 3-dots Menu */}
-        <div className='flex-shrink-0 ml-2 self-center'>
+        <div className='flex-shrink-0 ml-2 lg:self-center'>
           <Dropdown
             menuOptions={menuOptions}
             onAction={handleMenuAction}

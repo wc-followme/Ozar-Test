@@ -61,7 +61,7 @@ export const PortfolioBox = ({
           <Image
             src={image}
             alt={title}
-            className='max-w-full object-contain h-auto w-auto'
+            className='max-w-full object-cover h-auto w-auto max-h-full'
             height={296}
             width={298}
           />

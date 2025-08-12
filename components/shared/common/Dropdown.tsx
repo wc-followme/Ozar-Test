@@ -10,7 +10,7 @@ import React from 'react';
 export interface DropdownOption {
   label: string;
   action: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
 }
 
 interface DropdownProps {
@@ -55,12 +55,14 @@ export const Dropdown: React.FC<DropdownProps> = ({
               'border-b border-[var(--border-dark)]'
           )}
         >
-          <Icon
-            size='24'
-            color='var(--text-dark)'
-            className='!h-6 !w-6'
-            variant='Outline'
-          />
+          {Icon && (
+            <Icon
+              size='24'
+              color='var(--text-dark)'
+              className='!h-6 !w-6'
+              variant='Outline'
+            />
+          )}
           <span>{label}</span>
         </DropdownMenuItem>
       ))}

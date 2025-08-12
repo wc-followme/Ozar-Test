@@ -64,7 +64,7 @@ export const ProfileCategoryTabComponent = () => {
         onValueChange={setSelectedTab}
         className='w-full'
       >
-        <div className='flex gap-6'>
+        <div className='flex lg:flex-row flex-col gap-6'>
           <div className='w-[280px] shrink-0 p-5'>
             <TabsList className='flex flex-col w-full rounded-lg h-auto'>
               {tabData.map(tab => (
