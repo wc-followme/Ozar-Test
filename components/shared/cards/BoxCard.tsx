@@ -33,6 +33,7 @@ export interface BoxCardProps {
   onDelete?: () => void;
   onToggle?: () => void;
   onClick?: () => void; // New prop for card click
+  showMenu?: boolean; // New prop to control menu visibility
 }
 
 export const BoxCard: React.FC<BoxCardProps> = ({
@@ -47,6 +48,7 @@ export const BoxCard: React.FC<BoxCardProps> = ({
   onDelete,
   onToggle,
   onClick,
+  showMenu: showMenuProp = true, // Default to true for backward compatibility
 }) => {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -67,8 +69,8 @@ export const BoxCard: React.FC<BoxCardProps> = ({
     return true; // Show other actions by default
   });
 
-  // Only show menu if there are any visible options
-  const showMenu = filteredMenuOptions.length > 0;
+  // Only show menu if there are any visible options AND showMenu prop is true
+  const showMenu = showMenuProp && filteredMenuOptions.length > 0;
 
   const handleToggle = async () => {
     if (!onToggle) return;

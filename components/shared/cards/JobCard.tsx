@@ -64,7 +64,7 @@ export function JobCard({ job }: JobCardProps) {
             onError={() => setImgSrc('/images/img-placeholder-md.png')}
           />
           <Badge
-            className={`absolute top-3 left-3 text-[12px]  font-medium gap-1 p-1 rounded-[30px] text-[var(--text-dark)] border-0 bg-white`}
+            className={`absolute top-3 left-3 text-[12px]  font-medium gap-1 p-1 rounded-[30px] text-[var(--text-dark)] border-0 bg-[var(--white-background)] hover:bg-[var(--white-background)]`}
           >
             <span
               className={`h-3 w-3 rounded-full ${getProgressColor(job.progress)}`}
@@ -103,13 +103,21 @@ export function JobCard({ job }: JobCardProps) {
 
           <div className='space-y-2'>
             <div className='flex items-center gap-2 text-sm text-[var(--text-dark)] font-normal'>
-              <Sms size='22' className='flex-shrink-0 text-yellowbrand' />
+              <Sms
+                size='22'
+                className='flex-shrink-0 text-yellowbrand'
+                color='currentColor'
+              />
               <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
                 {job.email}
               </span>
             </div>
             <div className='flex items-center gap-2 text-sm text-[var(--text-dark)] font-normal'>
-              <Location size='22' className='flex-shrink-0 text-greenbrand' />
+              <Location
+                size='22'
+                className='flex-shrink-0 text-greenbrand'
+                color='currentColor'
+              />
               <span className='overflow-hidden text-ellipsis whitespace-nowrap'>
                 {job.address}
               </span>
