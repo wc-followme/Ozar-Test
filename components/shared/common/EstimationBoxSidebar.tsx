@@ -54,6 +54,7 @@ interface Service {
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
   dateRange: string;
@@ -67,6 +68,7 @@ interface Trade {
 
 interface Room {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   total: number;
   trades: Trade[];
@@ -150,7 +152,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
           >
             {rooms.map(room => (
               <AccordionItem
-                key={room.id}
+                key={room.uniqueKey}
                 value={room.id}
                 className='border-none'
               >
@@ -188,7 +190,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                       >
                         {room.trades.map(trade => (
                           <AccordionItem
-                            key={trade.id}
+                            key={`${room.uniqueKey}_${trade.uniqueKey}`}
                             value={trade.id}
                             className='border-none'
                           >
@@ -221,7 +223,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                 <div className='ml-6 mt-1'>
                                   {trade.serviceList.map(service => (
                                     <div
-                                      key={service.id}
+                                      key={`${room.uniqueKey}_${trade.uniqueKey}_${service.id}`}
                                       className={`flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg ${
                                         selectedService === service.id
                                           ? 'bg-[var(--background)]'

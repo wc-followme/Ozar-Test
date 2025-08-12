@@ -50,6 +50,7 @@ interface Service {
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
   dateRange: string;
@@ -63,6 +64,7 @@ interface Trade {
 
 interface Room {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   total: number;
   trades: Trade[];
@@ -72,6 +74,13 @@ interface Room {
 interface EstimationBoxProps {
   _onClose: () => void;
 }
+
+// Utility function to generate unique keys
+const generateUniqueKey = (prefix: string): string => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${prefix}_${timestamp}_${random}`;
+};
 
 export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const [isEditing, setIsEditing] = useState(false);
@@ -94,6 +103,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const [rooms, setRooms] = useState<Room[]>([
     {
       id: 'room-1',
+      uniqueKey: generateUniqueKey('room'),
       name: 'Home 1',
       total: 0.0,
       trades: [],
@@ -208,6 +218,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     if (rooms.length === 0) {
       const defaultRoom: Room = {
         id: 'room-1',
+        uniqueKey: generateUniqueKey('room'),
         name: 'Home 1',
         total: 0.0,
         isExpanded: true,
@@ -228,6 +239,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     const uniqueId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newRoom: Room = {
       id: uniqueId,
+      uniqueKey: generateUniqueKey('room'),
       name: `Room ${rooms.length + 1}`,
       total: 0.0,
       isExpanded: true,
@@ -266,6 +278,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
     const newTrade: Trade = {
       id: tradeUuid, // Use the UUID from database instead of generated ID
+      uniqueKey: generateUniqueKey('trade'),
       name: tradeName,
       services: 0,
       dateRange: '',
@@ -347,6 +360,27 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleTradeSelect = (tradeId: string) => {
+    // Find which room contains this trade
+    let foundRoom: Room | null = null;
+
+    for (const room of rooms) {
+      const trade = room.trades.find(tr => tr.id === tradeId);
+      if (trade) {
+        foundRoom = room;
+        break;
+      }
+    }
+
+    // Set the room that contains this trade
+    if (foundRoom) {
+      setSelectedRoomId(foundRoom.id);
+
+      // Ensure the room is expanded
+      if (!expandedRooms.includes(foundRoom.id)) {
+        setExpandedRooms(prev => [...prev, foundRoom.id]);
+      }
+    }
+
     setSelectedTrade(tradeId);
     setShowAddService(true); // Set to true to show trade state
     setShowServiceForm(false); // Always go to trade view first
@@ -484,47 +518,48 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     newTradeId: string,
     newTradeName: string
   ) => {
-    if (selectedTrade && selectedTrade === oldTradeId) {
-      setRooms(prev => {
-        const updatedRooms = prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === oldTradeId
-                    ? {
-                        ...trade,
-                        id: newTradeId, // Update the trade ID
-                        name: newTradeName,
-                      }
-                    : trade
-                ),
-              }
-            : room
-        );
+    // Only update the trade in the selected room, not all rooms
+    setRooms(prev => {
+      const updatedRooms = prev.map(room =>
+        room.id === selectedRoomId
+          ? {
+              ...room,
+              trades: room.trades.map(trade =>
+                trade.id === oldTradeId
+                  ? {
+                      ...trade,
+                      id: newTradeId, // Update the trade ID
+                      name: newTradeName,
+                    }
+                  : trade
+              ),
+            }
+          : room
+      );
 
-        // Update the selected trade ID
+      // Update the selected trade ID if it matches
+      if (selectedTrade === oldTradeId) {
         setSelectedTrade(newTradeId);
+      }
 
-        // Save complete state after trade replacement
-        setTimeout(() => {
-          const roomsData = updatedRooms.map(room => ({
-            id: room.id,
-            name: room.name,
-            trades: room.trades.map(trade => ({
-              id: trade.id,
-              name: trade.name,
-              startDate: new Date(),
-              endDate: new Date(Date.now() + 86400000),
-              markup: 0,
-            })),
-          }));
-          updateLocalStorageFromState(roomsData);
-        }, 0);
+      // Save complete state after trade replacement
+      setTimeout(() => {
+        const roomsData = updatedRooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          trades: room.trades.map(trade => ({
+            id: trade.id,
+            name: trade.name,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 86400000),
+            markup: 0,
+          })),
+        }));
+        updateLocalStorageFromState(roomsData);
+      }, 0);
 
-        return updatedRooms;
-      });
-    }
+      return updatedRooms;
+    });
   };
 
   const handleServiceNameChange = (newServiceName: string) => {
@@ -849,6 +884,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
           // If this was the last room, create a default room
           const defaultRoom: Room = {
             id: 'room-1',
+            uniqueKey: generateUniqueKey('room'),
             name: 'Home 1',
             total: 0.0,
             trades: [],
@@ -1058,7 +1094,10 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
               >
                 <div className='space-y-4'>
                   {selectedRoom.trades.map(trade => (
-                    <SortableItem key={trade.id} id={trade.id}>
+                    <SortableItem
+                      key={`${selectedRoom.uniqueKey}_${trade.uniqueKey}`}
+                      id={trade.id}
+                    >
                       {dragHandleProps => (
                         <TradeListCardComponent
                           trade={trade}
@@ -1114,6 +1153,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
               <EstimationTradeForm
                 trade={selectedTradeData}
                 roomName={selectedRoom?.name || 'Room'}
+                roomUniqueKey={selectedRoom?.uniqueKey || ''}
+                tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
                 onTradeNameChange={handleTradeNameChange}
                 onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={serviceId => {

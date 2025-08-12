@@ -36,6 +36,8 @@ interface Trade {
 interface EstimationTradeFormProps {
   trade: Trade;
   roomName: string; // Add room name prop
+  roomUniqueKey: string; // Add room unique key prop
+  tradeUniqueKey: string; // Add trade unique key prop
   _onTradeUpdate?: (updatedTrade: Trade) => void;
   onServiceSelect?: (serviceId: string) => void;
   _onAddService?: () => void;
@@ -53,6 +55,8 @@ interface EstimationTradeFormProps {
 export default function EstimationTradeForm({
   trade,
   roomName,
+  roomUniqueKey,
+  tradeUniqueKey,
   onServiceSelect,
   onTradeNameChange,
   onTradeReplacement,
@@ -344,7 +348,10 @@ export default function EstimationTradeForm({
         >
           <div className='space-y-4'>
             {trade.serviceList.map(service => (
-              <SortableItem key={service.id} id={service.id}>
+              <SortableItem
+                key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
+                id={service.id}
+              >
                 {dragHandleProps => (
                   <TradeListCardComponent
                     service={service}
