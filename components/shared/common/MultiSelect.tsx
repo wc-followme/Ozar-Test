@@ -97,7 +97,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
           <Button
             type='button'
             className={cn(
-              'h-12 w-full flex items-center justify-between border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] px-3 py-2 min-h-[40px] shadow-none focus:border-[var(--secondary)] focus:ring-[var(--secondary)]',
+              'min-h-12 w-full flex items-center justify-between border-2 bg-[var(--white-background)] hover:bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] px-3 py-2 h-auto shadow-none focus:border-[var(--secondary)] focus:ring-[var(--secondary)]',
               error ? 'border-[var(--warning)]' : 'border-[var(--border-dark)]'
             )}
           >

@@ -5,6 +5,7 @@ import { Company } from './../components/icons/Company';
 import { JobIcon } from './../components/icons/JobIcon';
 import { Material } from './../components/icons/Material';
 import { RoleIcon } from './../components/icons/RoleIcon';
+import { TemplateIcon } from './../components/icons/TemplateIcon';
 import { Tool } from './../components/icons/Tool';
 import { Trade } from './../components/icons/Trade';
 
@@ -18,7 +19,6 @@ import { CircleUsersStarIcon } from '../components/icons/CircleUsersStarIcon';
 import { HelmetIcon } from '../components/icons/HelmetIcon';
 import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
-import { TemplateIcon } from '../components/icons/TemplateIcon';
 import { UserCardIcon } from '../components/icons/UserCardIcon';
 
 // Sidebar title constants
@@ -52,6 +52,7 @@ export const PERMISSION_CATEGORIES = {
   MATERIALS: 'materials',
   TOOLS: 'tools',
   JOBS: 'jobs',
+  TEMPLATES: 'templates',
 } as const;
 
 // Permission actions constants
@@ -204,5 +205,11 @@ export const roleIconOptions = [
     icon: CatHomeIcon,
     color: '#00A8BF',
     bgColor: '#00A8BF26',
+  },
+  {
+    menu_id: 'templates-management',
+    title: SIDEBAR_TITLES.TEMPLATES_MANAGEMENT,
+    href: '/templates',
+    icon: TemplateIcon,
   },
 ];
