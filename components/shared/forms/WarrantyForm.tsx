@@ -1,5 +1,6 @@
 'use client';
 
+import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
 import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -10,6 +11,7 @@ interface WarrantyFormProps {
   onSubmit: (data: WarrantyFormData) => void;
   onCancel: () => void;
   isLoading?: boolean;
+  initialData?: any;
 }
 
 export interface WarrantyFormData {
@@ -56,22 +58,43 @@ export const WarrantyForm = ({
   onSubmit,
   onCancel,
   isLoading = false,
+  initialData,
 }: WarrantyFormProps) => {
   const [formData, setFormData] = useState<WarrantyFormData>({
-    type: '',
-    category: '',
-    description: '',
-    duration: '',
+    type: initialData?.type?.toLowerCase() || '',
+    category: initialData?.category || '',
+    description: initialData?.description || '',
+    duration: initialData?.duration?.toLowerCase().replace(' ', '-') || '',
   });
+
+  const [errors, setErrors] = useState<Partial<WarrantyFormData>>({});
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const validateForm = () => {
+    const newErrors: Partial<WarrantyFormData> = {};
+
+    if (!formData.type) {
+      newErrors.type = 'Type of warranty is required';
+    }
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
+    }
+    if (!formData.description) {
+      newErrors.description = 'Description is required';
+    }
+    if (!formData.duration) {
+      newErrors.duration = 'Duration is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      formData.type &&
-      formData.category &&
-      formData.description &&
-      formData.duration
-    ) {
+    setIsSubmitted(true);
+
+    if (validateForm()) {
       onSubmit(formData);
     }
   };
@@ -81,13 +104,15 @@ export const WarrantyForm = ({
       ...prev,
       [field]: value,
     }));
-  };
 
-  const isFormValid =
-    formData.type &&
-    formData.category &&
-    formData.description &&
-    formData.duration;
+    // Clear error when user starts typing
+    if (errors[field] && isSubmitted) {
+      setErrors(prev => ({
+        ...prev,
+        [field]: undefined,
+      }));
+    }
+  };
 
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
@@ -101,8 +126,9 @@ export const WarrantyForm = ({
           value={formData.type}
           onValueChange={value => handleInputChange('type', value)}
           placeholder='Select warranty type'
-          className='w-full'
+          triggerClassName={`w-full ${errors.type ? '!border-[var(--warning)]' : ''}`}
         />
+        {errors.type && <FormErrorMessage message={errors.type} />}
       </div>
 
       {/* Category */}
@@ -115,8 +141,9 @@ export const WarrantyForm = ({
           value={formData.category}
           onValueChange={value => handleInputChange('category', value)}
           placeholder='eg. interior'
-          className='w-full'
+          triggerClassName={`w-full ${errors.category ? '!border-[var(--warning)]' : ''}`}
         />
+        {errors.category && <FormErrorMessage message={errors.category} />}
       </div>
 
       {/* Description */}
@@ -129,8 +156,15 @@ export const WarrantyForm = ({
           placeholder='Enter Description'
           value={formData.description}
           onChange={e => handleInputChange('description', e.target.value)}
-          className='min-h-[120px] resize-none border-2 border-[var(--border-dark)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px]'
+          className={`min-h-[120px] resize-none border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
+            errors.description
+              ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
+              : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
+          }`}
         />
+        {errors.description && (
+          <FormErrorMessage message={errors.description} />
+        )}
       </div>
 
       {/* Duration */}
@@ -143,8 +177,9 @@ export const WarrantyForm = ({
           value={formData.duration}
           onValueChange={value => handleInputChange('duration', value)}
           placeholder='Select Duration'
-          className='w-full'
+          triggerClassName={`w-full ${errors.duration ? '!border-[var(--warning)]' : ''}`}
         />
+        {errors.duration && <FormErrorMessage message={errors.duration} />}
       </div>
 
       {/* Action Buttons */}
@@ -153,17 +188,17 @@ export const WarrantyForm = ({
           type='button'
           variant='outline'
           onClick={onCancel}
-          className='btn-secondary'
+          className='btn-secondary !px-8'
           disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           type='submit'
-          className='btn-primary'
-          disabled={!isFormValid || isLoading}
+          className='btn-primary !px-12'
+          disabled={isLoading}
         >
-          {isLoading ? 'Saving...' : 'Save'}
+          Save
         </Button>
       </div>
     </form>

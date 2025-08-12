@@ -31,7 +31,7 @@ export const CompanyBottomBlock = () => {
   };
 
   return (
-    <div className='bg-[var(--white-background)] rounded-b-[10px] border border-[var(--border-dark)] border-t-0'>
+    <div className='bg-[var(--white-background)] rounded-b-[10px] border-t border-[var(--border-dark)]'>
       <div className='p-6'>
         <Tabs
           value={selectedTab}

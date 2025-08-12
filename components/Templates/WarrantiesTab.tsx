@@ -23,6 +23,7 @@ export const WarrantiesTab = () => {
   const [warrantyToDelete, setWarrantyToDelete] = useState<string | null>(null);
   const [isAddWarrantyOpen, setIsAddWarrantyOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingWarranty, setEditingWarranty] = useState<any>(null);
 
   // Filter warranties based on search and filter
   const filteredWarranties = useMemo(() => {
@@ -55,8 +56,11 @@ export const WarrantiesTab = () => {
   }, []);
 
   const handleEdit = (id: string) => {
-    console.log('Edit warranty:', id);
-    // Add your edit logic here
+    const warranty = warranties.find(w => w.id === id);
+    if (warranty) {
+      setEditingWarranty(warranty);
+      setIsAddWarrantyOpen(true);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -85,23 +89,30 @@ export const WarrantiesTab = () => {
   const handleWarrantySubmit = async (data: WarrantyFormData) => {
     setIsSubmitting(true);
     try {
-      console.log('Adding new warranty:', data);
-      // Add your API call here to save the warranty
+      if (editingWarranty) {
+        console.log('Updating warranty:', editingWarranty.id, data);
+        // Add your API call here to update the warranty
+      } else {
+        console.log('Adding new warranty:', data);
+        // Add your API call here to save the warranty
+      }
 
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Close the side sheet after successful submission
       setIsAddWarrantyOpen(false);
+      setEditingWarranty(null);
       setIsSubmitting(false);
     } catch (error) {
-      console.error('Error adding warranty:', error);
+      console.error('Error saving warranty:', error);
       setIsSubmitting(false);
     }
   };
 
   const handleCancelAddWarranty = () => {
     setIsAddWarrantyOpen(false);
+    setEditingWarranty(null);
   };
 
   return (
@@ -216,17 +227,18 @@ export const WarrantiesTab = () => {
         archiveButtonText='Delete'
       />
 
-      {/* Add Warranty SideSheet */}
+      {/* Add/Edit Warranty SideSheet */}
       <SideSheet
         open={isAddWarrantyOpen}
         onOpenChange={setIsAddWarrantyOpen}
-        title='Add Warranty'
+        title={editingWarranty ? 'Edit Warranty' : 'Add Warranty'}
         size='600px'
       >
         <WarrantyForm
           onSubmit={handleWarrantySubmit}
           onCancel={handleCancelAddWarranty}
           isLoading={isSubmitting}
+          initialData={editingWarranty}
         />
       </SideSheet>
     </div>
