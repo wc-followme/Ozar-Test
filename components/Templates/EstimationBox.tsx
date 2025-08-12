@@ -329,7 +329,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     );
 
     // Add the new trade to expanded trades
-    setExpandedTrades(prev => [...prev, newTrade.id]);
+    setExpandedTrades(prev => [...prev, newTrade.uniqueKey]);
 
     // Select the new trade
     setSelectedTrade(newTrade.id);
@@ -411,8 +411,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       }
 
       // Ensure the trade accordion is expanded
-      if (!expandedTrades.includes(foundTrade.id)) {
-        setExpandedTrades(prev => [...prev, foundTrade.id]);
+      if (!expandedTrades.includes(foundTrade.uniqueKey)) {
+        setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
     }
 
@@ -465,8 +465,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       if (!expandedRooms.includes(foundRoom.id)) {
         setExpandedRooms(prev => [...prev, foundRoom.id]);
       }
-      if (!expandedTrades.includes(foundTrade.id)) {
-        setExpandedTrades(prev => [...prev, foundTrade.id]);
+      if (!expandedTrades.includes(foundTrade.uniqueKey)) {
+        setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
 
       // Set service and form states

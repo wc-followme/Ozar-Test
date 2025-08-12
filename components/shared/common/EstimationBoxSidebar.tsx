@@ -191,7 +191,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                         {room.trades.map(trade => (
                           <AccordionItem
                             key={`${room.uniqueKey}_${trade.uniqueKey}`}
-                            value={trade.id}
+                            value={trade.uniqueKey}
                             className='border-none'
                           >
                             <AccordionPrimitive.Header className='flex'>
@@ -205,7 +205,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                   <IconChevronDown
                                     size={16}
                                     className={`mr-2 transition-transform duration-200 ${
-                                      expandedTrades.includes(trade.id)
+                                      expandedTrades.includes(trade.uniqueKey)
                                         ? 'rotate-180'
                                         : ''
                                     }`}
