@@ -85,7 +85,7 @@ interface EstimationBoxSidebarProps {
   handleRoomSelect: (roomId: string) => void;
   expandedTrades: string[];
   handleTradeAccordionChange: (value: string[]) => void;
-  handleTradeSelect: (tradeId: string) => void;
+  handleTradeSelect: (tradeUniqueKey: string) => void;
   selectedService: string | null;
   handleServiceSelect: (serviceId: string) => void;
   formatCurrency: (amount: number) => string;
@@ -197,7 +197,9 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                             <AccordionPrimitive.Header className='flex'>
                               <AccordionPrimitive.Trigger
                                 className={`flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full `}
-                                onClick={() => handleTradeSelect(trade.id)}
+                                onClick={() =>
+                                  handleTradeSelect(trade.uniqueKey)
+                                }
                               >
                                 <div className='flex items-center flex-1 min-w-0'>
                                   <IconChevronDown
