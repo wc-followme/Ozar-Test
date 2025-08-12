@@ -3,7 +3,10 @@
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Service } from '@/components/shared/forms/estimation-types';
-import { saveRoomTradeData } from '@/components/Templates/EstimateComponent';
+import {
+  replaceTradeInRoom,
+  saveRoomTradeData,
+} from '@/components/Templates/EstimateComponent';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card } from '@/components/ui/card';
@@ -41,6 +44,11 @@ interface EstimationTradeFormProps {
   onServiceSelect?: (serviceId: string) => void;
   _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
+  onTradeReplacement?: (
+    oldTradeId: string,
+    newTradeId: string,
+    newTradeName: string
+  ) => void;
   onServiceReorder?: (reorderedServices: Service[]) => void;
   tradeOptions?: Array<{ value: string; label: string }>;
 }
@@ -50,6 +58,7 @@ export default function EstimationTradeForm({
   roomName,
   onServiceSelect,
   onTradeNameChange,
+  onTradeReplacement,
   onServiceReorder,
   tradeOptions = [],
 }: EstimationTradeFormProps) {
@@ -136,16 +145,37 @@ export default function EstimationTradeForm({
                     const selectedOption = finalTradeOptions.find(
                       option => option.value === newValue
                     );
-                    onTradeNameChange?.(
-                      selectedOption ? selectedOption.label : newValue
+                    const newTradeName = selectedOption
+                      ? selectedOption.label
+                      : newValue;
+
+                    // Get the current trade ID from the trade prop
+                    const currentTradeId = trade.id;
+
+                    // Call the trade replacement handler to update component state
+                    onTradeReplacement?.(
+                      currentTradeId,
+                      newValue,
+                      newTradeName
                     );
+
+                    // Also call the trade name change handler for backward compatibility
+                    onTradeNameChange?.(newTradeName);
+
                     // Save data after trade selection
                     const updates: any = {
                       markup: parseFloat(markupAmount) || 0,
                     };
                     if (startDate) updates.start_date = startDate.toISOString();
                     if (endDate) updates.end_date = endDate.toISOString();
-                    saveRoomTradeData(roomName, newValue, updates);
+
+                    // Replace the trade in localStorage
+                    replaceTradeInRoom(
+                      roomName,
+                      currentTradeId,
+                      newValue,
+                      updates
+                    );
                   }}
                   options={finalTradeOptions}
                   placeholder='Select a trade'

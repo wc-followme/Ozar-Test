@@ -91,16 +91,16 @@ export const saveRoomTradeData = (
     const existingData = localStorage.getItem('job_rooms');
     const jobRooms = existingData ? JSON.parse(existingData) : [];
 
-    // Find or create room
-    let roomIndex = jobRooms.findIndex(
+    // Find the room
+    const roomIndex = jobRooms.findIndex(
       (room: any) => room.room_name === roomName
     );
+
     if (roomIndex === -1) {
-      jobRooms.push({
-        room_name: roomName,
-        trades: [],
-      });
-      roomIndex = jobRooms.length - 1;
+      // Room doesn't exist in localStorage, ignore this update
+      // Rooms should only be created through saveCompleteRoomTradeData
+      console.log('Room not found in localStorage, ignoring update:', roomName);
+      return false;
     }
 
     // Find existing trade in this room
@@ -109,24 +109,10 @@ export const saveRoomTradeData = (
     );
 
     if (tradeIndex === -1) {
-      // Only create new trade if this trade doesn't exist in this room
-      // Check if this trade exists in any other room first
-      const existingTradeInOtherRoom = jobRooms.some(
-        (room: any, roomIdx: number) =>
-          roomIdx !== roomIndex &&
-          room.trades.some((trade: any) => trade.trade_id === tradeId)
-      );
-
-      if (!existingTradeInOtherRoom) {
-        // Create new trade only if it doesn't exist anywhere
-        jobRooms[roomIndex].trades.push({
-          trade_id: tradeId,
-          start_date: updates.start_date || new Date().toISOString(),
-          end_date:
-            updates.end_date || new Date(Date.now() + 86400000).toISOString(),
-          markup: updates.markup || 0,
-        });
-      }
+      // Trade doesn't exist in localStorage, ignore this update
+      // Trades should only be created through saveCompleteRoomTradeData
+      console.log('Trade not found in localStorage, ignoring update:', tradeId);
+      return false;
     } else {
       // Update existing trade
       jobRooms[roomIndex].trades[tradeIndex] = {
@@ -209,6 +195,54 @@ export const clearRoomTradeData = () => {
     return true;
   } catch (error) {
     console.error('Error clearing room trade data:', error);
+    return false;
+  }
+};
+
+// Function to replace a trade in a room (used when user changes trade from dropdown)
+export const replaceTradeInRoom = (
+  roomName: string,
+  oldTradeId: string,
+  newTradeId: string,
+  updates: {
+    start_date?: string;
+    end_date?: string;
+    markup?: number;
+  }
+) => {
+  try {
+    const existingData = localStorage.getItem('job_rooms');
+    const jobRooms = existingData ? JSON.parse(existingData) : [];
+
+    // Find the room
+    const roomIndex = jobRooms.findIndex(
+      (room: any) => room.room_name === roomName
+    );
+
+    if (roomIndex === -1) {
+      console.error('Room not found:', roomName);
+      return false;
+    }
+
+    // Remove the old trade from this room
+    jobRooms[roomIndex].trades = jobRooms[roomIndex].trades.filter(
+      (trade: any) => trade.trade_id !== oldTradeId
+    );
+
+    // Add the new trade to this room
+    jobRooms[roomIndex].trades.push({
+      trade_id: newTradeId,
+      start_date: updates.start_date || new Date().toISOString(),
+      end_date:
+        updates.end_date || new Date(Date.now() + 86400000).toISOString(),
+      markup: updates.markup || 0,
+    });
+
+    localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
+    console.log('Replaced trade in localStorage:', jobRooms);
+    return true;
+  } catch (error) {
+    console.error('Error replacing trade in room:', error);
     return false;
   }
 };

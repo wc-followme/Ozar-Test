@@ -469,6 +469,53 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     }
   };
 
+  // Handle trade replacement when user changes trade from dropdown
+  const handleTradeReplacement = (
+    oldTradeId: string,
+    newTradeId: string,
+    newTradeName: string
+  ) => {
+    if (selectedTrade && selectedTrade === oldTradeId) {
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.id === oldTradeId
+                    ? {
+                        ...trade,
+                        id: newTradeId, // Update the trade ID
+                        name: newTradeName,
+                      }
+                    : trade
+                ),
+              }
+            : room
+        );
+
+        // Update the selected trade ID
+        setSelectedTrade(newTradeId);
+
+        // Save complete state after trade replacement
+        setTimeout(() => {
+          const roomsData = updatedRooms.map(room => ({
+            name: room.name,
+            trades: room.trades.map(trade => ({
+              id: trade.id,
+              startDate: new Date(),
+              endDate: new Date(Date.now() + 86400000),
+              markup: 0,
+            })),
+          }));
+          saveCompleteRoomTradeData(roomsData);
+        }, 0);
+
+        return updatedRooms;
+      });
+    }
+  };
+
   const handleServiceNameChange = (newServiceName: string) => {
     if (selectedTrade && selectedService) {
       setRooms(prev =>
@@ -1055,6 +1102,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
                 trade={selectedTradeData}
                 roomName={selectedRoom?.name || 'Room'}
                 onTradeNameChange={handleTradeNameChange}
+                onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={serviceId => {
                   handleServiceSelect(serviceId);
                 }}
