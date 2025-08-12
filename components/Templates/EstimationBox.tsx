@@ -76,7 +76,20 @@ interface EstimationBoxProps {
 }
 
 // Utility function to generate unique keys
-const generateUniqueKey = (prefix: string): string => {
+const generateUniqueKey = (
+  prefix: string,
+  tradeUuid?: string,
+  roomId?: string,
+  tradeSequenceNumber?: number
+): string => {
+  if (
+    prefix === 'trade' &&
+    roomId !== undefined &&
+    tradeSequenceNumber !== undefined
+  ) {
+    return `trade_${roomId}_${tradeSequenceNumber}`;
+  }
+  // Fallback for other cases (rooms, etc.)
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `${prefix}_${timestamp}_${random}`;
@@ -102,7 +115,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   >(null);
   const [rooms, setRooms] = useState<Room[]>([
     {
-      id: 'room-1',
+      id: '0', // Use sequence number as room ID
       uniqueKey: generateUniqueKey('room'),
       name: 'Home 1',
       total: 0.0,
@@ -217,7 +230,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     // If no rooms exist, create the default Home 1 room
     if (rooms.length === 0) {
       const defaultRoom: Room = {
-        id: 'room-1',
+        id: '0', // Use sequence number as room ID
         uniqueKey: generateUniqueKey('room'),
         name: 'Home 1',
         total: 0.0,
@@ -226,8 +239,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       };
 
       setRooms([defaultRoom]);
-      setExpandedRooms(['room-1']);
-      setSelectedRoomId('room-1');
+      setExpandedRooms(['0']);
+      setSelectedRoomId('0');
       setSelectedTrade(null);
       setShowAddService(false);
       setShowServiceForm(false);
@@ -235,10 +248,10 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       return;
     }
 
-    // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `room-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+    // Generate room ID as sequence number
+    const roomSequenceNumber = rooms.length;
     const newRoom: Room = {
-      id: uniqueId,
+      id: roomSequenceNumber.toString(), // Use sequence number as room ID
       uniqueKey: generateUniqueKey('room'),
       name: `Room ${rooms.length + 1}`,
       total: 0.0,
@@ -275,10 +288,18 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
     const tradeUuid = defaultTradeOption.value; // This is the UUID from database
     const tradeName = defaultTradeOption.label; // This is the trade name
+    const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+    const roomSequenceNumber = parseInt(selectedRoomId); // Room ID is now the sequence number
+    const tradeSequenceNumber = selectedRoom ? selectedRoom.trades.length : 0;
 
     const newTrade: Trade = {
       id: tradeUuid, // Use the UUID from database instead of generated ID
-      uniqueKey: generateUniqueKey('trade'),
+      uniqueKey: generateUniqueKey(
+        'trade',
+        tradeUuid,
+        selectedRoomId, // Use room ID directly
+        tradeSequenceNumber
+      ),
       name: tradeName,
       services: 0,
       dateRange: '',
@@ -478,43 +499,61 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleTradeNameChange = (newTradeName: string) => {
+    console.log('selectedTrade ======================>', selectedTrade);
+    console.log('selectedRoomId ======================>', selectedRoomId);
+
     if (selectedTrade) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? { ...trade, name: newTradeName }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      console.log('selectedRoom ======================>', selectedRoom);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
+      );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      console.log(
+        'selectedTradeUniqueKey ======================>',
+        selectedTradeUniqueKey
       );
 
-      // Save complete state after trade name change
-      setTimeout(() => {
-        const roomsData = rooms.map(room => ({
-          id: room.id,
-          name: room.name,
-          trades: room.trades.map(trade => ({
-            id: trade.id,
-            name: trade.name,
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 86400000),
-            markup: 0,
-          })),
-        }));
-        updateLocalStorageFromState(roomsData);
-      }, 0);
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? { ...trade, name: newTradeName }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+
+        // Save complete state after trade name change
+        setTimeout(() => {
+          const roomsData = rooms.map(room => ({
+            id: room.id,
+            name: room.name,
+            trades: room.trades.map(trade => ({
+              id: trade.id,
+              name: trade.name,
+              startDate: new Date(),
+              endDate: new Date(Date.now() + 86400000),
+              markup: 0,
+            })),
+          }));
+          updateLocalStorageFromState(roomsData);
+        }, 0);
+      }
     }
   };
 
   // Handle trade replacement when user changes trade from dropdown
   const handleTradeReplacement = (
-    oldTradeId: string,
+    oldTradeUniqueKey: string,
     newTradeId: string,
     newTradeName: string
   ) => {
@@ -524,21 +563,44 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         room.id === selectedRoomId
           ? {
               ...room,
-              trades: room.trades.map(trade =>
-                trade.id === oldTradeId
+              trades: room.trades.map(trade => {
+                const shouldUpdate = trade.uniqueKey === oldTradeUniqueKey;
+                return shouldUpdate
                   ? {
                       ...trade,
                       id: newTradeId, // Update the trade ID
                       name: newTradeName,
+                      // Generate new unique key with same sequence numbers
+                      uniqueKey: generateUniqueKey(
+                        'trade',
+                        newTradeId,
+                        selectedRoomId, // Use room ID directly
+                        room.trades.indexOf(trade)
+                      ),
                     }
-                  : trade
-              ),
+                  : trade;
+              }),
             }
           : room
       );
+      // console.log("updatedRooms ======================>",updatedRooms);
+      // console.log("room ======================>",rooms);
+      // console.log("selectedRoomId ======================>",selectedRoomId);
+      // console.log("selectedTrade ======================>",selectedTrade);
+      // console.log("oldTradeUniqueKey ======================>",oldTradeUniqueKey);
+      // console.log("newTradeId ======================>",newTradeId);
+      // console.log("newTradeName ======================>",newTradeName);
 
-      // Update the selected trade ID if it matches
-      if (selectedTrade === oldTradeId) {
+      // Update the selected trade ID if it matches the specific trade instance
+      const currentSelectedTrade = rooms
+        .find(room => room.id === selectedRoomId)
+        ?.trades.find(trade => trade.uniqueKey === oldTradeUniqueKey);
+      // console.log("currentSelectedTrade ======================>",currentSelectedTrade);
+      if (
+        selectedTrade &&
+        currentSelectedTrade &&
+        currentSelectedTrade.id === selectedTrade
+      ) {
         setSelectedTrade(newTradeId);
       }
 
@@ -564,111 +626,153 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
   const handleServiceNameChange = (newServiceName: string) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? { ...service, name: newServiceName }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  name: newServiceName,
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleServiceUpdate = (updatedService: Service) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? updatedService
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? updatedService
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleMaterialAdd = (newMaterial: Material) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                materials: [...service.materials, newMaterial],
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  materials: [
+                                    ...service.materials,
+                                    newMaterial,
+                                  ],
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleFinishAdd = (newFinish: Material) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                finishes: [...service.finishes, newFinish],
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  finishes: [...service.finishes, newFinish],
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
@@ -677,189 +781,243 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     updatedMaterial: Material
   ) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                materials: service.materials.map(material =>
-                                  material.id === materialId
-                                    ? updatedMaterial
-                                    : material
-                                ),
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  materials: service.materials.map(material =>
+                                    material.id === materialId
+                                      ? updatedMaterial
+                                      : material
+                                  ),
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleMaterialDelete = (materialId: string) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                materials: service.materials.filter(
-                                  material => material.id !== materialId
-                                ),
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  materials: service.materials.filter(
+                                    material => material.id !== materialId
+                                  ),
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleFinishUpdate = (finishId: string, updatedFinish: Material) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                finishes: service.finishes.map(finish =>
-                                  finish.id === finishId
-                                    ? updatedFinish
-                                    : finish
-                                ),
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  finishes: service.finishes.map(finish =>
+                                    finish.id === finishId
+                                      ? updatedFinish
+                                      : finish
+                                  ),
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleFinishDelete = (finishId: string) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                finishes: service.finishes.filter(
-                                  finish => finish.id !== finishId
-                                ),
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  finishes: service.finishes.filter(
+                                    finish => finish.id !== finishId
+                                  ),
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleToolAdd = (newTool: Tool) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                tools: [...service.tools, newTool],
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  tools: [...service.tools, newTool],
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
   const handleToolRemove = (toolId: string) => {
     if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                tools: service.tools.filter(
-                                  tool => tool.id !== toolId
-                                ),
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.map(service =>
+                            service.id === selectedService
+                              ? {
+                                  ...service,
+                                  tools: service.tools.filter(
+                                    tool => tool.id !== toolId
+                                  ),
+                                }
+                              : service
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
     }
   };
 
@@ -883,14 +1041,14 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         if (filteredRooms.length === 0) {
           // If this was the last room, create a default room
           const defaultRoom: Room = {
-            id: 'room-1',
+            id: '0', // Use sequence number as room ID
             uniqueKey: generateUniqueKey('room'),
             name: 'Home 1',
             total: 0.0,
             trades: [],
             isExpanded: true,
           };
-          setSelectedRoomId('room-1');
+          setSelectedRoomId('0');
           return [defaultRoom];
         } else {
           // Select the first remaining room
@@ -905,42 +1063,60 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       setShowServiceForm(false);
       setSelectedService(null);
     } else if (deleteType === 'trade' && selectedTrade) {
-      // Delete trade
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.filter(trade => trade.id !== selectedTrade),
-              }
-            : room
-        )
+      // Delete trade - find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.filter(
+                    trade => trade.uniqueKey !== selectedTradeUniqueKey
+                  ),
+                }
+              : room
+          )
+        );
+      }
       setSelectedTrade(null);
       setShowAddService(false);
       setShowServiceForm(false);
       setSelectedService(null);
     } else if (deleteType === 'service' && selectedService && selectedTrade) {
-      // Delete service
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.filter(
-                          service => service.id !== selectedService
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
+      // Delete service - find the selected trade's unique key
+      const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+      const selectedTradeData = selectedRoom?.trades.find(
+        trade => trade.id === selectedTrade
       );
+      const selectedTradeUniqueKey = selectedTradeData?.uniqueKey;
+
+      if (selectedTradeUniqueKey) {
+        setRooms(prev =>
+          prev.map(room =>
+            room.id === selectedRoomId
+              ? {
+                  ...room,
+                  trades: room.trades.map(trade =>
+                    trade.uniqueKey === selectedTradeUniqueKey
+                      ? {
+                          ...trade,
+                          serviceList: trade.serviceList.filter(
+                            service => service.id !== selectedService
+                          ),
+                        }
+                      : trade
+                  ),
+                }
+              : room
+          )
+        );
+      }
       setSelectedService(null);
       setShowServiceForm(false);
     }

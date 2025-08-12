@@ -43,7 +43,7 @@ interface EstimationTradeFormProps {
   _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
   onTradeReplacement?: (
-    oldTradeId: string,
+    oldTradeUniqueKey: string,
     newTradeId: string,
     newTradeName: string
   ) => void;
@@ -151,12 +151,12 @@ export default function EstimationTradeForm({
                       ? selectedOption.label
                       : newValue;
 
-                    // Get the current trade ID from the trade prop
-                    const currentTradeId = trade.id;
+                    // Get the current trade unique key to identify the specific trade instance
+                    const currentTradeUniqueKey = tradeUniqueKey;
 
                     // Call the trade replacement handler to update component state
                     onTradeReplacement?.(
-                      currentTradeId,
+                      currentTradeUniqueKey,
                       newValue,
                       newTradeName
                     );
