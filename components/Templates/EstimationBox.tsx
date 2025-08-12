@@ -4,15 +4,16 @@ import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardC
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
 import EstimationHeader from '@/components/shared/common/EstimationHeader';
+import { Tool } from '@/components/shared/forms/estimation-types';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
-import { Tool } from '@/components/shared/forms/estimation-types';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
+import { saveCompleteRoomTradeData } from './EstimateComponent';
 
 interface Material {
   id: string;
@@ -194,6 +195,13 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       );
     };
   }, []);
+
+  // Save state whenever rooms change
+  useEffect(() => {
+    if (rooms.length > 0) {
+      saveCurrentState();
+    }
+  }, [rooms]);
 
   const handleAddRoom = () => {
     // If no rooms exist, create the default Home 1 room
@@ -444,6 +452,20 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Save complete state after trade name change
+      setTimeout(() => {
+        const roomsData = rooms.map(room => ({
+          name: room.name,
+          trades: room.trades.map(trade => ({
+            id: trade.id,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 86400000),
+            markup: 0,
+          })),
+        }));
+        saveCompleteRoomTradeData(roomsData);
+      }, 0);
     }
   };
 
@@ -859,8 +881,24 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
 
   const projectTotal = calculateProjectTotal();
 
+  const saveCurrentState = () => {
+    // Save all rooms and trades to localStorage
+    const roomsData = rooms.map(room => ({
+      name: room.name,
+      trades: room.trades.map(trade => ({
+        id: trade.id,
+        startDate: new Date(), // You can get actual dates from trade state
+        endDate: new Date(Date.now() + 86400000), // You can get actual dates from trade state
+        markup: 0, // You can get actual markup from trade state
+      })),
+    }));
+
+    saveCompleteRoomTradeData(roomsData);
+    console.log('Saved current state to localStorage');
+  };
+
   const handleSave = () => {
-    // TODO: Implement save functionality
+    saveCurrentState();
     console.log('Saving estimation...');
   };
 
@@ -1015,6 +1053,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             selectedTradeData ? (
               <EstimationTradeForm
                 trade={selectedTradeData}
+                roomName={selectedRoom?.name || 'Room'}
                 onTradeNameChange={handleTradeNameChange}
                 onServiceSelect={serviceId => {
                   handleServiceSelect(serviceId);

@@ -3,6 +3,7 @@
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import { Service } from '@/components/shared/forms/estimation-types';
+import { saveRoomTradeData } from '@/components/Templates/EstimateComponent';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Card } from '@/components/ui/card';
@@ -35,6 +36,7 @@ interface Trade {
 
 interface EstimationTradeFormProps {
   trade: Trade;
+  roomName: string; // Add room name prop
   _onTradeUpdate?: (updatedTrade: Trade) => void;
   onServiceSelect?: (serviceId: string) => void;
   _onAddService?: () => void;
@@ -45,6 +47,7 @@ interface EstimationTradeFormProps {
 
 export default function EstimationTradeForm({
   trade,
+  roomName,
   onServiceSelect,
   onTradeNameChange,
   onServiceReorder,
@@ -82,6 +85,16 @@ export default function EstimationTradeForm({
     }
   }, [trade.name, tradeOptions]);
 
+  // Save initial data when component mounts
+  useEffect(() => {
+    if (selectedTrade) {
+      const updates: any = { markup: parseFloat(markupAmount) || 0 };
+      if (startDate) updates.start_date = startDate.toISOString();
+      if (endDate) updates.end_date = endDate.toISOString();
+      saveRoomTradeData(roomName, selectedTrade, updates);
+    }
+  }, [selectedTrade, startDate, endDate, markupAmount]);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -98,6 +111,10 @@ export default function EstimationTradeForm({
   const handleInputChange = (field: string, value: number) => {
     if (field === 'markup') {
       setMarkupAmount(value.toString());
+      const updates: any = { markup: value };
+      if (startDate) updates.start_date = startDate.toISOString();
+      if (endDate) updates.end_date = endDate.toISOString();
+      saveRoomTradeData(roomName, selectedTrade, updates);
     }
   };
 
@@ -122,6 +139,13 @@ export default function EstimationTradeForm({
                     onTradeNameChange?.(
                       selectedOption ? selectedOption.label : newValue
                     );
+                    // Save data after trade selection
+                    const updates: any = {
+                      markup: parseFloat(markupAmount) || 0,
+                    };
+                    if (startDate) updates.start_date = startDate.toISOString();
+                    if (endDate) updates.end_date = endDate.toISOString();
+                    saveRoomTradeData(roomName, newValue, updates);
                   }}
                   options={finalTradeOptions}
                   placeholder='Select a trade'
@@ -190,6 +214,12 @@ export default function EstimationTradeForm({
                     onSelect={date => {
                       setStartDate(date);
                       setStartDatePickerOpen(false);
+                      // Save data immediately with the new date
+                      if (date) {
+                        saveRoomTradeData(roomName, selectedTrade, {
+                          start_date: date.toISOString(),
+                        });
+                      }
                     }}
                     disabled={date => date < new Date()}
                     initialFocus
@@ -233,6 +263,33 @@ export default function EstimationTradeForm({
                     onSelect={date => {
                       setEndDate(date);
                       setEndDatePickerOpen(false);
+                      // Save data immediately with the new date
+                      if (date) {
+                        const existingData = localStorage.getItem('job_rooms');
+                        const jobRooms = existingData
+                          ? JSON.parse(existingData)
+                          : [];
+
+                        let roomIndex = jobRooms.findIndex(
+                          (room: any) => room.room_name === 'Living Room'
+                        );
+                        if (roomIndex === -1) {
+                          jobRooms.push({
+                            room_name: 'Living Room',
+                            trades: [],
+                          });
+                          roomIndex = jobRooms.length - 1;
+                        }
+
+                        const tradeIndex = jobRooms[roomIndex].trades.findIndex(
+                          (trade: any) => trade.trade_id === selectedTrade
+                        );
+                        if (tradeIndex !== -1) {
+                          saveRoomTradeData(roomName, selectedTrade, {
+                            end_date: date.toISOString(),
+                          });
+                        }
+                      }
                     }}
                     disabled={date => {
                       const today = new Date();

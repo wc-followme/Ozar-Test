@@ -394,7 +394,9 @@ export default function HomeOwnerWizardPage() {
 
   // Handle add room for estimate component
   const handleAddRoom = () => {
-    console.log('Add room clicked');
+    // This will trigger the EstimationBox to open
+    // The EstimateComponent handles this internally
+    console.log('Add room clicked - EstimationBox should open');
   };
 
   // Loading state

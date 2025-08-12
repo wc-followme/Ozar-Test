@@ -10,10 +10,208 @@ import { RoomIcon } from '../icons/RoomIcon';
 import { TemplateIcon } from '../icons/TemplateIcon';
 import EstimationBox from './EstimationBox';
 
+interface Tool {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  status: 'available' | 'in-use' | 'maintenance';
+}
+
+interface Material {
+  id: string;
+  name: string;
+  variant: string;
+  qty: number;
+  unit: string;
+  description: string;
+  rate: number;
+  markup: number;
+  lineTotal: number;
+}
+
+interface ServiceOption {
+  id: string;
+  name: string;
+  tradeTotal: number;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  qty: number;
+  rate: number;
+  lineTotal: number;
+  serviceTotal: number;
+  tradeTotal: number;
+  serviceOptions: ServiceOption[];
+  materials: Material[];
+  finishes: Material[];
+  tools: Tool[];
+}
+
+interface Trade {
+  id: string;
+  name: string;
+  services: number;
+  dateRange: string;
+  type: string;
+  laborCost: number;
+  materialCost: number;
+  tradeTotal: number;
+  serviceList: Service[];
+  isExpanded: boolean;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  total: number;
+  trades: Trade[];
+  isExpanded: boolean;
+}
+
 interface EstimateComponentProps {
   breadcrumbData: BreadcrumbItem[];
   onAddRoom: () => void;
 }
+
+// Common function to handle localStorage operations for rooms and trades
+export const saveRoomTradeData = (
+  roomName: string,
+  tradeId: string,
+  updates: {
+    start_date?: string;
+    end_date?: string;
+    markup?: number;
+  }
+) => {
+  try {
+    const existingData = localStorage.getItem('job_rooms');
+    const jobRooms = existingData ? JSON.parse(existingData) : [];
+
+    // Find or create room
+    let roomIndex = jobRooms.findIndex(
+      (room: any) => room.room_name === roomName
+    );
+    if (roomIndex === -1) {
+      jobRooms.push({
+        room_name: roomName,
+        trades: [],
+      });
+      roomIndex = jobRooms.length - 1;
+    }
+
+    // Find existing trade in this room
+    const tradeIndex = jobRooms[roomIndex].trades.findIndex(
+      (trade: any) => trade.trade_id === tradeId
+    );
+
+    if (tradeIndex === -1) {
+      // Only create new trade if this trade doesn't exist in this room
+      // Check if this trade exists in any other room first
+      const existingTradeInOtherRoom = jobRooms.some(
+        (room: any, roomIdx: number) =>
+          roomIdx !== roomIndex &&
+          room.trades.some((trade: any) => trade.trade_id === tradeId)
+      );
+
+      if (!existingTradeInOtherRoom) {
+        // Create new trade only if it doesn't exist anywhere
+        jobRooms[roomIndex].trades.push({
+          trade_id: tradeId,
+          start_date: updates.start_date || new Date().toISOString(),
+          end_date:
+            updates.end_date || new Date(Date.now() + 86400000).toISOString(),
+          markup: updates.markup || 0,
+        });
+      }
+    } else {
+      // Update existing trade
+      jobRooms[roomIndex].trades[tradeIndex] = {
+        ...jobRooms[roomIndex].trades[tradeIndex],
+        ...updates,
+      };
+    }
+
+    localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
+    console.log('Updated localStorage:', jobRooms);
+    return true;
+  } catch (error) {
+    console.error('Error saving room trade data:', error);
+    return false;
+  }
+};
+
+// New function to save complete room and trade data from states
+export const saveCompleteRoomTradeData = (
+  rooms: Array<{
+    name: string;
+    trades: Array<{
+      id: string;
+      startDate?: Date;
+      endDate?: Date;
+      markup?: number;
+    }>;
+  }>
+) => {
+  try {
+    const jobRooms = rooms.map(room => ({
+      room_name: room.name,
+      trades: room.trades.map(trade => ({
+        trade_id: trade.id,
+        start_date: trade.startDate?.toISOString() || new Date().toISOString(),
+        end_date:
+          trade.endDate?.toISOString() ||
+          new Date(Date.now() + 86400000).toISOString(),
+        markup: trade.markup || 0,
+      })),
+    }));
+
+    localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
+    console.log('Saved complete room trade data to localStorage:', jobRooms);
+    return true;
+  } catch (error) {
+    console.error('Error saving complete room trade data:', error);
+    return false;
+  }
+};
+
+// Function to clear and reset localStorage
+export const resetRoomTradeData = () => {
+  try {
+    localStorage.removeItem('job_rooms');
+    console.log('Reset room trade data in localStorage');
+    return true;
+  } catch (error) {
+    console.error('Error resetting room trade data:', error);
+    return false;
+  }
+};
+
+// Function to get room trade data from localStorage
+export const getRoomTradeData = () => {
+  try {
+    const existingData = localStorage.getItem('job_rooms');
+    return existingData ? JSON.parse(existingData) : [];
+  } catch (error) {
+    console.error('Error getting room trade data:', error);
+    return [];
+  }
+};
+
+// Function to clear room trade data from localStorage
+export const clearRoomTradeData = () => {
+  try {
+    localStorage.removeItem('job_rooms');
+    console.log('Cleared room trade data from localStorage');
+    return true;
+  } catch (error) {
+    console.error('Error clearing room trade data:', error);
+    return false;
+  }
+};
 
 export default function EstimateComponent({
   breadcrumbData,
