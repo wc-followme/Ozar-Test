@@ -16,29 +16,77 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MOCK_EMPLOYEES, MOCK_JOBS, TODO_MESSAGES } from '@/constants/common';
+import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS, TODO_MESSAGES } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
 import { Calendar, Trash } from 'iconsax-react';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
 
-// Validation schema
+// Validation schema with enhanced validation
 const todoFormSchema = yup.object({
-  job: yup.string().required(TODO_MESSAGES.JOB_REQUIRED),
-  date: yup.date().required(TODO_MESSAGES.DATE_REQUIRED),
-  employees: yup.array().min(1, TODO_MESSAGES.EMPLOYEES_REQUIRED).default([]),
-  title: yup.string().required(TODO_MESSAGES.TITLE_REQUIRED),
+  job: yup
+    .string()
+    .required(TODO_MESSAGES.JOB_REQUIRED)
+    .trim()
+    .min(1, TODO_MESSAGES.JOB_REQUIRED),
+  date: yup
+    .date()
+    .required(TODO_MESSAGES.DATE_REQUIRED)
+    .test('future-date', TODO_MESSAGES.DATE_FUTURE_REQUIRED, function (value) {
+      if (!value) return false;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return value >= today;
+    }),
+  employees: yup
+    .array()
+    .of(yup.string().required())
+    .min(1, TODO_MESSAGES.EMPLOYEES_REQUIRED)
+    .default([]),
+  title: yup
+    .string()
+    .required(TODO_MESSAGES.TITLE_REQUIRED)
+    .trim()
+    .min(3, 'Title must be at least 3 characters')
+    .max(100, 'Title must be less than 100 characters'),
   listItems: yup
     .array()
-    .of(yup.string().required(TODO_MESSAGES.LIST_ITEM_REQUIRED))
+    .of(
+      yup
+        .string()
+        .required(TODO_MESSAGES.LIST_ITEM_REQUIRED)
+        .trim()
+        .min(1, TODO_MESSAGES.LIST_ITEM_REQUIRED)
+        .max(500, 'List item must be less than 500 characters')
+    )
     .min(1, TODO_MESSAGES.LIST_ITEMS_REQUIRED)
+    .max(20, 'Maximum 20 list items allowed')
     .default(['']),
 });
+
+interface Job {
+  id: number;
+  uuid: string;
+  project_name: string;
+  project_id: string;
+  status: string;
+}
+
+interface Employee {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  profile_picture_url: string;
+  status: string;
+}
 
 interface TodoFormData {
   job: string;
@@ -52,21 +100,31 @@ interface TodoFormProps {
   onSubmit: (data: TodoFormData) => void;
   onCancel: () => void;
   loading?: boolean;
+  editingTodoList?: any; // Add this prop for editing mode
 }
 
 export const TodoForm: React.FC<TodoFormProps> = ({
   onSubmit,
   onCancel,
   loading = false,
+  editingTodoList,
 }) => {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeesLoading, setEmployeesLoading] = useState(false);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const {
     control,
     handleSubmit,
     setValue,
     watch,
+    reset,
     formState: { errors },
   } = useForm<TodoFormData>({
     resolver: yupResolver(todoFormSchema),
@@ -80,6 +138,253 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   });
 
   const watchedListItems = watch('listItems');
+  const watchedJob = watch('job');
+  const watchedEmployees = watch('employees');
+
+  // Debug form values
+  useEffect(() => {
+    if (editingTodoList) {
+      console.log('Current form values:', {
+        job: watchedJob,
+        employees: watchedEmployees,
+        selectedEmployees,
+        jobsCount: jobs.length,
+        employeesCount: employees.length,
+      });
+    }
+  }, [
+    watchedJob,
+    watchedEmployees,
+    selectedEmployees,
+    jobs.length,
+    employees.length,
+    editingTodoList,
+  ]);
+
+  // Debug available jobs
+  useEffect(() => {
+    if (jobs.length > 0) {
+      console.log(
+        'Available jobs:',
+        jobs.map(job => ({
+          uuid: job.uuid,
+          project_name: job.project_name,
+          project_id: job.project_id,
+        }))
+      );
+    }
+  }, [jobs]);
+
+  // Reset form when editing mode changes
+  useEffect(() => {
+    if (!editingTodoList) {
+      // Reset form for create mode
+      reset({
+        job: '',
+        date: new Date(),
+        employees: [],
+        title: '',
+        listItems: [''],
+      });
+      setSelectedEmployees([]);
+    }
+  }, [editingTodoList, reset]);
+
+  // Fetch jobs on component mount
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setJobsLoading(true);
+      try {
+        const response = await apiService.fetchJobsDropdown({
+          page: 1,
+          limit: 50,
+          type: 'ALL',
+        });
+
+        if (response.statusCode === 200 && response.data?.data) {
+          const jobsData = response.data.data.map((job: any) => ({
+            id: job.id,
+            uuid: job.uuid,
+            project_name: job.project_name,
+            project_id: job.project_id,
+            status: job.status,
+          }));
+          setJobs(jobsData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch jobs:', error);
+        setJobs([]);
+      } finally {
+        setJobsLoading(false);
+      }
+    };
+
+    fetchJobs();
+  }, []);
+
+  // Fetch employees on component mount
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      setEmployeesLoading(true);
+      try {
+        // Get company ID from localStorage
+        const selectedCompany = localStorage.getItem(
+          STORAGE_KEYS.SELECTED_COMPANY
+        );
+        const companyId = selectedCompany
+          ? JSON.parse(selectedCompany)?.id
+          : null;
+
+        if (!companyId) {
+          console.warn(
+            'No company ID found in localStorage - employees will not be loaded'
+          );
+          setEmployees([]);
+          return;
+        }
+
+        const response = await apiService.fetchUsersDropdown({
+          company_id: companyId,
+          page: 1,
+          limit: 50,
+        });
+        console.log('API Response:', response);
+        if (response.data) {
+          console.log('API Response:', response);
+          console.log('Response data:', response.data);
+
+          // The response structure is: { data: [...], total: 1, page: 1, limit: 50, totalPages: 1 }
+          let employeesData = [];
+          if (response.data && Array.isArray(response.data)) {
+            employeesData = response.data;
+          } else if (
+            response.data &&
+            response.data.data &&
+            Array.isArray(response.data.data)
+          ) {
+            employeesData = response.data.data;
+          }
+
+          const mappedEmployees = employeesData.map((employee: any) => ({
+            id: employee.id,
+            uuid: employee.uuid,
+            name: employee.name,
+            email: employee.email,
+            profile_picture_url:
+              employee.profile_picture_url || '/images/profile.jpg',
+            status: employee.status || 'ACTIVE',
+          }));
+
+          console.log('Mapped employees:', mappedEmployees);
+          setEmployees(mappedEmployees);
+        }
+      } catch (error) {
+        console.error('Failed to fetch employees:', error);
+        setEmployees([]);
+      } finally {
+        setEmployeesLoading(false);
+      }
+    };
+
+    fetchEmployees();
+  }, []);
+
+  // Debug employees state
+  useEffect(() => {
+    console.log('Employees array length:', employees.length);
+    console.log('Employees data:', employees);
+    console.log(
+      'MultiSelect options:',
+      employees.map(employee => ({
+        value: employee.uuid,
+        label: employee.name,
+        image: employee.profile_picture_url || '/images/profile.jpg',
+      }))
+    );
+  }, [employees]);
+
+  // Handle prefilling the form if editing
+  useEffect(() => {
+    if (editingTodoList && jobs.length > 0 && employees.length > 0) {
+      console.log('Setting form values for editing:', {
+        job_id: editingTodoList.job_id,
+        job_uuid: editingTodoList.job_uuid,
+        employees: editingTodoList.employees,
+        title: editingTodoList.title,
+        date: editingTodoList.date,
+        items: editingTodoList.items,
+      });
+
+      // Add a small delay to ensure form is properly initialized
+      setTimeout(() => {
+        // Try both job_id and job_uuid
+        let jobUuid = editingTodoList.job_uuid || editingTodoList.job_id;
+
+        // Ensure jobUuid is a string
+        if (jobUuid !== null && jobUuid !== undefined) {
+          jobUuid = String(jobUuid);
+        }
+
+        // Check if job exists in available jobs
+        const jobExists = jobs.some(j => j.uuid === jobUuid);
+
+        // If job doesn't exist, try to find by project_name or other criteria
+        if (!jobExists && editingTodoList.project_name) {
+          const matchingJob = jobs.find(
+            j =>
+              j.project_name === editingTodoList.project_name ||
+              j.project_id === editingTodoList.project_id
+          );
+          if (matchingJob) {
+            jobUuid = matchingJob.uuid;
+            console.log('Found matching job by name:', matchingJob);
+          }
+        }
+
+        console.log('Attempting to set job:', {
+          jobUuid,
+          jobUuidType: typeof jobUuid,
+          availableJobUuids: jobs.map(j => j.uuid),
+          availableJobUuidTypes: jobs.map(j => typeof j.uuid),
+          jobExists: jobs.some(j => j.uuid === jobUuid),
+          jobExistsStrict: jobs.some(
+            j => j.uuid === jobUuid && typeof j.uuid === typeof jobUuid
+          ),
+        });
+
+        // Handle employees - they might be in different formats
+        let employeeUuids: string[] = [];
+        if (editingTodoList.user_uuids) {
+          employeeUuids = editingTodoList.user_uuids;
+        } else if (
+          editingTodoList.employees &&
+          Array.isArray(editingTodoList.employees)
+        ) {
+          employeeUuids = editingTodoList.employees.map(
+            (emp: any) => emp.user?.uuid || emp.uuid
+          );
+        }
+
+        // Reset form with all values at once
+        reset({
+          job: jobUuid,
+          date: new Date(editingTodoList.date),
+          employees: employeeUuids,
+          title: editingTodoList.title,
+          listItems: editingTodoList.items.map((item: any) => item.description),
+        });
+
+        setSelectedEmployees(employeeUuids);
+
+        console.log('Job value set to:', jobUuid);
+
+        // Check the field value after a short delay
+        setTimeout(() => {
+          console.log('Job field value after setting:', watchedJob);
+        }, 200);
+      }, 100);
+    }
+  }, [editingTodoList, jobs, employees, setValue, reset, watchedJob]);
 
   const addListItem = () => {
     const currentItems = watchedListItems || [];
@@ -94,9 +399,111 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     }
   };
 
-  const handleFormSubmit = (data: TodoFormData) => {
-    data.employees = selectedEmployees;
-    onSubmit(data);
+  const handleFormSubmit = async (data: TodoFormData) => {
+    setSubmitLoading(true);
+    setSubmitError(null);
+
+    try {
+      let response;
+      if (editingTodoList) {
+        // Update existing todo list
+        console.log('Updating todo list:', editingTodoList.uuid);
+
+        // Prepare items with UUID handling
+        const originalItems = editingTodoList.items || [];
+        console.log('Original items:', originalItems);
+        console.log('Form items:', data.listItems);
+
+        const items = data.listItems
+          .filter(item => item.trim() !== '') // Remove empty items
+          .map((item, index) => {
+            // Check if this position corresponds to an original item
+            const originalItem = originalItems[index];
+
+            if (originalItem && originalItem.uuid) {
+              // Existing item - include UUID
+              console.log(
+                `Item ${index}: Existing item with UUID ${originalItem.uuid}`
+              );
+              return {
+                uuid: originalItem.uuid,
+                description: item.trim(),
+              };
+            } else {
+              // New item - don't include UUID
+              console.log(`Item ${index}: New item without UUID`);
+              return {
+                description: item.trim(),
+              };
+            }
+          });
+
+        console.log('Final items array:', items);
+
+        // Prepare payload for update
+        const payload = {
+          title: data.title,
+          date: format(data.date, 'yyyy-MM-dd'),
+          user_uuids: selectedEmployees,
+          items: items,
+        };
+
+        console.log('Update payload:', payload);
+        console.log('Selected employees:', selectedEmployees);
+        console.log('Original employees:', editingTodoList.employees);
+
+        response = await apiService.updateTodoList(
+          editingTodoList.uuid,
+          payload
+        );
+
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          console.log('Todo list updated successfully:', response);
+          showSuccessToast('Todo list updated successfully!');
+        } else {
+          console.error('Failed to update todo list:', response);
+          const errorMessage = response.message || 'Failed to update todo list';
+          setSubmitError(errorMessage);
+          showErrorToast(errorMessage);
+        }
+      } else {
+        // Create new todo list
+        const payload = {
+          job_uuid: data.job,
+          title: data.title,
+          date: format(data.date, 'yyyy-MM-dd'),
+          user_uuids: selectedEmployees,
+          items: data.listItems
+            .filter(item => item.trim() !== '') // Remove empty items
+            .map(item => ({ description: item.trim() })),
+        };
+
+        console.log('Create payload:', payload);
+        response = await apiService.createTodoList(payload);
+
+        if (response.statusCode === 200 || response.statusCode === 201) {
+          console.log('Todo list created successfully:', response);
+          showSuccessToast('Todo list created successfully!');
+        } else {
+          console.error('Failed to create todo list:', response);
+          const errorMessage = response.message || 'Failed to create todo list';
+          setSubmitError(errorMessage);
+          showErrorToast(errorMessage);
+        }
+      }
+
+      // Call the original onSubmit with the form data
+      data.employees = selectedEmployees;
+      onSubmit(data);
+    } catch (error) {
+      console.error('Error submitting todo list:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'An unexpected error occurred';
+      setSubmitError(errorMessage);
+      showErrorToast(errorMessage);
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const handleEmployeeChange = (employees: string[]) => {
@@ -134,15 +541,25 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     <SelectValue placeholder={TODO_MESSAGES.JOB_PLACEHOLDER} />
                   </SelectTrigger>
                   <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                    {MOCK_JOBS.map(({ value, label }) => (
-                      <SelectItem
-                        key={value}
-                        value={value}
-                        className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
-                      >
-                        {label}
-                      </SelectItem>
-                    ))}
+                    {jobsLoading ? (
+                      <div className='p-2 text-gray-500 text-sm'>
+                        Loading jobs...
+                      </div>
+                    ) : jobs.length > 0 ? (
+                      jobs.map(job => (
+                        <SelectItem
+                          key={job.uuid}
+                          value={job.uuid}
+                          className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
+                        >
+                          {job.project_name}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className='p-2 text-gray-500 text-sm'>
+                        No jobs found
+                      </div>
+                    )}
                   </SelectContent>
                 </Select>
               )}
@@ -190,6 +607,11 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                         field.onChange(date);
                         setDatePickerOpen(false);
                       }}
+                      disabled={date => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return date < today;
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -206,10 +628,18 @@ export const TodoForm: React.FC<TodoFormProps> = ({
             {TODO_MESSAGES.EMPLOYEES_LABEL}
           </Label>
           <MultiSelect
-            options={MOCK_EMPLOYEES}
+            options={employees.map(employee => ({
+              value: employee.uuid,
+              label: employee.name,
+              image: employee.profile_picture_url || '/images/profile.jpg',
+            }))}
             value={selectedEmployees}
             onChange={handleEmployeeChange}
-            placeholder={TODO_MESSAGES.EMPLOYEES_PLACEHOLDER}
+            placeholder={
+              employeesLoading
+                ? 'Loading employees...'
+                : TODO_MESSAGES.EMPLOYEES_PLACEHOLDER
+            }
             error={errors.employees?.message || ''}
           />
         </div>
@@ -234,7 +664,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                     ? '!border-[var(--warning)]'
                     : 'border-[var(--border-dark)]'
                 )}
-                disabled={loading}
+                disabled={loading || submitLoading}
               />
             )}
           />
@@ -274,7 +704,7 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                           ? '!border-[var(--warning)]'
                           : 'border-[var(--border-dark)]'
                       )}
-                      disabled={loading}
+                      disabled={loading || submitLoading}
                     />
                   )}
                 />
@@ -293,22 +723,33 @@ export const TodoForm: React.FC<TodoFormProps> = ({
           <FormErrorMessage message={errors.listItems?.message || ''} />
         </div>
 
+        {/* Error Display */}
+        {submitError && (
+          <div className='p-3 bg-red-50 border border-red-200 rounded-md'>
+            <p className='text-red-600 text-sm'>{submitError}</p>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div className='pt-4 flex items-center gap-3'>
           <Button
             type='button'
             className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
             onClick={onCancel}
-            disabled={loading}
+            disabled={loading || submitLoading}
           >
             {TODO_MESSAGES.CANCEL_BUTTON}
           </Button>
           <Button
             type='submit'
             className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
-            disabled={loading}
+            disabled={loading || submitLoading}
           >
-            {loading ? TODO_MESSAGES.SAVING_BUTTON : TODO_MESSAGES.SAVE_BUTTON}
+            {submitLoading
+              ? TODO_MESSAGES.SAVING_BUTTON
+              : editingTodoList
+                ? 'Update Todo List'
+                : TODO_MESSAGES.SAVE_BUTTON}
           </Button>
         </div>
       </form>

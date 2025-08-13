@@ -196,6 +196,7 @@ const FiveBoxSystem = () => {
               onDelete={() => handleDelete(id)}
               onToggle={() => handleToggle(id)}
               onClick={() => handleCardClick(id)}
+              showMenu={id !== '04' && id !== '05'} // Hide menu for Category (04) and Estimation (05)
             />
           )
         )}

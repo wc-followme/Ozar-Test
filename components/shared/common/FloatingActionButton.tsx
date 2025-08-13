@@ -1,8 +1,11 @@
 'use client';
 
+import { useToast } from '@/components/ui/use-toast';
+import { apiService } from '@/lib/api';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { IconCategoryPlus, IconX } from '@tabler/icons-react';
 import { Add, AddCircle } from 'iconsax-react';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MaterialCheckListIcon } from '../../icons/MaterialCheckListIcon';
 import { SupportIcon } from '../../icons/SupportIcon';
 import { TodoListIcon } from '../../icons/TodoListIcon';
@@ -11,10 +14,13 @@ import { Button } from '../../ui/button';
 import { AppointmentForm } from '../forms/AppointmentsForm';
 import { CreateJobForm } from '../forms/CreateJobForm';
 import { TodoForm } from '../forms/TodoForm';
-import { AppointmentsComponent } from './AppointmentsComponent';
+import {
+  AppointmentsComponent,
+  AppointmentsComponentRef,
+} from './AppointmentsComponent';
 import { MaterialChecklistComponent } from './MaterialChecklistComponent';
 import SideSheet from './SideSheet';
-import { TodoComponent } from './TodoComponent';
+import { TodoComponent, TodoComponentRef } from './TodoComponent';
 import { ToolsChecklistComponent } from './ToolsChecklistComponent';
 
 interface ToolbarItem {
@@ -51,6 +57,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   const [showTodoForm, setShowTodoForm] = useState(false);
   const [showAppointmentForm, setShowAppointmentForm] = useState(false);
   const [showJobSheet, setShowJobSheet] = useState(false);
+  const todoComponentRef = useRef<TodoComponentRef>(null);
+  const appointmentsComponentRef = useRef<AppointmentsComponentRef>(null);
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const items = externalToolbarItems || toolbarItems;
 
@@ -82,14 +91,83 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
   const handleTodoFormSubmit = () => {
     setShowTodoForm(false);
+    // Refresh the todo list after successful form submission
+    if (todoComponentRef.current) {
+      todoComponentRef.current.refresh();
+    }
   };
 
   const handleTodoFormCancel = () => {
     setShowTodoForm(false);
   };
 
-  const handleAppointmentFormSubmit = () => {
-    setShowAppointmentForm(false);
+  const handleAppointmentFormSubmit = async (data: any) => {
+    try {
+      // Format date to YYYY-MM-DD
+      const formattedDate = data.date
+        ? data.date.toISOString().split('T')[0]
+        : '';
+
+      if (!formattedDate) {
+        return;
+      }
+
+      // Convert employees array to comma-separated string
+      const userUuids = data.employees.join(',');
+
+      // Convert 12-hour format to 24-hour format
+      const convertTo24Hour = (time12h: string) => {
+        const [time, modifier] = time12h.split(' ');
+        if (!time || !modifier) return time12h;
+
+        const timeParts = time.split(':');
+        if (timeParts.length !== 2) return time12h;
+
+        let hours = timeParts[0];
+        const minutes = timeParts[1];
+
+        if (!hours || !minutes) return time12h;
+
+        if (hours === '12') {
+          hours = modifier === 'PM' ? '12' : '00';
+        } else if (modifier === 'PM') {
+          hours = String(parseInt(hours) + 12);
+        }
+
+        return `${hours.padStart(2, '0')}:${minutes}`;
+      };
+
+      const payload = {
+        agenda: data.agenda,
+        appointment_with: data.appointmentWith,
+        date: formattedDate,
+        start_time: convertTo24Hour(data.starts),
+        end_time: convertTo24Hour(data.ends),
+        address: data.address,
+        notes: data.notes || '',
+        user_uuids: userUuids,
+      };
+
+      // Create new appointment
+      const response = await apiService.createAppointment(payload);
+
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        showSuccessToast(
+          extractApiSuccessMessage(response, 'Appointment created successfully')
+        );
+        setShowAppointmentForm(false);
+        // Refresh appointments list
+        appointmentsComponentRef.current?.refreshAppointments();
+      } else {
+        showErrorToast(response.message || 'Failed to create appointment');
+      }
+    } catch (error) {
+      const message = extractApiErrorMessage(
+        error,
+        'Failed to create appointment'
+      );
+      showErrorToast(message);
+    }
   };
 
   const handleAppointmentFormCancel = () => {
@@ -176,7 +254,11 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
             data-tooltip='Jobs'
             onClick={handleJobClick}
           >
-            <Add size='32' className='text-greenbrand sm:hidden' />
+            <Add
+              size='32'
+              className='text-greenbrand sm:hidden'
+              color='var(--secondary)'
+            />
           </button>
         </div>
       </div>
@@ -206,14 +288,22 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
                     }
                     className='ml-auto p-1 rounded transition-colors'
                   >
-                    <AddCircle size='20' className='text-greenbrand' />
+                    <AddCircle
+                      size='20'
+                      className='text-[var(--secondary)]'
+                      color='var(--secondary)'
+                    />
                   </button>
                 )}
               </div>
 
               <div className='flex-1 py-4 overflow-y-auto'>
-                {activeItem === 'todoList' && <TodoComponent />}
-                {activeItem === 'appointmentList' && <AppointmentsComponent />}
+                {activeItem === 'todoList' && (
+                  <TodoComponent ref={todoComponentRef} />
+                )}
+                {activeItem === 'appointmentList' && (
+                  <AppointmentsComponent ref={appointmentsComponentRef} />
+                )}
                 {activeItem === 'toolChecklist' && <ToolsChecklistComponent />}
                 {activeItem === 'materialChecklist' && (
                   <MaterialChecklistComponent />

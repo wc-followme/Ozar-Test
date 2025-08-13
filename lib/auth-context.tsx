@@ -111,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const savedUser =
         localStorage.getItem(STORAGE_KEYS.USER) ||
         getCookie(STORAGE_KEYS.USER_DATA);
+
       const token =
         localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
         getCookie(STORAGE_KEYS.AUTH_TOKEN);
@@ -121,7 +122,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isAuthenticated && hasUserData) {
         setIsAuthenticated(true);
         try {
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
         } catch {
           // If parsing fails, clear everything
           logout();
@@ -163,7 +165,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role,
           company,
         } = loginUserData;
-        console.log('loginUserData', loginUserData);
+
         const { id: role_id, uuid: role_uuid, name: role_name } = role;
         const { uuid: company_uuid, name: company_name } = company;
         // Transform login user data to match User interface

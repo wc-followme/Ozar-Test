@@ -44,6 +44,7 @@ export const ROUTES = {
   TOOLS_MANAGEMENT: '/tools-management',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
+  PORTAL_USERS: '/portal-users',
   ROLE_MANAGEMENT: '/role-management',
   CREATE_ROLE: '/role-management/create-role',
   EDIT_ROLE: '/role-management/edit-role',
@@ -59,6 +60,8 @@ export const ROUTES = {
   FIVE_BOX_PROJECT_INFO: '/company-profile/five-box-system/project-information',
   FIVE_BOX_CATEGORY: '/company-profile/five-box-system/category',
   FIVE_BOX_ESTIMATION: '/company-profile/five-box-system/estimation',
+  TEMPLATES_MANAGEMENT: '/templates',
+  CREATE_TEMPLATE: '/templates/create',
 } as const;
 
 // Action constants for menu options and permissions
@@ -288,6 +291,7 @@ export const APPOINTMENT_MESSAGES = {
   DATE_LABEL: 'Date',
   DATE_PLACEHOLDER: 'Select Date',
   DATE_REQUIRED: 'Date is required',
+  DATE_FUTURE_REQUIRED: 'Only Future date should be allowed',
 
   STARTS_LABEL: 'Starts',
   STARTS_PLACEHOLDER: 'Select Time',
@@ -296,6 +300,7 @@ export const APPOINTMENT_MESSAGES = {
   ENDS_LABEL: 'Ends',
   ENDS_PLACEHOLDER: 'Select Time',
   ENDS_REQUIRED: 'End time is required',
+  ENDS_GREATER_THAN_STARTS: 'End time should be greater than start time',
 
   ADDRESS_LABEL: 'Address',
   ADDRESS_PLACEHOLDER: 'Enter Address',
@@ -347,6 +352,7 @@ export const TODO_MESSAGES = {
   DATE_LABEL: 'Date',
   DATE_PLACEHOLDER: 'Select Date',
   DATE_REQUIRED: 'Date is required',
+  DATE_FUTURE_REQUIRED: 'Only Future date should be allowed',
 
   EMPLOYEES_LABEL: 'Select Employees',
   EMPLOYEES_PLACEHOLDER: 'Select employees',
