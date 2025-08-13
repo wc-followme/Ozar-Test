@@ -450,6 +450,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     // Find which room contains this trade using uniqueKey
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
+    console.log('tradeUniqueKey', tradeUniqueKey);
 
     for (const room of rooms) {
       const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
@@ -459,6 +460,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         break;
       }
     }
+    console.log('foundRoom', foundRoom);
+    console.log('foundTrade', foundTrade);
 
     // Set the room that contains this trade
     if (foundRoom && foundTrade) {
@@ -715,6 +718,25 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
                             : service
                         ),
                       }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  const handleTradeUpdate = (updatedTrade: Trade) => {
+    if (selectedTrade && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? { ...trade, ...updatedTrade }
                     : trade
                 ),
               }
@@ -1274,9 +1296,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             selectedTradeData ? (
               <EstimationTradeForm
                 trade={selectedTradeData}
-                roomName={selectedRoom?.name || 'Room'}
                 roomUniqueKey={selectedRoom?.uniqueKey || ''}
                 tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
+                _onTradeUpdate={handleTradeUpdate}
                 onTradeNameChange={handleTradeNameChange}
                 onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={serviceId => {

@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique key to match EstimationBox
   name: string;
   services: number;
   dateRange: string;
@@ -31,6 +32,9 @@ interface Trade {
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
+  startDate?: Date; // Add start date field
+  endDate?: Date; // Add end date field
+  markup?: number; // Add markup field
 }
 
 interface EstimationTradeFormProps {
@@ -55,6 +59,7 @@ export default function EstimationTradeForm({
   trade,
   roomUniqueKey,
   tradeUniqueKey,
+  _onTradeUpdate,
   onServiceSelect,
   onTradeNameChange,
   onTradeReplacement,
@@ -64,15 +69,19 @@ export default function EstimationTradeForm({
 }: EstimationTradeFormProps) {
   const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
-  const [markupAmount, setMarkupAmount] = useState('');
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return tomorrow;
-  });
   const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
+
+  // Use trade-specific data instead of local state
+  const startDate = trade.startDate || new Date();
+  const endDate =
+    trade.endDate ||
+    (() => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow;
+    })();
+  const markupAmount = trade.markup?.toString() || '0';
 
   // Use provided tradeOptions or show nothing if no trades available
   const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
@@ -119,10 +128,10 @@ export default function EstimationTradeForm({
 
   const handleInputChange = (field: string, value: number) => {
     if (field === 'markup') {
-      setMarkupAmount(value.toString());
-      const updates: any = { markup: value };
-      if (startDate) updates.start_date = startDate.toISOString();
-      if (endDate) updates.end_date = endDate.toISOString();
+      _onTradeUpdate?.({
+        ...trade,
+        markup: value,
+      });
       onLocalStorageUpdate?.();
     }
   };
@@ -235,10 +244,12 @@ export default function EstimationTradeForm({
                     mode='single'
                     selected={startDate}
                     onSelect={date => {
-                      setStartDate(date);
-                      setStartDatePickerOpen(false);
-                      // Save data immediately with the new date
                       if (date) {
+                        _onTradeUpdate?.({
+                          ...trade,
+                          startDate: date,
+                        });
+                        setStartDatePickerOpen(false);
                         onLocalStorageUpdate?.();
                       }
                     }}
@@ -282,10 +293,12 @@ export default function EstimationTradeForm({
                     mode='single'
                     selected={endDate}
                     onSelect={date => {
-                      setEndDate(date);
-                      setEndDatePickerOpen(false);
-                      // Save data immediately with the new date
                       if (date) {
+                        _onTradeUpdate?.({
+                          ...trade,
+                          endDate: date,
+                        });
+                        setEndDatePickerOpen(false);
                         onLocalStorageUpdate?.();
                       }
                     }}
