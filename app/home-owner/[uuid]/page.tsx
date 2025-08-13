@@ -477,12 +477,10 @@ export default function HomeOwnerWizardPage() {
                 onAddRoom={handleAddRoom}
                 jobId={uuid}
                 onSaveSuccess={() => {
-                  console.log('Job rooms saved successfully!');
-                  // You can add any success handling here
+                  // Success handling is now done via toast messages in EstimationBox
                 }}
                 onSaveError={error => {
-                  console.error('Failed to save job rooms:', error);
-                  // You can add any error handling here
+                  // Error handling is now done via toast messages in EstimationBox
                 }}
               />
               // Commented out for now

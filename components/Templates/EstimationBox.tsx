@@ -12,8 +12,10 @@ import EstimationServiceForm from '@/components/shared/forms/EstimationServiceFo
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
+import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 import { updateLocalStorageFromState } from './EstimateComponent';
@@ -106,6 +108,7 @@ const generateUniqueKey = (
 };
 
 export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
+  const { showSuccessToast, showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>([
@@ -1161,14 +1164,30 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
           console.log('Save API response:', response);
 
+          // Show success toast with API response message
+          showSuccessToast(
+            extractApiSuccessMessage(response, 'Estimation saved successfully!')
+          );
+
           // Call success callback if provided
           if (props.onSaveSuccess) {
             props.onSaveSuccess();
           }
         }
+      } else {
+        // Show success toast for localStorage save only
+        showSuccessToast('Estimation saved to local storage successfully!');
       }
     } catch (error) {
       console.error('Error saving job rooms:', error);
+
+      // Show error toast with API error message
+      showErrorToast(
+        extractApiErrorMessage(
+          error,
+          'Failed to save estimation. Please try again.'
+        )
+      );
 
       // Call error callback if provided
       if (props.onSaveError) {
@@ -1423,12 +1442,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             <div className='flex gap-3'>
               <button onClick={handleSave} className='btn-secondary'>
                 Save
-              </button>
-              <button
-                onClick={handleReviewAndSend}
-                className='px-6 py-2.5 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors font-medium'
-              >
-                Review & Send
               </button>
             </div>
           </div>
