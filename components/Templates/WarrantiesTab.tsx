@@ -162,7 +162,7 @@ export const WarrantiesTab = () => {
           onValueChange={setSelectedTab}
           className='w-full'
         >
-          <div className='flex gap-6 lg:flex-row flex-col'>
+          <div className='flex lg:gap-6 gap-0 lg:flex-row flex-col'>
             <div className='lg:w-[280px] w-full shrink-0 p-4'>
               {/* Mobile Select Dropdown */}
               <div className='lg:hidden'>
@@ -199,7 +199,7 @@ export const WarrantiesTab = () => {
               </div>
             </div>
 
-            <div className='flex-1 p-4 bg-[var(--background)] rounded-r-[20px]'>
+            <div className='flex-1 p-4 bg-[var(--background)] lg:rounded-r-[20px]'>
               {warrantyTabs.map(tab => (
                 <TabsContent key={tab.id} value={tab.value} className='mt-0'>
                   <div className='space-y-4'>

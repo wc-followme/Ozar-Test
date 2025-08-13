@@ -109,7 +109,7 @@ const CompanyProfile = () => {
                   <h1 className='text-[var(--text-dark)] text-2xl font-bold leading-[18px] tracking-[0%]'>
                     Envision Construction
                   </h1>
-                  <div className='flex flex-wrap items-end gap-2'>
+                  <div className='flex flex-wrap items-end gap-4'>
                     <div>
                       <p className='text-[var(--text-secondary)] text-base font-normal leading-[18px] tracking-[0%] mb-2'>
                         Construction Company
@@ -169,8 +169,8 @@ const CompanyProfile = () => {
                         <span className='hidden sm:inline'>Share</span>
                       </Button>
 
-                      <Button
-                        variant='secondary'
+                      <Link
+                        href='/company-profile/edit-profile'
                         className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
                       >
                         <Edit2
@@ -179,7 +179,7 @@ const CompanyProfile = () => {
                           className='[&_path]:!stroke-[2px]'
                         />
                         <span className='hidden sm:inline'>Edit Profile</span>
-                      </Button>
+                      </Link>
                     </div>
                   </div>
                 </div>

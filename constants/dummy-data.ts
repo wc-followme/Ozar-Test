@@ -303,11 +303,6 @@ export const warranties = [
 
 export const warrantyTabs = [
   {
-    id: 'all',
-    label: 'All Warranties',
-    value: 'all',
-  },
-  {
     id: 'workmanship',
     label: 'Workmanship',
     value: 'workmanship',

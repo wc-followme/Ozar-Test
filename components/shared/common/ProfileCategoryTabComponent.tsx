@@ -1,5 +1,6 @@
 'use client';
 
+import SelectField from '@/components/shared/common/SelectField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useState } from 'react';
 
@@ -64,22 +65,44 @@ export const ProfileCategoryTabComponent = () => {
         onValueChange={setSelectedTab}
         className='w-full'
       >
-        <div className='flex lg:flex-row flex-col gap-6'>
-          <div className='w-[280px] shrink-0 p-5'>
-            <TabsList className='flex flex-col w-full rounded-lg h-auto'>
-              {tabData.map(tab => (
-                <TabsTrigger
-                  key={tab.id}
-                  value={tab.id}
-                  className='w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[#F5F7FA] data-[state=active]:text-[#24338C] rounded-lg font-medium'
-                >
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+        <div className='flex lg:gap-6 gap-0 lg:flex-row flex-col'>
+          <div className='lg:w-[280px] w-full shrink-0 p-4'>
+            {/* Mobile Select Dropdown */}
+            <div className='lg:hidden'>
+              <SelectField
+                options={tabData.map(tab => ({
+                  value: tab.id,
+                  label: tab.label,
+                }))}
+                value={selectedTab}
+                onValueChange={setSelectedTab}
+                placeholder='Select category'
+                className='w-full'
+                triggerClassName='rounded-lg h-[42px]'
+              />
+            </div>
+
+            {/* Desktop Tabs */}
+            <div className='hidden lg:block'>
+              <TabsList className='flex flex-col w-full rounded-lg h-auto'>
+                {tabData.map((tab, index) => (
+                  <TabsTrigger
+                    key={tab.id}
+                    value={tab.id}
+                    className={`w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[#F5F7FA] data-[state=active]:text-[#24338C] rounded-lg font-medium ${
+                      index !== tabData.length - 1
+                        ? 'border-b border-[var(--border-dark)]'
+                        : ''
+                    }`}
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
           </div>
 
-          <div className='flex-1 p-5 bg-[var(--background)] rounded-r-[20px]'>
+          <div className='flex-1 p-4 bg-[var(--background)] lg:rounded-r-[20px]'>
             {tabData.map(tab => (
               <TabsContent key={tab.id} value={tab.id} className='mt-0'>
                 <div className='flex flex-wrap gap-3 bg-[var(--card-background)] rounded-[10px] p-5'>

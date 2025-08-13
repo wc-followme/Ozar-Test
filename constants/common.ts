@@ -52,6 +52,8 @@ export const ROUTES = {
   MATERIAL_MANAGEMENT: '/material-management',
   SERVICE_MANAGEMENT: '/service-management',
   TRADE_MANAGEMENT: '/trade-management',
+  TEMPLATES_MANAGEMENT: '/templates',
+  CREATE_TEMPLATE: '/templates/create',
 } as const;
 
 // Action constants for menu options and permissions
@@ -397,3 +399,40 @@ export const CUSTOM_EVENTS = {
   COMPANY_CHANGED: 'company-changed',
   STORAGE: 'storage',
 } as const;
+
+// Company Profile Tab Constants
+export const COMPANY_TABS = {
+  COMPANY_INFO: 'company-info',
+  TEAM: 'team',
+  REVIEW: 'review',
+  PORTFOLIO: 'portfolio',
+  WARRANTIES: 'warranties',
+} as const;
+
+export const COMPANY_TAB_ITEMS = [
+  {
+    value: COMPANY_TABS.COMPANY_INFO,
+    label: 'Company info',
+    className: 'pt-6 max-w-full',
+  },
+  {
+    value: COMPANY_TABS.TEAM,
+    label: 'Team',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.REVIEW,
+    label: 'Review',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.PORTFOLIO,
+    label: 'Portfolio',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.WARRANTIES,
+    label: 'Warranties',
+    className: 'pt-6',
+  },
+];
