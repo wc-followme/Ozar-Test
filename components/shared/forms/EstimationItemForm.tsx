@@ -142,12 +142,23 @@ export default function EstimationItemForm({
               return matchingOption ? matchingOption.value : item.name;
             })()}
             onValueChange={newValue => {
-              // Find the selected option to get the display name
+              // Find the selected option to get the display name and UUID
               const selectedOption = materialOptions.find(
                 option => option.value === newValue
               );
               const newName = selectedOption ? selectedOption.label : newValue;
-              handleInputChange('name', newName);
+              const materialUuid = selectedOption
+                ? selectedOption.value
+                : undefined;
+
+              // Update both name and UUID
+              if (onItemUpdate) {
+                onItemUpdate({
+                  ...item,
+                  name: newName,
+                  ...(materialUuid && { uuid: materialUuid }), // Only add uuid if it exists
+                });
+              }
             }}
             options={materialOptions}
             placeholder={

@@ -1,5 +1,6 @@
 export interface EstimationItem {
   id: string;
+  uuid?: string; // Add UUID field for database material UUID
   name: string;
   variant: string;
   qty: number;
@@ -18,6 +19,7 @@ export interface ServiceOption {
 
 export interface Tool {
   id: string;
+  uuid?: string; // Add UUID field for database tool UUID
   name: string;
   category: string;
   description: string;

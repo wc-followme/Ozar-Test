@@ -14,6 +14,7 @@ import SideSheet from './SideSheet';
 
 interface Tool {
   id: string;
+  uuid?: string; // Add UUID field for database tool UUID
   name: string;
   category: string;
   description: string;

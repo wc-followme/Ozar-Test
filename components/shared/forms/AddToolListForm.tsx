@@ -11,6 +11,7 @@ import MultiSelect, { MultiSelectOption } from '../common/MultiSelect';
 
 interface Tool {
   id: string;
+  uuid?: string; // Add UUID field for database tool UUID
   name: string;
   category: string;
   description: string;
@@ -114,6 +115,7 @@ export default function AddToolListForm({
       const toolData = toolOptions.find(tool => tool.value === toolId);
       return {
         id: `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        uuid: toolId, // Store the actual tool UUID from database
         name: toolData?.label || 'Unknown Tool',
         category: 'general',
         description: '',

@@ -150,7 +150,7 @@ export const updateLocalStorageFromState = (
             qty: service.qty,
             rate: service.rate,
             materials: service.materials.map(material => ({
-              material_id: material.id,
+              material_id: material.uuid || material.id,
               description: material.description,
               disclaimer: '', // Add disclaimer field if needed
               qty: material.qty,
@@ -159,7 +159,7 @@ export const updateLocalStorageFromState = (
               markup: material.markup,
             })),
             finishes: service.finishes.map(finish => ({
-              material_id: finish.id,
+              material_id: finish.uuid || finish.id,
               description: finish.description,
               disclaimer: '', // Add disclaimer field if needed
               qty: finish.qty,
@@ -168,7 +168,7 @@ export const updateLocalStorageFromState = (
               markup: finish.markup,
             })),
             tools: service.tools.map(tool => ({
-              tool_id: tool.id,
+              tool_id: tool.uuid || tool.id,
             })),
           })) || [],
       })),
