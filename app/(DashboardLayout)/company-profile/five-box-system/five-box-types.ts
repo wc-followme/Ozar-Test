@@ -1,3 +1,5 @@
+export type FiveBoxStep = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH';
+
 export interface FiveBoxItem {
   id: string;
   number: string;
@@ -12,6 +14,7 @@ export interface FiveBoxItem {
   order: number;
   icon: string;
   formFields: string[];
+  step: FiveBoxStep;
 }
 
 export interface MenuOption {

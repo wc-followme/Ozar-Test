@@ -6,6 +6,7 @@ import { ThankYouComponent } from '@/components/shared/common/ThankYouComponent'
 import { StepGeneralInfo } from '@/components/shared/forms/StepGeneralInfo';
 import { StepOptionalDetails } from '@/components/shared/forms/StepOptionalDetails';
 import { StepProjectType } from '@/components/shared/forms/StepProjectType';
+import { StepPropertyInfo } from '@/components/shared/forms/StepPropertyInfo';
 import { showErrorToast, showSuccessToast } from '@/components/ui/use-toast';
 import { ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -21,6 +22,7 @@ import {
   JobData,
   OptionalDetailsData,
   ProjectTypeData,
+  PropertyInfoData,
   WIZARD_STEPS,
   WizardStep,
 } from '../home-owner-types';
@@ -36,19 +38,46 @@ export default function HomeOwnerWizardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Wizard step state
+  // Wizard step state - start with first available step
   const [step, setStep] = useState<WizardStep>(WIZARD_STEPS.GENERAL);
 
   // Form data state
   const [generalInfoData, setGeneralInfoData] =
     useState<GeneralInfoData | null>(null);
+  const [propertyInfoData, setPropertyInfoData] = useState<any | null>(null);
   const [optionalDetailsData, setOptionalDetailsData] =
     useState<OptionalDetailsData | null>(null);
   const [projectTypeData, setProjectTypeData] =
     useState<ProjectTypeData | null>(null);
+  const [companyId, setCompanyId] = useState<string | null>(null); // Store company UUID from job data
 
   // State for Thank You component
   const [showThankYou, setShowThankYou] = useState(false);
+
+  // Box settings state
+  const [boxSettings, setBoxSettings] = useState<any>(null);
+
+  // Fetch box settings
+  const fetchBoxSettings = async () => {
+    if (!companyId) {
+      console.log('Company ID not available for box settings');
+      return;
+    }
+
+    try {
+      const response = await apiService.getBoxSettings({
+        company_id: companyId,
+      });
+
+      if (response.statusCode === 200 && response.data) {
+        setBoxSettings(response.data);
+        console.log('Box settings loaded:', response.data);
+      }
+    } catch (err: unknown) {
+      console.error('Failed to fetch box settings:', err);
+      // Don't show error toast for box settings as it's not critical
+    }
+  };
 
   // Fetch job data on component mount
   useEffect(() => {
@@ -67,6 +96,8 @@ export default function HomeOwnerWizardPage() {
         const job = data || response;
         setJobData(job);
 
+        // Set company ID in state
+
         // Reset form data based on existing job data
         if (job) {
           const {
@@ -74,10 +105,7 @@ export default function HomeOwnerWizardPage() {
             client_email,
             client_phone_number,
             client_address,
-            budget,
-            preferred_contractor,
-            project_start_date,
-            project_finish_date,
+
             property_type,
             age_of_property,
             approx_sq_ft,
@@ -89,24 +117,34 @@ export default function HomeOwnerWizardPage() {
             has_animals,
             pet_type,
             category_id,
+            company,
           } = job;
+          const { uuid: companyUuid } = company || {};
 
+          if (companyUuid) {
+            setCompanyId(companyUuid);
+          }
           // Reset general info data
           setGeneralInfoData({
             fullName: client_name || '',
             email: client_email || '',
             phone: client_phone_number || '',
             address: client_address || '',
-            budget: budget ? `$${budget}` : '',
-            contractor: preferred_contractor
-              ? preferred_contractor.toString()
-              : '',
-            projectStartDate: project_start_date
-              ? new Date(project_start_date)
-              : '',
-            projectFinishDate: project_finish_date
-              ? new Date(project_finish_date)
-              : '',
+            preferredContactMethod: '',
+            contactStartTime: '',
+            contactEndTime: '',
+            animals: has_animals ? 'Yes' : 'No',
+            petType: pet_type || '',
+          });
+
+          // Reset property info data
+          setPropertyInfoData({
+            property: property_type?.toLowerCase() || 'residential',
+            propertyType: '', // Will be set based on property type
+            bhk: '',
+            floor: '',
+            approxSqFt: approx_sq_ft ? approx_sq_ft.toString() : '',
+            ageOfProperty: age_of_property || '0-5',
           });
 
           // Reset optional details data
@@ -150,41 +188,138 @@ export default function HomeOwnerWizardPage() {
     fetchJobData();
   }, [uuid]);
 
-  // Navigation handlers
-  const goToGeneral = () => setStep(WIZARD_STEPS.GENERAL);
-  const goToOptional = () => setStep(WIZARD_STEPS.OPTIONAL);
-  const goToProjectType = () => setStep(WIZARD_STEPS.PROJECT_TYPE);
+  // Fetch box settings when companyId is available
+  useEffect(() => {
+    if (companyId) {
+      fetchBoxSettings();
+    }
+  }, [companyId]);
+
+  // Get job boxes step from job data - handle as array
+  const jobBoxesStepArray = jobData?.job_boxes_step || [];
+  const jobBoxesStep = Array.isArray(jobBoxesStepArray)
+    ? jobBoxesStepArray
+    : [jobBoxesStepArray || JOB_BOXES_STEPS.THIRD];
+
+  // Set initial step based on available jobBoxesStep
+  useEffect(() => {
+    if (jobBoxesStep.length > 0) {
+      if (jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST)) {
+        setStep(WIZARD_STEPS.GENERAL);
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND)) {
+        setStep(WIZARD_STEPS.PROPERTY);
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)) {
+        setStep(WIZARD_STEPS.OPTIONAL);
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+        setStep(WIZARD_STEPS.PROJECT_TYPE);
+      }
+    }
+  }, [jobBoxesStep]);
+
+  // Navigation handlers - navigate to next available step
+  // const goToGeneral = () => {
+  //   if (jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST)) {
+  //     setStep(WIZARD_STEPS.GENERAL);
+  //   }
+  // };
+  const goToProperty = () => {
+    if (jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND)) {
+      setStep(WIZARD_STEPS.PROPERTY);
+    }
+  };
+  const goToOptional = () => {
+    if (jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)) {
+      setStep(WIZARD_STEPS.OPTIONAL);
+    }
+  };
+  const goToProjectType = () => {
+    if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+      setStep(WIZARD_STEPS.PROJECT_TYPE);
+    }
+  };
 
   // Form submission handlers
   const handleGeneralInfoSubmit = (data: GeneralInfoData) => {
     setGeneralInfoData(data);
-    if (jobBoxesStep === JOB_BOXES_STEPS.FIRST) {
+    if (
+      jobBoxesStep.length === 1 &&
+      jobBoxesStep[0] === JOB_BOXES_STEPS.FIRST
+    ) {
       // Submit only general info
       handleFinalSubmit({ generalInfo: data });
     } else {
-      goToOptional();
+      // Move to next available step
+      if (jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND)) {
+        goToProperty();
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)) {
+        goToOptional();
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+        goToProjectType();
+      }
+    }
+  };
+
+  const handlePropertyInfoSubmit = (data: PropertyInfoData) => {
+    setPropertyInfoData(data);
+    if (
+      jobBoxesStep.length === 2 &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND)
+    ) {
+      // Submit general + property info
+      handleFinalSubmit({
+        generalInfo: generalInfoData!,
+        propertyInfo: data,
+      });
+    } else {
+      // Move to next available step
+      if (jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)) {
+        goToOptional();
+      } else if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+        goToProjectType();
+      }
     }
   };
 
   const handleOptionalDetailsSubmit = (data: OptionalDetailsData) => {
     setOptionalDetailsData(data);
-    if (jobBoxesStep === JOB_BOXES_STEPS.SECOND) {
-      // Submit general + optional info
+    if (
+      jobBoxesStep.length === 3 &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND) &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)
+    ) {
+      // Submit general + property + optional info
       handleFinalSubmit({
         generalInfo: generalInfoData!,
+        propertyInfo: propertyInfoData!,
         optionalDetails: data,
       });
     } else {
-      goToProjectType();
+      // Move to next step if FOURTH is available
+      if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+        goToProjectType();
+      }
     }
   };
 
   const handleOptionalDetailsSkip = () => {
-    if (jobBoxesStep === JOB_BOXES_STEPS.SECOND) {
-      // Submit only general info (skip optional)
-      handleFinalSubmit({ generalInfo: generalInfoData! });
+    if (
+      jobBoxesStep.length === 3 &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND) &&
+      jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)
+    ) {
+      // Submit general + property info (skip optional)
+      handleFinalSubmit({
+        generalInfo: generalInfoData!,
+        propertyInfo: propertyInfoData!,
+      });
     } else {
-      goToProjectType();
+      // Move to next step if FOURTH is available
+      if (jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH)) {
+        goToProjectType();
+      }
     }
   };
 
@@ -193,6 +328,7 @@ export default function HomeOwnerWizardPage() {
     // Submit all data
     handleFinalSubmit({
       generalInfo: generalInfoData!,
+      propertyInfo: propertyInfoData!,
       optionalDetails: optionalDetailsData!,
       projectType: data,
     });
@@ -205,100 +341,89 @@ export default function HomeOwnerWizardPage() {
 
       // Map general info data
       if (allData.generalInfo) {
-        const {
-          fullName,
-          email,
-          phone,
-          address,
-          budget,
-          contractor,
-          projectStartDate,
-          projectFinishDate,
-        } = allData.generalInfo;
+        const generalInfo = allData.generalInfo!;
+        payload.client_name = generalInfo.fullName || '';
+        payload.client_email = generalInfo.email || '';
+        payload.client_phone_number = generalInfo.phone || '';
+        payload.client_address = generalInfo.address || '';
+        payload.has_animals = generalInfo.animals === 'Yes';
+        payload.pet_type = generalInfo.petType || '';
 
-        payload.client_name = fullName || '';
-        payload.client_email = email || '';
-        payload.client_phone_number = phone || '';
-        payload.client_address = address || '';
-        payload.budget = parseFloat(budget?.replace(/[^0-9.]/g, '')) || 0;
-        payload.preferred_contractor = Number(contractor) || null;
+        // Handle questions separately (questions are passed separately from form data)
+        const questions = (allData as any).questions;
+        if (
+          questions &&
+          Object.keys(questions).length > 0 &&
+          boxSettings?.question_json
+        ) {
+          // Process questions for all sections
+          const processedQuestionJson: Record<string, any[]> = {};
 
-        // Handle dates
-        if (projectStartDate) {
-          payload.project_start_date = new Date(projectStartDate)
-            .toISOString()
-            .split('T')[0];
-        }
-        if (projectFinishDate) {
-          payload.project_finish_date = new Date(projectFinishDate)
-            .toISOString()
-            .split('T')[0];
+          Object.entries(boxSettings.question_json).forEach(
+            ([section, sectionQuestions]) => {
+              const sectionAnswers = (sectionQuestions as any[])
+                .filter((q: any) => questions[q.id]) // Only include questions that have answers
+                .map((q: any) => ({
+                  id: q.id,
+                  text: q.text,
+                  answer: questions[q.id] || '',
+                }));
+
+              if (sectionAnswers.length > 0) {
+                processedQuestionJson[section] = sectionAnswers;
+              }
+            }
+          );
+
+          if (Object.keys(processedQuestionJson).length > 0) {
+            payload.question_json = processedQuestionJson;
+          }
         }
       }
 
       // Map optional details data
       if (allData.optionalDetails) {
-        const {
-          typeOfProperty,
-          ageOfProperty,
-          approxSqft,
-          notificationStyle,
-          dailyWorkStart,
-          dailyWorkEnd,
-          ownerPresent,
-          weekendWork,
-          animals,
-          petType,
-        } = allData.optionalDetails;
-
-        payload.property_type = typeOfProperty?.toUpperCase() || 'RESIDENTIAL';
-        payload.age_of_property = ageOfProperty || '';
+        const optionalDetails = allData.optionalDetails!;
+        payload.property_type =
+          optionalDetails.typeOfProperty?.toUpperCase() || 'RESIDENTIAL';
+        payload.age_of_property = optionalDetails.ageOfProperty || '';
         payload.approx_sq_ft =
-          parseInt(approxSqft?.replace(/[^0-9]/g, '')) || 0;
-        payload.notification_style = notificationStyle || 'Email';
-        if (dailyWorkStart) {
-          payload.daily_work_start_time = dailyWorkStart;
+          parseInt(optionalDetails.approxSqft?.replace(/[^0-9]/g, '')) || 0;
+        payload.notification_style =
+          optionalDetails.notificationStyle || 'Email';
+        if (optionalDetails.dailyWorkStart) {
+          payload.daily_work_start_time = optionalDetails.dailyWorkStart;
         }
-        if (dailyWorkEnd) {
-          payload.daily_work_end_time = dailyWorkEnd;
+        if (optionalDetails.dailyWorkEnd) {
+          payload.daily_work_end_time = optionalDetails.dailyWorkEnd;
         }
-        payload.owner_present_need = ownerPresent === 'Yes';
-        payload.weekend_work = weekendWork === 'Yes';
-        payload.has_animals = animals === 'Yes';
+        payload.owner_present_need = optionalDetails.ownerPresent === 'Yes';
+        payload.weekend_work = optionalDetails.weekendWork === 'Yes';
+        payload.has_animals = optionalDetails.animals === 'Yes';
         if (payload.has_animals === true) {
-          payload.pet_type = petType || '';
+          payload.pet_type = optionalDetails.petType || '';
         }
       }
 
       // Map project type data
       if (allData.projectType) {
-        const { selectedType } = allData.projectType;
-        payload.category_id = Number(selectedType) || null;
+        const projectType = allData.projectType!;
+        payload.category_id = Number(projectType.selectedType) || null;
       }
 
       // Add existing job data if available
       if (jobData) {
-        const {
-          company_id,
-          client_id,
-          job_image,
-          project_name,
-          latitude,
-          longitude,
-          job_status,
-          job_privacy,
-          status,
-        } = jobData;
+        const job = jobData!;
 
-        payload.company_id = Number(company_id) || null;
-        payload.client_id = client_id || null;
-        payload.job_image = job_image || '';
-        payload.project_name = project_name || '';
-        payload.latitude = latitude || '';
-        payload.longitude = longitude || '';
-        payload.job_status = job_status || 'PENDING';
-        payload.job_privacy = job_privacy || 'PUBLIC';
-        payload.status = status || 'ACTIVE';
+        payload.company_id = Number(job.company_id) || null;
+        payload.client_id = job.client_id || null;
+        payload.job_image = job.job_image || '';
+        payload.project_name = job.project_name || '';
+        payload.latitude = job.latitude || '';
+        payload.longitude = job.longitude || '';
+        payload.job_status = job.job_status || 'PENDING';
+        payload.job_privacy = job.job_privacy || 'PUBLIC';
+        payload.status = job.status || 'ACTIVE';
       }
 
       payload.job_boxes_step = jobBoxesStep;
@@ -343,42 +468,48 @@ export default function HomeOwnerWizardPage() {
     }
   };
 
-  // Get job boxes step from job data
-  const jobBoxesStep = jobData?.job_boxes_step || JOB_BOXES_STEPS.THIRD;
-
-  // Progress indicator logic based on job_boxes_step
+  // Progress indicator logic based on job_boxes_step array
   const getSteps = () => {
-    switch (jobBoxesStep) {
-      case JOB_BOXES_STEPS.FIRST:
-        return [];
-      case JOB_BOXES_STEPS.SECOND:
-        return [
-          {
-            key: WIZARD_STEPS.GENERAL,
-            label: HOME_OWNER_MESSAGES.GENERAL_INFO_LABEL,
-          },
-          {
-            key: WIZARD_STEPS.OPTIONAL,
-            label: HOME_OWNER_MESSAGES.OPTIONAL_DETAILS_LABEL,
-          },
-        ];
-      case JOB_BOXES_STEPS.THIRD:
-      default:
-        return [
-          {
-            key: WIZARD_STEPS.GENERAL,
-            label: HOME_OWNER_MESSAGES.GENERAL_INFO_LABEL,
-          },
-          {
-            key: WIZARD_STEPS.OPTIONAL,
-            label: HOME_OWNER_MESSAGES.OPTIONAL_DETAILS_LABEL,
-          },
-          {
-            key: WIZARD_STEPS.PROJECT_TYPE,
-            label: HOME_OWNER_MESSAGES.PROJECT_TYPE_LABEL,
-          },
-        ];
+    // If no steps or empty array, default to THIRD
+    if (!jobBoxesStep.length) {
+      return [
+        {
+          key: WIZARD_STEPS.GENERAL,
+          label: HOME_OWNER_MESSAGES.GENERAL_INFO_LABEL,
+        },
+        {
+          key: WIZARD_STEPS.OPTIONAL,
+          label: HOME_OWNER_MESSAGES.OPTIONAL_DETAILS_LABEL,
+        },
+        {
+          key: WIZARD_STEPS.PROJECT_TYPE,
+          label: HOME_OWNER_MESSAGES.PROJECT_TYPE_LABEL,
+        },
+      ];
     }
+
+    // Map array steps to wizard steps
+    const stepMapping: Record<string, any> = {
+      FIRST: {
+        key: WIZARD_STEPS.GENERAL,
+        label: HOME_OWNER_MESSAGES.GENERAL_INFO_LABEL,
+      },
+      SECOND: {
+        key: WIZARD_STEPS.PROPERTY,
+        label: 'Property Information',
+      },
+      THIRD: {
+        key: WIZARD_STEPS.OPTIONAL,
+        label: HOME_OWNER_MESSAGES.OPTIONAL_DETAILS_LABEL,
+      },
+      FOURTH: {
+        key: WIZARD_STEPS.PROJECT_TYPE,
+        label: HOME_OWNER_MESSAGES.PROJECT_TYPE_LABEL,
+      },
+    };
+
+    // Convert array to wizard steps, maintaining order
+    return jobBoxesStep.map(step => stepMapping[step]).filter(step => step); // Remove undefined steps
   };
 
   const steps = getSteps();
@@ -435,11 +566,14 @@ export default function HomeOwnerWizardPage() {
         <div className=''>
           <div className='w-[90vw] mx-auto flex flex-col items-center bg-[var(--background)] min-h-[calc(100vh-100px)] rounded-tl-[32px] rounded-tr-[32px] px-4 md:px-12 py-4 md:py-8 shadow-none'>
             {/* Custom Progress Bar - Only show if not FIRST step */}
-            {jobBoxesStep !== JOB_BOXES_STEPS.FIRST && steps.length > 0 && (
-              <div className='w-full flex justify-center mb-4 md:mb-8'>
-                <div className='flex items-center justify-center w-full max-w-2xl'>
-                  {steps.map((s, idx) => (
-                    <>
+            {!(
+              jobBoxesStep.length === 1 &&
+              jobBoxesStep[0] === JOB_BOXES_STEPS.FIRST
+            ) &&
+              steps.length > 0 && (
+                <div className='w-full flex justify-center mb-4 md:mb-8'>
+                  <div className='flex items-center justify-center w-full max-w-2xl'>
+                    {steps.map((s, idx) => (
                       <div
                         key={s.key}
                         className={`flex items-center ${idx !== 0 ? 'ml-0' : ''}`}
@@ -455,50 +589,80 @@ export default function HomeOwnerWizardPage() {
                           />
                         )}
                       </div>
-                    </>
-                  ))}
-                </div>
-              </div>
-            )}
-            {/* Wizard Steps */}
-            {step === WIZARD_STEPS.GENERAL && (
-              <StepGeneralInfo
-                onNext={handleGeneralInfoSubmit}
-                defaultValues={generalInfoData}
-                isLastStep={jobBoxesStep === JOB_BOXES_STEPS.FIRST}
-              />
-            )}
-            {step === WIZARD_STEPS.OPTIONAL && (
-              <StepOptionalDetails
-                onPrev={goToGeneral}
-                {...(jobBoxesStep === JOB_BOXES_STEPS.THIRD && {
-                  onSkip: handleOptionalDetailsSkip,
-                })}
-                onNext={handleOptionalDetailsSubmit}
-                cancelButtonClass={cancelButtonClass}
-                defaultValues={optionalDetailsData}
-                isLastStep={jobBoxesStep === JOB_BOXES_STEPS.SECOND}
-              />
-            )}
-            {step === WIZARD_STEPS.PROJECT_TYPE &&
-              jobBoxesStep === JOB_BOXES_STEPS.THIRD &&
-              (jobData?.company_id ? (
-                <StepProjectType
-                  onPrev={goToOptional}
-                  onSubmit={handleProjectTypeSubmit}
-                  cancelButtonClass={cancelButtonClass}
-                  defaultValues={projectTypeData as any}
-                  isLastStep={true}
-                  company_id={Number(jobData.company_id)}
-                />
-              ) : (
-                <div className='flex items-center justify-center h-64'>
-                  <div className='text-lg text-red-600'>
-                    Company ID is required to load project types. Please contact
-                    support.
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
+            {/* Wizard Steps */}
+            {step === WIZARD_STEPS.GENERAL &&
+              jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) && (
+                <StepGeneralInfo
+                  onNext={handleGeneralInfoSubmit}
+                  defaultValues={generalInfoData}
+                  isLastStep={
+                    jobBoxesStep.length === 1 &&
+                    jobBoxesStep[0] === JOB_BOXES_STEPS.FIRST
+                  }
+                  boxSettings={boxSettings}
+                  allQuestionJson={jobData?.question_json || {}}
+                />
+              )}
+            {step === WIZARD_STEPS.PROPERTY &&
+              jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND) && (
+                <StepPropertyInfo
+                  onNext={handlePropertyInfoSubmit}
+                  defaultValues={propertyInfoData}
+                  isLastStep={
+                    jobBoxesStep.length === 2 &&
+                    jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) &&
+                    jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND)
+                  }
+                  boxSettings={boxSettings}
+                  allQuestionJson={jobData?.question_json || {}}
+                />
+              )}
+            {step === WIZARD_STEPS.OPTIONAL &&
+              jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD) && (
+                <StepOptionalDetails
+                  onPrev={goToProperty}
+                  {...(jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH) && {
+                    onSkip: handleOptionalDetailsSkip,
+                  })}
+                  onNext={handleOptionalDetailsSubmit}
+                  cancelButtonClass={cancelButtonClass}
+                  defaultValues={optionalDetailsData}
+                  isLastStep={
+                    (jobBoxesStep.length === 3 &&
+                      jobBoxesStep.includes(JOB_BOXES_STEPS.FIRST) &&
+                      jobBoxesStep.includes(JOB_BOXES_STEPS.SECOND) &&
+                      jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD)) ||
+                    (jobBoxesStep.length === 3 &&
+                      jobBoxesStep.includes(JOB_BOXES_STEPS.THIRD) &&
+                      !jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH))
+                  }
+                />
+              )}
+            {step === WIZARD_STEPS.PROJECT_TYPE &&
+              jobBoxesStep.includes(JOB_BOXES_STEPS.FOURTH) &&
+              (() => {
+                return companyId ? (
+                  <StepProjectType
+                    onPrev={goToOptional}
+                    onSubmit={handleProjectTypeSubmit}
+                    cancelButtonClass={cancelButtonClass}
+                    defaultValues={projectTypeData as any}
+                    isLastStep={true}
+                    company_id={companyId}
+                  />
+                ) : (
+                  <div className='flex items-center justify-center h-64'>
+                    <div className='text-lg text-red-600'>
+                      Company ID is required to load project types. Please
+                      contact support.
+                    </div>
+                  </div>
+                );
+              })()}
           </div>
         </div>
       </div>

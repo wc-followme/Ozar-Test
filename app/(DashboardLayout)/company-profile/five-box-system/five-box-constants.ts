@@ -17,6 +17,7 @@ export const FIVE_BOX_DATA: FiveBoxItem[] = [
     order: 1,
     icon: 'user',
     formFields: ['name', 'email', 'phone', 'address'],
+    step: 'FIRST',
   },
   {
     id: '02',
@@ -32,6 +33,7 @@ export const FIVE_BOX_DATA: FiveBoxItem[] = [
     order: 2,
     icon: 'home',
     formFields: ['propertyType', 'size', 'bhk', 'floorCount'],
+    step: 'SECOND',
   },
   {
     id: '03',
@@ -48,6 +50,7 @@ export const FIVE_BOX_DATA: FiveBoxItem[] = [
     order: 3,
     icon: 'project',
     formFields: ['workType', 'serviceScope', 'timeline'],
+    step: 'THIRD',
   },
   {
     id: '04',
@@ -63,6 +66,7 @@ export const FIVE_BOX_DATA: FiveBoxItem[] = [
     order: 4,
     icon: 'category',
     formFields: ['projectName', 'location', 'contacts'],
+    step: 'FOURTH',
   },
   {
     id: '05',
@@ -78,5 +82,6 @@ export const FIVE_BOX_DATA: FiveBoxItem[] = [
     order: 5,
     icon: 'calculator',
     formFields: ['budget', 'pricing', 'paymentTerms'],
+    step: 'FIFTH',
   },
 ];

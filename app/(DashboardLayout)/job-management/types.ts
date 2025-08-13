@@ -74,6 +74,7 @@ export interface CreateJobFormProps {
   defaultValues?: Partial<CreateJobFormData & { link?: string }>;
   onCancel?: () => void;
   generatedLink?: string;
+  boxDefaults?: Array<{ id: string; enabled: boolean }> | null;
 }
 
 export interface CreateJobFormState {
@@ -356,7 +357,8 @@ export interface ContractorApiResponse {
 
 // Category types
 export interface Category {
-  id: number;
+  uuid?: string;
+  id?: number;
   name: string;
   description?: string;
   is_default?: boolean;

@@ -1,10 +1,10 @@
 // Home owner module type definitions
 
 // Step types
-export type WizardStep = 'general' | 'optional' | 'projectType';
+export type WizardStep = 'general' | 'property' | 'optional' | 'projectType';
 
 // Job boxes step types
-export type JobBoxesStep = 'FIRST' | 'SECOND' | 'THIRD';
+export type JobBoxesStep = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH';
 
 // Form data types
 export interface GeneralInfoData {
@@ -12,10 +12,20 @@ export interface GeneralInfoData {
   email: string;
   phone: string;
   address: string;
-  budget: string;
-  contractor: string;
-  projectStartDate: Date | string | undefined;
-  projectFinishDate: Date | string | undefined;
+  preferredContactMethod: string;
+  contactStartTime: string;
+  contactEndTime: string;
+  animals: string;
+  petType: string;
+}
+
+export interface PropertyInfoData {
+  property: string;
+  propertyType: string;
+  bhk: string;
+  floor: string;
+  approxSqFt: string;
+  ageOfProperty: string;
 }
 
 export interface OptionalDetailsData {
@@ -38,8 +48,15 @@ export interface ProjectTypeData {
 // Combined form data type
 export interface HomeOwnerFormData {
   generalInfo?: GeneralInfoData;
+  propertyInfo?: PropertyInfoData;
   optionalDetails?: OptionalDetailsData;
   projectType?: ProjectTypeData;
+}
+
+// Company data type
+export interface CompanyData {
+  uuid: string;
+  name: string;
 }
 
 // Job data type
@@ -82,6 +99,8 @@ export interface JobData {
   weekend_work: boolean | null;
   has_animals: boolean | null;
   pet_type: string | null;
+  question_json?: Record<string, any>;
+  company?: CompanyData;
 }
 
 // API response types
@@ -247,10 +266,12 @@ export const JOB_BOXES_STEPS = {
   FIRST: 'FIRST' as JobBoxesStep,
   SECOND: 'SECOND' as JobBoxesStep,
   THIRD: 'THIRD' as JobBoxesStep,
+  FOURTH: 'FOURTH' as JobBoxesStep,
 } as const;
 
 export const WIZARD_STEPS = {
   GENERAL: 'general' as WizardStep,
+  PROPERTY: 'property' as WizardStep,
   OPTIONAL: 'optional' as WizardStep,
   PROJECT_TYPE: 'projectType' as WizardStep,
 } as const;
@@ -261,10 +282,11 @@ export const DEFAULT_GENERAL_INFO: GeneralInfoData = {
   email: '',
   phone: '',
   address: '',
-  budget: '',
-  contractor: '',
-  projectStartDate: '',
-  projectFinishDate: '',
+  preferredContactMethod: '',
+  contactStartTime: '',
+  contactEndTime: '',
+  animals: 'No',
+  petType: '',
 };
 
 export const DEFAULT_OPTIONAL_DETAILS: OptionalDetailsData = {

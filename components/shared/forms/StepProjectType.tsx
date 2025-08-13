@@ -31,7 +31,7 @@ export function StepProjectType({
   defaultValues,
   isLastStep = false,
   company_id,
-}: StepProjectTypeProps & { company_id: number }) {
+}: StepProjectTypeProps & { company_id: string }) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -172,7 +172,7 @@ export function StepProjectType({
                   <div className='h-auto md:h-[calc(100vh_-_550px)] md:-mx-4 md:px-4 overflow-y-auto'>
                     <div className='w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8'>
                       {categories.map((category: Category) => {
-                        const { id, name, description, is_default, icon } =
+                        const { uuid, name, description, is_default, icon } =
                           category;
 
                         // Map icon string to icon component and colors
@@ -186,11 +186,9 @@ export function StepProjectType({
 
                         return (
                           <div
-                            key={id}
-                            className={`flex flex-col items-start border border-[var(--border-dark)] rounded-2xl bg-[var(--card-background)] p-4 sm:p-6 cursor-pointer transition-all duration-150 hover:shadow-md ${selectedType === id.toString() ? 'bg-[var(--card-hover)] shadow-green-100' : ''}`}
-                            onClick={() =>
-                              setValue('selectedType', id.toString())
-                            }
+                            key={uuid}
+                            className={`flex flex-col items-start border border-[var(--border-dark)] rounded-2xl bg-[var(--card-background)] p-4 sm:p-6 cursor-pointer transition-all duration-150 hover:shadow-md ${selectedType === uuid ? 'bg-[var(--card-hover)] shadow-green-100' : ''}`}
+                            onClick={() => setValue('selectedType', uuid || '')}
                           >
                             <div
                               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
