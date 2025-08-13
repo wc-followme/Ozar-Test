@@ -35,7 +35,6 @@ interface Trade {
 
 interface EstimationTradeFormProps {
   trade: Trade;
-  roomName: string; // Add room name prop
   roomUniqueKey: string; // Add room unique key prop
   tradeUniqueKey: string; // Add trade unique key prop
   _onTradeUpdate?: (updatedTrade: Trade) => void;
@@ -54,7 +53,6 @@ interface EstimationTradeFormProps {
 
 export default function EstimationTradeForm({
   trade,
-  roomName,
   roomUniqueKey,
   tradeUniqueKey,
   onServiceSelect,

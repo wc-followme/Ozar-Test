@@ -1,9 +1,12 @@
 'use client';
 
+import { TOOL_MESSAGES } from '@/app/(DashboardLayout)/tools-management/tool-messages';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { CloseCircle } from 'iconsax-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MultiSelect, { MultiSelectOption } from '../common/MultiSelect';
 
 interface Tool {
@@ -21,26 +24,8 @@ interface AddToolListFormProps {
   roomName?: string;
   tradeName?: string;
   serviceName?: string;
+  serviceId?: string | undefined; // Add service ID prop for fetching tools
 }
-
-// Available tools for selection
-const AVAILABLE_TOOLS: MultiSelectOption[] = [
-  { value: 'tool-1', label: 'Nail Master 3000' },
-  { value: 'tool-2', label: 'Drill Wizard' },
-  { value: 'tool-3', label: 'Saw Xpert' },
-  { value: 'tool-4', label: 'Level Right' },
-  { value: 'tool-5', label: 'Hammer Pro' },
-  { value: 'tool-6', label: 'Safety Goggles' },
-  { value: 'tool-7', label: 'Measuring Tape' },
-  { value: 'tool-8', label: 'Screwdriver Set' },
-  { value: 'tool-9', label: 'Circular Saw' },
-  { value: 'tool-10', label: 'Impact Driver' },
-  { value: 'tool-11', label: 'Angle Grinder' },
-  { value: 'tool-12', label: 'Jigsaw' },
-  { value: 'tool-13', label: 'Router' },
-  { value: 'tool-14', label: 'Planer' },
-  { value: 'tool-15', label: 'Chisel Set' },
-];
 
 export default function AddToolListForm({
   onSubmit,
@@ -49,12 +34,84 @@ export default function AddToolListForm({
   roomName = 'Room',
   tradeName = 'Trade',
   serviceName = 'Service',
+  serviceId, // Add service ID prop
 }: AddToolListFormProps) {
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
+  const [toolOptions, setToolOptions] = useState<MultiSelectOption[]>([]);
+  const [toolsLoading, setToolsLoading] = useState(false);
+
+  // Fetch tools from API based on service UUID and company UUID
+  const fetchTools = async (
+    serviceUuid: string | null,
+    companyUuid: string | null
+  ) => {
+    if (!serviceUuid || !companyUuid) {
+      setToolOptions([]);
+      return;
+    }
+
+    setToolsLoading(true);
+    try {
+      const response = await apiService.fetchTools({
+        page: 1,
+        limit: 50,
+        service_uuid: serviceUuid,
+        company_id: companyUuid,
+        status: 'ACTIVE',
+      });
+
+      type ToolItem = { id?: string | number; uuid?: string; name?: string };
+      const payload = response as unknown as {
+        data?: ToolItem[] | { data?: ToolItem[] };
+      };
+      const list: ToolItem[] = Array.isArray(payload?.data)
+        ? (payload.data as ToolItem[])
+        : Array.isArray((payload?.data as { data?: ToolItem[] })?.data)
+          ? ((payload.data as { data?: ToolItem[] }).data as ToolItem[])
+          : [];
+
+      const options = list
+        .filter(t => !!t?.name)
+        .map(t => ({
+          value: String(t.uuid || t.id || t.name),
+          label: String(t.name),
+        }));
+
+      setToolOptions(options);
+    } catch (error) {
+      console.error('Error fetching tools:', error);
+      console.error('Service UUID:', serviceUuid);
+      console.error('Company UUID:', companyUuid);
+      setToolOptions([]);
+    } finally {
+      setToolsLoading(false);
+    }
+  };
+
+  // Load tools when component mounts or when service/company changes
+  useEffect(() => {
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+
+    fetchTools(serviceId || null, companyUuid);
+  }, [serviceId]);
 
   const handleSubmit = () => {
     const selectedTools: Tool[] = selectedToolIds.map(toolId => {
-      const toolData = AVAILABLE_TOOLS.find(tool => tool.value === toolId);
+      const toolData = toolOptions.find(tool => tool.value === toolId);
       return {
         id: `tool-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         name: toolData?.label || 'Unknown Tool',
@@ -70,7 +127,7 @@ export default function AddToolListForm({
     setSelectedToolIds(prev => prev.filter(id => id !== toolId));
   };
 
-  const selectedTools = AVAILABLE_TOOLS.filter(tool =>
+  const selectedTools = toolOptions.filter(tool =>
     selectedToolIds.includes(tool.value)
   );
 
@@ -95,10 +152,12 @@ export default function AddToolListForm({
         {/* Tool Selection MultiSelect */}
         <MultiSelect
           label=''
-          options={AVAILABLE_TOOLS}
+          options={toolOptions}
           value={selectedToolIds}
           onChange={setSelectedToolIds}
-          placeholder='Select Tools'
+          placeholder={
+            toolsLoading ? TOOL_MESSAGES.LOADING_TOOLS_DROPDOWN : 'Select Tools'
+          }
         />
 
         {/* Selected Tools Display */}

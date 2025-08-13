@@ -29,6 +29,7 @@ interface ToolsAccordionProps {
   roomName?: string;
   tradeName?: string;
   serviceName?: string;
+  serviceId?: string; // Add service ID prop for fetching tools
 }
 
 export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
@@ -41,6 +42,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
     roomName = 'Room',
     tradeName = 'Trade',
     serviceName = 'Service',
+    serviceId, // Add service ID prop
   } = props;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isSideSheetOpen, setIsSideSheetOpen] = useState(false);
@@ -150,6 +152,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
           roomName={roomName}
           tradeName={tradeName}
           serviceName={serviceName}
+          serviceId={serviceId}
         />
       </SideSheet>
     </>

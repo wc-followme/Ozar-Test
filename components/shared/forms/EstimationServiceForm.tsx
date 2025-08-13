@@ -366,6 +366,7 @@ export default function EstimationServiceForm({
         roomName={roomName}
         tradeName={tradeName}
         serviceName={service.name}
+        serviceId={service.uuid || service.id}
       />
     </div>
   );

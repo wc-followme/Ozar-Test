@@ -1547,6 +1547,7 @@ class ApiService {
     limit = 10,
     name = '',
     service_id = '',
+    service_uuid = '',
     status = 'ACTIVE',
     company_id = '',
   }: {
@@ -1554,6 +1555,7 @@ class ApiService {
     limit?: number;
     name?: string;
     service_id?: string | number;
+    service_uuid?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
     company_id?: string | number;
   }): Promise<FetchToolsResponse> {
@@ -1562,6 +1564,7 @@ class ApiService {
     params.append('limit', String(limit));
     if (name) params.append('name', name);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (status) params.append('status', status);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/tools?${params.toString()}`, {
