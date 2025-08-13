@@ -138,12 +138,14 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const selectedRoom =
     rooms.find(room => room.id === selectedRoomId) || rooms[0];
 
-  // Find the trade data across all rooms to handle cross-room trade selection
-  const selectedTradeData = selectedTrade
+  // Find the trade data using uniqueKey to ensure room-specific selection
+  const selectedTradeData = selectedTradeUniqueKey
     ? rooms
         .flatMap(room => room.trades)
-        .find(trade => trade.id === selectedTrade)
-    : selectedRoom?.trades.find(trade => trade.id === selectedTrade);
+        .find(trade => trade.uniqueKey === selectedTradeUniqueKey)
+    : selectedRoom?.trades.find(
+        trade => trade.uniqueKey === selectedTradeUniqueKey
+      );
 
   const selectedServiceData =
     selectedService && selectedTradeData
@@ -415,14 +417,14 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       tools: [],
     };
 
-    if (selectedTrade) {
+    if (selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: [...trade.serviceList, newService],
@@ -1136,14 +1138,14 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleServiceReorder = (reorderedServices: Service[]) => {
-    if (selectedTrade) {
+    if (selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: reorderedServices,
