@@ -1,12 +1,5 @@
 'use client';
 
-import { initialRooms } from '@/app/(DashboardLayout)/templates/template-data';
-import {
-  EstimationBoxProps,
-  Room,
-  Service,
-  Trade,
-} from '@/app/(DashboardLayout)/templates/template-types';
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
@@ -70,6 +63,9 @@ interface Trade {
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
 }
 
 interface Room {
@@ -350,6 +346,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         tradeTotal: 0.0,
         serviceList: [],
         isExpanded: true,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 86400000), // Default to tomorrow
+        markup: 0,
       };
 
       setRooms(prev =>
@@ -393,6 +392,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       tradeTotal: 0.0,
       serviceList: [],
       isExpanded: true,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 86400000), // Default to tomorrow
+      markup: 0,
     };
 
     setRooms(prev =>
@@ -615,9 +617,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
           trades: room.trades.map(trade => ({
             id: trade.id,
             name: trade.name,
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 86400000),
-            markup: 0,
+            startDate: trade.startDate || new Date(),
+            endDate: trade.endDate || new Date(Date.now() + 86400000),
+            markup: trade.markup || 0,
           })),
         }));
         updateLocalStorageFromState(roomsData);
@@ -678,9 +680,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
           trades: room.trades.map(trade => ({
             id: trade.id,
             name: trade.name,
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 86400000),
-            markup: 0,
+            startDate: trade.startDate || new Date(),
+            endDate: trade.endDate || new Date(Date.now() + 86400000),
+            markup: trade.markup || 0,
           })),
         }));
         updateLocalStorageFromState(roomsData);
@@ -1117,9 +1119,9 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
       trades: room.trades.map(trade => ({
         id: trade.id,
         name: trade.name,
-        startDate: new Date(), // You can get actual dates from trade state
-        endDate: new Date(Date.now() + 86400000), // You can get actual dates from trade state
-        markup: 0, // You can get actual markup from trade state
+        startDate: trade.startDate || new Date(),
+        endDate: trade.endDate || new Date(Date.now() + 86400000),
+        markup: trade.markup || 0,
       })),
     }));
 
