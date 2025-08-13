@@ -63,7 +63,7 @@ export default function EstimationItemsAccordion({
                   color='var(--text-dark)'
                 />
                 <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-                  {title} - {items.length} services
+                  {title} - {items.length}
                 </h3>
               </div>
               <div
