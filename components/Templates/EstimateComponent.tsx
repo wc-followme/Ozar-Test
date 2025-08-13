@@ -12,6 +12,7 @@ import EstimationBox from './EstimationBox';
 
 interface Tool {
   id: string;
+  uuid?: string; // Add UUID field for database tool UUID
   name: string;
   category: string;
   description: string;
@@ -20,6 +21,7 @@ interface Tool {
 
 interface Material {
   id: string;
+  uuid?: string; // Add UUID field for database material UUID
   name: string;
   variant: string;
   qty: number;
@@ -101,6 +103,7 @@ export const updateLocalStorageFromState = (
         tradeTotal: number;
         materials: Array<{
           id: string;
+          uuid?: string;
           name: string;
           variant: string;
           qty: number;
@@ -112,6 +115,7 @@ export const updateLocalStorageFromState = (
         }>;
         finishes: Array<{
           id: string;
+          uuid?: string;
           name: string;
           variant: string;
           qty: number;
@@ -123,6 +127,7 @@ export const updateLocalStorageFromState = (
         }>;
         tools: Array<{
           id: string;
+          uuid?: string;
           name: string;
           category: string;
           description: string;
