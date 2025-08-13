@@ -354,6 +354,7 @@ export default function EstimationServiceForm({
         onItemUpdate={onFinishUpdate || (() => {})}
         onItemDelete={onFinishDelete || (() => {})}
         defaultExpanded={true}
+        serviceId={service.uuid || service.id}
       />
 
       {/* Tools Accordion */}

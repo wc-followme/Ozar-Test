@@ -158,6 +158,15 @@ export const updateLocalStorageFromState = (
               rate: material.rate,
               markup: material.markup,
             })),
+            finishes: service.finishes.map(finish => ({
+              material_id: finish.id,
+              description: finish.description,
+              disclaimer: '', // Add disclaimer field if needed
+              qty: finish.qty,
+              unit: finish.unit,
+              rate: finish.rate,
+              markup: finish.markup,
+            })),
             tools: service.tools.map(tool => ({
               tool_id: tool.id,
             })),
