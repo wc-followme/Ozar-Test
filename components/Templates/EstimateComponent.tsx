@@ -1,6 +1,7 @@
 'use client';
 
-import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { EstimateComponentProps } from '@/app/(DashboardLayout)/templates/template-types';
+import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { TemplateListForm } from '@/components/shared/forms/TemplateListForm';
@@ -246,7 +247,7 @@ export default function EstimateComponent({
         <div className='flex gap-4 justify-center'>
           <Button className='btn-primary' onClick={handleAddRoom}>
             <RoomIcon className='!h-6 !w-6' />
-            Add Room
+            Add Room&nbsp;/&nbsp;Project
           </Button>
           <Button className='btn-secondary' onClick={handleAddFromTemplate}>
             <TemplateIcon className='!h-6 !w-6' />

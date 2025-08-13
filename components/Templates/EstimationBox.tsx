@@ -1,5 +1,12 @@
 'use client';
 
+import { initialRooms } from '@/app/(DashboardLayout)/templates/template-data';
+import {
+  EstimationBoxProps,
+  Room,
+  Service,
+  Trade,
+} from '@/app/(DashboardLayout)/templates/template-types';
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
@@ -115,6 +122,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('room-1');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState<
     'room' | 'trade' | 'service' | null
@@ -304,10 +312,18 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
   };
 
   const handleAccordionChange = (value: string[]) => {
+    // If main accordion is collapsed, don't allow individual changes
+    if (!isMainAccordionExpanded) {
+      return;
+    }
     setExpandedRooms(value);
   };
 
   const handleTradeAccordionChange = (value: string[]) => {
+    // If main accordion is collapsed, don't allow individual changes
+    if (!isMainAccordionExpanded) {
+      return;
+    }
     setExpandedTrades(value);
   };
 
@@ -1123,6 +1139,32 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const toggleMainAccordion = () => {
+    // Check if all accordions are currently expanded
+    const allRoomIds = rooms.map(room => room.id);
+    const allTradeIds = rooms.flatMap(room =>
+      room.trades.map(trade => trade.id)
+    );
+
+    const allRoomsExpanded = allRoomIds.every(id => expandedRooms.includes(id));
+    const allTradesExpanded = allTradeIds.every(id =>
+      expandedTrades.includes(id)
+    );
+    const allExpanded = allRoomsExpanded && allTradesExpanded;
+
+    if (allExpanded) {
+      // All are expanded, so collapse all
+      setExpandedTrades([]);
+      setExpandedRooms([]);
+      setIsMainAccordionExpanded(false);
+    } else {
+      // Some or none are expanded, so expand all
+      setExpandedTrades(allTradeIds);
+      setExpandedRooms(allRoomIds);
+      setIsMainAccordionExpanded(true);
+    }
+  };
+
   // Reorder handlers for drag and drop
   const handleTradeReorder = (reorderedTrades: Trade[]) => {
     setRooms(prev =>
@@ -1205,6 +1247,8 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         selectedService={selectedService}
         handleServiceSelect={handleServiceSelect}
         formatCurrency={formatCurrency}
+        selectedRoomId={selectedRoomId}
+        toggleMainAccordion={toggleMainAccordion}
       />
 
       {/* Main Content */}
