@@ -77,6 +77,9 @@ interface Room {
 interface EstimateComponentProps {
   breadcrumbData: BreadcrumbItem[];
   onAddRoom: () => void;
+  jobId?: string; // Add job ID prop for API calls
+  onSaveSuccess?: () => void; // Callback for successful save
+  onSaveError?: (error: any) => void; // Callback for save errors
 }
 
 // Common function to update localStorage from component state
@@ -271,6 +274,9 @@ export const clearRoomTradeData = () => {
 export default function EstimateComponent({
   breadcrumbData,
   onAddRoom,
+  jobId,
+  onSaveSuccess,
+  onSaveError,
 }: EstimateComponentProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [showEstimationBox, setShowEstimationBox] = useState(false);
@@ -297,7 +303,14 @@ export default function EstimateComponent({
 
   // If EstimationBox is shown, render only that
   if (showEstimationBox) {
-    return <EstimationBox _onClose={handleCloseEstimationBox} />;
+    return (
+      <EstimationBox
+        _onClose={handleCloseEstimationBox}
+        {...(jobId && { jobId })}
+        {...(onSaveSuccess && { onSaveSuccess })}
+        {...(onSaveError && { onSaveError })}
+      />
+    );
   }
 
   return (

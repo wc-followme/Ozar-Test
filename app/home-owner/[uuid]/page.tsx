@@ -475,6 +475,15 @@ export default function HomeOwnerWizardPage() {
               <EstimateComponent
                 breadcrumbData={breadcrumbData}
                 onAddRoom={handleAddRoom}
+                jobId={uuid}
+                onSaveSuccess={() => {
+                  console.log('Job rooms saved successfully!');
+                  // You can add any success handling here
+                }}
+                onSaveError={error => {
+                  console.error('Failed to save job rooms:', error);
+                  // You can add any error handling here
+                }}
               />
               // Commented out for now
               // <StepGeneralInfo

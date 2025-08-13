@@ -80,6 +80,9 @@ interface Room {
 
 interface EstimationBoxProps {
   _onClose: () => void;
+  jobId?: string; // Add job ID prop for API calls
+  onSaveSuccess?: () => void; // Callback for successful save
+  onSaveError?: (error: any) => void; // Callback for save errors
 }
 
 // Utility function to generate unique keys
@@ -102,7 +105,7 @@ const generateUniqueKey = (
   return `${prefix}_${timestamp}_${random}`;
 };
 
-export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
+export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>([
@@ -1133,8 +1136,45 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     updateLocalStorageFromState(roomsData);
   };
 
-  const handleSave = () => {
-    saveCurrentState();
+  const handleSave = async () => {
+    try {
+      // First save to localStorage
+      saveCurrentState();
+
+      // If jobId is provided, make API call
+      if (props.jobId) {
+        // Get the job_rooms data from localStorage
+        const jobRoomsData = localStorage.getItem('job_rooms');
+        if (jobRoomsData) {
+          const jobRooms = JSON.parse(jobRoomsData);
+
+          // Make API call using makeGenericRequest
+          const response = await apiService.makeGenericRequest(
+            `/jobs/${props.jobId}/rooms`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                job_rooms: jobRooms,
+              }),
+            }
+          );
+
+          console.log('Save API response:', response);
+
+          // Call success callback if provided
+          if (props.onSaveSuccess) {
+            props.onSaveSuccess();
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error saving job rooms:', error);
+
+      // Call error callback if provided
+      if (props.onSaveError) {
+        props.onSaveError(error);
+      }
+    }
   };
 
   const handleReviewAndSend = () => {

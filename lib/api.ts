@@ -1907,6 +1907,20 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Generic request method for custom endpoints
+  async makeGenericRequest(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<any> {
+    return this.makeRequest(endpoint, {
+      headers: {
+        ...this.getRoleHeaders(),
+        ...options.headers,
+      },
+      ...options,
+    });
+  }
 }
 
 export const apiService = new ApiService();
