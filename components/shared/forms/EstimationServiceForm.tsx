@@ -10,6 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import {
+  calculateLineTotal,
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+} from '@/lib/estimation-calculations';
 import { useEffect, useState } from 'react';
 import { EstimationItem, Service, Tool } from './estimation-types';
 
@@ -59,6 +64,25 @@ export default function EstimationServiceForm({
     Array<{ value: string; label: string }>
   >([]);
   const [loading, setLoading] = useState(false);
+
+  // Calculate current service values using backend logic
+  const calculateCurrentServiceValues = () => {
+    const lineTotal = calculateLineTotal(service.rate, service.qty);
+    const serviceTotal = calculateServiceTotal(service.rate, service.qty);
+    const totalMaterialCost = calculateServiceTotalMaterialCost(
+      service.materials,
+      service.finishes
+    );
+    const tradeTotal = serviceTotal + totalMaterialCost;
+
+    return {
+      lineTotal,
+      serviceTotal,
+      tradeTotal,
+    };
+  };
+
+  const currentValues = calculateCurrentServiceValues();
 
   // Fetch services from API based on trade UUID and company UUID
   const fetchServices = async (
@@ -196,7 +220,6 @@ export default function EstimationServiceForm({
                     onServiceUpdate({
                       ...service,
                       qty: newQty,
-                      lineTotal: newQty * service.rate,
                     });
                   }
                 }}
@@ -215,7 +238,6 @@ export default function EstimationServiceForm({
                     onServiceUpdate({
                       ...service,
                       rate: numericValue,
-                      lineTotal: service.qty * numericValue,
                     });
                   }
                 }}
@@ -228,19 +250,19 @@ export default function EstimationServiceForm({
               <div className='px-4'>
                 <Label className='field-label text-xs'>Line Total</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
-                  {formatCurrency(service.lineTotal)}
+                  {formatCurrency(currentValues.lineTotal)}
                 </p>
               </div>
               <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Service Total</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
-                  {formatCurrency(service.serviceTotal)}
+                  {formatCurrency(currentValues.serviceTotal)}
                 </p>
               </div>
               <div className='border-l border-[var(--border-dark)] px-6'>
                 <Label className='field-label text-xs'>Trade Total</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
-                  {formatCurrency(service.tradeTotal)}
+                  {formatCurrency(currentValues.tradeTotal)}
                 </p>
               </div>
             </div>

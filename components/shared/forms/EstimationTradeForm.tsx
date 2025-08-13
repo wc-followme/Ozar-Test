@@ -122,8 +122,7 @@ export default function EstimationTradeForm({
 
   const currencyOptions = [
     { value: '$', label: '$' },
-    { value: '€', label: '€' },
-    { value: '£', label: '£' },
+    { value: '%', label: '%' }
   ];
 
   const handleInputChange = (field: string, value: number) => {

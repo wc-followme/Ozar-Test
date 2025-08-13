@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { calculateLineTotal, formatCurrency } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { EstimationItem } from './estimation-types';
@@ -112,8 +113,7 @@ export default function EstimationItemForm({
 
   const currencyOptions = [
     { value: '$', label: '$' },
-    { value: '€', label: '€' },
-    { value: '£', label: '£' },
+    { value: '%', label: '%' },
   ];
 
   const handleInputChange = (
@@ -235,7 +235,7 @@ export default function EstimationItemForm({
           />
         </div>
         <div className='space-y-2'>
-          <Label className='field-label text-sm'>Markup %</Label>
+          <Label className='field-label text-sm'>Markup </Label>
           <div className='flex focus-within:ring-2 focus-within:ring-[var(--secondary)] focus-within:ring-opacity-50'>
             <div className='w-[60px]'>
               <SelectField
@@ -264,7 +264,7 @@ export default function EstimationItemForm({
             Line Total
           </Label>
           <p className='text-lg font-semibold text-[var(--primary)]'>
-            {formatCurrency(item.lineTotal)}
+            {formatCurrency(calculateLineTotal(item.rate, item.qty))}
           </p>
         </div>
       </div>

@@ -15,6 +15,13 @@ import { SortableItem } from '@/components/ui/sortable-item';
 import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import {
+  calculateJobTotal,
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+  calculateTradeTotal,
+  MARKUP_TYPES,
+} from '@/lib/estimation-calculations';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
@@ -30,6 +37,7 @@ interface Material {
   rate: number;
   markup: number;
   lineTotal: number;
+  is_hidden?: boolean;
 }
 
 interface ServiceOption {
@@ -52,6 +60,7 @@ interface Service {
   materials: Material[];
   finishes: Material[];
   tools: Tool[];
+  is_hidden?: boolean;
 }
 
 interface Trade {
@@ -69,6 +78,7 @@ interface Trade {
   startDate?: Date;
   endDate?: Date;
   markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface Room {
@@ -164,6 +174,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           service => service.id === selectedService
         )
       : undefined;
+
+  // Debug selectedServiceData
+  console.log('selectedServiceData:', selectedServiceData);
+  console.log('selectedTradeData:', selectedTradeData);
 
   const fetchTrades = async (companyUuid: string | null) => {
     try {
@@ -267,6 +281,91 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       updateLocalStorageFromState(rooms);
     }
   }, [rooms]);
+
+  // Update calculations on mount
+  useEffect(() => {
+    if (rooms.length > 0) {
+      updateAllCalculations();
+    }
+  }, []);
+
+  // Function to update calculations for a service
+  const updateServiceCalculations = (service: Service): Service => {
+    console.log('Updating service calculations for:', service.name);
+    console.log('Service rate:', service.rate, 'qty:', service.qty);
+    console.log('Service materials:', service.materials);
+    console.log('Service finishes:', service.finishes);
+
+    const serviceTotal = calculateServiceTotal(service.rate, service.qty);
+    const totalMaterialCost = calculateServiceTotalMaterialCost(
+      service.materials,
+      service.finishes
+    );
+
+    console.log('Service total:', serviceTotal);
+    console.log('Total material cost:', totalMaterialCost);
+
+    const updatedService = {
+      ...service,
+      lineTotal: serviceTotal,
+      serviceTotal: serviceTotal,
+      tradeTotal: serviceTotal + totalMaterialCost,
+    };
+
+    console.log('Updated service:', updatedService);
+    return updatedService;
+  };
+
+  // Function to update calculations for a trade
+  const updateTradeCalculations = (trade: Trade): Trade => {
+    console.log('Updating trade calculations for:', trade.name);
+    console.log('Trade services:', trade.serviceList);
+
+    // First update individual service calculations
+    const updatedServices = trade.serviceList.map(updateServiceCalculations);
+    console.log('Updated services:', updatedServices);
+
+    const tradeTotals = calculateTradeTotal({
+      markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
+      markup: trade.markup || 0,
+      services: updatedServices,
+    });
+
+    console.log('Trade totals:', tradeTotals);
+
+    return {
+      ...trade,
+      serviceList: updatedServices,
+      laborCost: tradeTotals.labor_cost,
+      materialCost: tradeTotals.material_cost,
+      tradeTotal: tradeTotals.trade_total,
+    };
+  };
+
+  // Function to update calculations for a room
+  const updateRoomCalculations = (room: Room): Room => {
+    const updatedTrades = room.trades.map(updateTradeCalculations);
+    const roomTotal = updatedTrades.reduce(
+      (total, trade) => total + trade.tradeTotal,
+      0
+    );
+
+    return {
+      ...room,
+      trades: updatedTrades,
+      total: roomTotal,
+    };
+  };
+
+  // Function to update all calculations
+  const updateAllCalculations = (): void => {
+    console.log('Updating all calculations...');
+    setRooms(prevRooms => {
+      const updatedRooms = prevRooms.map(updateRoomCalculations);
+      console.log('Updated rooms:', updatedRooms);
+      return updatedRooms;
+    });
+  };
 
   const handleAddRoom = () => {
     // If no rooms exist, create the default Home 1 room
@@ -433,10 +532,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       name: 'New Service',
       description: '',
       qty: 1,
-      rate: 0.0,
-      lineTotal: 0.0,
-      serviceTotal: 0.0,
-      tradeTotal: 0.0,
+      rate: 50.0, // Set a default rate instead of 0
+      lineTotal: 50.0, // Calculate initial line total
+      serviceTotal: 50.0, // Calculate initial service total
+      tradeTotal: 50.0, // Calculate initial trade total
       serviceOptions: [],
       materials: [],
       finishes: [],
@@ -455,18 +554,16 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                         ...trade,
                         serviceList: [...trade.serviceList, newService],
                         services: trade.serviceList.length + 1,
-                        tradeTotal: trade.tradeTotal + newService.tradeTotal,
                       }
                     : trade
-                ),
-                total: room.trades.reduce(
-                  (sum, trade) => sum + trade.tradeTotal,
-                  0
                 ),
               }
             : room
         )
       );
+
+      // Update calculations after adding service
+      setTimeout(() => updateAllCalculations(), 0);
 
       // Select the new service
       setSelectedService(newService.id);
@@ -732,9 +829,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleServiceUpdate = (updatedService: Service) => {
+    console.log('handleServiceUpdate called with:', updatedService);
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
-      setRooms(prev =>
-        prev.map(room =>
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
@@ -752,8 +850,13 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                 ),
               }
             : room
-        )
-      );
+        );
+        console.log('Updated rooms in handleServiceUpdate:', updatedRooms);
+        return updatedRooms;
+      });
+
+      // Update calculations after service update
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -773,6 +876,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after trade update
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -802,6 +908,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after material add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -838,6 +947,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after material update
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -869,6 +981,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after material delete
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -902,6 +1017,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after finish update
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -933,6 +1051,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after finish delete
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -962,6 +1083,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after tool add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -993,6 +1117,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after tool remove
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -1106,17 +1233,18 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }).format(amount);
   };
 
-  // Calculate project total across all rooms
+  // Calculate project total across all rooms using backend logic
   const calculateProjectTotal = () => {
-    return rooms.reduce((total, room) => {
-      const roomTotal = room.trades.reduce((tradeTotal, trade) => {
-        const serviceTotal = trade.serviceList.reduce((serviceSum, service) => {
-          return serviceSum + service.lineTotal;
-        }, 0);
-        return tradeTotal + serviceTotal;
-      }, 0);
-      return total + roomTotal;
-    }, 0);
+    const jobRoomsData = rooms.map(room => ({
+      trades: room.trades.map(trade => ({
+        markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
+        markup: trade.markup || 0,
+        services: trade.serviceList,
+      })),
+    }));
+
+    const jobTotals = calculateJobTotal(jobRoomsData);
+    return jobTotals.trade_total;
   };
 
   const projectTotal = calculateProjectTotal();
@@ -1293,6 +1421,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             : room
         )
       );
+
+      // Update calculations after finish add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
