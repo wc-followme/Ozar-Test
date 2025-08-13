@@ -61,6 +61,7 @@ export const ACTIONS = {
   EDIT: 'edit',
   DELETE: 'delete',
   ARCHIVE: 'archive',
+  RETRIEVE: 'retrieve',
   VIEW: 'view',
   CREATE: 'create',
   CUSTOMIZE: 'customize',

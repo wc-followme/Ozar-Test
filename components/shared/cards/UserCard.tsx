@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Avatar } from '../common/Avatar';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { ConfirmRetrieveModal } from '../common/ConfirmRetrieveModal';
 import Dropdown from '../common/Dropdown';
 
 interface MenuOption {
@@ -29,6 +30,7 @@ interface UserCardProps {
   onToggle: () => void;
   menuOptions: MenuOption[];
   onDelete?: () => void;
+  onRetrieve?: (() => void) | undefined;
   disableActions?: boolean;
   userUuid: string;
   avatarColor?: { bg: string; color: string };
@@ -44,12 +46,14 @@ export function UserCard({
   onToggle,
   menuOptions,
   onDelete,
+  onRetrieve,
   disableActions,
   userUuid,
   avatarColor,
 }: UserCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showRetrieve, setShowRetrieve] = useState(false);
   const router = useRouter();
 
   // Get user permissions for users
@@ -85,6 +89,8 @@ export function UserCard({
       router.push(`/user-management/edit-user/${userUuid}`);
     } else if (action === ACTIONS.DELETE) {
       setShowDelete(true);
+    } else if (action === ACTIONS.RETRIEVE) {
+      setShowRetrieve(true);
     }
   };
 
@@ -192,6 +198,17 @@ export function UserCard({
           if (onDelete) await onDelete();
         }}
       />
+      <ConfirmRetrieveModal
+        open={showRetrieve}
+        title={`Are you sure you want to retrieve?`}
+        subtitle={`This will restore the user to active status.`}
+        onCancel={() => setShowRetrieve(false)}
+        onRetrieve={async () => {
+          setShowRetrieve(false);
+          if (onRetrieve) await onRetrieve();
+        }}
+      />
+        
     </div>
   );
 }

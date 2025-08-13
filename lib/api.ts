@@ -845,6 +845,7 @@ class ApiService {
     company_id = '',
     search = '',
     status = 'ACTIVE',
+    user_type = '',
   }: {
     page?: number;
     limit?: number;
@@ -852,6 +853,7 @@ class ApiService {
     company_id?: string | number;
     search?: string;
     status?: 'ACTIVE' | 'INACTIVE';
+    user_type?: string;
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -860,6 +862,7 @@ class ApiService {
     if (company_id) params.append('company_id', String(company_id));
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (user_type) params.append('user_type', user_type);
     return this.makeRequest(`/users?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -1902,3 +1905,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+
