@@ -38,6 +38,7 @@ interface ServiceOption {
 
 interface Service {
   id: string;
+  uuid?: string; // Add UUID field for database service UUID
   name: string;
   description: string;
   qty: number;
@@ -422,6 +423,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
     const uniqueId = `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newService: Service = {
       id: uniqueId,
+      uuid: uniqueId, // Use the same ID as UUID for now
       name: 'New Service',
       description: '',
       qty: 1,
@@ -620,6 +622,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             startDate: trade.startDate || new Date(),
             endDate: trade.endDate || new Date(Date.now() + 86400000),
             markup: trade.markup || 0,
+            serviceList: trade.serviceList || [],
           })),
         }));
         updateLocalStorageFromState(roomsData);
@@ -683,6 +686,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
             startDate: trade.startDate || new Date(),
             endDate: trade.endDate || new Date(Date.now() + 86400000),
             markup: trade.markup || 0,
+            serviceList: trade.serviceList || [],
           })),
         }));
         updateLocalStorageFromState(roomsData);
@@ -1122,6 +1126,7 @@ export default function EstimationBox(_props: Readonly<EstimationBoxProps>) {
         startDate: trade.startDate || new Date(),
         endDate: trade.endDate || new Date(Date.now() + 86400000),
         markup: trade.markup || 0,
+        serviceList: trade.serviceList || [],
       })),
     }));
 

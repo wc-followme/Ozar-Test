@@ -1,7 +1,6 @@
 'use client';
 
-import { EstimateComponentProps } from '@/app/(DashboardLayout)/templates/template-types';
-import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { TemplateListForm } from '@/components/shared/forms/TemplateListForm';
@@ -90,7 +89,46 @@ export const updateLocalStorageFromState = (
       startDate?: Date;
       endDate?: Date;
       markup?: number;
-      // Add any other trade properties that need to be saved
+      serviceList?: Array<{
+        id: string;
+        uuid?: string;
+        name: string;
+        description: string;
+        qty: number;
+        rate: number;
+        lineTotal: number;
+        serviceTotal: number;
+        tradeTotal: number;
+        materials: Array<{
+          id: string;
+          name: string;
+          variant: string;
+          qty: number;
+          unit: string;
+          description: string;
+          rate: number;
+          markup: number;
+          lineTotal: number;
+        }>;
+        finishes: Array<{
+          id: string;
+          name: string;
+          variant: string;
+          qty: number;
+          unit: string;
+          description: string;
+          rate: number;
+          markup: number;
+          lineTotal: number;
+        }>;
+        tools: Array<{
+          id: string;
+          name: string;
+          category: string;
+          description: string;
+          status: string;
+        }>;
+      }>;
     }>;
   }>
 ) => {
@@ -104,7 +142,26 @@ export const updateLocalStorageFromState = (
           trade.endDate?.toISOString() ||
           new Date(Date.now() + 86400000).toISOString(),
         markup: trade.markup || 0,
-        // Add any other trade properties that need to be saved
+        services:
+          trade.serviceList?.map((service, index) => ({
+            service_id: service.uuid || service.id,
+            service_order_no: index + 1,
+            description: service.description || service.name,
+            qty: service.qty,
+            rate: service.rate,
+            materials: service.materials.map(material => ({
+              material_id: material.id,
+              description: material.description,
+              disclaimer: '', // Add disclaimer field if needed
+              qty: material.qty,
+              unit: material.unit,
+              rate: material.rate,
+              markup: material.markup,
+            })),
+            tools: service.tools.map(tool => ({
+              tool_id: tool.id,
+            })),
+          })) || [],
       })),
     }));
 
@@ -153,6 +210,7 @@ export const replaceTradeInRoom = (
       end_date:
         updates.end_date || new Date(Date.now() + 86400000).toISOString(),
       markup: updates.markup || 0,
+      services: [], // Initialize with empty services array
     });
 
     localStorage.setItem('job_rooms', JSON.stringify(jobRooms));
