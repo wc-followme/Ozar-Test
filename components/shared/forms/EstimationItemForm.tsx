@@ -25,7 +25,9 @@ export default function EstimationItemForm({
   onDelete,
   serviceId, // Add service ID prop
 }: EstimationItemFormProps) {
-  const [selectedCurrency, setSelectedCurrency] = useState('$');
+  const [selectedCurrency, setSelectedCurrency] = useState(
+    item.markup_type === 'PERCENTAGE' ? '%' : '$'
+  );
   const [materialOptions, setMaterialOptions] = useState<
     Array<{ value: string; label: string }>
   >([]);
@@ -83,6 +85,11 @@ export default function EstimationItemForm({
     }
   };
 
+  // Update selectedCurrency when item changes
+  useEffect(() => {
+    setSelectedCurrency(item.markup_type === 'PERCENTAGE' ? '%' : '$');
+  }, [item.markup_type]);
+
   // Load materials when component mounts or when service/company changes
   useEffect(() => {
     const selectedCompanyRaw =
@@ -124,6 +131,7 @@ export default function EstimationItemForm({
       onItemUpdate({
         ...item,
         [field]: value,
+        markup_type: selectedCurrency === '%' ? 'PERCENTAGE' : 'FLAT_AMOUNT',
       });
     }
   };
@@ -157,6 +165,8 @@ export default function EstimationItemForm({
                   ...item,
                   name: newName,
                   ...(materialUuid && { uuid: materialUuid }), // Only add uuid if it exists
+                  markup_type:
+                    selectedCurrency === '%' ? 'PERCENTAGE' : 'FLAT_AMOUNT',
                 });
               }
             }}
@@ -267,7 +277,16 @@ export default function EstimationItemForm({
             <div className='w-[60px]'>
               <SelectField
                 value={selectedCurrency}
-                onValueChange={setSelectedCurrency}
+                onValueChange={value => {
+                  setSelectedCurrency(value);
+                  // Update the item's markup_type when currency changes
+                  if (onItemUpdate) {
+                    onItemUpdate({
+                      ...item,
+                      markup_type: value === '%' ? 'PERCENTAGE' : 'FLAT_AMOUNT',
+                    });
+                  }
+                }}
                 options={currencyOptions}
                 placeholder='$'
                 className='mb-0'

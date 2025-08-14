@@ -157,12 +157,14 @@ export const calculateMarkupValue = (trade: {
       qty: number;
       is_hidden?: boolean;
       markup?: number;
+      markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
     }>;
     finishes?: Array<{
       rate: number;
       qty: number;
       is_hidden?: boolean;
       markup?: number;
+      markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
     }>;
   }>;
 }): number => {
@@ -230,7 +232,17 @@ export const calculateMarkupValue = (trade: {
             if (!shouldIncludeInCalculation(material)) {
               return materialTotal;
             }
-            return materialTotal + safeNumber(material.markup || 0);
+            const markupValue = safeNumber(material.markup || 0);
+            const markupType = material.markup_type || 'FLAT_AMOUNT';
+
+            if (markupType === 'PERCENTAGE') {
+              // Calculate percentage of the material cost (qty * rate)
+              const materialCost = calculateMaterialCost(material);
+              return materialTotal + (materialCost * markupValue) / 100;
+            } else {
+              // Flat amount markup
+              return materialTotal + markupValue;
+            }
           },
           0
         );
@@ -241,7 +253,17 @@ export const calculateMarkupValue = (trade: {
             if (!shouldIncludeInCalculation(finish)) {
               return finishTotal;
             }
-            return finishTotal + safeNumber(finish.markup || 0);
+            const markupValue = safeNumber(finish.markup || 0);
+            const markupType = finish.markup_type || 'FLAT_AMOUNT';
+
+            if (markupType === 'PERCENTAGE') {
+              // Calculate percentage of the finish cost (qty * rate)
+              const finishCost = calculateMaterialCost(finish);
+              return finishTotal + (finishCost * markupValue) / 100;
+            } else {
+              // Flat amount markup
+              return finishTotal + markupValue;
+            }
           },
           0
         );
@@ -269,12 +291,14 @@ export const calculateTradeTotal = (trade: {
       qty: number;
       is_hidden?: boolean;
       markup?: number;
+      markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
     }>;
     finishes?: Array<{
       rate: number;
       qty: number;
       is_hidden?: boolean;
       markup?: number;
+      markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
     }>;
   }>;
 }): {
@@ -311,12 +335,14 @@ export const calculateJobTotal = (
           qty: number;
           is_hidden?: boolean;
           markup?: number;
+          markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
         }>;
         finishes?: Array<{
           rate: number;
           qty: number;
           is_hidden?: boolean;
           markup?: number;
+          markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
         }>;
       }>;
     }>;

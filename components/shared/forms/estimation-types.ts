@@ -8,6 +8,7 @@ export interface EstimationItem {
   description: string;
   rate: number;
   markup: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
   lineTotal: number;
 }
 

@@ -20,7 +20,6 @@ import React, { useEffect, useState } from 'react';
 import { HOME_OWNER_MESSAGES } from '../home-owner-messages';
 import {
   CategoryData,
-  EstimationData,
   GeneralInfoData,
   HomeOwnerFormData,
   JOB_BOXES_STEPS,
@@ -550,21 +549,6 @@ export default function HomeOwnerWizardPage() {
     }
   };
 
-  const handleEstimationSubmit = (data: EstimationData) => {
-    setEstimationData(data);
-    // Submit all data with current questions
-    handleFinalSubmit(
-      {
-        generalInfo: generalInfoData!,
-        propertyInfo: propertyInfoData!,
-        projectInfo: projectInfoData!,
-        category: categoryData!,
-        estimation: data,
-      },
-      questionsByStep
-    );
-  };
-
   const handleFinalSubmit = async (
     allData: HomeOwnerFormData,
     currentQuestions?: Record<
@@ -951,7 +935,7 @@ export default function HomeOwnerWizardPage() {
               steps.length > 0 && (
                 <div className='w-full flex justify-center mb-4 md:mb-8'>
                   <div className='flex items-center justify-center w-full max-w-2xl'>
-                    {steps.map((s, idx) => (
+                    {steps.map((_, idx) => (
                       <React.Fragment key={idx}>
                         <div
                           className={`w-4 md:w-6 h-4 md:h-6 rounded-full flex items-center justify-center z-10 ${currentStepPosition >= idx ? 'bg-green-600' : 'bg-gray-300'}`}
