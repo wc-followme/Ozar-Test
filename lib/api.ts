@@ -845,6 +845,7 @@ class ApiService {
     company_id = '',
     search = '',
     status = 'ACTIVE',
+    user_type = '',
   }: {
     page?: number;
     limit?: number;
@@ -852,6 +853,7 @@ class ApiService {
     company_id?: string | number;
     search?: string;
     status?: 'ACTIVE' | 'INACTIVE';
+    user_type?: string;
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -860,6 +862,7 @@ class ApiService {
     if (company_id) params.append('company_id', String(company_id));
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (user_type) params.append('user_type', user_type);
     return this.makeRequest(`/users?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -923,6 +926,7 @@ class ApiService {
     phone_number = '',
     email = '',
     role_id = '',
+    company_id = '',
     page = 1,
     limit = 10,
   }: {
@@ -930,6 +934,7 @@ class ApiService {
     phone_number?: string;
     email?: string;
     role_id?: string | number;
+    company_id?: string | number;
     page?: number;
     limit?: number;
   }): Promise<any> {
@@ -938,6 +943,7 @@ class ApiService {
     if (phone_number) params.append('phone_number', phone_number);
     if (email) params.append('email', email);
     if (role_id) params.append('role_id', String(role_id));
+    if (company_id) params.append('company_id', String(company_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {
@@ -1736,6 +1742,24 @@ class ApiService {
     });
   }
 
+  // Five-box system API methods
+  async getBoxSettings(params?: {
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
   // Create todo list
   async createTodoList(payload: {
     job_uuid: string;
@@ -1766,6 +1790,28 @@ class ApiService {
     return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateBoxSettings(payload: {
+    default_selected_json?: Array<{ id: string; enabled: boolean }>;
+    field_status_json?: any;
+    question_json?: any;
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (payload.company_id) {
+      queryParams.append('company_id', payload.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -1815,6 +1861,7 @@ class ApiService {
     });
   }
 
+  // Removed testConnection and all debug code
   // Create appointment
   async createAppointment(payload: {
     agenda: string;
@@ -1925,3 +1972,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+

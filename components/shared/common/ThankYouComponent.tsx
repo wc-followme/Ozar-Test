@@ -1,7 +1,10 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
+import { ROUTES } from '@/constants/common';
+import { THANK_YOU_MESSAGES } from '@/constants/messages';
 import { TickCircle } from 'iconsax-react';
+import { useRouter } from 'next/navigation';
 import { Button } from '../../ui/button';
 
 interface ThankYouComponentProps {
@@ -10,9 +13,15 @@ interface ThankYouComponentProps {
 }
 
 export function ThankYouComponent({
-  title = 'Thank You!',
-  message = 'Your project details have been successfully submitted. We will review your information and get back to you soon.',
+  title = THANK_YOU_MESSAGES.DEFAULT_TITLE,
+  message = THANK_YOU_MESSAGES.DEFAULT_MESSAGE,
 }: ThankYouComponentProps) {
+  const router = useRouter();
+
+  const handleLoginClick = () => {
+    router.push(ROUTES.AUTH_LOGIN);
+  };
+
   return (
     <div className='bg-[var(--white-background)] flex flex-col items-center justify-center p-4 rounded-2xl'>
       <Card className='w-full bg-[var(--card-background)] border-0'>
@@ -39,8 +48,11 @@ export function ThankYouComponent({
 
           {/* Additional Info */}
           <div className=''>
-            <Button className='btn-primary text-center mx-auto'>
-              Go to Log in
+            <Button
+              className='btn-primary text-center mx-auto'
+              onClick={handleLoginClick}
+            >
+              {THANK_YOU_MESSAGES.GO_TO_LOGIN_BUTTON}
             </Button>
           </div>
         </CardContent>

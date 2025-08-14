@@ -1,13 +1,65 @@
 'use client';
 
+import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
+import SideSheet from '@/components/shared/common/SideSheet';
+import {
+  ReviewForm,
+  ReviewFormData,
+} from '@/components/shared/forms/ReviewForm';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { IconShare } from '@tabler/icons-react';
+import { IconShare, IconStar } from '@tabler/icons-react';
 import { DocumentText, Edit2, Star1 } from 'iconsax-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useState } from 'react';
 
 const CompanyProfile = () => {
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleWriteReview = () => {
+    setIsReviewFormOpen(true);
+  };
+
+  const handleReviewSubmit = async (data: ReviewFormData) => {
+    setIsSubmitting(true);
+    try {
+      console.log('Submitting review:', data);
+      // Add your API call here to save the review
+
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Create new review object
+      const newReview = {
+        id: `review-${Date.now()}`,
+        reviewTitle: `Review ${Date.now()}`,
+        rating: parseFloat(data.rating),
+        reviewText: data.review,
+        reviewerName: 'Anonymous User', // You can get this from user context
+        reviewDate: new Date().toISOString(),
+      };
+
+      // Dispatch custom event to notify ReviewTab
+      const event = new CustomEvent('newReviewSubmitted', {
+        detail: newReview,
+      });
+      window.dispatchEvent(event);
+
+      // Close the side sheet after successful submission
+      setIsReviewFormOpen(false);
+      setIsSubmitting(false);
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancelReview = () => {
+    setIsReviewFormOpen(false);
+  };
+
   return (
     <div className='rounded-[10px]'>
       {/* Cover Image Section */}
@@ -57,7 +109,7 @@ const CompanyProfile = () => {
                   <h1 className='text-[var(--text-dark)] text-2xl font-bold leading-[18px] tracking-[0%]'>
                     Envision Construction
                   </h1>
-                  <div className='flex flex-wrap items-end gap-2'>
+                  <div className='flex flex-wrap items-end gap-4'>
                     <div>
                       <p className='text-[var(--text-secondary)] text-base font-normal leading-[18px] tracking-[0%] mb-2'>
                         Construction Company
@@ -84,7 +136,15 @@ const CompanyProfile = () => {
                         <span className='text-gray-500 text-sm'>5 Reviews</span>
                       </div>
                     </div>
-                    <div className='flex gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
+                    <div className='flex flex-wrap gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
+                      <Button
+                        variant='secondary'
+                        className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
+                        onClick={handleWriteReview}
+                      >
+                        <IconStar size='32' color='currentcolor' />
+                        <span className='hidden sm:inline'>Write a Review</span>
+                      </Button>
                       <Link
                         href='/company-profile/five-box-system'
                         className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
@@ -109,8 +169,8 @@ const CompanyProfile = () => {
                         <span className='hidden sm:inline'>Share</span>
                       </Button>
 
-                      <Button
-                        variant='secondary'
+                      <Link
+                        href='/company-profile/edit-profile'
                         className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
                       >
                         <Edit2
@@ -119,6 +179,12 @@ const CompanyProfile = () => {
                           className='[&_path]:!stroke-[2px]'
                         />
                         <span className='hidden sm:inline'>Edit Profile</span>
+                      </Link>
+                      <Button
+                        variant='secondary'
+                        className='btn-primary gap-1 !py-[10px]  sm:!w-auto !h-9 rounded-full'
+                      >
+                        Request Quote
                       </Button>
                     </div>
                   </div>
@@ -130,6 +196,23 @@ const CompanyProfile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Company Bottom Block with Tabs */}
+      <CompanyBottomBlock />
+
+      {/* Review Form SideSheet */}
+      <SideSheet
+        open={isReviewFormOpen}
+        onOpenChange={setIsReviewFormOpen}
+        title='Write a Review'
+        size='600px'
+      >
+        <ReviewForm
+          onSubmit={handleReviewSubmit}
+          onCancel={handleCancelReview}
+          isLoading={isSubmitting}
+        />
+      </SideSheet>
     </div>
   );
 };

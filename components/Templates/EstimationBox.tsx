@@ -1591,10 +1591,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         }
         subtitle={
           deleteType === 'room'
-            ? `Are you sure you want to delete "${selectedRoom?.name}"? This will also delete all trades and services within this room.`
+            ? `Are you sure you want to delete &ldquo;${selectedRoom?.name}&rdquo;? This will also delete all trades and services within this room.`
             : deleteType === 'trade'
-              ? `Are you sure you want to delete "${selectedTradeData?.name}"? This will also delete all services within this trade.`
-              : `Are you sure you want to delete "${selectedServiceData?.name}"? This action cannot be undone.`
+              ? `Are you sure you want to delete &ldquo;${selectedTradeData?.name}&rdquo;? This will also delete all services within this trade.`
+              : `Are you sure you want to delete &ldquo;${selectedServiceData?.name}&rdquo;? This action cannot be undone.`
         }
         archiveButtonText={'Delete'}
         onCancel={handleDeleteCancel}
