@@ -212,16 +212,42 @@ export default function EstimationServiceForm({
             <div className='space-y-2 w-[100px]'>
               <Label className='field-label'>Qty</Label>
               <Input
-                type='number'
-                value={service.qty}
+                type='text'
+                value={service.qty.toString()}
                 onChange={e => {
-                  const newQty = parseInt(e.target.value) || 0;
-                  if (onServiceUpdate) {
-                    onServiceUpdate({
-                      ...service,
-                      qty: newQty,
-                    });
+                  const value = e.target.value;
+                  // Only allow numbers
+                  if (/^\d*$/.test(value)) {
+                    const newQty = value === '' ? 0 : parseInt(value) || 0;
+                    if (onServiceUpdate) {
+                      onServiceUpdate({
+                        ...service,
+                        qty: newQty,
+                      });
+                    }
                   }
+                }}
+                onKeyDown={e => {
+                  // Allow: backspace, delete, tab, escape, enter, and numbers
+                  const allowedKeys = [
+                    'Backspace',
+                    'Delete',
+                    'Tab',
+                    'Escape',
+                    'Enter',
+                    'ArrowLeft',
+                    'ArrowRight',
+                    'ArrowUp',
+                    'ArrowDown',
+                    'Home',
+                    'End',
+                  ];
+
+                  if (allowedKeys.includes(e.key) || /^[0-9]$/.test(e.key)) {
+                    return;
+                  }
+
+                  e.preventDefault();
                 }}
                 className='input-field'
               />

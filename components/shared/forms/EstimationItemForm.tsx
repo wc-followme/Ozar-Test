@@ -183,11 +183,38 @@ export default function EstimationItemForm({
         <div className='space-y-2 w-[150px]'>
           <Label className='field-label text-sm'>Qty</Label>
           <Input
-            type='number'
-            value={item.qty}
-            onChange={e =>
-              handleInputChange('qty', parseInt(e.target.value) || 0)
-            }
+            type='text'
+            value={item.qty.toString()}
+            onChange={e => {
+              const value = e.target.value;
+              // Only allow numbers
+              if (/^\d*$/.test(value)) {
+                const numericValue = value === '' ? 0 : parseInt(value) || 0;
+                handleInputChange('qty', numericValue);
+              }
+            }}
+            onKeyDown={e => {
+              // Allow: backspace, delete, tab, escape, enter, and numbers
+              const allowedKeys = [
+                'Backspace',
+                'Delete',
+                'Tab',
+                'Escape',
+                'Enter',
+                'ArrowLeft',
+                'ArrowRight',
+                'ArrowUp',
+                'ArrowDown',
+                'Home',
+                'End',
+              ];
+
+              if (allowedKeys.includes(e.key) || /^[0-9]$/.test(e.key)) {
+                return;
+              }
+
+              e.preventDefault();
+            }}
             className='input-field'
           />
         </div>
