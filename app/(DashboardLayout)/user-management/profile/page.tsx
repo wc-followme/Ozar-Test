@@ -1,9 +1,9 @@
 'use client';
 
-import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
 import { ProfileTopBlock } from '@/components/shared/common/ProfileTopBlock';
+import { ProfileBottomBlock } from '../../../../components/Templates/ProfileBottomBlock';
 
-const CompanyProfile = () => {
+const Profile = () => {
   const handleWriteReview = () => {
     console.log('Write review clicked');
   };
@@ -25,27 +25,27 @@ const CompanyProfile = () => {
   };
 
   return (
-    <div className='space-y-6'>
+    <div className=''>
       <ProfileTopBlock
         coverImage='/images/profile-block-bg.png'
-        logoImage='/images/logo.svg'
-        companyName='Envision Construction'
-        tagline='Construction Company'
-        rating={4.0}
-        reviewCount={5}
+        logoImage='/images/profile.jpg'
+        companyName='John Doe'
+        tagline='Senior Developer'
+        rating={4.5}
+        reviewCount={12}
         onWriteReview={handleWriteReview}
         onEditProfile={handleEditProfile}
         onRequestQuote={handleRequestQuote}
         onShare={handleShare}
         onChangeCover={handleChangeCover}
-        editProfileLink='/company-profile/edit-profile'
-        fiveBoxSystemLink='/company-profile/five-box-system'
+        showReviewButton={false}
+        showFiveBoxSystemButton={false}
+        showRequestQuoteButton={false}
+        editProfileLink='/user-management/profile/edit'
       />
-
-      {/* Company Bottom Block with Tabs */}
-      <CompanyBottomBlock />
+      <ProfileBottomBlock />
     </div>
   );
 };
 
-export default CompanyProfile;
+export default Profile;
