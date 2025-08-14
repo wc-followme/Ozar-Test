@@ -180,6 +180,12 @@ const CompanyProfile = () => {
                         />
                         <span className='hidden sm:inline'>Edit Profile</span>
                       </Link>
+                      <Button
+                        variant='secondary'
+                        className='btn-primary gap-1 !py-[10px]  sm:!w-auto !h-9 rounded-full'
+                      >
+                        Request Quote
+                      </Button>
                     </div>
                   </div>
                 </div>
