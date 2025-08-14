@@ -60,7 +60,7 @@ export default function EstimateComponent({
           onButtonClick={onAddRoom}
           showButton={false}
         />
-        <div className='flex gap-4 justify-center'>
+        <div className='flex sm:flex-row flex-col gap-4 justify-center'>
           <Button className='btn-primary' onClick={handleAddRoom}>
             <RoomIcon className='!h-6 !w-6' />
             Add Room&nbsp;/&nbsp;Project

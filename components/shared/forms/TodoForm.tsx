@@ -9,13 +9,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -28,6 +21,7 @@ import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import FormErrorMessage from '../common/FormErrorMessage';
 import MultiSelect from '../common/MultiSelect';
+import SelectField from '../common/SelectField';
 
 // Validation schema with enhanced validation
 const todoFormSchema = yup.object({
@@ -522,49 +516,43 @@ export const TodoForm: React.FC<TodoFormProps> = ({
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
           {/* Job Selection */}
           <div className='space-y-2'>
-            <Label htmlFor='job' className='field-label'>
-              {TODO_MESSAGES.JOB_LABEL}
-            </Label>
             <Controller
               name='job'
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger
-                    className={cn(
-                      'h-12 border-2 bg-[var(--white-background)] rounded-[10px]',
-                      errors.job
-                        ? '!border-[var(--warning)]'
-                        : 'border-[var(--border-dark)]'
-                    )}
-                  >
-                    <SelectValue placeholder={TODO_MESSAGES.JOB_PLACEHOLDER} />
-                  </SelectTrigger>
-                  <SelectContent className='bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px] max-h-60 overflow-y-auto'>
-                    {jobsLoading ? (
-                      <div className='p-2 text-gray-500 text-sm'>
-                        Loading jobs...
-                      </div>
-                    ) : jobs.length > 0 ? (
-                      jobs.map(job => (
-                        <SelectItem
-                          key={job.uuid}
-                          value={job.uuid}
-                          className='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
-                        >
-                          {job.project_name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className='p-2 text-gray-500 text-sm'>
-                        No jobs found
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+                <SelectField
+                  label={TODO_MESSAGES.JOB_LABEL}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  options={
+                    jobsLoading
+                      ? []
+                      : jobs.map(job => ({
+                          value: job.uuid,
+                          label:
+                            job.project_name ||
+                            job.project_id ||
+                            'Unnamed Project',
+                        }))
+                  }
+                  placeholder={
+                    jobsLoading
+                      ? 'Loading jobs...'
+                      : jobs.length > 0
+                        ? TODO_MESSAGES.JOB_PLACEHOLDER
+                        : 'No jobs found'
+                  }
+                  error={errors.job?.message || ''}
+                  triggerClassName={cn(
+                    'h-12 border-2 bg-[var(--white-background)] rounded-[10px]',
+                    errors.job
+                      ? '!border-[var(--warning)]'
+                      : 'border-[var(--border-dark)]'
+                  )}
+                  disabled={jobsLoading}
+                />
               )}
             />
-            <FormErrorMessage message={errors.job?.message || ''} />
           </div>
 
           {/* Date Selection */}
