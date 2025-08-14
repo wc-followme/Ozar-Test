@@ -21,6 +21,7 @@ export const HOME_OWNER_MESSAGES = {
   GENERAL_INFO_LABEL: 'General Info',
   OPTIONAL_DETAILS_LABEL: 'Optional Details',
   PROJECT_TYPE_LABEL: 'Project Type',
+  ESTIMATION_LABEL: 'Estimation',
 
   // Progress Bar Messages
   STEP_PROGRESS: 'Step progress',
@@ -57,12 +58,14 @@ export const HOME_OWNER_MESSAGES = {
   GENERAL_INFO_TITLE: 'General Information',
   OPTIONAL_DETAILS_TITLE: 'Optional Details',
   PROJECT_TYPE_TITLE: 'Project Type Selection',
+  ESTIMATION_TITLE: 'Estimation',
 
   // Form Section Descriptions
   GENERAL_INFO_DESCRIPTION: 'Please provide your basic information.',
   OPTIONAL_DETAILS_DESCRIPTION:
     'Additional details to help us serve you better.',
   PROJECT_TYPE_DESCRIPTION: 'Select the type of project you need.',
+  ESTIMATION_DESCRIPTION: 'Get detailed cost estimates for your project.',
 
   // Status Messages
   FORM_INCOMPLETE: 'Please complete all required fields.',
@@ -89,6 +92,7 @@ export const HOME_OWNER_MESSAGES = {
     'Please provide your contact information and project details.',
   HELP_OPTIONAL_DETAILS: 'These details help us provide better service.',
   HELP_PROJECT_TYPE: 'Select the category that best describes your project.',
+  HELP_ESTIMATION: 'Review and get detailed cost estimates for your project.',
 
   // Accessibility Messages
   ARIA_PROGRESS: 'Progress indicator',
