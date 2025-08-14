@@ -922,8 +922,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     updatedMaterial: EstimationItem
   ) => {
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
-      setRooms(prev =>
-        prev.map(room =>
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
@@ -948,11 +948,16 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                 ),
               }
             : room
-        )
-      );
+        );
 
-      // Update calculations after material update
-      setTimeout(() => updateAllCalculations(), 0);
+        // Update calculations immediately with the new state
+        setTimeout(() => {
+          const recalculatedRooms = updatedRooms.map(updateRoomCalculations);
+          setRooms(recalculatedRooms);
+        }, 0);
+
+        return updatedRooms;
+      });
     }
   };
 
@@ -992,8 +997,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
   const handleFinishUpdate = (finishId: string, updatedFinish: Material) => {
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
-      setRooms(prev =>
-        prev.map(room =>
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
@@ -1018,11 +1023,16 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                 ),
               }
             : room
-        )
-      );
+        );
 
-      // Update calculations after finish update
-      setTimeout(() => updateAllCalculations(), 0);
+        // Update calculations immediately with the new state
+        setTimeout(() => {
+          const recalculatedRooms = updatedRooms.map(updateRoomCalculations);
+          setRooms(recalculatedRooms);
+        }, 0);
+
+        return updatedRooms;
+      });
     }
   };
 

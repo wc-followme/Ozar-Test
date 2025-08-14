@@ -166,6 +166,24 @@ export const calculateMarkupValue = (trade: {
     }>;
   }>;
 }): number => {
+  console.log('calculateMarkupValue called with:', {
+    markup_type: trade.markup_type,
+    markup: trade.markup,
+    services: trade.services?.map(s => ({
+      materials:
+        s.materials?.map(m => ({
+          rate: m.rate,
+          qty: m.qty,
+          markup: m.markup,
+        })) || [],
+      finishes:
+        s.finishes?.map(f => ({
+          rate: f.rate,
+          qty: f.qty,
+          markup: f.markup,
+        })) || [],
+    })),
+  });
   const {
     markup_type = MARKUP_TYPES.FLAT_AMOUNT,
     markup = 0,
@@ -206,19 +224,19 @@ export const calculateMarkupValue = (trade: {
       return total + materialMarkup + finishMarkup;
     }, 0);
   } else if (services.length > 0) {
-    // Check if there are individual material/finish markups
-    const hasIndividualMarkups = services.some(service => {
-      const hasMaterialMarkups = (service.materials || []).some(material => 
-        material.markup && material.markup > 0
+    // Check if there are any materials or finishes with markup fields (including 0)
+    const hasIndividualMarkupFields = services.some(service => {
+      const hasMaterialMarkupFields = (service.materials || []).some(material =>
+        material.hasOwnProperty('markup')
       );
-      const hasFinishMarkups = (service.finishes || []).some(finish => 
-        finish.markup && finish.markup > 0
+      const hasFinishMarkupFields = (service.finishes || []).some(finish =>
+        finish.hasOwnProperty('markup')
       );
-      return hasMaterialMarkups || hasFinishMarkups;
+      return hasMaterialMarkupFields || hasFinishMarkupFields;
     });
 
-    if (hasIndividualMarkups) {
-      // Flat amount markup: sum of individual material and finish markups
+    if (hasIndividualMarkupFields) {
+      // Flat amount markup: sum of individual material and finish markups (including 0 values)
       return services.reduce((total, service) => {
         if (!shouldIncludeInCalculation(service)) {
           return total;
@@ -250,9 +268,12 @@ export const calculateMarkupValue = (trade: {
       }, 0);
     } else {
       // Trade-level flat amount markup: use the trade markup value directly
-      return safeNumber(markup);
+      const result = safeNumber(markup);
+      console.log('Trade-level flat amount markup result:', result);
+      return result;
     }
   }
+  console.log('No services, returning 0');
   return 0;
 };
 
