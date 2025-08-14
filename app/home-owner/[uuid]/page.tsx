@@ -5,11 +5,11 @@ import { HomeOwnerHeader } from '@/components/layout/HomeOwnerHeader';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ThankYouComponent } from '@/components/shared/common/ThankYouComponent';
 import { StepCategory } from '@/components/shared/forms/StepCategory';
-import { StepEstimation } from '@/components/shared/forms/StepEstimation';
+// import { StepEstimation } from '@/components/shared/forms/StepEstimation';
+import EstimateComponent from '@/components/Templates/EstimateComponent';
 import { StepGeneralInfo } from '@/components/shared/forms/StepGeneralInfo';
 import { StepProjectInfo } from '@/components/shared/forms/StepProjectInfo';
 import { StepPropertyInfo } from '@/components/shared/forms/StepPropertyInfo';
-import EstimateComponent from '@/components/Templates/EstimateComponent';
 import { showErrorToast, showSuccessToast } from '@/components/ui/use-toast';
 import { ROLE_IDS, ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -52,9 +52,9 @@ export default function HomeOwnerWizardPage() {
   const [projectInfoData, setProjectInfoData] =
     useState<ProjectInfoData | null>(null);
   const [categoryData, setCategoryData] = useState<CategoryData | null>(null);
-  const [estimationData, setEstimationData] = useState<EstimationData | null>(
-    null
-  );
+  // const [estimationData, setEstimationData] = useState<EstimationData | null>(
+  //   null
+  // );
   const [companyId, setCompanyId] = useState<string | null>(null); // Store company UUID from job data
 
   // State for Thank You component
@@ -242,7 +242,7 @@ export default function HomeOwnerWizardPage() {
           });
 
           // Reset estimation data
-          setEstimationData({});
+          //setEstimationData({});
         }
       } catch (err: unknown) {
         // Handle auth errors first (will redirect to login if 401)
@@ -1050,14 +1050,25 @@ export default function HomeOwnerWizardPage() {
               })()}
             {step === WIZARD_STEPS.ESTIMATION &&
               jobBoxesStep.includes(JOB_BOXES_STEPS.FIFTH) && (
-                <StepEstimation
-                  {...(shouldShowPreviousButton() && {
-                    onPrev: goToPreviousStep,
-                  })}
-                  onSubmit={handleEstimationSubmit}
-                  cancelButtonClass={cancelButtonClass}
-                  defaultValues={estimationData}
-                  isLastStep={isLastStep()}
+                // <StepEstimation
+                //   {...(shouldShowPreviousButton() && {
+                //     onPrev: goToPreviousStep,
+                //   })}
+                //   onSubmit={handleEstimationSubmit}
+                //   cancelButtonClass={cancelButtonClass}
+                //   defaultValues={estimationData}
+                //   isLastStep={isLastStep()}
+                // />
+                <EstimateComponent
+                  breadcrumbData={breadcrumbData}
+                  onAddRoom={handleAddRoom}
+                  jobId={uuid}
+                  onSaveSuccess={() => {
+                    // Success handling is now done via toast messages in EstimationBox
+                  }}
+                  onSaveError={_error => {
+                    // Error handling is now done via toast messages in EstimationBox
+                  }}
                 />
               )}
           </div>
