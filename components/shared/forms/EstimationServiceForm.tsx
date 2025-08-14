@@ -192,11 +192,18 @@ export default function EstimationServiceForm({
                     onServiceNameChange(newName);
                   }
                   if (onServiceUpdate) {
-                    onServiceUpdate({
+                    const updatedService = {
                       ...service,
                       name: newName,
-                      ...(serviceUuid && { uuid: serviceUuid }), // Only add uuid if it exists
-                    });
+                    };
+
+                    if (serviceUuid) {
+                      (updatedService as any).uuid = serviceUuid;
+                    } else {
+                      delete (updatedService as any).uuid;
+                    }
+
+                    onServiceUpdate(updatedService);
                   }
                 }}
                 options={serviceOptions}
@@ -373,7 +380,9 @@ export default function EstimationServiceForm({
         onItemUpdate={onMaterialUpdate || (() => {})}
         onItemDelete={onMaterialDelete || (() => {})}
         defaultExpanded={true}
-        serviceId={service.uuid || service.id || undefined}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
 
       {/* Finishes Accordion */}
@@ -402,7 +411,9 @@ export default function EstimationServiceForm({
         onItemUpdate={onFinishUpdate || (() => {})}
         onItemDelete={onFinishDelete || (() => {})}
         defaultExpanded={true}
-        serviceId={service.uuid || service.id || undefined}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
 
       {/* Tools Accordion */}
@@ -415,7 +426,9 @@ export default function EstimationServiceForm({
         roomName={roomName}
         tradeName={tradeName}
         serviceName={service.name}
-        serviceId={service.uuid || service.id || undefined}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
     </div>
   );

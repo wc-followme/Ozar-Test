@@ -118,6 +118,12 @@ export default function EstimationItemForm({
 
   // Load materials when component mounts or when service/company changes
   useEffect(() => {
+    // Clear material options immediately if serviceId is null or undefined
+    if (!serviceId) {
+      setMaterialOptions([]);
+      return;
+    }
+
     const selectedCompanyRaw =
       typeof window !== 'undefined'
         ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
@@ -134,7 +140,7 @@ export default function EstimationItemForm({
         })()
       : '';
 
-    fetchMaterials(serviceId || null, companyUuid);
+    fetchMaterials(serviceId, companyUuid);
   }, [serviceId]);
 
   const formatCurrency = (amount: number) => {

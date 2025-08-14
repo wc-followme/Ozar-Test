@@ -331,7 +331,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       laborCost: tradeTotals.labor_cost,
       materialCost: tradeTotals.material_cost,
       tradeTotal: tradeTotals.trade_total,
-      markup: tradeTotals.markup, // Add the calculated markup value
+      // Don't store the calculated markup value back - keep the original markup percentage
     };
   };
 
@@ -602,6 +602,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       if (!expandedTrades.includes(foundTrade.uniqueKey)) {
         setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
+
+      // Don't clear service data when switching trades - only clear selectedService state
+      // The service data should remain intact in the trade object
     }
 
     setShowAddService(true); // Set to true to show trade state

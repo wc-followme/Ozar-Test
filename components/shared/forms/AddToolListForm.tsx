@@ -101,6 +101,12 @@ export default function AddToolListForm({
 
   // Load tools when component mounts or when service/company changes
   useEffect(() => {
+    // Clear tool options immediately if serviceId is null or undefined
+    if (!serviceId) {
+      setToolOptions([]);
+      return;
+    }
+
     const selectedCompanyRaw =
       typeof window !== 'undefined'
         ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
@@ -117,7 +123,7 @@ export default function AddToolListForm({
         })()
       : '';
 
-    fetchTools(serviceId || null, companyUuid);
+    fetchTools(serviceId, companyUuid);
   }, [serviceId]);
 
   const handleSubmit = () => {
