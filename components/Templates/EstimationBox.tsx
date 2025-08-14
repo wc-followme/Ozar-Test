@@ -339,6 +339,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       laborCost: tradeTotals.labor_cost,
       materialCost: tradeTotals.material_cost,
       tradeTotal: tradeTotals.trade_total,
+      markup: tradeTotals.markup, // Add the calculated markup value
     };
   };
 
@@ -455,6 +456,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         startDate: new Date(),
         endDate: new Date(Date.now() + 86400000), // Default to tomorrow
         markup: 0,
+        markup_type: MARKUP_TYPES.FLAT_AMOUNT,
       };
 
       setRooms(prev =>
@@ -501,6 +503,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       startDate: new Date(),
       endDate: new Date(Date.now() + 86400000), // Default to tomorrow
       markup: 0,
+      markup_type: MARKUP_TYPES.FLAT_AMOUNT,
     };
 
     setRooms(prev =>

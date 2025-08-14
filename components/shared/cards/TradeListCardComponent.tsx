@@ -18,6 +18,8 @@ interface Trade {
   laborCost: number;
   materialCost: number;
   tradeTotal: number;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface Service {

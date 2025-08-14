@@ -206,36 +206,52 @@ export const calculateMarkupValue = (trade: {
       return total + materialMarkup + finishMarkup;
     }, 0);
   } else if (services.length > 0) {
-    // Flat amount markup: sum of individual material and finish markups
-    return services.reduce((total, service) => {
-      if (!shouldIncludeInCalculation(service)) {
-        return total;
-      }
-
-      // Sum material markups
-      const materialMarkup = (service.materials || []).reduce(
-        (materialTotal, material) => {
-          if (!shouldIncludeInCalculation(material)) {
-            return materialTotal;
-          }
-          return materialTotal + safeNumber(material.markup || 0);
-        },
-        0
+    // Check if there are individual material/finish markups
+    const hasIndividualMarkups = services.some(service => {
+      const hasMaterialMarkups = (service.materials || []).some(material => 
+        material.markup && material.markup > 0
       );
-
-      // Sum finish markups
-      const finishMarkup = (service.finishes || []).reduce(
-        (finishTotal, finish) => {
-          if (!shouldIncludeInCalculation(finish)) {
-            return finishTotal;
-          }
-          return finishTotal + safeNumber(finish.markup || 0);
-        },
-        0
+      const hasFinishMarkups = (service.finishes || []).some(finish => 
+        finish.markup && finish.markup > 0
       );
+      return hasMaterialMarkups || hasFinishMarkups;
+    });
 
-      return total + materialMarkup + finishMarkup;
-    }, 0);
+    if (hasIndividualMarkups) {
+      // Flat amount markup: sum of individual material and finish markups
+      return services.reduce((total, service) => {
+        if (!shouldIncludeInCalculation(service)) {
+          return total;
+        }
+
+        // Sum material markups
+        const materialMarkup = (service.materials || []).reduce(
+          (materialTotal, material) => {
+            if (!shouldIncludeInCalculation(material)) {
+              return materialTotal;
+            }
+            return materialTotal + safeNumber(material.markup || 0);
+          },
+          0
+        );
+
+        // Sum finish markups
+        const finishMarkup = (service.finishes || []).reduce(
+          (finishTotal, finish) => {
+            if (!shouldIncludeInCalculation(finish)) {
+              return finishTotal;
+            }
+            return finishTotal + safeNumber(finish.markup || 0);
+          },
+          0
+        );
+
+        return total + materialMarkup + finishMarkup;
+      }, 0);
+    } else {
+      // Trade-level flat amount markup: use the trade markup value directly
+      return safeNumber(markup);
+    }
   }
   return 0;
 };

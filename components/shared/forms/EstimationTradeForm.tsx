@@ -22,7 +22,7 @@ import { useEffect, useState } from 'react';
 
 interface Trade {
   id: string;
-  uniqueKey: string; // Add unique key to match EstimationBox
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
   dateRange: string;
@@ -32,9 +32,10 @@ interface Trade {
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
-  startDate?: Date; // Add start date field
-  endDate?: Date; // Add end date field
-  markup?: number; // Add markup field
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface EstimationTradeFormProps {
@@ -81,7 +82,6 @@ export default function EstimationTradeForm({
       tomorrow.setDate(tomorrow.getDate() + 1);
       return tomorrow;
     })();
-  const markupAmount = trade.markup?.toString() || '0';
 
   // Use provided tradeOptions or show nothing if no trades available
   const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
@@ -106,12 +106,12 @@ export default function EstimationTradeForm({
   // Save initial data when component mounts
   useEffect(() => {
     if (selectedTrade) {
-      const updates: any = { markup: parseFloat(markupAmount) || 0 };
+      const updates: any = {};
       if (startDate) updates.start_date = startDate.toISOString();
       if (endDate) updates.end_date = endDate.toISOString();
       onLocalStorageUpdate?.();
     }
-  }, [selectedTrade, startDate, endDate, markupAmount, onLocalStorageUpdate]);
+  }, [selectedTrade, startDate, endDate, onLocalStorageUpdate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -122,18 +122,8 @@ export default function EstimationTradeForm({
 
   const currencyOptions = [
     { value: '$', label: '$' },
-    { value: '%', label: '%' }
+    { value: '%', label: '%' },
   ];
-
-  const handleInputChange = (field: string, value: number) => {
-    if (field === 'markup') {
-      _onTradeUpdate?.({
-        ...trade,
-        markup: value,
-      });
-      onLocalStorageUpdate?.();
-    }
-  };
 
   return (
     <div className='space-y-6'>
@@ -171,9 +161,7 @@ export default function EstimationTradeForm({
                     onTradeNameChange?.(newTradeName);
 
                     // Save data after trade selection
-                    const updates: any = {
-                      markup: parseFloat(markupAmount) || 0,
-                    };
+                    const updates: any = {};
                     if (startDate) updates.start_date = startDate.toISOString();
                     if (endDate) updates.end_date = endDate.toISOString();
                     onLocalStorageUpdate?.();
@@ -322,7 +310,7 @@ export default function EstimationTradeForm({
             </div>
             <div className='flex-1 space-y-2'>
               <Label className='field-label'>Total Markup</Label>
-              <div className='flex '>
+              <div className='flex'>
                 <div className='w-[60px]'>
                   <SelectField
                     value={selectedCurrency}
@@ -335,13 +323,9 @@ export default function EstimationTradeForm({
                 </div>
                 <Input
                   type='text'
-                  value={markupAmount}
-                  onChange={e => {
-                    const numericValue =
-                      parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                    handleInputChange('markup', numericValue);
-                  }}
-                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
+                  value={formatCurrency(trade.markup || 0)}
+                  disabled={true}
+                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] opacity-75 cursor-not-allowed'
                 />
               </div>
             </div>
