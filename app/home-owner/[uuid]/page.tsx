@@ -155,17 +155,6 @@ export default function HomeOwnerWizardPage() {
   const goToOptional = () => setStep(WIZARD_STEPS.OPTIONAL);
   const goToProjectType = () => setStep(WIZARD_STEPS.PROJECT_TYPE);
 
-  // Form submission handlers
-  const handleGeneralInfoSubmit = (data: GeneralInfoData) => {
-    setGeneralInfoData(data);
-    if (jobBoxesStep === JOB_BOXES_STEPS.FIRST) {
-      // Submit only general info
-      handleFinalSubmit({ generalInfo: data });
-    } else {
-      goToOptional();
-    }
-  };
-
   const handleOptionalDetailsSubmit = (data: OptionalDetailsData) => {
     setOptionalDetailsData(data);
     if (jobBoxesStep === JOB_BOXES_STEPS.SECOND) {
@@ -479,7 +468,7 @@ export default function HomeOwnerWizardPage() {
                 onSaveSuccess={() => {
                   // Success handling is now done via toast messages in EstimationBox
                 }}
-                onSaveError={error => {
+                onSaveError={_error => {
                   // Error handling is now done via toast messages in EstimationBox
                 }}
               />

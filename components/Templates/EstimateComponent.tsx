@@ -10,70 +10,6 @@ import { RoomIcon } from '../icons/RoomIcon';
 import { TemplateIcon } from '../icons/TemplateIcon';
 import EstimationBox from './EstimationBox';
 
-interface Tool {
-  id: string;
-  uuid?: string; // Add UUID field for database tool UUID
-  name: string;
-  category: string;
-  description: string;
-  status: 'available' | 'in-use' | 'maintenance';
-}
-
-interface Material {
-  id: string;
-  uuid?: string; // Add UUID field for database material UUID
-  name: string;
-  variant: string;
-  qty: number;
-  unit: string;
-  description: string;
-  rate: number;
-  markup: number;
-  lineTotal: number;
-}
-
-interface ServiceOption {
-  id: string;
-  name: string;
-  tradeTotal: number;
-}
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  qty: number;
-  rate: number;
-  lineTotal: number;
-  serviceTotal: number;
-  tradeTotal: number;
-  serviceOptions: ServiceOption[];
-  materials: Material[];
-  finishes: Material[];
-  tools: Tool[];
-}
-
-interface Trade {
-  id: string;
-  name: string;
-  services: number;
-  dateRange: string;
-  type: string;
-  laborCost: number;
-  materialCost: number;
-  tradeTotal: number;
-  serviceList: Service[];
-  isExpanded: boolean;
-}
-
-interface Room {
-  id: string;
-  name: string;
-  total: number;
-  trades: Trade[];
-  isExpanded: boolean;
-}
-
 interface EstimateComponentProps {
   breadcrumbData: BreadcrumbItem[];
   onAddRoom: () => void;
@@ -285,7 +221,7 @@ export default function EstimateComponent({
     setIsTemplateSheetOpen(true);
   };
 
-  const handleTemplateSave = (selectedTemplates: string[]) => {
+  const handleTemplateSave = (_selectedTemplates: string[]) => {
     setIsTemplateSheetOpen(false);
   };
 

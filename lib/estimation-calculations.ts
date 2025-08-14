@@ -166,24 +166,6 @@ export const calculateMarkupValue = (trade: {
     }>;
   }>;
 }): number => {
-  console.log('calculateMarkupValue called with:', {
-    markup_type: trade.markup_type,
-    markup: trade.markup,
-    services: trade.services?.map(s => ({
-      materials:
-        s.materials?.map(m => ({
-          rate: m.rate,
-          qty: m.qty,
-          markup: m.markup,
-        })) || [],
-      finishes:
-        s.finishes?.map(f => ({
-          rate: f.rate,
-          qty: f.qty,
-          markup: f.markup,
-        })) || [],
-    })),
-  });
   const {
     markup_type = MARKUP_TYPES.FLAT_AMOUNT,
     markup = 0,
@@ -268,12 +250,9 @@ export const calculateMarkupValue = (trade: {
       }, 0);
     } else {
       // Trade-level flat amount markup: use the trade markup value directly
-      const result = safeNumber(markup);
-      console.log('Trade-level flat amount markup result:', result);
-      return result;
+      return safeNumber(markup);
     }
   }
-  console.log('No services, returning 0');
   return 0;
 };
 

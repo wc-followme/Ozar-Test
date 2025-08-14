@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { calculateLineTotal, formatCurrency } from '@/lib/estimation-calculations';
+import { calculateLineTotal } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { useEffect, useState } from 'react';
 import { EstimationItem } from './estimation-types';

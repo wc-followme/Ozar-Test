@@ -100,7 +100,7 @@ interface EstimationBoxProps {
 // Utility function to generate unique keys
 const generateUniqueKey = (
   prefix: string,
-  tradeUuid?: string,
+  _tradeUuid?: string,
   roomId?: string,
   tradeSequenceNumber?: number
 ): string => {
@@ -318,20 +318,14 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
   // Function to update calculations for a trade
   const updateTradeCalculations = (trade: Trade): Trade => {
-    console.log('Updating trade calculations for:', trade.name);
-    console.log('Trade services:', trade.serviceList);
-
     // First update individual service calculations
     const updatedServices = trade.serviceList.map(updateServiceCalculations);
-    console.log('Updated services:', updatedServices);
 
     const tradeTotals = calculateTradeTotal({
       markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
       markup: trade.markup || 0,
       services: updatedServices,
     });
-
-    console.log('Trade totals:', tradeTotals);
 
     return {
       ...trade,
@@ -360,10 +354,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
   // Function to update all calculations
   const updateAllCalculations = (): void => {
-    console.log('Updating all calculations...');
     setRooms(prevRooms => {
       const updatedRooms = prevRooms.map(updateRoomCalculations);
-      console.log('Updated rooms:', updatedRooms);
       return updatedRooms;
     });
   };
@@ -480,7 +472,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     const tradeUuid = defaultTradeOption.value; // This is the UUID from database
     const tradeName = defaultTradeOption.label; // This is the trade name
     const selectedRoom = rooms.find(room => room.id === selectedRoomId);
-    const roomSequenceNumber = parseInt(selectedRoomId); // Room ID is now the sequence number
+
     const tradeSequenceNumber = selectedRoom ? selectedRoom.trades.length : 0;
 
     const newTrade: Trade = {
@@ -1335,11 +1327,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         props.onSaveError(error);
       }
     }
-  };
-
-  const handleReviewAndSend = () => {
-    // Add your review and send logic here
-    // For now, just show a success message
   };
 
   const toggleSidebar = () => {

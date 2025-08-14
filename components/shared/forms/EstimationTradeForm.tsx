@@ -318,6 +318,7 @@ export default function EstimationTradeForm({
                     options={currencyOptions}
                     placeholder='$'
                     className='mb-0'
+                    disabled={true}
                     triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
                   />
                 </div>
