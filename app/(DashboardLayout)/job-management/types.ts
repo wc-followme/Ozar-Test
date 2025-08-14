@@ -306,37 +306,38 @@ export interface StepGeneralInfoProps {
   isLastStep?: boolean;
 }
 
-export interface StepOptionalDetailsData {
-  typeOfProperty: string;
-  ageOfProperty: string;
-  approxSqft: string;
-  notificationStyle: string;
-  dailyWorkStart: string;
-  dailyWorkEnd: string;
-  ownerPresent: string;
+export interface StepProjectInfoData {
+  projectName: string;
+  projectStartDate: string;
+  projectFinishDate: string;
+  ownerPresence: string;
   weekendWork: string;
-  animals: string;
-  petType?: string;
+  dailyWorkTimingStart: string;
+  dailyWorkTimingEnd: string;
+  budget: string;
+  preferredContractor: string;
+  questions?: any[];
 }
 
-export interface StepOptionalDetailsProps {
-  onPrev: () => void;
-  onSkip?: () => void;
+export interface StepProjectInfoProps {
   onNext: (data: any) => void;
-  cancelButtonClass?: string;
+  onPrev?: () => void;
   defaultValues?: any;
   isLastStep?: boolean;
+  boxSettings?: any;
+  allQuestionJson?: Record<string, any[]>;
+  cancelButtonClass?: string;
 }
 
-export interface StepProjectTypeData {
+export interface StepCategoryData {
   selectedType: string;
 }
 
-export interface StepProjectTypeProps {
-  onPrev: () => void;
-  onSubmit: (data: StepProjectTypeData) => void;
+export interface StepCategoryProps {
+  onPrev?: () => void;
+  onSubmit: (data: StepCategoryData) => void;
   cancelButtonClass?: string;
-  defaultValues?: Partial<StepProjectTypeData>;
+  defaultValues?: Partial<StepCategoryData>;
   isLastStep?: boolean;
 }
 

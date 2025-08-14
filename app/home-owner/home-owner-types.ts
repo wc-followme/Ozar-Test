@@ -1,10 +1,15 @@
 // Home owner module type definitions
 
 // Step types
-export type WizardStep = 'general' | 'property' | 'optional' | 'projectType';
+export type WizardStep =
+  | 'general'
+  | 'property'
+  | 'optional'
+  | 'projectType'
+  | 'estimation';
 
 // Job boxes step types
-export type JobBoxesStep = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH';
+export type JobBoxesStep = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH';
 
 // Form data types
 export interface GeneralInfoData {
@@ -28,29 +33,32 @@ export interface PropertyInfoData {
   ageOfProperty: string;
 }
 
-export interface OptionalDetailsData {
-  typeOfProperty: string;
-  ageOfProperty: string;
-  approxSqft: string;
-  notificationStyle: string;
-  dailyWorkStart: string;
-  dailyWorkEnd: string;
-  ownerPresent: string;
+export interface ProjectInfoData {
+  projectName: string;
+  projectStartDate: string;
+  projectFinishDate: string;
+  ownerPresence: string;
   weekendWork: string;
-  animals: string;
-  petType?: string;
+  dailyWorkTimingStart: string;
+  dailyWorkTimingEnd: string;
+  budget: string;
+  preferredContractor: string;
+  questions?: any[];
 }
 
-export interface ProjectTypeData {
+export interface CategoryData {
   selectedType: string;
 }
+
+export type EstimationData = Record<string, unknown>;
 
 // Combined form data type
 export interface HomeOwnerFormData {
   generalInfo?: GeneralInfoData;
   propertyInfo?: PropertyInfoData;
-  optionalDetails?: OptionalDetailsData;
-  projectType?: ProjectTypeData;
+  projectInfo?: ProjectInfoData;
+  category?: CategoryData;
+  estimation?: EstimationData;
 }
 
 // Company data type
@@ -189,8 +197,9 @@ export interface LoadingState {
 
 export interface FormState {
   generalInfo: GeneralInfoData | null;
-  optionalDetails: OptionalDetailsData | null;
-  projectType: ProjectTypeData | null;
+  projectInfo: ProjectInfoData | null;
+  category: CategoryData | null;
+  estimation: EstimationData | null;
 }
 
 // Navigation types
@@ -203,9 +212,9 @@ export interface NavigationHandlers {
 // Form submission types
 export interface FormSubmissionHandlers {
   handleGeneralInfoSubmit: (data: GeneralInfoData) => void;
-  handleOptionalDetailsSubmit: (data: OptionalDetailsData) => void;
-  handleOptionalDetailsSkip: () => void;
-  handleProjectTypeSubmit: (data: ProjectTypeData) => void;
+  handleProjectInfoSubmit: (data: ProjectInfoData) => void;
+  handleCategorySubmit: (data: CategoryData) => void;
+  handleEstimationSubmit: (data: EstimationData) => void;
   handleFinalSubmit: (allData: HomeOwnerFormData) => Promise<void>;
 }
 
@@ -236,8 +245,8 @@ export interface DataTransformation {
   ) => UpdateJobRequest;
   fromApiToForm: (jobData: JobData) => {
     generalInfo: GeneralInfoData;
-    optionalDetails: OptionalDetailsData;
-    projectType: ProjectTypeData;
+    projectInfo: ProjectInfoData;
+    category: CategoryData;
   };
 }
 
@@ -267,6 +276,7 @@ export const JOB_BOXES_STEPS = {
   SECOND: 'SECOND' as JobBoxesStep,
   THIRD: 'THIRD' as JobBoxesStep,
   FOURTH: 'FOURTH' as JobBoxesStep,
+  FIFTH: 'FIFTH' as JobBoxesStep,
 } as const;
 
 export const WIZARD_STEPS = {
@@ -274,6 +284,7 @@ export const WIZARD_STEPS = {
   PROPERTY: 'property' as WizardStep,
   OPTIONAL: 'optional' as WizardStep,
   PROJECT_TYPE: 'projectType' as WizardStep,
+  ESTIMATION: 'estimation' as WizardStep,
 } as const;
 
 // Default values
@@ -289,19 +300,23 @@ export const DEFAULT_GENERAL_INFO: GeneralInfoData = {
   petType: '',
 };
 
-export const DEFAULT_OPTIONAL_DETAILS: OptionalDetailsData = {
-  typeOfProperty: 'Residential',
-  ageOfProperty: '0-5 years',
-  approxSqft: '2500 Sq / Ft',
-  notificationStyle: 'Email',
-  dailyWorkStart: '',
-  dailyWorkEnd: '',
-  ownerPresent: 'No',
-  weekendWork: 'Yes',
-  animals: 'Yes',
-  petType: 'Dog',
+export const DEFAULT_PROJECT_INFO: ProjectInfoData = {
+  projectName: '',
+  projectStartDate: '',
+  projectFinishDate: '',
+  ownerPresence: '',
+  weekendWork: '',
+  dailyWorkTimingStart: '',
+  dailyWorkTimingEnd: '',
+  budget: '',
+  preferredContractor: '',
+  questions: [],
 };
 
-export const DEFAULT_PROJECT_TYPE: ProjectTypeData = {
+export const DEFAULT_CATEGORY: CategoryData = {
   selectedType: '',
+};
+
+export const DEFAULT_ESTIMATION: EstimationData = {
+  // Placeholder for future estimation fields
 };

@@ -19,6 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { SKIP_MESSAGES } from '@/constants/messages';
 
 import { getFormConfig } from '@/components/shared/dynamicforms/formConfigs';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -65,19 +66,32 @@ const createPropertyInfoSchema = (boxSettings: any) => {
 };
 
 interface StepPropertyInfoProps {
-  onNext: (data: any) => void;
+  onNext: (
+    data: any,
+    questions?: { id: string; text: string; answer: string }[]
+  ) => void;
+  onPrev?: () => void;
   defaultValues?: any;
   isLastStep?: boolean;
   boxSettings?: any;
   allQuestionJson?: Record<string, any[]>;
+  cancelButtonClass?: string;
+  questionJson?: { id: string; text: string; answer: string }[];
+  showSkipToEstimation?: boolean;
+  onSkipToEstimation?: () => void;
 }
 
 export function StepPropertyInfo({
   onNext,
+  onPrev,
   defaultValues,
   isLastStep = false,
   boxSettings,
   allQuestionJson = {},
+  cancelButtonClass,
+  questionJson = [],
+  showSkipToEstimation = false,
+  onSkipToEstimation,
 }: StepPropertyInfoProps) {
   const form = useForm<any>({
     resolver: yupResolver(createPropertyInfoSchema(boxSettings)),
@@ -104,12 +118,23 @@ export function StepPropertyInfo({
     );
   };
 
-  // Update questions when allQuestionJson changes
+  // Update questions when allQuestionJson changes and restore saved answers
   useEffect(() => {
     const propertyQuestions =
       allQuestionJson?.[FIVE_BOX_SLUGS.PROPERTY_INFORMATION] || [];
-    setQuestions(propertyQuestions);
-  }, [allQuestionJson]);
+    // Restore saved answers from questionJson array format
+    const questionsWithSavedAnswers = propertyQuestions.map(question => {
+      const savedQuestion = questionJson?.find(
+        (q: any) => q.id === question.id.toString()
+      );
+      return {
+        ...question,
+        answer: savedQuestion?.answer || question.answer || '',
+      };
+    });
+
+    setQuestions(questionsWithSavedAnswers);
+  }, [allQuestionJson, questionJson]);
 
   // Helper function to check if field is enabled
   const isFieldEnabled = (fieldName: string): boolean => {
@@ -140,11 +165,19 @@ export function StepPropertyInfo({
   };
 
   const onSubmit = (data: any) => {
-    const formDataWithQuestions = {
-      ...data,
-      questions,
-    };
-    onNext(formDataWithQuestions);
+    // Convert questions array to array format with complete question data
+    const questionsRecord: { id: string; text: string; answer: string }[] = [];
+    questions.forEach(question => {
+      if (question.answer) {
+        questionsRecord.push({
+          id: question.id.toString(),
+          text: question.text,
+          answer: question.answer,
+        });
+      }
+    });
+
+    onNext(data, questionsRecord);
   };
 
   // Get form config for Property Information
@@ -392,14 +425,38 @@ export function StepPropertyInfo({
             )}
           </div>
 
-          {/* Submit/Next Step Button */}
-          <div className='flex justify-end'>
-            <Button
-              type='submit'
-              className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
-            >
-              {isLastStep ? STEP_MESSAGES.SUBMIT : STEP_MESSAGES.NEXT_STEP}
-            </Button>
+          {/* Navigation Buttons */}
+          <div className='flex w-full items-center gap-2'>
+            {onPrev && (
+              <button
+                type='button'
+                className={
+                  cancelButtonClass ||
+                  'btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                }
+                onClick={onPrev}
+              >
+                Previous
+              </button>
+            )}
+            <div className='flex gap-2 ml-auto'>
+              {showSkipToEstimation && onSkipToEstimation && (
+                <Button
+                  type='button'
+                  variant='outline'
+                  className='btn-secondary !px-4 md:!px-8 text-sm sm:text-base'
+                  onClick={onSkipToEstimation}
+                >
+                  {SKIP_MESSAGES.SKIP_TO_ESTIMATION}
+                </Button>
+              )}
+              <Button
+                className='btn-primary !px-4 md:!px-8 text-sm sm:text-base'
+                type='submit'
+              >
+                {isLastStep ? STEP_MESSAGES.SUBMIT : STEP_MESSAGES.NEXT_STEP}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>

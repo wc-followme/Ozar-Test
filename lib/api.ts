@@ -923,6 +923,7 @@ class ApiService {
     phone_number = '',
     email = '',
     role_id = '',
+    company_id = '',
     page = 1,
     limit = 10,
   }: {
@@ -930,6 +931,7 @@ class ApiService {
     phone_number?: string;
     email?: string;
     role_id?: string | number;
+    company_id?: string | number;
     page?: number;
     limit?: number;
   }): Promise<any> {
@@ -938,6 +940,7 @@ class ApiService {
     if (phone_number) params.append('phone_number', phone_number);
     if (email) params.append('email', email);
     if (role_id) params.append('role_id', String(role_id));
+    if (company_id) params.append('company_id', String(company_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {

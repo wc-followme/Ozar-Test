@@ -11,20 +11,26 @@ export const PET_TYPES = {
   CAT: 'Cat',
 } as const;
 
+export const CONTACT_METHOD_OPTIONS_ARRAY = [
+  { value: 'email', label: 'Email' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'sms', label: 'SMS' },
+];
+
 // Property Information Option Arrays
 export const PROPERTY_TYPE_ARRAY = [
-  { value: 'residential', label: 'Residential' },
-  { value: 'commercial', label: 'Commercial' },
-  { value: 'industrial', label: 'Industrial' },
-  { value: 'mixed', label: 'Mixed Use' },
+  { value: 'RESIDENTIAL', label: 'Residential' },
+  { value: 'COMMERCIAL', label: 'Commercial' },
+  { value: 'INDUSTRIAL', label: 'Industrial' },
+  { value: 'MIXED', label: 'Mixed Use' },
 ];
 
 export const PROPERTY_TYPE_OPTIONS_ARRAY = [
-  { value: 'house-villa', label: 'House/Villa' },
-  { value: 'apartment', label: 'Apartment' },
-  { value: 'condo', label: 'Condo' },
-  { value: 'townhouse', label: 'Townhouse' },
-  { value: 'penthouse', label: 'Penthouse' },
+  { value: 'HOUSE_VILLA', label: 'House/Villa' },
+  { value: 'APARTMENT', label: 'Apartment' },
+  { value: 'CONDO', label: 'Condo' },
+  { value: 'TOWNHOUSE', label: 'Townhouse' },
+  { value: 'PENTHOUSE', label: 'Penthouse' },
 ];
 
 export const BHK_OPTIONS_ARRAY = [
@@ -33,7 +39,7 @@ export const BHK_OPTIONS_ARRAY = [
   { value: '3', label: '3 BHK' },
   { value: '4', label: '4 BHK' },
   { value: '5', label: '5 BHK' },
-  { value: '6+', label: '6+ BHK' },
+  { value: '6', label: '6+ BHK' },
 ];
 
 export const FLOOR_OPTIONS_ARRAY = [
@@ -42,7 +48,7 @@ export const FLOOR_OPTIONS_ARRAY = [
   { value: '2', label: '2 Floor' },
   { value: '3', label: '3 Floor' },
   { value: '4', label: '4 Floor' },
-  { value: '5+', label: '5+ Floor' },
+  { value: '5', label: '5+ Floor' },
 ];
 
 export const SQUARE_FOOTAGE_OPTIONS_ARRAY = [
@@ -51,7 +57,7 @@ export const SQUARE_FOOTAGE_OPTIONS_ARRAY = [
   { value: '1500-2000', label: '1500-2000 Sq / Ft' },
   { value: '2000-2500', label: '2000-2500 Sq / Ft' },
   { value: '2500-3000', label: '2500 Sq / Ft' },
-  { value: '3000+', label: '3000+ Sq / Ft' },
+  { value: '3000-3500', label: '3000+ Sq / Ft' },
 ];
 
 export const PROPERTY_AGE_OPTIONS_ARRAY = [

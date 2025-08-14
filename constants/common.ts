@@ -62,6 +62,7 @@ export const ROUTES = {
   FIVE_BOX_ESTIMATION: '/company-profile/five-box-system/estimation',
   TEMPLATES_MANAGEMENT: '/templates',
   CREATE_TEMPLATE: '/templates/create',
+  AUTH_LOGIN: '/auth/login',
 } as const;
 
 // Action constants for menu options and permissions

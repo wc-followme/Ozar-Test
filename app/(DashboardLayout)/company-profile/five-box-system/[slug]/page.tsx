@@ -1,10 +1,12 @@
 'use client';
 
+import { CategoryItem } from '@/app/(DashboardLayout)/templates/template-types';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import {
   FieldItem,
   FieldManagementSwitch,
 } from '@/components/shared/common/FieldManagementSwitch';
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { DynamicForm, getFormConfig } from '@/components/shared/dynamicforms';
 import {
@@ -17,15 +19,15 @@ import EstimateComponent from '@/components/Templates/EstimateComponent';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
-import { ROUTES } from '@/constants/common';
+import { CommonStatus, ROUTES } from '@/constants/common';
+import { catIconOptions } from '@/constants/icon-options';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { use, useCallback, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { FIVE_BOX_SLUGS, SLUG_TITLES } from '../five-box-slug-constants';
-import { CATEGORY_DATA } from './slug-constants';
 import { SLUG_MESSAGES } from './slug-messages';
 import { PageProps, QuestionItem } from './slug-types';
 
@@ -42,8 +44,9 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   const [loading, setLoading] = useState(true);
   const [questionJson, setQuestionJson] = useState<any>({});
   const [fieldStatusJson, setFieldStatusJson] = useState<any>({});
-  // Category data from constants
-  const categoryData = [...CATEGORY_DATA];
+  // Category data state
+  const [categoryData, setCategoryData] = useState<CategoryItem[]>([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
 
   // Fetch box settings from API
   const fetchBoxSettings = useCallback(async () => {
@@ -104,6 +107,67 @@ const DynamicBoxPage = ({ params }: PageProps) => {
     }
   }, [slug, handleAuthError, showErrorToast]);
 
+  // Fetch categories from API
+  const fetchCategories = useCallback(async () => {
+    try {
+      setIsLoadingCategories(true);
+      const currentCompanyId = getCompanyId();
+
+      const response = await apiService.fetchCategories({
+        page: 1,
+        limit: 50,
+        status: CommonStatus.ACTIVE,
+        ...(currentCompanyId && { company_id: currentCompanyId }),
+      });
+
+      if (response.statusCode === 200 && response.data) {
+        let categories: any[] = [];
+
+        // Handle different possible response structures
+        if (Array.isArray(response.data)) {
+          categories = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          categories = response.data.data;
+        }
+
+        // Transform categories to CategoryItem format
+        const transformedCategories: CategoryItem[] = categories.map(
+          category => {
+            const { uuid, name, description, icon } = category;
+
+            // Find icon option to get color and bgColor
+            const iconOption = catIconOptions.find(
+              opt => opt.value === icon
+            ) || {
+              icon: () => null,
+              color: '#EBB402',
+              bgColor: '#EBB4021A',
+            };
+
+            return {
+              id: uuid || '',
+              name: name || 'Unnamed Category',
+              description: description || 'No description available',
+              icon: icon || '',
+              color: iconOption.color,
+              bgColor: iconOption.bgColor,
+            };
+          }
+        );
+
+        setCategoryData(transformedCategories);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      console.error('Failed to fetch categories:', err);
+      showErrorToast('Failed to load categories');
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  }, [handleAuthError, showErrorToast]);
+
   // Update box settings via API
   const updateBoxSettings = async (updatedData: any) => {
     try {
@@ -156,11 +220,15 @@ const DynamicBoxPage = ({ params }: PageProps) => {
   const refetchBoxSettings = useCallback(() => {
     setFieldStates(formFields);
     fetchBoxSettings();
-  }, [fetchBoxSettings, formFields]);
+    fetchCategories();
+  }, [fetchBoxSettings, fetchCategories, formFields]);
 
   useCompanyChange(refetchBoxSettings);
 
-  // Initial fetch handled by useCompanyChange hook
+  // Initial fetch for categories
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   // Get enabled field names for the DynamicForm
   const enabledFieldNames = useMemo(() => {
@@ -317,11 +385,23 @@ const DynamicBoxPage = ({ params }: PageProps) => {
           <Breadcrumb items={breadcrumbData} />
         </div>
 
-        <CategoryComponent
-          categoryData={categoryData}
-          selectedCategory={selectedCategory}
-          onCategorySelect={handleCategorySelect}
-        />
+        {isLoadingCategories ? (
+          <div className='p-5 sm:p-6 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
+            <div className='flex items-center justify-center h-64'>
+              <LoadingComponent
+                variant='inline'
+                size='md'
+                text='Loading categories...'
+              />
+            </div>
+          </div>
+        ) : (
+          <CategoryComponent
+            categoryData={categoryData}
+            selectedCategory={selectedCategory}
+            onCategorySelect={handleCategorySelect}
+          />
+        )}
       </section>
     );
   }
