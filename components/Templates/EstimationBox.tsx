@@ -533,10 +533,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       name: 'New Service',
       description: '',
       qty: 1,
-      rate: 50.0, // Set a default rate instead of 0
-      lineTotal: 50.0, // Calculate initial line total
-      serviceTotal: 50.0, // Calculate initial service total
-      tradeTotal: 50.0, // Calculate initial trade total
+      rate: 0.0, // Set default rate to 0
+      lineTotal: 0.0, // Calculate initial line total
+      serviceTotal: 0.0, // Calculate initial service total
+      tradeTotal: 0.0, // Calculate initial trade total
       serviceOptions: [],
       materials: [],
       finishes: [],
