@@ -63,6 +63,11 @@ export default function JobManagement() {
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [boxDefaults, setBoxDefaults] = useState<Array<{
+    id: string;
+    enabled: boolean;
+  }> | null>(null);
+  const [questionJson, setQuestionJson] = useState<any>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const isInitialMount = useRef(true);
@@ -107,6 +112,26 @@ export default function JobManagement() {
         return; // Don't show toast if it's an auth error
       }
       // Error handled silently - filter counts are not critical
+    }
+  }, [handleAuthError]);
+
+  // Fetch 5-box default selections for the selected company
+  const fetchBoxDefaults = useCallback(async () => {
+    try {
+      const company_id = getCompanyId();
+      const response = await apiService.getBoxSettings(
+        company_id ? { company_id } : {}
+      );
+      if (response.statusCode === 200 && response.data) {
+        const { default_selected_json, question_json } = response.data;
+        setBoxDefaults(default_selected_json);
+        setQuestionJson(question_json);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      // Non-critical: ignore toast for this auxiliary fetch
     }
   }, [handleAuthError]);
 
@@ -257,7 +282,7 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
     fetchFilterCounts();
     isInitialDataLoaded.current = true;
-  }, [selectedTab]);
+  }, [selectedTab, fetchFilterCounts, fetchJobsByTab]);
 
   useCompanyChange(refetchJobs);
 
@@ -302,6 +327,13 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
   }, [selectedTab]); // Remove fetchJobsByTab from dependencies
 
+  // Effect to fetch box defaults when form opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchBoxDefaults();
+    }
+  }, [isOpen, fetchBoxDefaults]);
+
   // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -342,30 +374,16 @@ export default function JobManagement() {
 
     setIsSubmitting(true);
     try {
-      // Prepare job_boxes_step with automatic logic
-      let jobBoxesStep = '';
-      if (Array.isArray(job_boxes_step) && job_boxes_step.length > 0) {
-        if (job_boxes_step.length === 1) {
-          jobBoxesStep = 'FIRST';
-        } else if (job_boxes_step.length === 2) {
-          jobBoxesStep = 'SECOND';
-        } else if (job_boxes_step.length === 3) {
-          jobBoxesStep = 'THIRD';
-        }
-      }
-
       // Prepare payload for API
       const payload: any = {
         client_name,
         client_email,
         client_phone_number,
         job_privacy,
+        job_boxes_step,
+        question_json: questionJson,
       };
 
-      // Only add job_boxes_step if array length is not 0
-      if (job_boxes_step?.length !== 0) {
-        payload.job_boxes_step = jobBoxesStep;
-      }
       // Only include client_id if it has a value
       if (client_id !== undefined && client_id !== null && client_id !== '') {
         // Convert string to number if needed
@@ -398,7 +416,7 @@ export default function JobManagement() {
         if (homeOwnerLink) {
           setGeneratedLink(homeOwnerLink);
         }
-        if (job_boxes_step?.length === 0) {
+        if (!job_boxes_step || job_boxes_step.length === 0) {
           setIsOpen(false);
           setGeneratedLink('');
           fetchJobsByTab(selectedTab, 1, false);
@@ -716,6 +734,7 @@ export default function JobManagement() {
         title={JOB_MESSAGES.ADD_JOB_TITLE}
       >
         <CreateJobForm
+          boxDefaults={boxDefaults}
           onSubmit={handleCreateJob}
           isSubmitting={isSubmitting}
           generatedLink={generatedLink}
