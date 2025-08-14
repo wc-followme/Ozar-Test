@@ -1,25 +1,124 @@
 'use client';
 
-import { initialRooms } from '@/app/(DashboardLayout)/templates/template-data';
-import {
-  EstimationBoxProps,
-  Room,
-  Service,
-  Trade,
-} from '@/app/(DashboardLayout)/templates/template-types';
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
 import EstimationHeader from '@/components/shared/common/EstimationHeader';
+import {
+  EstimationItem,
+  Tool,
+} from '@/components/shared/forms/estimation-types';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
-import { Tool } from '@/components/shared/forms/estimation-types';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
-import { useState } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import {
+  calculateJobTotal,
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+  calculateTradeTotal,
+  MARKUP_TYPES,
+} from '@/lib/estimation-calculations';
+import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
+import { updateLocalStorageFromState } from './EstimateComponent';
 
-export default function EstimationBox({}: EstimationBoxProps) {
+interface Material {
+  id: string;
+  name: string;
+  variant: string;
+  qty: number;
+  unit: string;
+  description: string;
+  rate: number;
+  markup: number;
+  lineTotal: number;
+  is_hidden?: boolean;
+}
+
+interface ServiceOption {
+  id: string;
+  name: string;
+  tradeTotal: number;
+}
+
+interface Service {
+  id: string;
+  uuid?: string; // Add UUID field for database service UUID
+  name: string;
+  description: string;
+  qty: number;
+  rate: number;
+  lineTotal: number;
+  serviceTotal: number;
+  tradeTotal: number;
+  serviceOptions: ServiceOption[];
+  materials: Material[];
+  finishes: Material[];
+  tools: Tool[];
+  is_hidden?: boolean;
+}
+
+interface Trade {
+  id: string;
+  uniqueKey: string; // Add unique generated key
+  name: string;
+  services: number;
+  dateRange: string;
+  type: string;
+  laborCost: number;
+  materialCost: number;
+  tradeTotal: number;
+  serviceList: Service[];
+  isExpanded: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
+}
+
+interface Room {
+  id: string;
+  uniqueKey: string; // Add unique generated key
+  name: string;
+  total: number;
+  trades: Trade[];
+  isExpanded: boolean;
+}
+
+interface EstimationBoxProps {
+  _onClose: () => void;
+  jobId?: string; // Add job ID prop for API calls
+  onSaveSuccess?: () => void; // Callback for successful save
+  onSaveError?: (error: any) => void; // Callback for save errors
+}
+
+// Utility function to generate unique keys
+const generateUniqueKey = (
+  prefix: string,
+  _tradeUuid?: string,
+  roomId?: string,
+  tradeSequenceNumber?: number
+): string => {
+  if (
+    prefix === 'trade' &&
+    roomId !== undefined &&
+    tradeSequenceNumber !== undefined
+  ) {
+    return `trade_${roomId}_${tradeSequenceNumber}`;
+  }
+  // Fallback for other cases (rooms, etc.)
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${prefix}_${timestamp}_${random}`;
+};
+
+export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
+  const { showSuccessToast, showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>([
@@ -28,6 +127,9 @@ export default function EstimationBox({}: EstimationBoxProps) {
   ]);
   const [expandedTrades, setExpandedTrades] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
+  const [selectedTradeUniqueKey, setSelectedTradeUniqueKey] = useState<
+    string | null
+  >(null);
   const [showAddService, setShowAddService] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -38,17 +140,33 @@ export default function EstimationBox({}: EstimationBoxProps) {
   const [deleteType, setDeleteType] = useState<
     'room' | 'trade' | 'service' | null
   >(null);
-  const [rooms, setRooms] = useState<Room[]>(initialRooms);
+  const [rooms, setRooms] = useState<Room[]>([
+    {
+      id: '0', // Use sequence number as room ID
+      uniqueKey: generateUniqueKey('room'),
+      name: 'Home 1',
+      total: 0.0,
+      trades: [],
+      isExpanded: true,
+    },
+  ]);
+
+  // Trades dropdown options from API
+  const [tradeOptions, setTradeOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
 
   const selectedRoom =
     rooms.find(room => room.id === selectedRoomId) || rooms[0];
 
-  // Find the trade data across all rooms to handle cross-room trade selection
-  const selectedTradeData = selectedTrade
+  // Find the trade data using uniqueKey to ensure room-specific selection
+  const selectedTradeData = selectedTradeUniqueKey
     ? rooms
         .flatMap(room => room.trades)
-        .find(trade => trade.id === selectedTrade)
-    : selectedRoom?.trades.find(trade => trade.id === selectedTrade);
+        .find(trade => trade.uniqueKey === selectedTradeUniqueKey)
+    : selectedRoom?.trades.find(
+        trade => trade.uniqueKey === selectedTradeUniqueKey
+      );
 
   const selectedServiceData =
     selectedService && selectedTradeData
@@ -57,11 +175,197 @@ export default function EstimationBox({}: EstimationBoxProps) {
         )
       : undefined;
 
+  // Debug selectedServiceData
+  console.log('selectedServiceData:', selectedServiceData);
+  console.log('selectedTradeData:', selectedTradeData);
+
+  const fetchTrades = async (companyUuid: string | null) => {
+    try {
+      console.log('Fetching trades for company:', companyUuid);
+      const response = await apiService.fetchTrades({
+        page: 1,
+        limit: 10,
+        is_active: true,
+        company_id: companyUuid || '',
+      });
+      console.log('Trades API response:', response);
+
+      type TradeItem = { id?: string | number; uuid?: string; name?: string };
+      const payload = response as unknown as {
+        data?: TradeItem[] | { data?: TradeItem[] };
+      };
+      const list: TradeItem[] = Array.isArray(payload?.data)
+        ? (payload.data as TradeItem[])
+        : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
+          ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
+          : [];
+      console.log('Parsed trades list:', list);
+
+      const options = list
+        .filter(t => !!t?.name)
+        .map(t => ({
+          value: String(t.uuid || t.id || t.name),
+          label: String(t.name),
+        }));
+      console.log('Trade options:', options);
+      setTradeOptions(options);
+    } catch (error) {
+      console.error('Error fetching trades:', error);
+      console.error('Error type:', typeof error);
+      console.error(
+        'Error message:',
+        error instanceof Error ? error.message : 'No message'
+      );
+      console.error(
+        'Error stack:',
+        error instanceof Error ? error.stack : 'No stack'
+      );
+      console.error('Company UUID:', companyUuid);
+      console.error('API URL being called: /trades with params:', {
+        page: 1,
+        limit: 10,
+        is_active: true,
+        company_id: companyUuid || '',
+      });
+      setTradeOptions([]);
+    }
+  };
+
+  // Load trades on mount and when company changes
+  useEffect(() => {
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+    fetchTrades(companyUuid);
+
+    const handleCompanyChanged = () => {
+      const raw = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+      let uuid = '';
+      if (raw) {
+        try {
+          const parsed: { uuid?: string; id?: string | number } =
+            JSON.parse(raw);
+          uuid = parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+        } catch {}
+      }
+      fetchTrades(uuid);
+    };
+
+    window.addEventListener(
+      CUSTOM_EVENTS.COMPANY_CHANGED,
+      handleCompanyChanged as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CHANGED,
+        handleCompanyChanged as EventListener
+      );
+    };
+  }, []);
+
+  // Save state whenever rooms change
+  useEffect(() => {
+    if (rooms.length > 0) {
+      updateLocalStorageFromState(rooms);
+    }
+  }, [rooms]);
+
+  // Update calculations on mount
+  useEffect(() => {
+    if (rooms.length > 0) {
+      updateAllCalculations();
+    }
+  }, []);
+
+  // Function to update calculations for a service
+  const updateServiceCalculations = (service: Service): Service => {
+    console.log('Updating service calculations for:', service.name);
+    console.log('Service rate:', service.rate, 'qty:', service.qty);
+    console.log('Service materials:', service.materials);
+    console.log('Service finishes:', service.finishes);
+
+    const serviceTotal = calculateServiceTotal(service.rate, service.qty);
+    const totalMaterialCost = calculateServiceTotalMaterialCost(
+      service.materials,
+      service.finishes
+    );
+
+    console.log('Service total:', serviceTotal);
+    console.log('Total material cost:', totalMaterialCost);
+
+    const updatedService = {
+      ...service,
+      lineTotal: serviceTotal,
+      serviceTotal: serviceTotal,
+      tradeTotal: serviceTotal + totalMaterialCost,
+    };
+
+    console.log('Updated service:', updatedService);
+    return updatedService;
+  };
+
+  // Function to update calculations for a trade
+  const updateTradeCalculations = (trade: Trade): Trade => {
+    // First update individual service calculations
+    const updatedServices = trade.serviceList.map(updateServiceCalculations);
+
+    const tradeTotals = calculateTradeTotal({
+      markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
+      markup: trade.markup || 0,
+      services: updatedServices,
+    });
+
+    return {
+      ...trade,
+      serviceList: updatedServices,
+      laborCost: tradeTotals.labor_cost,
+      materialCost: tradeTotals.material_cost,
+      tradeTotal: tradeTotals.trade_total,
+      markup: tradeTotals.markup, // Add the calculated markup value
+    };
+  };
+
+  // Function to update calculations for a room
+  const updateRoomCalculations = (room: Room): Room => {
+    const updatedTrades = room.trades.map(updateTradeCalculations);
+    const roomTotal = updatedTrades.reduce(
+      (total, trade) => total + trade.tradeTotal,
+      0
+    );
+
+    return {
+      ...room,
+      trades: updatedTrades,
+      total: roomTotal,
+    };
+  };
+
+  // Function to update all calculations
+  const updateAllCalculations = (): void => {
+    setRooms(prevRooms => {
+      const updatedRooms = prevRooms.map(updateRoomCalculations);
+      return updatedRooms;
+    });
+  };
+
   const handleAddRoom = () => {
     // If no rooms exist, create the default Home 1 room
     if (rooms.length === 0) {
       const defaultRoom: Room = {
-        id: 'room-1',
+        id: '0', // Use sequence number as room ID
+        uniqueKey: generateUniqueKey('room'),
         name: 'Home 1',
         total: 0.0,
         isExpanded: true,
@@ -69,19 +373,21 @@ export default function EstimationBox({}: EstimationBoxProps) {
       };
 
       setRooms([defaultRoom]);
-      setExpandedRooms(['room-1']);
-      setSelectedRoomId('room-1');
+      setExpandedRooms(['0']);
+      setSelectedRoomId('0');
       setSelectedTrade(null);
+      setSelectedTradeUniqueKey(null);
       setShowAddService(false);
       setShowServiceForm(false);
       setSelectedService(null);
       return;
     }
 
-    // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Generate room ID as sequence number
+    const roomSequenceNumber = rooms.length;
     const newRoom: Room = {
-      id: uniqueId,
+      id: roomSequenceNumber.toString(), // Use sequence number as room ID
+      uniqueKey: generateUniqueKey('room'),
       name: `Room ${rooms.length + 1}`,
       total: 0.0,
       isExpanded: true,
@@ -94,6 +400,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     // Automatically select the newly created room
     setSelectedRoomId(newRoom.id);
     setSelectedTrade(null);
+    setSelectedTradeUniqueKey(null);
     setShowAddService(false);
     setShowServiceForm(false);
     setSelectedService(null);
@@ -116,11 +423,67 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const handleAddTrade = () => {
-    // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `trade-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    // Use the UUID from the first trade option in the dropdown
+    const defaultTradeOption = tradeOptions[0];
+    if (!defaultTradeOption) {
+      console.error('No trade options available');
+      // Create a default trade if no options are available
+      const defaultTrade: Trade = {
+        id: 'default-trade',
+        uniqueKey: generateUniqueKey(
+          'trade',
+          'default-trade',
+          selectedRoomId,
+          0
+        ),
+        name: 'Default Trade',
+        services: 0,
+        dateRange: '',
+        type: '2D',
+        laborCost: 0.0,
+        materialCost: 0.0,
+        tradeTotal: 0.0,
+        serviceList: [],
+        isExpanded: true,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 86400000), // Default to tomorrow
+        markup: 0,
+        markup_type: MARKUP_TYPES.FLAT_AMOUNT,
+      };
+
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: [...room.trades, defaultTrade],
+                total: room.total + defaultTrade.tradeTotal,
+              }
+            : room
+        )
+      );
+
+      setExpandedTrades(prev => [...prev, defaultTrade.uniqueKey]);
+      setSelectedTrade(defaultTrade.id);
+      setShowAddService(true);
+      return;
+    }
+
+    const tradeUuid = defaultTradeOption.value; // This is the UUID from database
+    const tradeName = defaultTradeOption.label; // This is the trade name
+    const selectedRoom = rooms.find(room => room.id === selectedRoomId);
+
+    const tradeSequenceNumber = selectedRoom ? selectedRoom.trades.length : 0;
+
     const newTrade: Trade = {
-      id: uniqueId,
-      name: 'New Trade',
+      id: tradeUuid, // Use the UUID from database instead of generated ID
+      uniqueKey: generateUniqueKey(
+        'trade',
+        tradeUuid,
+        selectedRoomId, // Use room ID directly
+        tradeSequenceNumber
+      ),
+      name: tradeName,
       services: 0,
       dateRange: '',
       type: '2D',
@@ -129,6 +492,10 @@ export default function EstimationBox({}: EstimationBoxProps) {
       tradeTotal: 0.0,
       serviceList: [],
       isExpanded: true,
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 86400000), // Default to tomorrow
+      markup: 0,
+      markup_type: MARKUP_TYPES.FLAT_AMOUNT,
     };
 
     setRooms(prev =>
@@ -144,7 +511,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
     );
 
     // Add the new trade to expanded trades
-    setExpandedTrades(prev => [...prev, newTrade.id]);
+    setExpandedTrades(prev => [...prev, newTrade.uniqueKey]);
 
     // Select the new trade
     setSelectedTrade(newTrade.id);
@@ -153,46 +520,45 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
   const handleAddService = () => {
     // Generate a unique ID using timestamp + random number to avoid conflicts
-    const uniqueId = `service-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const uniqueId = `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newService: Service = {
       id: uniqueId,
+      uuid: uniqueId, // Use the same ID as UUID for now
       name: 'New Service',
       description: '',
       qty: 1,
-      rate: 0.0,
-      lineTotal: 0.0,
-      serviceTotal: 0.0,
-      tradeTotal: 0.0,
+      rate: 50.0, // Set a default rate instead of 0
+      lineTotal: 50.0, // Calculate initial line total
+      serviceTotal: 50.0, // Calculate initial service total
+      tradeTotal: 50.0, // Calculate initial trade total
       serviceOptions: [],
       materials: [],
       finishes: [],
       tools: [],
     };
 
-    if (selectedTrade) {
+    if (selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: [...trade.serviceList, newService],
                         services: trade.serviceList.length + 1,
-                        tradeTotal: trade.tradeTotal + newService.tradeTotal,
                       }
                     : trade
-                ),
-                total: room.trades.reduce(
-                  (sum, trade) => sum + trade.tradeTotal,
-                  0
                 ),
               }
             : room
         )
       );
+
+      // Update calculations after adding service
+      setTimeout(() => updateAllCalculations(), 0);
 
       // Select the new service
       setSelectedService(newService.id);
@@ -200,16 +566,43 @@ export default function EstimationBox({}: EstimationBoxProps) {
     }
   };
 
-  const handleTradeSelect = (tradeId: string) => {
-    setSelectedTrade(tradeId);
+  const handleTradeSelect = (tradeUniqueKey: string) => {
+    // Find which room contains this trade using uniqueKey
+    let foundRoom: Room | null = null;
+    let foundTrade: Trade | null = null;
+    console.log('tradeUniqueKey', tradeUniqueKey);
+
+    for (const room of rooms) {
+      const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
+      if (trade) {
+        foundRoom = room;
+        foundTrade = trade;
+        break;
+      }
+    }
+    console.log('foundRoom', foundRoom);
+    console.log('foundTrade', foundTrade);
+
+    // Set the room that contains this trade
+    if (foundRoom && foundTrade) {
+      setSelectedRoomId(foundRoom.id);
+      setSelectedTrade(foundTrade.id); // Keep the trade ID for backward compatibility
+      setSelectedTradeUniqueKey(foundTrade.uniqueKey);
+
+      // Ensure the room is expanded
+      if (!expandedRooms.includes(foundRoom.id)) {
+        setExpandedRooms(prev => [...prev, foundRoom.id]);
+      }
+
+      // Ensure the trade accordion is expanded
+      if (!expandedTrades.includes(foundTrade.uniqueKey)) {
+        setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
+      }
+    }
+
     setShowAddService(true); // Set to true to show trade state
     setShowServiceForm(false); // Always go to trade view first
     setSelectedService(null); // Clear service selection
-
-    // Ensure the trade accordion is expanded
-    if (!expandedTrades.includes(tradeId)) {
-      setExpandedTrades(prev => [...prev, tradeId]);
-    }
   };
 
   const handleRoomSelect = (roomId: string) => {
@@ -217,6 +610,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
     // Always show room view when room is clicked
     setSelectedTrade(null);
+    setSelectedTradeUniqueKey(null);
     setShowAddService(false);
     setShowServiceForm(false);
     setSelectedService(null);
@@ -229,12 +623,12 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
   const handleServiceSelect = (serviceId: string) => {
     // Find which room and trade contains this service across ALL rooms
-    let foundRoom = null;
-    let foundTrade = null;
+    let foundRoom: Room | null = null;
+    let foundTrade: Trade | null = null;
 
     for (const room of rooms) {
-      const trade = room.trades.find(trade =>
-        trade.serviceList.some(service => service.id === serviceId)
+      const trade = room.trades.find(tr =>
+        tr.serviceList.some(service => service.id === serviceId)
       );
       if (trade) {
         foundRoom = room;
@@ -249,13 +643,14 @@ export default function EstimationBox({}: EstimationBoxProps) {
 
       // Set the trade that contains this service
       setSelectedTrade(foundTrade.id);
+      setSelectedTradeUniqueKey(foundTrade.uniqueKey);
 
       // Ensure the room and trade are expanded
       if (!expandedRooms.includes(foundRoom.id)) {
         setExpandedRooms(prev => [...prev, foundRoom.id]);
       }
-      if (!expandedTrades.includes(foundTrade.id)) {
-        setExpandedTrades(prev => [...prev, foundTrade.id]);
+      if (!expandedTrades.includes(foundTrade.uniqueKey)) {
+        setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
 
       // Set service and form states
@@ -298,14 +693,14 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const handleTradeNameChange = (newTradeName: string) => {
-    if (selectedTrade) {
+    if (selectedTrade && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? { ...trade, name: newTradeName }
                     : trade
                 ),
@@ -313,23 +708,109 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Save complete state after trade name change
+      setTimeout(() => {
+        const roomsData = rooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          trades: room.trades.map(trade => ({
+            id: trade.id,
+            name: trade.name,
+            startDate: trade.startDate || new Date(),
+            endDate: trade.endDate || new Date(Date.now() + 86400000),
+            markup: trade.markup || 0,
+            serviceList: trade.serviceList || [],
+          })),
+        }));
+        updateLocalStorageFromState(roomsData);
+      }, 0);
     }
   };
 
+  // Handle trade replacement when user changes trade from dropdown
+  const handleTradeReplacement = (
+    oldTradeUniqueKey: string,
+    newTradeId: string,
+    newTradeName: string
+  ) => {
+    // Only update the trade in the selected room, not all rooms
+    setRooms(prev => {
+      const updatedRooms = prev.map(room =>
+        room.id === selectedRoomId
+          ? {
+              ...room,
+              trades: room.trades.map(trade => {
+                const shouldUpdate = trade.uniqueKey === oldTradeUniqueKey;
+                return shouldUpdate
+                  ? {
+                      ...trade,
+                      id: newTradeId, // Update the trade ID
+                      name: newTradeName,
+                      // Generate new unique key with same sequence numbers
+                      uniqueKey: generateUniqueKey(
+                        'trade',
+                        newTradeId,
+                        selectedRoomId, // Use room ID directly
+                        room.trades.indexOf(trade)
+                      ),
+                    }
+                  : trade;
+              }),
+            }
+          : room
+      );
+
+      // Update the selected trade ID if it matches the specific trade instance
+      const currentSelectedTrade = rooms
+        .find(room => room.id === selectedRoomId)
+        ?.trades.find(trade => trade.uniqueKey === oldTradeUniqueKey);
+      if (
+        selectedTrade &&
+        currentSelectedTrade &&
+        currentSelectedTrade.id === selectedTrade
+      ) {
+        setSelectedTrade(newTradeId);
+      }
+
+      // Save complete state after trade replacement
+      setTimeout(() => {
+        const roomsData = updatedRooms.map(room => ({
+          id: room.id,
+          name: room.name,
+          trades: room.trades.map(trade => ({
+            id: trade.id,
+            name: trade.name,
+            startDate: trade.startDate || new Date(),
+            endDate: trade.endDate || new Date(Date.now() + 86400000),
+            markup: trade.markup || 0,
+            serviceList: trade.serviceList || [],
+          })),
+        }));
+        updateLocalStorageFromState(roomsData);
+      }, 0);
+
+      return updatedRooms;
+    });
+  };
+
   const handleServiceNameChange = (newServiceName: string) => {
-    if (selectedTrade && selectedService) {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
                           service.id === selectedService
-                            ? { ...service, name: newServiceName }
+                            ? {
+                                ...service,
+                                name: newServiceName,
+                              }
                             : service
                         ),
                       }
@@ -343,14 +824,15 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const handleServiceUpdate = (updatedService: Service) => {
-    if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
+    console.log('handleServiceUpdate called with:', updatedService);
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -363,20 +845,47 @@ export default function EstimationBox({}: EstimationBoxProps) {
                 ),
               }
             : room
-        )
-      );
+        );
+        console.log('Updated rooms in handleServiceUpdate:', updatedRooms);
+        return updatedRooms;
+      });
+
+      // Update calculations after service update
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
-  const handleMaterialAdd = (newMaterial: any) => {
-    if (selectedTrade && selectedService) {
+  const handleTradeUpdate = (updatedTrade: Trade) => {
+    if (selectedTrade && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? { ...trade, ...updatedTrade }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+
+      // Update calculations after trade update
+      setTimeout(() => updateAllCalculations(), 0);
+    }
+  };
+
+  const handleMaterialAdd = (newMaterial: EstimationItem) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -394,47 +903,24 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Update calculations after material add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
-  const handleFinishAdd = (newFinish: any) => {
-    if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
+  const handleMaterialUpdate = (
+    materialId: string,
+    updatedMaterial: EstimationItem
+  ) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
-                    ? {
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? {
-                                ...service,
-                                finishes: [...service.finishes, newFinish],
-                              }
-                            : service
-                        ),
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
-      );
-    }
-  };
-
-  const handleMaterialUpdate = (materialId: string, updatedMaterial: any) => {
-    if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -454,20 +940,28 @@ export default function EstimationBox({}: EstimationBoxProps) {
                 ),
               }
             : room
-        )
-      );
+        );
+
+        // Update calculations immediately with the new state
+        setTimeout(() => {
+          const recalculatedRooms = updatedRooms.map(updateRoomCalculations);
+          setRooms(recalculatedRooms);
+        }, 0);
+
+        return updatedRooms;
+      });
     }
   };
 
   const handleMaterialDelete = (materialId: string) => {
-    if (selectedTrade && selectedService) {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -487,18 +981,21 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Update calculations after material delete
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
-  const handleFinishUpdate = (finishId: string, updatedFinish: any) => {
-    if (selectedTrade && selectedService) {
-      setRooms(prev =>
-        prev.map(room =>
+  const handleFinishUpdate = (finishId: string, updatedFinish: Material) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -518,20 +1015,28 @@ export default function EstimationBox({}: EstimationBoxProps) {
                 ),
               }
             : room
-        )
-      );
+        );
+
+        // Update calculations immediately with the new state
+        setTimeout(() => {
+          const recalculatedRooms = updatedRooms.map(updateRoomCalculations);
+          setRooms(recalculatedRooms);
+        }, 0);
+
+        return updatedRooms;
+      });
     }
   };
 
   const handleFinishDelete = (finishId: string) => {
-    if (selectedTrade && selectedService) {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -551,18 +1056,21 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Update calculations after finish delete
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
   const handleToolAdd = (newTool: Tool) => {
-    if (selectedTrade && selectedService) {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -580,18 +1088,21 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Update calculations after tool add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
   const handleToolRemove = (toolId: string) => {
-    if (selectedTrade && selectedService) {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
@@ -611,6 +1122,9 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+
+      // Update calculations after tool remove
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -634,13 +1148,14 @@ export default function EstimationBox({}: EstimationBoxProps) {
         if (filteredRooms.length === 0) {
           // If this was the last room, create a default room
           const defaultRoom: Room = {
-            id: 'room-1',
+            id: '0', // Use sequence number as room ID
+            uniqueKey: generateUniqueKey('room'),
             name: 'Home 1',
             total: 0.0,
             trades: [],
             isExpanded: true,
           };
-          setSelectedRoomId('room-1');
+          setSelectedRoomId('0');
           return [defaultRoom];
         } else {
           // Select the first remaining room
@@ -651,34 +1166,47 @@ export default function EstimationBox({}: EstimationBoxProps) {
         }
       });
       setSelectedTrade(null);
+      setSelectedTradeUniqueKey(null);
       setShowAddService(false);
       setShowServiceForm(false);
       setSelectedService(null);
-    } else if (deleteType === 'trade' && selectedTrade) {
-      // Delete trade
+    } else if (
+      deleteType === 'trade' &&
+      selectedTrade &&
+      selectedTradeUniqueKey
+    ) {
+      // Delete trade using uniqueKey
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
-                trades: room.trades.filter(trade => trade.id !== selectedTrade),
+                trades: room.trades.filter(
+                  trade => trade.uniqueKey !== selectedTradeUniqueKey
+                ),
               }
             : room
         )
       );
       setSelectedTrade(null);
+      setSelectedTradeUniqueKey(null);
       setShowAddService(false);
       setShowServiceForm(false);
       setSelectedService(null);
-    } else if (deleteType === 'service' && selectedService && selectedTrade) {
-      // Delete service
+    } else if (
+      deleteType === 'service' &&
+      selectedService &&
+      selectedTrade &&
+      selectedTradeUniqueKey
+    ) {
+      // Delete service using uniqueKey
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: trade.serviceList.filter(
@@ -708,6 +1236,97 @@ export default function EstimationBox({}: EstimationBoxProps) {
       style: 'currency',
       currency: 'USD',
     }).format(amount);
+  };
+
+  // Calculate project total across all rooms using backend logic
+  const calculateProjectTotal = () => {
+    const jobRoomsData = rooms.map(room => ({
+      trades: room.trades.map(trade => ({
+        markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
+        markup: trade.markup || 0,
+        services: trade.serviceList,
+      })),
+    }));
+
+    const jobTotals = calculateJobTotal(jobRoomsData);
+    return jobTotals.trade_total;
+  };
+
+  const projectTotal = calculateProjectTotal();
+
+  const saveCurrentState = () => {
+    // Save all rooms and trades to localStorage
+    const roomsData = rooms.map(room => ({
+      id: room.id,
+      name: room.name,
+      trades: room.trades.map(trade => ({
+        id: trade.id,
+        name: trade.name,
+        startDate: trade.startDate || new Date(),
+        endDate: trade.endDate || new Date(Date.now() + 86400000),
+        markup: trade.markup || 0,
+        serviceList: trade.serviceList || [],
+      })),
+    }));
+
+    updateLocalStorageFromState(roomsData);
+  };
+
+  const handleSave = async () => {
+    try {
+      // First save to localStorage
+      saveCurrentState();
+
+      // If jobId is provided, make API call
+      if (props.jobId) {
+        // Get the job_rooms data from localStorage
+        const jobRoomsData = localStorage.getItem('job_rooms');
+        if (jobRoomsData) {
+          const jobRooms = JSON.parse(jobRoomsData);
+
+          // Make API call using makeGenericRequest
+          const response = await apiService.makeGenericRequest(
+            `/jobs/${props.jobId}/rooms`,
+            {
+              method: 'POST',
+              body: JSON.stringify({
+                job_rooms: jobRooms,
+              }),
+            }
+          );
+
+          console.log('Save API response:', response);
+
+          // Show success toast with API response message
+          showSuccessToast(
+            extractApiSuccessMessage(response, 'Estimation saved successfully!')
+          );
+
+          // Call success callback if provided
+          if (props.onSaveSuccess) {
+            props.onSaveSuccess();
+          }
+        }
+      } else {
+        // Show success toast for localStorage save only
+        showSuccessToast('Estimation saved to local storage successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving job rooms:', error);
+
+      // Show error toast with API error message
+      showErrorToast(
+        extractApiErrorMessage(
+          error,
+          'Failed to save estimation. Please try again.'
+        )
+      );
+
+      // Call error callback if provided
+      if (props.onSaveError) {
+        props.onSaveError(error);
+      }
+    }
   };
 
   const toggleSidebar = () => {
@@ -755,14 +1374,14 @@ export default function EstimationBox({}: EstimationBoxProps) {
   };
 
   const handleServiceReorder = (reorderedServices: Service[]) => {
-    if (selectedTrade) {
+    if (selectedTradeUniqueKey) {
       setRooms(prev =>
         prev.map(room =>
           room.id === selectedRoomId
             ? {
                 ...room,
                 trades: room.trades.map(trade =>
-                  trade.id === selectedTrade
+                  trade.uniqueKey === selectedTradeUniqueKey
                     ? {
                         ...trade,
                         serviceList: reorderedServices,
@@ -773,6 +1392,38 @@ export default function EstimationBox({}: EstimationBoxProps) {
             : room
         )
       );
+    }
+  };
+
+  const handleFinishAdd = (newFinish: Material) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                finishes: [...service.finishes, newFinish],
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+
+      // Update calculations after finish add
+      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
@@ -829,11 +1480,14 @@ export default function EstimationBox({}: EstimationBoxProps) {
               >
                 <div className='space-y-4'>
                   {selectedRoom.trades.map(trade => (
-                    <SortableItem key={trade.id} id={trade.id}>
+                    <SortableItem
+                      key={`${selectedRoom.uniqueKey}_${trade.uniqueKey}`}
+                      id={trade.id}
+                    >
                       {dragHandleProps => (
                         <TradeListCardComponent
                           trade={trade}
-                          onClick={() => handleTradeSelect(trade.id)}
+                          onClick={() => handleTradeSelect(trade.uniqueKey)}
                           dragHandleProps={dragHandleProps}
                         />
                       )}
@@ -855,12 +1509,8 @@ export default function EstimationBox({}: EstimationBoxProps) {
               <EstimationServiceForm
                 service={selectedServiceData}
                 onServiceUpdate={handleServiceUpdate}
-                onAddMaterial={() => {
-                  console.log('Add material clicked');
-                }}
-                onAddFinish={() => {
-                  console.log('Add finish clicked');
-                }}
+                onAddMaterial={() => {}}
+                onAddFinish={() => {}}
                 onServiceNameChange={handleServiceNameChange}
                 onMaterialAdd={handleMaterialAdd}
                 onFinishAdd={handleFinishAdd}
@@ -873,6 +1523,7 @@ export default function EstimationBox({}: EstimationBoxProps) {
                 onRemoveTool={handleToolRemove}
                 roomName={selectedRoom?.name || 'Room'}
                 tradeName={selectedTradeData?.name || 'Trade'}
+                tradeId={selectedTrade || undefined}
               />
             ) : (
               // Service selected but data not found
@@ -888,20 +1539,17 @@ export default function EstimationBox({}: EstimationBoxProps) {
             selectedTradeData ? (
               <EstimationTradeForm
                 trade={selectedTradeData}
-                _onTradeUpdate={updatedTrade => {
-                  // Handle trade update logic here
-                  console.log('Trade updated:', updatedTrade);
-                }}
+                roomUniqueKey={selectedRoom?.uniqueKey || ''}
+                tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
+                _onTradeUpdate={handleTradeUpdate}
+                onTradeNameChange={handleTradeNameChange}
+                onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={serviceId => {
-                  // Handle service selection logic here
                   handleServiceSelect(serviceId);
                 }}
-                _onAddService={() => {
-                  // Handle add service logic here
-                  handleAddService();
-                }}
-                onTradeNameChange={handleTradeNameChange}
                 onServiceReorder={handleServiceReorder}
+                onLocalStorageUpdate={saveCurrentState}
+                tradeOptions={tradeOptions}
               />
             ) : (
               <div className='text-center py-12'>
@@ -909,6 +1557,25 @@ export default function EstimationBox({}: EstimationBoxProps) {
               </div>
             )
           ) : null}
+        </div>
+
+        {/* Project Total and Submit Buttons */}
+        <div className='p-6 bg-white border-t border-gray-200 shadow-sm'>
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center gap-4'>
+              <h3 className='text-xl font-semibold text-gray-900'>
+                Project Total:
+              </h3>
+              <span className='text-2xl font-bold text-gray-900'>
+                {formatCurrency(projectTotal)}
+              </span>
+            </div>
+            <div className='flex gap-3'>
+              <button onClick={handleSave} className='btn-secondary'>
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

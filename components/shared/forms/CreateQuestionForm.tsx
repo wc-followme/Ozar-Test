@@ -53,18 +53,6 @@ export const CreateQuestionForm: React.FC<CreateQuestionFormProps> = ({
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    let hasValidQuestion = false;
-
-    questions.forEach(question => {
-      if (question.trim()) {
-        hasValidQuestion = true;
-      }
-    });
-
-    if (!hasValidQuestion) {
-      newErrors['general'] = 'At least one question is required';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -122,11 +110,6 @@ export const CreateQuestionForm: React.FC<CreateQuestionFormProps> = ({
             )}
           </div>
         ))}
-
-        {/* General Error */}
-        {errors['general'] && (
-          <p className='text-red-500 text-xs mt-1'>{errors['general']}</p>
-        )}
 
         {/* Action Buttons */}
         <div className='flex gap-3 pt-4'>

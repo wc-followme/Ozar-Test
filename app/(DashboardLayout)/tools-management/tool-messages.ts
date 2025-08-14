@@ -28,6 +28,7 @@ export const TOOL_MESSAGES = {
   LOADING: 'Loading...',
   LOADING_MORE: 'Loading more...',
   LOADING_SERVICES: 'Loading services...',
+  LOADING_TOOLS_DROPDOWN: 'Loading tools...',
 
   // Status Messages
   NO_TOOLS_FOUND: 'No tools found.',

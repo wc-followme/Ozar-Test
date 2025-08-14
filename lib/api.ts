@@ -845,6 +845,7 @@ class ApiService {
     company_id = '',
     search = '',
     status = 'ACTIVE',
+    user_type = '',
   }: {
     page?: number;
     limit?: number;
@@ -852,6 +853,7 @@ class ApiService {
     company_id?: string | number;
     search?: string;
     status?: 'ACTIVE' | 'INACTIVE';
+    user_type?: string;
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -860,6 +862,7 @@ class ApiService {
     if (company_id) params.append('company_id', String(company_id));
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (user_type) params.append('user_type', user_type);
     return this.makeRequest(`/users?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -923,6 +926,7 @@ class ApiService {
     phone_number = '',
     email = '',
     role_id = '',
+    company_id = '',
     page = 1,
     limit = 10,
   }: {
@@ -930,6 +934,7 @@ class ApiService {
     phone_number?: string;
     email?: string;
     role_id?: string | number;
+    company_id?: string | number;
     page?: number;
     limit?: number;
   }): Promise<any> {
@@ -938,6 +943,7 @@ class ApiService {
     if (phone_number) params.append('phone_number', phone_number);
     if (email) params.append('email', email);
     if (role_id) params.append('role_id', String(role_id));
+    if (company_id) params.append('company_id', String(company_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {
@@ -1329,6 +1335,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     trade_id = '',
+    trade_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1338,6 +1345,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     trade_id?: string | number;
+    trade_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1348,6 +1356,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (trade_id) params.append('trade_id', String(trade_id));
+    if (trade_uuid) params.append('trade_uuid', trade_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/services?${params.toString()}`, {
       method: 'GET',
@@ -1456,6 +1465,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     service_id = '',
+    service_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1465,6 +1475,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     service_id?: string | number;
+    service_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1475,6 +1486,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/materials?${params.toString()}`, {
       method: 'GET',
@@ -1541,6 +1553,7 @@ class ApiService {
     limit = 10,
     name = '',
     service_id = '',
+    service_uuid = '',
     status = 'ACTIVE',
     company_id = '',
   }: {
@@ -1548,6 +1561,7 @@ class ApiService {
     limit?: number;
     name?: string;
     service_id?: string | number;
+    service_uuid?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
     company_id?: string | number;
   }): Promise<FetchToolsResponse> {
@@ -1556,6 +1570,7 @@ class ApiService {
     params.append('limit', String(limit));
     if (name) params.append('name', name);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (status) params.append('status', status);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/tools?${params.toString()}`, {
@@ -1727,6 +1742,24 @@ class ApiService {
     });
   }
 
+  // Five-box system API methods
+  async getBoxSettings(params?: {
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
   // Create todo list
   async createTodoList(payload: {
     job_uuid: string;
@@ -1757,6 +1790,28 @@ class ApiService {
     return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateBoxSettings(payload: {
+    default_selected_json?: Array<{ id: string; enabled: boolean }>;
+    field_status_json?: any;
+    question_json?: any;
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (payload.company_id) {
+      queryParams.append('company_id', payload.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
     });
   }
 
@@ -1806,6 +1861,7 @@ class ApiService {
     });
   }
 
+  // Removed testConnection and all debug code
   // Create appointment
   async createAppointment(payload: {
     agenda: string;
@@ -1898,7 +1954,22 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Generic request method for custom endpoints
+  async makeGenericRequest(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<any> {
+    return this.makeRequest(endpoint, {
+      headers: {
+        ...this.getRoleHeaders(),
+        ...options.headers,
+      },
+      ...options,
+    });
+  }
 }
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+
