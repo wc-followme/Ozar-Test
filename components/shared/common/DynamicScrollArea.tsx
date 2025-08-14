@@ -4,17 +4,6 @@ import React from 'react';
 interface DynamicScrollAreaProps {
   children: React.ReactNode;
   className?: string;
-  widthOptions?: {
-    mobilePadding?: number;
-    tabletPadding?: number;
-    desktopPadding?: number;
-    maxMobileWidth?: number;
-    maxTabletWidth?: number;
-    maxLargeTabletWidth?: number;
-    defaultDesktopWidth?: number;
-    buttonWidth?: number;
-    buttonWidthDesktop?: number;
-  };
 }
 
 /**
@@ -24,7 +13,6 @@ interface DynamicScrollAreaProps {
 export const DynamicScrollArea: React.FC<DynamicScrollAreaProps> = ({
   children,
   className,
-  widthOptions,
 }) => {
   return (
     <div className={cn('w-full overflow-x-auto scrollbar-hide', className)}>

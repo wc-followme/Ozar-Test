@@ -9,7 +9,6 @@ interface MediaPreviewProps {
   onRemove: (index: number) => void;
   className?: string;
   previewClassName?: string;
-  gridCols?: number;
 }
 
 export const MediaPreview = ({
@@ -17,7 +16,6 @@ export const MediaPreview = ({
   onRemove,
   className = '',
   previewClassName = '',
-  gridCols = 4,
 }: MediaPreviewProps) => {
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
 

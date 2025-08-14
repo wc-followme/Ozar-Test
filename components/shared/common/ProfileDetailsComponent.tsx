@@ -2,16 +2,9 @@
 
 import { Video } from '@/components/ui/video';
 import { IconPlayerPlayFilled } from '@tabler/icons-react';
-import { useState } from 'react';
 import { Button } from '../../ui/button';
 
 export const ProfileDetailsComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const toggleExpanded = () => {
-    setIsExpanded(!isExpanded);
-  };
-
   return (
     <div className='bg-[var(--card-background)] rounded-lg p-5 border border-[var(--border-dark)] w-full'>
       <div className='flex gap-6 lg:flex-row flex-col'>

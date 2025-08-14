@@ -63,7 +63,7 @@ export const CustomerReviewBox = ({
         <div className='flex md:items-center md:gap-4 gap-2 mb-2'>
           <div className='flex md:items-center md:flex-row flex-col md:gap-4 gap-2'>
             <h4 className='font-bold text-[var(--text-dark)] text-lg'>
-              "{reviewTitle}"
+              &ldquo;{reviewTitle}&rdquo;
             </h4>
             <div className='flex items-center gap-1'>
               {[...Array(5)].map((_, starIndex) => (

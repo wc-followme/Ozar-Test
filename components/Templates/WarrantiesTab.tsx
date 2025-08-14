@@ -211,7 +211,6 @@ export const WarrantiesTab = () => {
                             title={warranty.title}
                             duration={warranty.duration}
                             description={warranty.description}
-                            type={warranty.type}
                             onEdit={handleEdit}
                             onDelete={handleDelete}
                           />
@@ -225,7 +224,6 @@ export const WarrantiesTab = () => {
                               title={warranty.title}
                               duration={warranty.duration}
                               description={warranty.description}
-                              type={warranty.type}
                               onEdit={handleEdit}
                               onDelete={handleDelete}
                             />

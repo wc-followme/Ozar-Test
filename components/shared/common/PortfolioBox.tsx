@@ -9,8 +9,6 @@ import Image from 'next/image';
 interface PortfolioBoxProps {
   id: string;
   title: string;
-  type: string;
-  year: string;
   image?: string;
   imageCount?: number;
   videoCount?: number;
@@ -21,8 +19,6 @@ interface PortfolioBoxProps {
 export const PortfolioBox = ({
   id,
   title,
-  type,
-  year,
   image,
   imageCount = 0,
   videoCount = 0,

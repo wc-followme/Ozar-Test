@@ -11,7 +11,6 @@ interface WarrantyListProps {
   title: string;
   duration: string;
   description: string;
-  type: string;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
 }
@@ -21,7 +20,6 @@ export const WarrantyList = ({
   title,
   duration,
   description,
-  type,
   onEdit,
   onDelete,
 }: WarrantyListProps) => {

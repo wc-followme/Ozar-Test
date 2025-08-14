@@ -133,8 +133,6 @@ export const PortfolioTab = () => {
             key={project.id}
             id={project.id}
             title={project.title}
-            type={project.type}
-            year={project.year}
             {...(project.image && { image: project.image })}
             imageCount={project.imageCount}
             videoCount={project.videoCount}

@@ -84,8 +84,7 @@ export const ReviewForm = ({
     }
   };
 
-  const renderStar = (rating: string) => {
-    const ratingValue = parseFloat(rating);
+  const renderStar = (_rating: string) => {
     return <Star1 size={16} className='text-yellow-500 fill-yellow-500' />;
   };
 

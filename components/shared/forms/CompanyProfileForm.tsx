@@ -16,7 +16,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { COUNTRY_CODES } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { ProfileImageUpload } from './ProfileImageUpload';
@@ -68,9 +67,6 @@ export const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({
   initialData,
   loading = false,
 }) => {
-  // Photo upload state
-  const [uploadedImageKey, setUploadedImageKey] = useState<string>('');
-
   const {
     control,
     handleSubmit,
@@ -95,16 +91,16 @@ export const CompanyProfileForm: React.FC<CompanyProfileFormProps> = ({
     },
   });
 
-  const handleImageChange = (fileKey: string) => {
-    setUploadedImageKey(fileKey);
+  const handleFormSubmit = async (data: CompanyProfileFormData) => {
+    await onSubmit(data);
+  };
+
+  const handleImageChange = (_fileKey: string) => {
+    // Not used in this component
   };
 
   const handleImageDelete = () => {
-    setUploadedImageKey('');
-  };
-
-  const handleFormSubmit = async (data: CompanyProfileFormData) => {
-    await onSubmit(data);
+    // Not used in this component
   };
 
   return (

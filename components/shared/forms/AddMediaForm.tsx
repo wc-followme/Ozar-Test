@@ -132,7 +132,6 @@ export const AddMediaForm = ({
               files={formData.media}
               onRemove={handleRemoveMedia}
               className='mt-2'
-              gridCols={4}
               previewClassName='aspect-square h-[80px] w-[80px]'
             />
           </div>
