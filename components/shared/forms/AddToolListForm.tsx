@@ -51,6 +51,15 @@ export default function AddToolListForm({
       return;
     }
 
+    // Early return if service UUID is not a real UUID (e.g., generated service IDs)
+    // Real UUIDs should be in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(serviceUuid)) {
+      setToolOptions([]);
+      return;
+    }
+
     setToolsLoading(true);
     try {
       const response = await apiService.fetchTools({
@@ -80,9 +89,10 @@ export default function AddToolListForm({
 
       setToolOptions(options);
     } catch (error) {
-      console.error('Error fetching tools:', error);
-      console.error('Service UUID:', serviceUuid);
-      console.error('Company UUID:', companyUuid);
+      // Only log meaningful errors (non-empty error objects)
+      if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+        console.error('Error fetching tools:', error);
+      }
       setToolOptions([]);
     } finally {
       setToolsLoading(false);

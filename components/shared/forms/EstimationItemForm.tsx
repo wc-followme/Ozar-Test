@@ -38,11 +38,25 @@ export default function EstimationItemForm({
     serviceUuid: string | null,
     companyUuid: string | null
   ) => {
-    if (!serviceUuid || !companyUuid) {
+    // Early return if required parameters are missing
+    if (
+      !serviceUuid ||
+      !companyUuid ||
+      serviceUuid === '' ||
+      companyUuid === ''
+    ) {
       setMaterialOptions([]);
       return;
     }
 
+    // Early return if service UUID is not a real UUID (e.g., generated service IDs)
+    // Real UUIDs should be in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(serviceUuid)) {
+      setMaterialOptions([]);
+      return;
+    }
     setLoading(true);
     try {
       const response = await apiService.fetchMaterials({
@@ -76,9 +90,21 @@ export default function EstimationItemForm({
 
       setMaterialOptions(options);
     } catch (error) {
-      console.error('Error fetching materials:', error);
-      console.error('Service UUID:', serviceUuid);
-      console.error('Company UUID:', companyUuid);
+      // Only log error if we actually made an API call (i.e., parameters were valid)
+      // and if it's not an expected error due to missing parameters
+      if (
+        serviceUuid &&
+        companyUuid &&
+        serviceUuid !== '' &&
+        companyUuid !== '' &&
+        error &&
+        typeof error === 'object' &&
+        Object.keys(error).length > 0 // Don't log empty error objects
+      ) {
+        console.error('Error fetching materials:', error);
+        console.error('Service UUID:', serviceUuid);
+        console.error('Company UUID:', companyUuid);
+      }
       setMaterialOptions([]);
     } finally {
       setLoading(false);

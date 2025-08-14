@@ -122,10 +122,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const { showSuccessToast, showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
-  const [expandedRooms, setExpandedRooms] = useState<string[]>([
-    'room-1',
-    'room-2',
-  ]);
+  const [expandedRooms, setExpandedRooms] = useState<string[]>(['0']);
   const [expandedTrades, setExpandedTrades] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [selectedTradeUniqueKey, setSelectedTradeUniqueKey] = useState<
@@ -134,7 +131,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const [showAddService, setShowAddService] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('room-1');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('0');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -466,6 +463,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
       setExpandedTrades(prev => [...prev, defaultTrade.uniqueKey]);
       setSelectedTrade(defaultTrade.id);
+      setSelectedTradeUniqueKey(defaultTrade.uniqueKey);
       setShowAddService(true);
       return;
     }
@@ -516,10 +514,17 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
     // Select the new trade
     setSelectedTrade(newTrade.id);
+    setSelectedTradeUniqueKey(newTrade.uniqueKey);
     setShowAddService(true);
   };
 
   const handleAddService = () => {
+    // If no trade is selected, create a trade first
+    if (!selectedTradeUniqueKey) {
+      handleAddTrade();
+      return;
+    }
+
     // Generate a unique ID using timestamp + random number to avoid conflicts
     const uniqueId = `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newService: Service = {
@@ -538,33 +543,31 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       tools: [],
     };
 
-    if (selectedTradeUniqueKey) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.uniqueKey === selectedTradeUniqueKey
-                    ? {
-                        ...trade,
-                        serviceList: [...trade.serviceList, newService],
-                        services: trade.serviceList.length + 1,
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
-      );
+    setRooms(prev =>
+      prev.map(room =>
+        room.id === selectedRoomId
+          ? {
+              ...room,
+              trades: room.trades.map(trade =>
+                trade.uniqueKey === selectedTradeUniqueKey
+                  ? {
+                      ...trade,
+                      serviceList: [...trade.serviceList, newService],
+                      services: trade.serviceList.length + 1,
+                    }
+                  : trade
+              ),
+            }
+          : room
+      )
+    );
 
-      // Update calculations after adding service
-      setTimeout(() => updateAllCalculations(), 0);
+    // Update calculations after adding service
+    setTimeout(() => updateAllCalculations(), 0);
 
-      // Select the new service
-      setSelectedService(newService.id);
-      setShowServiceForm(true);
-    }
+    // Select the new service
+    setSelectedService(newService.id);
+    setShowServiceForm(true);
   };
 
   const handleTradeSelect = (tradeUniqueKey: string) => {

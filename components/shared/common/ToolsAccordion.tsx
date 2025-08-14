@@ -30,7 +30,7 @@ interface ToolsAccordionProps {
   roomName?: string;
   tradeName?: string;
   serviceName?: string;
-  serviceId?: string; // Add service ID prop for fetching tools
+  serviceId?: string | undefined; // Add service ID prop for fetching tools
 }
 
 export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
