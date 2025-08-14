@@ -1,8 +1,4 @@
 'use client';
-
-import { UserCard } from '@/components/shared/cards/UserCard';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,9 +15,10 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Edit2, Trash } from 'iconsax-react';
+import { Edit2, Refresh, Trash } from 'iconsax-react';
 import { useCallback, useEffect, useState } from 'react';
-import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
+import ArchiveList from '../user-management/ArchiveList';
+import UserList from '../user-management/UserList';
 import { PORTAL_USER_MESSAGES } from './portal-user-messages';
 import { MenuOption, Role, RoleApiResponse } from './types';
 
@@ -80,14 +77,19 @@ export default function PortalUsers() {
         }
 
         // Get selected company ID using global utility function
-        const companyId = getCompanyId();
+        // const companyId = getCompanyId();
 
+        const companyId = '';
         const role_id = filter !== 'all' ? filter : '';
+        const user_type = 'portal_users';
+        const statusParam =
+          selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
           role_id,
-          status: CommonStatus.ACTIVE, // Only fetch active users
+          status: statusParam,
+          user_type,
           ...(companyId ? { company_id: companyId } : {}),
         });
         const newUsers = usersRes.data;
@@ -122,18 +124,26 @@ export default function PortalUsers() {
         setLoading(false);
       }
     },
-    [filter]
+    [filter, selectedTab]
   );
 
-  // Handle company changes
+  // Handle company changes - refetch based on current tab
   const refetchUsers = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setUsers([]);
     fetchUsers(1, false);
-  }, []);
+  }, [fetchUsers]);
 
   useCompanyChange(refetchUsers);
+
+  // Refetch when role filter or tab changes
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setUsers([]);
+    fetchUsers(1, false);
+  }, [filter, selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -174,6 +184,8 @@ export default function PortalUsers() {
           PORTAL_USER_MESSAGES.STATUS_UPDATE_SUCCESS
         )
       );
+      // Refresh list to reflect latest server state based on current tab
+      refetchUsers();
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -208,20 +220,50 @@ export default function PortalUsers() {
     }
   };
 
-  const menuOptions: MenuOption[] = [
-    {
-      label: PORTAL_USER_MESSAGES.EDIT_USER_TITLE,
-      action: ACTIONS.EDIT,
-      icon: Edit2,
-      variant: 'default',
-    },
-    {
-      label: PORTAL_USER_MESSAGES.ARCHIVE_BUTTON,
-      action: ACTIONS.DELETE,
-      icon: Trash,
-      variant: 'destructive',
-    },
-  ];
+  // Retrieve handler
+  const handleRetrieveUser = async (uuid: string) => {
+    try {
+      const response = await apiService.updateUserStatus(uuid, CommonStatus.ACTIVE);
+      showSuccessToast(
+        extractApiSuccessMessage(response, PORTAL_USER_MESSAGES.STATUS_UPDATE_SUCCESS)
+      );
+      // Refresh list to reflect latest server state based on current tab
+      refetchUsers();
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message =
+        err instanceof Error ? err.message : PORTAL_USER_MESSAGES.STATUS_UPDATE_ERROR;
+      showErrorToast(message);
+    }
+  };
+
+  const menuOptions: MenuOption[] = selectedTab === 'archive' 
+    ? [
+        {
+          label: PORTAL_USER_MESSAGES.RETRIEVE_BUTTON,
+          action: ACTIONS.RETRIEVE,
+          icon: Refresh,
+          variant: 'default',
+        },
+      ]
+    : [
+        {
+          label: PORTAL_USER_MESSAGES.EDIT_USER_TITLE,
+          action: ACTIONS.EDIT,
+          icon: Edit2,
+          variant: 'default',
+        },
+        {
+          label: PORTAL_USER_MESSAGES.ARCHIVE_BUTTON,
+          action: ACTIONS.DELETE,
+          icon: Trash,
+          variant: 'destructive',
+        },
+      ];
 
   // Check if user has permission to view users
   if (userPermissions && !canViewUsers) {
@@ -294,86 +336,30 @@ export default function PortalUsers() {
           </div>
           {/* Users Tab Content */}
           <TabsContent value='users' className='mt-6'>
-            {/* Initial Loading State */}
-            {users.length === 0 && loading ? (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
-                {[...Array(8)].map((_, i) => (
-                  <UserCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* User Grid */}
-                {users.length === 0 && !loading ? (
-                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-                    <NoDataFound
-                      description={
-                        PORTAL_USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION
-                      }
-                      buttonText=''
-                      showButton={false}
-                    />
-                  </div>
-                ) : (
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
-                    {users?.map(
-                      ({
-                        uuid,
-                        name,
-                        role,
-                        phone_number,
-                        email,
-                        profile_picture_url,
-                        status,
-                        id,
-                      }) => (
-                        <UserCard
-                          key={uuid} // Use uuid instead of id for unique keys
-                          name={name}
-                          role={role?.name || ''}
-                          phone={phone_number}
-                          email={email}
-                          image={
-                            profile_picture_url
-                              ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
-                                profile_picture_url
-                              : ''
-                          }
-                          status={status === CommonStatus.ACTIVE}
-                          onToggle={() =>
-                            handleToggleStatus(
-                              id,
-                              status === CommonStatus.ACTIVE
-                            )
-                          }
-                          menuOptions={menuOptions}
-                          onDelete={() => handleDeleteUser(uuid)}
-                          disableActions={loading}
-                          userUuid={uuid}
-                        />
-                      )
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {loading && users.length > 0 && (
-              <div className='text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <UserList
+              users={users}
+              loading={loading}
+              noDataDescription={
+                PORTAL_USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION
+              }
+              menuOptions={menuOptions}
+              onToggle={handleToggleStatus}
+              onDelete={handleDeleteUser}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Users'
-                description='No archived users found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              users={users}
+              loading={loading}
+              noDataTitle={PORTAL_USER_MESSAGES.ARCHIVED_USERS_TITLE}
+              noDataDescription={PORTAL_USER_MESSAGES.NO_ARCHIVED_USERS_FOUND}
+              menuOptions={menuOptions}
+              onToggle={handleToggleStatus}
+              onDelete={handleDeleteUser}
+              onRetrieve={handleRetrieveUser}
+            />
           </TabsContent>
         </Tabs>
       </div>

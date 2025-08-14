@@ -41,6 +41,8 @@ export const PORTAL_USER_MESSAGES = {
   NO_USERS_FOUND_DESCRIPTION: "You haven't created any portal users yet.",
   NO_MORE_USERS: 'No more portal users to load.',
   USER_NOT_FOUND: 'Portal user not found',
+  ARCHIVED_USERS_TITLE: 'Archived Users',
+  NO_ARCHIVED_USERS_FOUND: 'No archived portal users found',
 
   // Form Placeholders
   SELECT_ROLE: 'Select role',
@@ -76,6 +78,7 @@ export const PORTAL_USER_MESSAGES = {
   CANCEL_BUTTON: 'Cancel',
   DELETE_USER_BUTTON: 'Delete Portal User',
   ARCHIVE_BUTTON: 'Archive',
+  RETRIEVE_BUTTON: 'Retrieve',
   ADD_ADMIN_USER_BUTTON: 'Create Portal User',
   REMOVE_PHOTO_ARIA: 'Remove photo',
 
@@ -117,6 +120,8 @@ export const PORTAL_USER_MESSAGES = {
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
   DELETE_CONFIRM_SUBTITLE: 'This action cannot be undone.',
+  RETRIEVE_CONFIRM_TITLE: 'Are you sure you want to retrieve?',
+  RETRIEVE_CONFIRM_SUBTITLE: 'This will restore the user to active status.',
 
   // Permissions Messages
   PERMISSIONS_UPDATE_SUCCESS: 'Portal user permissions updated successfully.',
