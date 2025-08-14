@@ -267,10 +267,23 @@ export default function ToolsManagement() {
     name: string;
     available_quantity: number;
     manufacturer: string;
+    brandName: string;
     tool_assets: string;
     service_ids: string;
+    videos?: File[];
+    videoLinks?: string[];
+    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
   }) => {
-    const { name, available_quantity, manufacturer, service_ids } = data;
+    const {
+      name,
+      available_quantity,
+      manufacturer,
+      brandName,
+      service_ids,
+      videos,
+      videoLinks,
+      toolIds,
+    } = data;
 
     setFormLoading(true);
     try {
@@ -590,7 +603,11 @@ export default function ToolsManagement() {
                       name,
                       available_quantity,
                       manufacturer,
+                      brandName: manufacturer, // Use manufacturer as brand name for now
                       services: services?.map(s => s.id) || [],
+                      videos: [],
+                      videoLinks: [],
+                      toolIds: [],
                     };
                   })()
                 : {}

@@ -45,7 +45,7 @@ export const MediaPreview = ({
         const hasError = imageErrors.has(index);
 
         return (
-          <div key={index} className='relative group'>
+          <div key={index} className='relative group h-full'>
             <div
               className={`w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 ${previewClassName}`}
             >

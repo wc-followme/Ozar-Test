@@ -5,6 +5,7 @@ import { IconDotsVertical } from '@tabler/icons-react';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Badge } from '../../ui/badge';
+import { Label } from '../../ui/label';
 import Dropdown from '../common/Dropdown';
 
 interface ToolCardProps {
@@ -81,15 +82,22 @@ export default function ToolCard({
 
         {/* Tool Info */}
         <div className='flex-1 min-w-0'>
-          <h3 className='font-bold text-[var(--text)] truncate text-base mb-1'>
+          <h3 className='font-bold text-[var(--text)] truncate text-base leading-tight mb-1'>
             {name}
           </h3>
-          <p className='text-sm text-[var(--text-secondary)] mb-2'>{brand}</p>
+          <p className='text-xs text-[var(--text-secondary)] mb-1 font-medium'>
+            {brand}
+          </p>
           <div className='flex items-center gap-2'>
-            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1'>
-              Qty: {quantity}
-            </Badge>
-            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1'>
+            <div className='flex flex-col'>
+              <Label className='text-sm text-[var(--text-secondary)]'>
+                Quantity
+              </Label>
+              <span className='text-sm text-[var(--text)] font-bold'>
+                {quantity}
+              </span>
+            </div>
+            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1 ml-auto'>
               {videoCount} Video{videoCount !== 1 ? 's' : ''}
             </Badge>
           </div>
