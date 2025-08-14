@@ -7,7 +7,7 @@ import {
 } from '@/components/shared/forms/ReviewForm';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { IconShare, IconStar } from '@tabler/icons-react';
+import { IconShare, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { DocumentText, Edit2, Star1 } from 'iconsax-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ interface ProfileTopBlockProps {
   onRequestQuote?: () => void;
   onShare?: () => void;
   onChangeCover?: () => void;
+  onAddToNetwork?: () => void;
   showReviewButton?: boolean;
   showEditButton?: boolean;
   showRequestQuoteButton?: boolean;
@@ -33,6 +34,8 @@ interface ProfileTopBlockProps {
   showFiveBoxSystemButton?: boolean;
   editProfileLink?: string;
   fiveBoxSystemLink?: string;
+  isUserProfile?: boolean;
+  companyProfileLink?: string;
 }
 
 export const ProfileTopBlock = ({
@@ -47,6 +50,7 @@ export const ProfileTopBlock = ({
   onRequestQuote,
   onShare,
   onChangeCover,
+  onAddToNetwork,
   showReviewButton = true,
   showEditButton = true,
   showRequestQuoteButton = true,
@@ -55,6 +59,8 @@ export const ProfileTopBlock = ({
   showFiveBoxSystemButton = true,
   editProfileLink = '/company-profile/edit-profile',
   fiveBoxSystemLink = '/company-profile/five-box-system',
+  isUserProfile = false,
+  companyProfileLink = '/company-profile',
 }: ProfileTopBlockProps) => {
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,6 +135,12 @@ export const ProfileTopBlock = ({
     }
   };
 
+  const handleAddToNetwork = () => {
+    if (onAddToNetwork) {
+      onAddToNetwork();
+    }
+  };
+
   return (
     <div className='rounded-[10px]'>
       {/* Cover Image Section */}
@@ -161,10 +173,10 @@ export const ProfileTopBlock = ({
       <div className='relative bg-[var(--white-background)]'>
         <div className='mx-auto'>
           <Card className='px-4 lg:pl-[52px] lg:pr-6 py-6 border-0'>
-            <div className='flex flex-col lg:flex-row items-start gap-4 md:gap-6 -mt-16'>
+            <div className='flex flex-col lg:flex-row gap-4 md:gap-6 -mt-[70px]'>
               {/* Logo */}
               <div className='relative'>
-                <div className='w-[150px] h-[150px] rounded-2xl md:w-32 md:h-32 bg-[var(--card-background)] overflow-hidden'>
+                <div className='w-[150px] h-[150px] rounded-[10px] border-2 border-transparent bg-[var(--card-background)] overflow-hidden'>
                   <Image
                     src={logoImage}
                     height={150}
@@ -176,7 +188,7 @@ export const ProfileTopBlock = ({
               </div>
 
               {/* Company Details */}
-              <div className='flex-1 min-w-0 pt-4 lg:pt-16 w-full'>
+              <div className='flex-1 min-w-0 w-full lg:pt-[70px]'>
                 <div className='space-y-2'>
                   <h1 className='text-[var(--text-dark)] text-2xl font-bold leading-[18px] tracking-[0%]'>
                     {companyName}
@@ -188,27 +200,69 @@ export const ProfileTopBlock = ({
                       </p>
 
                       {/* Rating */}
-                      <div className='flex items-center gap-2'>
-                        <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
-                          {rating}
-                        </span>
-                        <div className='flex items-center gap-1'>
-                          {[...Array(5)].map((_, index) => (
-                            <Star1
-                              key={index}
-                              size='16'
-                              className={
-                                index < Math.floor(rating)
-                                  ? 'text-yellowbrand fill-yellowbrand'
-                                  : 'text-placeholdergray fill-placeholdergray'
-                              }
-                            />
-                          ))}
+                      {isUserProfile ? (
+                        <div className='flex items-center gap-4'>
+                          <div className='flex flex-wrap items-center gap-4'>
+                            <Link
+                              href={companyProfileLink}
+                              className='text-[var(--text-dark)] flex items-center gap-2 text-base font-bold leading-[18px] tracking-[0%] hover:text-[var(--primary)] transition-colors'
+                            >
+                              <Image
+                                src={'/images/logo.svg'}
+                                width={24}
+                                height={24}
+                                className='object-contain'
+                                alt='logo'
+                              />
+                              Envision Construction
+                            </Link>
+                            <div className='w-px h-6 bg-[var(--border-dark)]'></div>
+                            <div className='flex items-center gap-2'>
+                              <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
+                                {rating}
+                              </span>
+                              <div className='flex items-center gap-1'>
+                                {[...Array(5)].map((_, index) => (
+                                  <IconStarFilled
+                                    key={index}
+                                    size='18'
+                                    className={
+                                      index < Math.floor(rating)
+                                        ? 'text-yellowbrand fill-yellowbrand'
+                                        : 'text-placeholdergray fill-placeholdergray'
+                                    }
+                                  />
+                                ))}
+                              </div>
+                              <span className='text-[var(--text-dark)] text-sm'>
+                                {reviewCount} Reviews
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <span className='text-gray-500 text-sm'>
-                          {reviewCount} Reviews
-                        </span>
-                      </div>
+                      ) : (
+                        <div className='flex items-center gap-2'>
+                          <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
+                            {rating}
+                          </span>
+                          <div className='flex items-center gap-1'>
+                            {[...Array(5)].map((_, index) => (
+                              <Star1
+                                key={index}
+                                size='16'
+                                className={
+                                  index < Math.floor(rating)
+                                    ? 'text-yellowbrand fill-yellowbrand'
+                                    : 'text-placeholdergray fill-placeholdergray'
+                                }
+                              />
+                            ))}
+                          </div>
+                          <span className='text-gray-500 text-sm'>
+                            {reviewCount} Reviews
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className='flex flex-wrap gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
                       {showReviewButton && (
@@ -256,7 +310,7 @@ export const ProfileTopBlock = ({
                       {showEditButton && (
                         <Link
                           href={editProfileLink}
-                          className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
+                          className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !text-sm !w-9 sm:!w-auto !h-9 rounded-full'
                           onClick={handleEditProfile}
                         >
                           <Edit2
@@ -275,6 +329,16 @@ export const ProfileTopBlock = ({
                           onClick={handleRequestQuote}
                         >
                           Request Quote
+                        </Button>
+                      )}
+
+                      {isUserProfile && (
+                        <Button
+                          variant='secondary'
+                          className='btn-primary gap-1 !py-[10px] sm:!w-auto !h-9 rounded-full'
+                          onClick={handleAddToNetwork}
+                        >
+                          Add to Network
                         </Button>
                       )}
                     </div>

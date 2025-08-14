@@ -25,7 +25,7 @@ const CompanyProfile = () => {
   };
 
   return (
-    <div className='space-y-6'>
+    <div className=''>
       <ProfileTopBlock
         coverImage='/images/profile-block-bg.png'
         logoImage='/images/logo.svg'

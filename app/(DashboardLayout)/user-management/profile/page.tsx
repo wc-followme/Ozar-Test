@@ -24,6 +24,10 @@ const Profile = () => {
     console.log('Change cover clicked');
   };
 
+  const handleAddToNetwork = () => {
+    console.log('Add to network clicked');
+  };
+
   return (
     <div className=''>
       <ProfileTopBlock
@@ -31,17 +35,20 @@ const Profile = () => {
         logoImage='/images/profile.jpg'
         companyName='John Doe'
         tagline='Senior Developer'
-        rating={4.5}
-        reviewCount={12}
+        rating={4.0}
+        reviewCount={5}
         onWriteReview={handleWriteReview}
         onEditProfile={handleEditProfile}
         onRequestQuote={handleRequestQuote}
         onShare={handleShare}
         onChangeCover={handleChangeCover}
+        onAddToNetwork={handleAddToNetwork}
         showReviewButton={false}
         showFiveBoxSystemButton={false}
-        showRequestQuoteButton={false}
+        showRequestQuoteButton={true}
         editProfileLink='/user-management/profile/edit'
+        isUserProfile={true}
+        companyProfileLink='/company-profile'
       />
       <ProfileBottomBlock />
     </div>

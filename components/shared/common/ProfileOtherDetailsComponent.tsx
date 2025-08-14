@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { RedirectionIcon } from '../../icons/RedirectionIcon';
 
 export const ProfileOtherDetailsComponent = () => {
@@ -55,13 +56,25 @@ export const ProfileOtherDetailsComponent = () => {
             <RedirectionIcon className='text-[var(--text-secondary)] cursor-pointer hover:text-[var(--primary)]' />
           </div>
         </div>
-        <div className='lg:min-w-[600px] min-w-full max-w-full'>
-          <label className='text-sm text-[var(--text-secondary)] font-normal'>
-            Address
-          </label>
-          <p className='text-[var(--text-dark)] font-medium text-sm'>
-            3517 W. Gray St. Utica, Pennsylvania 57867
-          </p>
+        <div className='lg:min-w-[600px] min-w-full max-w-full w-full'>
+          <div className='flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 w-full'>
+            <div className='flex-1'>
+              <label className='text-sm text-[var(--text-secondary)] font-normal'>
+                Address
+              </label>
+              <p className='text-[var(--text-dark)] font-medium text-sm'>
+                3517 W. Gray St. Utica, Pennsylvania 57867
+              </p>
+            </div>
+            <div className='lg:flex-shrink-0 ml-auto'>
+              <Link
+                href='/company-profile'
+                className='btn-secondary text-[14px] gap-1 !px-[12px] xl:!px-[26px] !py-[10px] !h-9 rounded-full'
+              >
+                View Company Profile
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     </div>
