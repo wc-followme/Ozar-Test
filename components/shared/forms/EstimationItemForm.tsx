@@ -9,7 +9,9 @@ import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { calculateLineTotal } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
+import { EyeSlash, Paintbucket, Trash } from 'iconsax-react';
 import { useEffect, useState } from 'react';
+import Dropdown from '../common/Dropdown';
 import { EstimationItem } from './estimation-types';
 
 interface EstimationItemFormProps {
@@ -256,13 +258,52 @@ export default function EstimationItemForm({
           />
         </div>
         <div className='self-center pt-8'>
-          <button
-            onClick={onDelete}
-            className='text-[var(--text-secondary)] hover:text-[var(--text-dark)] transition-colors'
-            type='button'
-          >
-            <IconDotsVertical size={24} color='var(--text-dark)' />
-          </button>
+          <Dropdown
+            menuOptions={[
+              {
+                label: 'Hide Line Item',
+                action: 'hide',
+                icon: EyeSlash,
+              },
+              {
+                label: 'Send to Finishes',
+                action: 'send-to-finishes',
+                icon: Paintbucket,
+              },
+              {
+                label: 'Delete line item',
+                action: 'delete',
+                icon: Trash,
+              },
+            ]}
+            onAction={action => {
+              switch (action) {
+                case 'hide':
+                  // Handle hide line item
+                  console.log('Hide line item clicked');
+                  break;
+                case 'send-to-finishes':
+                  // Handle send to finishes
+                  console.log('Send to finishes clicked');
+                  break;
+                case 'delete':
+                  // Handle delete
+                  if (onDelete) onDelete();
+                  break;
+                default:
+                  break;
+              }
+            }}
+            trigger={
+              <button
+                className='text-[var(--text-secondary)] hover:text-[var(--text-dark)] transition-colors'
+                type='button'
+              >
+                <IconDotsVertical size={24} color='var(--text-dark)' />
+              </button>
+            }
+            align='end'
+          />
         </div>
       </div>
       <div className='flex items-start gap-4 justify-between mt-4'>
