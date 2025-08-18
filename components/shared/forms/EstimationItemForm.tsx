@@ -9,7 +9,9 @@ import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { calculateLineTotal } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
+import { EyeSlash, Paintbucket, Trash } from 'iconsax-react';
 import { useEffect, useState } from 'react';
+import Dropdown from '../common/Dropdown';
 import { EstimationItem } from './estimation-types';
 
 interface EstimationItemFormProps {
@@ -33,24 +35,23 @@ export default function EstimationItemForm({
   >([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch materials from API based on service UUID and company UUID
+  // Fetch materials from API based on service ID and company UUID
   const fetchMaterials = async (
-    serviceUuid: string | null,
+    serviceId: string | null,
     companyUuid: string | null
   ) => {
-    if (!serviceUuid || !companyUuid) {
+    // Early return if required parameters are missing
+    if (!serviceId || !companyUuid || serviceId === '' || companyUuid === '') {
       setMaterialOptions([]);
       return;
     }
-
     setLoading(true);
     try {
-      const response = await apiService.fetchMaterials({
+      const response = await apiService.fetchMaterialsPublic({
         page: 1,
         limit: 50,
-        service_uuid: serviceUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        service_id: serviceId,
       });
 
       type MaterialItem = {
@@ -76,9 +77,21 @@ export default function EstimationItemForm({
 
       setMaterialOptions(options);
     } catch (error) {
-      console.error('Error fetching materials:', error);
-      console.error('Service UUID:', serviceUuid);
-      console.error('Company UUID:', companyUuid);
+      // Only log error if we actually made an API call (i.e., parameters were valid)
+      // and if it's not an expected error due to missing parameters
+      if (
+        serviceId &&
+        companyUuid &&
+        serviceId !== '' &&
+        companyUuid !== '' &&
+        error &&
+        typeof error === 'object' &&
+        Object.keys(error).length > 0 // Don't log empty error objects
+      ) {
+        console.error('Error fetching materials:', error);
+        console.error('Service ID:', serviceId);
+        console.error('Company UUID:', companyUuid);
+      }
       setMaterialOptions([]);
     } finally {
       setLoading(false);
@@ -92,6 +105,12 @@ export default function EstimationItemForm({
 
   // Load materials when component mounts or when service/company changes
   useEffect(() => {
+    // Clear material options immediately if serviceId is null or undefined
+    if (!serviceId) {
+      setMaterialOptions([]);
+      return;
+    }
+
     const selectedCompanyRaw =
       typeof window !== 'undefined'
         ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
@@ -108,7 +127,7 @@ export default function EstimationItemForm({
         })()
       : '';
 
-    fetchMaterials(serviceId || null, companyUuid);
+    fetchMaterials(serviceId, companyUuid);
   }, [serviceId]);
 
   const formatCurrency = (amount: number) => {
@@ -239,13 +258,50 @@ export default function EstimationItemForm({
           />
         </div>
         <div className='self-center pt-8'>
-          <button
-            onClick={onDelete}
-            className='text-[var(--text-secondary)] hover:text-[var(--text-dark)] transition-colors'
-            type='button'
-          >
-            <IconDotsVertical size={24} color='var(--text-dark)' />
-          </button>
+          <Dropdown
+            menuOptions={[
+              {
+                label: 'Hide Line Item',
+                action: 'hide',
+                icon: EyeSlash,
+              },
+              {
+                label: 'Send to Finishes',
+                action: 'send-to-finishes',
+                icon: Paintbucket,
+              },
+              {
+                label: 'Delete line item',
+                action: 'delete',
+                icon: Trash,
+              },
+            ]}
+            onAction={action => {
+              switch (action) {
+                case 'hide':
+                  // Handle hide line item
+                  break;
+                case 'send-to-finishes':
+                  // Handle send to finishes
+                  break;
+                case 'delete':
+                  // Handle delete
+                  if (onDelete) onDelete();
+                  break;
+                default:
+                  break;
+              }
+            }}
+            trigger={
+              <button
+                className='text-[var(--text-secondary)] hover:text-[var(--text-dark)] transition-colors'
+                type='button'
+              >
+                <IconDotsVertical size={24} color='var(--text-dark)' />
+              </button>
+            }
+            align='end'
+          />
         </div>
       </div>
       <div className='flex items-start gap-4 justify-between mt-4'>

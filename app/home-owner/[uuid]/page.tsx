@@ -5,8 +5,7 @@ import { HomeOwnerHeader } from '@/components/layout/HomeOwnerHeader';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ThankYouComponent } from '@/components/shared/common/ThankYouComponent';
 import { StepCategory } from '@/components/shared/forms/StepCategory';
-// import { StepEstimation } from '@/components/shared/forms/StepEstimation';
-import EstimateComponent from '@/components/Templates/EstimateComponent';
+import { StepEstimation } from '@/components/shared/forms/StepEstimation';
 import { StepGeneralInfo } from '@/components/shared/forms/StepGeneralInfo';
 import { StepProjectInfo } from '@/components/shared/forms/StepProjectInfo';
 import { StepPropertyInfo } from '@/components/shared/forms/StepPropertyInfo';
@@ -51,9 +50,7 @@ export default function HomeOwnerWizardPage() {
   const [projectInfoData, setProjectInfoData] =
     useState<ProjectInfoData | null>(null);
   const [categoryData, setCategoryData] = useState<CategoryData | null>(null);
-  // const [estimationData, setEstimationData] = useState<EstimationData | null>(
-  //   null
-  // );
+  const [estimationData, setEstimationData] = useState<any>(null);
   const [companyId, setCompanyId] = useState<string | null>(null); // Store company UUID from job data
 
   // State for Thank You component
@@ -549,6 +546,26 @@ export default function HomeOwnerWizardPage() {
     }
   };
 
+  const handleEstimationSubmit = (data: any) => {
+    setEstimationData(data);
+    if (isLastStep()) {
+      // Submit all data with current questions
+      handleFinalSubmit(
+        {
+          generalInfo: generalInfoData!,
+          propertyInfo: propertyInfoData!,
+          projectInfo: projectInfoData!,
+          category: categoryData!,
+          estimation: data,
+        },
+        questionsByStep
+      );
+    } else {
+      // Move to next step
+      goToNextStep();
+    }
+  };
+
   const handleFinalSubmit = async (
     allData: HomeOwnerFormData,
     currentQuestions?: Record<
@@ -872,16 +889,6 @@ export default function HomeOwnerWizardPage() {
   const cancelButtonClass =
     'h-[48px] px-8 border-2 border-[var(--border-dark)] bg-transparent rounded-full font-semibold text-[var(--text-dark)] flex items-center';
 
-  // Breadcrumb data for estimate component
-  const breadcrumbData: { name: string; href?: string }[] = [];
-
-  // Handle add room for estimate component
-  const handleAddRoom = () => {
-    // This will trigger the EstimationBox to open
-    // The EstimateComponent handles this internally
-    console.log('Add room clicked - EstimationBox should open');
-  };
-
   // Loading state
   if (isLoading) {
     return (
@@ -1034,26 +1041,27 @@ export default function HomeOwnerWizardPage() {
               })()}
             {step === WIZARD_STEPS.ESTIMATION &&
               jobBoxesStep.includes(JOB_BOXES_STEPS.FIFTH) && (
-                // <StepEstimation
-                //   {...(shouldShowPreviousButton() && {
-                //     onPrev: goToPreviousStep,
-                //   })}
-                //   onSubmit={handleEstimationSubmit}
-                //   cancelButtonClass={cancelButtonClass}
-                //   defaultValues={estimationData}
-                //   isLastStep={isLastStep()}
-                // />
-                <EstimateComponent
-                  breadcrumbData={breadcrumbData}
-                  onAddRoom={handleAddRoom}
+                <StepEstimation
+                  {...(shouldShowPreviousButton() && {
+                    onPrev: goToPreviousStep,
+                  })}
+                  onSubmit={handleEstimationSubmit}
+                  cancelButtonClass={cancelButtonClass}
+                  defaultValues={estimationData}
+                  isLastStep={isLastStep()}
                   jobId={uuid}
-                  onSaveSuccess={() => {
-                    // Success handling is now done via toast messages in EstimationBox
-                  }}
-                  onSaveError={_error => {
-                    // Error handling is now done via toast messages in EstimationBox
-                  }}
                 />
+                // <EstimateComponent
+                //   breadcrumbData={breadcrumbData}
+                //   onAddRoom={handleAddRoom}
+                //   jobId={uuid}
+                //   onSaveSuccess={() => {
+                //     // Success handling is now done via toast messages in EstimationBox
+                //   }}
+                //   onSaveError={_error => {
+                //     // Error handling is now done via toast messages in EstimationBox
+                //   }}
+                // />
               )}
           </div>
         </div>

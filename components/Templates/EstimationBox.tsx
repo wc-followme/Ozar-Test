@@ -14,6 +14,7 @@ import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
 import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
+import { ESTIMATION_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import {
   calculateJobTotal,
@@ -96,6 +97,7 @@ interface EstimationBoxProps {
   jobId?: string; // Add job ID prop for API calls
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
+  onFormSubmit?: number; // Trigger value for form submission
 }
 
 // Utility function to generate unique keys
@@ -122,10 +124,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const { showSuccessToast, showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
-  const [expandedRooms, setExpandedRooms] = useState<string[]>([
-    'room-1',
-    'room-2',
-  ]);
+  const [expandedRooms, setExpandedRooms] = useState<string[]>(['0']);
   const [expandedTrades, setExpandedTrades] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
   const [selectedTradeUniqueKey, setSelectedTradeUniqueKey] = useState<
@@ -134,7 +133,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const [showAddService, setShowAddService] = useState(false);
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('room-1');
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('0');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -176,20 +175,13 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         )
       : undefined;
 
-  // Debug selectedServiceData
-  console.log('selectedServiceData:', selectedServiceData);
-  console.log('selectedTradeData:', selectedTradeData);
-
   const fetchTrades = async (companyUuid: string | null) => {
     try {
-      console.log('Fetching trades for company:', companyUuid);
-      const response = await apiService.fetchTrades({
+      const response = await apiService.fetchTradesPublic({
         page: 1,
         limit: 10,
-        is_active: true,
         company_id: companyUuid || '',
       });
-      console.log('Trades API response:', response);
 
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
@@ -200,7 +192,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
           ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
           : [];
-      console.log('Parsed trades list:', list);
 
       const options = list
         .filter(t => !!t?.name)
@@ -208,7 +199,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           value: String(t.uuid || t.id || t.name),
           label: String(t.name),
         }));
-      console.log('Trade options:', options);
       setTradeOptions(options);
     } catch (error) {
       console.error('Error fetching trades:', error);
@@ -222,10 +212,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         error instanceof Error ? error.stack : 'No stack'
       );
       console.error('Company UUID:', companyUuid);
-      console.error('API URL being called: /trades with params:', {
+      console.error('API URL being called: /trades/public with params:', {
         page: 1,
         limit: 10,
-        is_active: true,
         company_id: companyUuid || '',
       });
       setTradeOptions([]);
@@ -290,21 +279,20 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   }, []);
 
+  // Listen for form submission and trigger save
+  useEffect(() => {
+    if (props.onFormSubmit && props.onFormSubmit > 0) {
+      handleSave();
+    }
+  }, [props.onFormSubmit]);
+
   // Function to update calculations for a service
   const updateServiceCalculations = (service: Service): Service => {
-    console.log('Updating service calculations for:', service.name);
-    console.log('Service rate:', service.rate, 'qty:', service.qty);
-    console.log('Service materials:', service.materials);
-    console.log('Service finishes:', service.finishes);
-
     const serviceTotal = calculateServiceTotal(service.rate, service.qty);
     const totalMaterialCost = calculateServiceTotalMaterialCost(
       service.materials,
       service.finishes
     );
-
-    console.log('Service total:', serviceTotal);
-    console.log('Total material cost:', totalMaterialCost);
 
     const updatedService = {
       ...service,
@@ -313,7 +301,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       tradeTotal: serviceTotal + totalMaterialCost,
     };
 
-    console.log('Updated service:', updatedService);
     return updatedService;
   };
 
@@ -334,7 +321,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       laborCost: tradeTotals.labor_cost,
       materialCost: tradeTotals.material_cost,
       tradeTotal: tradeTotals.trade_total,
-      markup: tradeTotals.markup, // Add the calculated markup value
+      // Don't store the calculated markup value back - keep the original markup percentage
     };
   };
 
@@ -427,7 +414,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Use the UUID from the first trade option in the dropdown
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
-      console.error('No trade options available');
+      console.error(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
+      showErrorToast(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
       // Create a default trade if no options are available
       const defaultTrade: Trade = {
         id: 'default-trade',
@@ -437,7 +425,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           selectedRoomId,
           0
         ),
-        name: 'Default Trade',
+        name: ESTIMATION_MESSAGES.DEFAULT_TRADE_NAME,
         services: 0,
         dateRange: '',
         type: '2D',
@@ -466,6 +454,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
       setExpandedTrades(prev => [...prev, defaultTrade.uniqueKey]);
       setSelectedTrade(defaultTrade.id);
+      setSelectedTradeUniqueKey(defaultTrade.uniqueKey);
       setShowAddService(true);
       return;
     }
@@ -516,10 +505,17 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
     // Select the new trade
     setSelectedTrade(newTrade.id);
+    setSelectedTradeUniqueKey(newTrade.uniqueKey);
     setShowAddService(true);
   };
 
   const handleAddService = () => {
+    // If no trade is selected, create a trade first
+    if (!selectedTradeUniqueKey) {
+      handleAddTrade();
+      return;
+    }
+
     // Generate a unique ID using timestamp + random number to avoid conflicts
     const uniqueId = `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
     const newService: Service = {
@@ -528,50 +524,47 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       name: 'New Service',
       description: '',
       qty: 1,
-      rate: 50.0, // Set a default rate instead of 0
-      lineTotal: 50.0, // Calculate initial line total
-      serviceTotal: 50.0, // Calculate initial service total
-      tradeTotal: 50.0, // Calculate initial trade total
+      rate: 0.0, // Set default rate to 0
+      lineTotal: 0.0, // Calculate initial line total
+      serviceTotal: 0.0, // Calculate initial service total
+      tradeTotal: 0.0, // Calculate initial trade total
       serviceOptions: [],
       materials: [],
       finishes: [],
       tools: [],
     };
 
-    if (selectedTradeUniqueKey) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? {
-                ...room,
-                trades: room.trades.map(trade =>
-                  trade.uniqueKey === selectedTradeUniqueKey
-                    ? {
-                        ...trade,
-                        serviceList: [...trade.serviceList, newService],
-                        services: trade.serviceList.length + 1,
-                      }
-                    : trade
-                ),
-              }
-            : room
-        )
-      );
+    setRooms(prev =>
+      prev.map(room =>
+        room.id === selectedRoomId
+          ? {
+              ...room,
+              trades: room.trades.map(trade =>
+                trade.uniqueKey === selectedTradeUniqueKey
+                  ? {
+                      ...trade,
+                      serviceList: [...trade.serviceList, newService],
+                      services: trade.serviceList.length + 1,
+                    }
+                  : trade
+              ),
+            }
+          : room
+      )
+    );
 
-      // Update calculations after adding service
-      setTimeout(() => updateAllCalculations(), 0);
+    // Update calculations after adding service
+    setTimeout(() => updateAllCalculations(), 0);
 
-      // Select the new service
-      setSelectedService(newService.id);
-      setShowServiceForm(true);
-    }
+    // Select the new service
+    setSelectedService(newService.id);
+    setShowServiceForm(true);
   };
 
   const handleTradeSelect = (tradeUniqueKey: string) => {
     // Find which room contains this trade using uniqueKey
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
-    console.log('tradeUniqueKey', tradeUniqueKey);
 
     for (const room of rooms) {
       const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
@@ -581,8 +574,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         break;
       }
     }
-    console.log('foundRoom', foundRoom);
-    console.log('foundTrade', foundTrade);
 
     // Set the room that contains this trade
     if (foundRoom && foundTrade) {
@@ -599,6 +590,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       if (!expandedTrades.includes(foundTrade.uniqueKey)) {
         setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
+
+      // Don't clear service data when switching trades - only clear selectedService state
+      // The service data should remain intact in the trade object
     }
 
     setShowAddService(true); // Set to true to show trade state
@@ -825,7 +819,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleServiceUpdate = (updatedService: Service) => {
-    console.log('handleServiceUpdate called with:', updatedService);
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev => {
         const updatedRooms = prev.map(room =>
@@ -847,7 +840,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               }
             : room
         );
-        console.log('Updated rooms in handleServiceUpdate:', updatedRooms);
         return updatedRooms;
       });
 
@@ -1129,6 +1121,38 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   };
 
+  const handleToolReplace = (newTools: Tool[]) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                tools: newTools, // Replace entire tools array
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+
+      // Update calculations after tool replace
+      setTimeout(() => updateAllCalculations(), 0);
+    }
+  };
+
   // Delete handlers
   const handleDeleteClick = () => {
     if (showServiceForm && selectedService) {
@@ -1296,12 +1320,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             }
           );
 
-          console.log('Save API response:', response);
-
           // Show success toast with API response message
-          showSuccessToast(
-            extractApiSuccessMessage(response, 'Estimation saved successfully!')
-          );
+          // showSuccessToast(
+          //   extractApiSuccessMessage(response, 'Estimation saved successfully!')
+          // );
 
           // Call success callback if provided
           if (props.onSaveSuccess) {
@@ -1310,7 +1332,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         }
       } else {
         // Show success toast for localStorage save only
-        showSuccessToast('Estimation saved to local storage successfully!');
+        //showSuccessToast('Estimation saved to local storage successfully!');
       }
     } catch (error) {
       console.error('Error saving job rooms:', error);
@@ -1429,7 +1451,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   return (
-    <div className='flex bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] overflow-hidden'>
+    <div className='flex bg-[var(--card-background)] rounded-[20px] w-full border border-[var(--border-dark)] overflow-hidden'>
       {/* Sidebar */}
       <EstimationBoxSidebar
         isSidebarCollapsed={isSidebarCollapsed}
@@ -1522,6 +1544,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                 tools={selectedServiceData.tools}
                 onAddTool={handleToolAdd}
                 onRemoveTool={handleToolRemove}
+                onReplaceTools={handleToolReplace}
                 roomName={selectedRoom?.name || 'Room'}
                 tradeName={selectedTradeData?.name || 'Trade'}
                 tradeId={selectedTrade || undefined}
@@ -1572,9 +1595,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               </span>
             </div>
             <div className='flex gap-3'>
-              <button onClick={handleSave} className='btn-secondary'>
-                Save
-              </button>
+              {/* Save button hidden - will be triggered by form submission */}
             </div>
           </div>
         </div>

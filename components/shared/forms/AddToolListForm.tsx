@@ -26,6 +26,7 @@ interface AddToolListFormProps {
   tradeName?: string;
   serviceName?: string;
   serviceId?: string | undefined; // Add service ID prop for fetching tools
+  existingTools?: Tool[]; // Add existing tools prop for pre-selection
 }
 
 export default function AddToolListForm({
@@ -36,6 +37,7 @@ export default function AddToolListForm({
   tradeName = 'Trade',
   serviceName = 'Service',
   serviceId, // Add service ID prop
+  existingTools = [], // Add existing tools prop
 }: AddToolListFormProps) {
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>([]);
   const [toolOptions, setToolOptions] = useState<MultiSelectOption[]>([]);
@@ -51,14 +53,22 @@ export default function AddToolListForm({
       return;
     }
 
+    // Early return if service UUID is not a real UUID (e.g., generated service IDs)
+    // Real UUIDs should be in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(serviceUuid)) {
+      setToolOptions([]);
+      return;
+    }
+
     setToolsLoading(true);
     try {
-      const response = await apiService.fetchTools({
+      const response = await apiService.fetchToolsPublic({
         page: 1,
         limit: 50,
-        service_uuid: serviceUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        service_id: serviceUuid,
       });
 
       type ToolItem = { id?: string | number; uuid?: string; name?: string };
@@ -80,9 +90,10 @@ export default function AddToolListForm({
 
       setToolOptions(options);
     } catch (error) {
-      console.error('Error fetching tools:', error);
-      console.error('Service UUID:', serviceUuid);
-      console.error('Company UUID:', companyUuid);
+      // Only log meaningful errors (non-empty error objects)
+      if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+        console.error('Error fetching tools:', error);
+      }
       setToolOptions([]);
     } finally {
       setToolsLoading(false);
@@ -91,6 +102,12 @@ export default function AddToolListForm({
 
   // Load tools when component mounts or when service/company changes
   useEffect(() => {
+    // Clear tool options immediately if serviceId is null or undefined
+    if (!serviceId) {
+      setToolOptions([]);
+      return;
+    }
+
     const selectedCompanyRaw =
       typeof window !== 'undefined'
         ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
@@ -107,8 +124,19 @@ export default function AddToolListForm({
         })()
       : '';
 
-    fetchTools(serviceId || null, companyUuid);
+    fetchTools(serviceId, companyUuid);
   }, [serviceId]);
+
+  // Pre-select existing tools when tool options are loaded
+  useEffect(() => {
+    if (toolOptions.length > 0 && existingTools.length > 0) {
+      const existingToolIds = existingTools.map(tool => tool.uuid || tool.id);
+      const preSelectedIds = toolOptions
+        .filter(tool => existingToolIds.includes(tool.value))
+        .map(tool => tool.value);
+      setSelectedToolIds(preSelectedIds);
+    }
+  }, [toolOptions, existingTools]);
 
   const handleSubmit = () => {
     const selectedTools: Tool[] = selectedToolIds.map(toolId => {
@@ -122,6 +150,7 @@ export default function AddToolListForm({
         status: 'available',
       };
     });
+    // Replace all existing tools with the new selection to avoid duplicates
     onSubmit(selectedTools);
   };
 
@@ -203,7 +232,7 @@ export default function AddToolListForm({
           onClick={handleSubmit}
           disabled={selectedToolIds.length === 0 || loading}
         >
-          Add Tools
+          {existingTools.length > 0 ? 'Update Tools' : 'Add Tools'}
         </Button>
       </div>
     </div>
