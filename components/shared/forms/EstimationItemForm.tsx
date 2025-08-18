@@ -280,11 +280,9 @@ export default function EstimationItemForm({
               switch (action) {
                 case 'hide':
                   // Handle hide line item
-                  console.log('Hide line item clicked');
                   break;
                 case 'send-to-finishes':
                   // Handle send to finishes
-                  console.log('Send to finishes clicked');
                   break;
                 case 'delete':
                   // Handle delete

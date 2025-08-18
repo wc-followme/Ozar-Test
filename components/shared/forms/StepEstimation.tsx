@@ -65,7 +65,6 @@ export function StepEstimation({
         breadcrumbData={[]}
         onAddRoom={() => {
           // Handle add room - this will trigger the EstimationBox to open
-          console.log('Add room clicked - EstimationBox should open');
         }}
         jobId={jobId || ''}
         onSaveSuccess={() => {

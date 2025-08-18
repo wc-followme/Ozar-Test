@@ -175,19 +175,13 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         )
       : undefined;
 
-  // Debug selectedServiceData
-  console.log('selectedServiceData:', selectedServiceData);
-  console.log('selectedTradeData:', selectedTradeData);
-
   const fetchTrades = async (companyUuid: string | null) => {
     try {
-      console.log('Fetching trades for company:', companyUuid);
       const response = await apiService.fetchTradesPublic({
         page: 1,
         limit: 10,
         company_id: companyUuid || '',
       });
-      console.log('Trades API response:', response);
 
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
@@ -198,7 +192,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
           ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
           : [];
-      console.log('Parsed trades list:', list);
 
       const options = list
         .filter(t => !!t?.name)
@@ -206,7 +199,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           value: String(t.uuid || t.id || t.name),
           label: String(t.name),
         }));
-      console.log('Trade options:', options);
       setTradeOptions(options);
     } catch (error) {
       console.error('Error fetching trades:', error);
@@ -290,26 +282,17 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   // Listen for form submission and trigger save
   useEffect(() => {
     if (props.onFormSubmit && props.onFormSubmit > 0) {
-      console.log('Form submission triggered - calling save function');
       handleSave();
     }
   }, [props.onFormSubmit]);
 
   // Function to update calculations for a service
   const updateServiceCalculations = (service: Service): Service => {
-    console.log('Updating service calculations for:', service.name);
-    console.log('Service rate:', service.rate, 'qty:', service.qty);
-    console.log('Service materials:', service.materials);
-    console.log('Service finishes:', service.finishes);
-
     const serviceTotal = calculateServiceTotal(service.rate, service.qty);
     const totalMaterialCost = calculateServiceTotalMaterialCost(
       service.materials,
       service.finishes
     );
-
-    console.log('Service total:', serviceTotal);
-    console.log('Total material cost:', totalMaterialCost);
 
     const updatedService = {
       ...service,
@@ -318,7 +301,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       tradeTotal: serviceTotal + totalMaterialCost,
     };
 
-    console.log('Updated service:', updatedService);
     return updatedService;
   };
 
@@ -583,7 +565,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Find which room contains this trade using uniqueKey
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
-    console.log('tradeUniqueKey', tradeUniqueKey);
 
     for (const room of rooms) {
       const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
@@ -593,8 +574,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         break;
       }
     }
-    console.log('foundRoom', foundRoom);
-    console.log('foundTrade', foundTrade);
 
     // Set the room that contains this trade
     if (foundRoom && foundTrade) {
@@ -840,7 +819,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleServiceUpdate = (updatedService: Service) => {
-    console.log('handleServiceUpdate called with:', updatedService);
     if (selectedTrade && selectedService && selectedTradeUniqueKey) {
       setRooms(prev => {
         const updatedRooms = prev.map(room =>
@@ -862,7 +840,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               }
             : room
         );
-        console.log('Updated rooms in handleServiceUpdate:', updatedRooms);
         return updatedRooms;
       });
 
@@ -1342,8 +1319,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               }),
             }
           );
-
-          console.log('Save API response:', response);
 
           // Show success toast with API response message
           showSuccessToast(
