@@ -62,12 +62,11 @@ export default function AddToolListForm({
 
     setToolsLoading(true);
     try {
-      const response = await apiService.fetchTools({
+      const response = await apiService.fetchToolsPublic({
         page: 1,
         limit: 50,
-        service_uuid: serviceUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        service_id: serviceUuid,
       });
 
       type ToolItem = { id?: string | number; uuid?: string; name?: string };

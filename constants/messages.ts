@@ -140,3 +140,9 @@ export const THANK_YOU_MESSAGES = {
 export const SKIP_MESSAGES = {
   SKIP_TO_ESTIMATION: 'Skip to Estimation',
 };
+
+// Estimation Messages
+export const ESTIMATION_MESSAGES = {
+  NO_TRADE_OPTIONS_AVAILABLE: 'No trade options available',
+  DEFAULT_TRADE_NAME: 'Default Trade',
+};

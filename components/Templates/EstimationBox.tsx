@@ -14,6 +14,7 @@ import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
 import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
+import { ESTIMATION_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import {
   calculateJobTotal,
@@ -180,10 +181,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const fetchTrades = async (companyUuid: string | null) => {
     try {
       console.log('Fetching trades for company:', companyUuid);
-      const response = await apiService.fetchTrades({
+      const response = await apiService.fetchTradesPublic({
         page: 1,
         limit: 10,
-        is_active: true,
         company_id: companyUuid || '',
       });
       console.log('Trades API response:', response);
@@ -219,10 +219,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         error instanceof Error ? error.stack : 'No stack'
       );
       console.error('Company UUID:', companyUuid);
-      console.error('API URL being called: /trades with params:', {
+      console.error('API URL being called: /trades/public with params:', {
         page: 1,
         limit: 10,
-        is_active: true,
         company_id: companyUuid || '',
       });
       setTradeOptions([]);
@@ -424,7 +423,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Use the UUID from the first trade option in the dropdown
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
-      console.error('No trade options available');
+      console.error(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
+      showErrorToast(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
       // Create a default trade if no options are available
       const defaultTrade: Trade = {
         id: 'default-trade',
@@ -434,7 +434,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           selectedRoomId,
           0
         ),
-        name: 'Default Trade',
+        name: ESTIMATION_MESSAGES.DEFAULT_TRADE_NAME,
         services: 0,
         dateRange: '',
         type: '2D',

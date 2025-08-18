@@ -33,38 +33,23 @@ export default function EstimationItemForm({
   >([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch materials from API based on service UUID and company UUID
+  // Fetch materials from API based on service ID and company UUID
   const fetchMaterials = async (
-    serviceUuid: string | null,
+    serviceId: string | null,
     companyUuid: string | null
   ) => {
     // Early return if required parameters are missing
-    if (
-      !serviceUuid ||
-      !companyUuid ||
-      serviceUuid === '' ||
-      companyUuid === ''
-    ) {
-      setMaterialOptions([]);
-      return;
-    }
-
-    // Early return if service UUID is not a real UUID (e.g., generated service IDs)
-    // Real UUIDs should be in format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(serviceUuid)) {
+    if (!serviceId || !companyUuid || serviceId === '' || companyUuid === '') {
       setMaterialOptions([]);
       return;
     }
     setLoading(true);
     try {
-      const response = await apiService.fetchMaterials({
+      const response = await apiService.fetchMaterialsPublic({
         page: 1,
         limit: 50,
-        service_uuid: serviceUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        service_id: serviceId,
       });
 
       type MaterialItem = {
@@ -93,16 +78,16 @@ export default function EstimationItemForm({
       // Only log error if we actually made an API call (i.e., parameters were valid)
       // and if it's not an expected error due to missing parameters
       if (
-        serviceUuid &&
+        serviceId &&
         companyUuid &&
-        serviceUuid !== '' &&
+        serviceId !== '' &&
         companyUuid !== '' &&
         error &&
         typeof error === 'object' &&
         Object.keys(error).length > 0 // Don't log empty error objects
       ) {
         console.error('Error fetching materials:', error);
-        console.error('Service UUID:', serviceUuid);
+        console.error('Service ID:', serviceId);
         console.error('Company UUID:', companyUuid);
       }
       setMaterialOptions([]);

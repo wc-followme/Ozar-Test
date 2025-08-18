@@ -96,12 +96,11 @@ export default function EstimationServiceForm({
 
     setLoading(true);
     try {
-      const response = await apiService.fetchServices({
+      const response = await apiService.fetchServicesPublic({
         page: 1,
         limit: 50,
-        trade_uuid: tradeUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        trade_id: tradeUuid,
       });
 
       type ServiceItem = { id?: string | number; uuid?: string; name?: string };
