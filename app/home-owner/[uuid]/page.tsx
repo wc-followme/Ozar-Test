@@ -945,7 +945,7 @@ export default function HomeOwnerWizardPage() {
                     {steps.map((_, idx) => (
                       <React.Fragment key={idx}>
                         <div
-                          className={`w-4 md:w-6 h-4 md:h-6 rounded-full flex items-center justify-center z-10 ${currentStepPosition >= idx ? 'bg-green-600' : 'bg-gray-300'}`}
+                          className={`w-4 md:w-6 h-4 md:h-6 shrink-0 rounded-full flex items-center justify-center z-10 ${currentStepPosition >= idx ? 'bg-green-600' : 'bg-gray-300'}`}
                         />
                         {/* Line (except after last circle) */}
                         {idx < totalSteps - 1 && (
@@ -1050,6 +1050,7 @@ export default function HomeOwnerWizardPage() {
                   defaultValues={estimationData}
                   isLastStep={isLastStep()}
                   jobId={uuid}
+                  categoryId={categoryData?.selectedType}
                 />
                 // <EstimateComponent
                 //   breadcrumbData={breadcrumbData}

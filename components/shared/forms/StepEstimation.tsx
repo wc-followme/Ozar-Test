@@ -23,6 +23,7 @@ interface StepEstimationProps {
   isLastStep?: boolean;
   cancelButtonClass?: string;
   jobId?: string;
+  categoryId?: string | undefined; // Add category ID prop for filtering trades
 }
 
 export function StepEstimation({
@@ -32,6 +33,7 @@ export function StepEstimation({
   isLastStep = false,
   cancelButtonClass,
   jobId,
+  categoryId,
 }: StepEstimationProps) {
   const [formSubmitTrigger, setFormSubmitTrigger] = useState(0);
 
@@ -67,6 +69,7 @@ export function StepEstimation({
           // Handle add room - this will trigger the EstimationBox to open
         }}
         jobId={jobId || ''}
+        categoryId={categoryId}
         onSaveSuccess={() => {
           // Success handling is now done via toast messages in EstimationBox
         }}
@@ -102,7 +105,7 @@ export function StepEstimation({
             )}
           />
 
-          <div className='flex w-full justify-between items-center gap-2'>
+          <div className='flex w-full justify-between items-center gap-2 mt-4'>
             {onPrev && (
               <button
                 type='button'

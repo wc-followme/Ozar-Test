@@ -76,22 +76,8 @@ export default function EstimationItemForm({
         }));
 
       setMaterialOptions(options);
-    } catch (error) {
-      // Only log error if we actually made an API call (i.e., parameters were valid)
-      // and if it's not an expected error due to missing parameters
-      if (
-        serviceId &&
-        companyUuid &&
-        serviceId !== '' &&
-        companyUuid !== '' &&
-        error &&
-        typeof error === 'object' &&
-        Object.keys(error).length > 0 // Don't log empty error objects
-      ) {
-        console.error('Error fetching materials:', error);
-        console.error('Service ID:', serviceId);
-        console.error('Company UUID:', companyUuid);
-      }
+    } catch (_error) {
+      // Gracefully degrade to empty options when API fails or returns no data
       setMaterialOptions([]);
     } finally {
       setLoading(false);

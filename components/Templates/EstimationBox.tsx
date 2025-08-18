@@ -95,6 +95,7 @@ interface Room {
 interface EstimationBoxProps {
   _onClose: () => void;
   jobId?: string; // Add job ID prop for API calls
+  categoryId?: string; // Add category ID prop for filtering trades
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
   onFormSubmit?: number; // Trigger value for form submission
@@ -181,6 +182,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         page: 1,
         limit: 10,
         company_id: companyUuid || '',
+        ...(props.categoryId && { category_id: props.categoryId }),
       });
 
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
@@ -200,23 +202,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           label: String(t.name),
         }));
       setTradeOptions(options);
-    } catch (error) {
-      console.error('Error fetching trades:', error);
-      console.error('Error type:', typeof error);
-      console.error(
-        'Error message:',
-        error instanceof Error ? error.message : 'No message'
-      );
-      console.error(
-        'Error stack:',
-        error instanceof Error ? error.stack : 'No stack'
-      );
-      console.error('Company UUID:', companyUuid);
-      console.error('API URL being called: /trades/public with params:', {
-        page: 1,
-        limit: 10,
-        company_id: companyUuid || '',
-      });
+    } catch (_error) {
+      // If fetching fails or returns unexpected data, show an empty dropdown silently
       setTradeOptions([]);
     }
   };

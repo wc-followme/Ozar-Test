@@ -89,11 +89,8 @@ export default function AddToolListForm({
         }));
 
       setToolOptions(options);
-    } catch (error) {
-      // Only log meaningful errors (non-empty error objects)
-      if (error && typeof error === 'object' && Object.keys(error).length > 0) {
-        console.error('Error fetching tools:', error);
-      }
+    } catch (_error) {
+      // Gracefully degrade to empty options when API fails or returns no data
       setToolOptions([]);
     } finally {
       setToolsLoading(false);

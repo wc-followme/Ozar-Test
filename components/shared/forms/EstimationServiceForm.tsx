@@ -123,10 +123,8 @@ export default function EstimationServiceForm({
         }));
 
       setServiceOptions(options);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      console.error('Trade UUID:', tradeUuid);
-      console.error('Company UUID:', companyUuid);
+    } catch (_error) {
+      // Gracefully degrade to empty options when API fails or returns no data
       setServiceOptions([]);
     } finally {
       setLoading(false);

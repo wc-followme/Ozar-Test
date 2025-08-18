@@ -14,6 +14,7 @@ interface EstimateComponentProps {
   breadcrumbData: BreadcrumbItem[];
   onAddRoom: () => void;
   jobId?: string; // Add job ID prop for API calls
+  categoryId?: string | undefined; // Add category ID prop for filtering trades
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
   onFormSubmit?: number; // Trigger value for form submission
@@ -212,6 +213,7 @@ export default function EstimateComponent({
   breadcrumbData,
   onAddRoom,
   jobId,
+  categoryId,
   onSaveSuccess,
   onSaveError,
   onFormSubmit,
@@ -245,6 +247,7 @@ export default function EstimateComponent({
       <EstimationBox
         _onClose={handleCloseEstimationBox}
         {...(jobId && { jobId })}
+        {...(categoryId && { categoryId })}
         {...(onSaveSuccess && { onSaveSuccess })}
         {...(onSaveError && { onSaveError })}
         {...(onFormSubmit && { onFormSubmit })}

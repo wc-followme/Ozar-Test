@@ -1974,15 +1974,20 @@ class ApiService {
     page = 1,
     limit = 10,
     company_id,
+    category_id,
   }: {
     page?: number;
     limit?: number;
     company_id: string | number;
+    category_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
     params.append('limit', String(limit));
     params.append('company_id', String(company_id));
+    if (category_id) {
+      params.append('category_id', String(category_id));
+    }
 
     return this.makeRequest(`/trades/public?${params.toString()}`, {
       method: 'GET',
