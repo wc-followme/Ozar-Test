@@ -1,6 +1,6 @@
 'use client';
 
-import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
+import FileUploadField from '@/components/shared/common/FileUploadField';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DocumentDownload } from 'iconsax-react';
@@ -12,6 +12,7 @@ interface DocUploadsProps {
   description?: string;
   supportedFormats?: string;
   onFileChange: (file: File | null) => void;
+  onFilesChange?: (files: File[]) => void;
   onDeleteFile?: () => void;
   uploading?: boolean;
   existingFileUrl?: string | undefined;
@@ -24,6 +25,7 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
   description = 'Download template to see the required format',
   supportedFormats = 'Supported formats: .csv, .xlsx',
   onFileChange,
+  onFilesChange,
   onDeleteFile,
   uploading = false,
   existingFileUrl,
@@ -88,14 +90,14 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
       </div>
 
       {/* Upload Section */}
-      <PhotoUploadField
-        photo={file}
-        onPhotoChange={handleFileChange}
-        onDeletePhoto={handleDeleteFile}
+      <FileUploadField
+        onFileChange={handleFileChange}
+        onFilesChange={onFilesChange}
         uploading={uploading}
         label='Upload Photo or Drag and Drop'
         text={supportedFormats}
-        existingImageUrl={existingFileUrl}
+        accept='image/*,.csv,.xlsx'
+        multiple
         cardHeight='min-h-[120px]'
         className='w-full'
       />

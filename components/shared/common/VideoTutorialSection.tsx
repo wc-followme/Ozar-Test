@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { IconVideoPlus } from '@tabler/icons-react';
 import { Trash } from 'iconsax-react';
-import { Camera, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 
 interface VideoTutorialSectionProps {
@@ -98,10 +99,9 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
             <button
               type='button'
               onClick={handleAddVideo}
-              className='w-24 h-24 bg-blue-100 border-2 border-dashed border-blue-300 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors'
+              className='w-24 h-24 bg-[#00A8BF26] border-2 border-dashed border-[#00A8BF] rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors'
             >
-              <Camera size={24} className='text-blue-500 mb-1' />
-              <span className='text-xs text-blue-600 font-medium'>Add</span>
+              <IconVideoPlus size={36} className='text-[#00A8BF]' />
             </button>
             <input
               ref={fileInputRef}

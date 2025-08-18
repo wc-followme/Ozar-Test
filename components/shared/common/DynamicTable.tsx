@@ -1,5 +1,6 @@
 'use client';
 
+import { Avatar } from '@/components/shared/common/Avatar';
 import { Button } from '@/components/ui/button';
 import {
   Table,
@@ -36,9 +37,10 @@ interface TableColumn {
 interface TableAction {
   key: string;
   label?: string;
-  icon?: string; // Icon name from iconsax-react
+  icon?: string | React.ComponentType<any>; // Icon name from iconsax-react or component
   onClick?: (row: any, index: number) => void; // Optional for dropdown actions
   className?: string;
+  iconClassName?: string; // Optional className for the icon
   variant?: 'ghost' | 'outline' | 'destructive';
   size?: 'sm' | 'lg' | 'default' | 'icon';
   showCondition?: (row: any) => boolean; // Optional condition to show/hide action
@@ -46,11 +48,7 @@ interface TableAction {
   dropdownOptions?: {
     label: string;
     action: string;
-    icon: React.ComponentType<{
-      size?: string | number;
-      color?: string;
-      variant?: 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
-    }>;
+    icon: React.ComponentType<any>;
     variant?: 'default' | 'destructive';
   }[];
   onDropdownAction?: (action: string, row: any) => void; // Handler for dropdown actions
@@ -112,10 +110,18 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
               return null;
             }
 
-            // Get icon component dynamically
-            const IconComponent = action.icon
-              ? (Iconsax as any)[action.icon]
-              : Iconsax.Trash;
+            // Get icon component dynamically with fallback
+            let IconComponent;
+            if (typeof action.icon === 'string') {
+              // If icon is a string, get it from Iconsax library
+              IconComponent = (Iconsax as any)[action.icon] || Iconsax.Trash;
+            } else if (action.icon) {
+              // If icon is a component, use it directly
+              IconComponent = action.icon;
+            } else {
+              // Fallback to Trash icon
+              IconComponent = Iconsax.Trash;
+            }
 
             // If action is a dropdown, render dropdown component
             if (
@@ -140,7 +146,11 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
                         action.className
                       )}
                     >
-                      <IconComponent size={16} color='var(--text-dark)' />
+                      <IconComponent
+                        size={20}
+                        color='var(--text-dark)'
+                        className={action.iconClassName}
+                      />
                       {action.label && (
                         <span className='ml-1'>{action.label}</span>
                       )}
@@ -164,7 +174,11 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
                   action.className
                 )}
               >
-                <IconComponent size={16} color='var(--text-dark)' />
+                <IconComponent
+                  size={16}
+                  color='var(--text-dark)'
+                  className={action.iconClassName}
+                />
                 {action.label && <span className='ml-1'>{action.label}</span>}
               </Button>
             );
@@ -192,20 +206,18 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
           : null;
         return (
           <div className='flex items-center gap-2'>
-            <div className='w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center'>
-              <span className='text-xs font-medium text-gray-600'>
-                {avatarData?.name
-                  ?.split(' ')
-                  .map((n: string) => n[0])
-                  .join('') || 'NA'}
-              </span>
-            </div>
+            <Avatar
+              name={avatarData?.name || 'NA'}
+              height={32}
+              width={32}
+              className='w-8 h-8 text-xs rounded-full'
+            />
             <div className='flex flex-col'>
-              <span className='text-[var(--text-dark)] font-medium'>
+              <span className='text-[var(--text-dark)] text-sm sm:text-base'>
                 {avatarData?.name || value}
               </span>
               {subtitleData && (
-                <span className='text-[var(--text-secondary)] text-sm'>
+                <span className='text-[var(--text-dark)] text-xs sm:text-sm'>
                   {subtitleData}
                 </span>
               )}
@@ -223,26 +235,43 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
         );
 
       case 'date':
-        return <span className='text-[var(--text-dark)]'>{value}</span>;
+        return (
+          <span className='text-[var(--text-dark)] text-sm sm:text-base'>
+            {value}
+          </span>
+        );
 
       case 'status':
-        return <span className='text-[var(--text-dark)]'>{value}</span>;
+        return (
+          <span className='text-[var(--text-dark)] text-sm sm:text-base'>
+            {value}
+          </span>
+        );
 
       default:
-        return <span className='text-[var(--text-dark)]'>{value}</span>;
+        return (
+          <span className='text-[var(--text-dark)] text-sm sm:text-base'>
+            {value}
+          </span>
+        );
     }
   };
 
   return (
-    <div className={cn('overflow-hidden', className)}>
-      <Table>
+    <div
+      className={cn(
+        'relative block w-full overflow-x-auto overflow-y-hidden overscroll-x-auto',
+        className
+      )}
+    >
+      <Table className='w-full'>
         <TableHeader className={headerBgColor}>
           <TableRow className='!border-b-0'>
             {allColumns.map(column => (
               <TableHead
                 key={column.key}
                 className={cn(
-                  'text-[var(--text-dark)] font-semibold text-base py-3 px-4',
+                  'text-[var(--text-dark)] font-semibold text-sm sm:text-base py-2 px-3 sm:py-3 sm:px-4 whitespace-nowrap',
                   column.width,
                   column.align === 'center' && 'text-center',
                   column.align === 'right' && 'text-right'
@@ -266,7 +295,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
                   <TableCell
                     key={column.key}
                     className={cn(
-                      'py-3 px-4 text-[var(--text-dark)] text-sm',
+                      'py-2 px-3 sm:py-3 sm:px-4 text-[var(--text-dark)] text-xs sm:text-sm whitespace-nowrap',
                       column.width,
                       column.align === 'center' && 'text-center',
                       column.align === 'right' && 'text-right'

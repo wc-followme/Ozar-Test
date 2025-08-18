@@ -1,29 +1,42 @@
 'use client';
 
+import ToolsDetailTopBlock from '@/components/sections/ToolsDetailTopBlock';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import { DynamicTable } from '@/components/shared/common/DynamicTable';
+import { QRCodeSection } from '@/components/shared/common/QRCodeSection';
+import SideSheet from '@/components/shared/common/SideSheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchNormal1 } from 'iconsax-react';
-import { Edit, Eye, Trash } from 'lucide-react';
-import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import {
+  TABLE_ACTION_TRIGGER_ICON,
+  TOOL_ACTIONS,
+} from '../../../../constants/tableactions';
+// Action icons are provided via constants/tableactions
+// duplicate import removed
+import { AssignForm } from '@/components/shared/forms/AssignForm';
+import { LostForm } from '@/components/shared/forms/LostForm';
+import { MaintenanceForm } from '@/components/shared/forms/MaintenanceForm';
+import { ReturnForm } from '@/components/shared/forms/ReturnForm';
+import { DynamicScrollArea } from '../../../../components/shared/common/DynamicScrollArea';
+import { DynamicTable } from '../../../../components/shared/common/DynamicTable';
+import { availableToolData } from './dummy-data';
 
 interface ToolDetailData {
   id: string;
   toolId: string;
   barcode: string;
-  assignedTo: {
+  returnedBy: {
     name: string;
     avatar: string;
   };
   employeeType: string;
   assignedJob: string;
-  assignedDate: string;
   dueDate: string;
+  returnedDate: string;
   condition: string;
   issue?: string;
   assignedStatus:
@@ -36,391 +49,58 @@ interface ToolDetailData {
 
 export default function ToolDetailPage() {
   const [selectedTab, setSelectedTab] = useState('available');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sideSheetOpen, setSideSheetOpen] = useState(false);
+  const [activeSheet, setActiveSheet] = useState<
+    null | 'assign' | 'return' | 'maintenance' | 'lost' | 'addMore'
+  >(null);
+  const [qrToolIds, setQrToolIds] = useState<
+    Array<{ id: string; toolId: string; barcode: string }>
+  >([]);
+  const [assignDefaults, setAssignDefaults] = useState({
+    toolName: 'Drill Machine',
+    toolId: '',
+    barcode: '',
+    condition: '',
+    assignDate: '',
+    dueDate: '',
+    assignee: '',
+    job: 'Job#456 Downtown Project',
+  });
+  const [returnDefaults, setReturnDefaults] = useState({
+    toolName: 'Drill Machine',
+    dueDate: '',
+    toolId: '',
+    barcode: '',
+    condition: '',
+    returnedDate: '',
+    returnedBy: '',
+    job: 'Job#456 Downtown Project',
+  });
+  const [maintenanceDefaults, setMaintenanceDefaults] = useState({
+    toolName: 'Drill Machine',
+    dueDate: '',
+    toolId: '',
+    barcode: '',
+    condition: '',
+    returnedDate: '',
+    returnedBy: '',
+    job: 'Job#456 Downtown Project',
+    issues: '',
+  });
+  const [lostDefaults, setLostDefaults] = useState({
+    toolName: 'Drill Machine',
+    dueDate: '',
+    toolId: '',
+    barcode: '',
+    condition: '',
+    acknowledgeDate: '',
+    subsEmployees: '',
+    job: 'Job#456 Downtown Project',
+    reason: '',
+  });
 
-  // Sample data for different tabs
-  const availableToolData: ToolDetailData[] = [
-    {
-      id: '1',
-      toolId: '11345',
-      barcode: 'QR12345',
-      assignedTo: {
-        name: 'Available',
-        avatar: '/images/avatars/avatar-1.png',
-      },
-      employeeType: 'Ready',
-      assignedJob: 'Not Assigned',
-      assignedDate: '-',
-      dueDate: '-',
-      condition: 'Good',
-      assignedStatus: 'Available',
-    },
-    {
-      id: '2',
-      toolId: '10345',
-      barcode: 'QR12346',
-      assignedTo: {
-        name: 'Available',
-        avatar: '/images/avatars/avatar-2.png',
-      },
-      employeeType: 'Ready',
-      assignedJob: 'Not Assigned',
-      assignedDate: '-',
-      dueDate: '-',
-      condition: 'Excellent',
-      assignedStatus: 'Available',
-    },
-    {
-      id: '3',
-      toolId: '12745',
-      barcode: 'QR12347',
-      assignedTo: {
-        name: 'Available',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Ready',
-      assignedJob: 'Not Assigned',
-      assignedDate: '-',
-      dueDate: '-',
-      condition: 'Decent',
-      assignedStatus: 'Available',
-    },
-    {
-      id: '4',
-      toolId: '12344',
-      barcode: 'QR12386',
-      assignedTo: {
-        name: 'Available',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Ready',
-      assignedJob: 'Not Assigned',
-      assignedDate: '-',
-      dueDate: '-',
-      condition: 'Good',
-      assignedStatus: 'Available',
-    },
-    {
-      id: '5',
-      toolId: '12746',
-      barcode: 'QR12348',
-      assignedTo: {
-        name: 'Available',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Ready',
-      assignedJob: 'Not Assigned',
-      assignedDate: '-',
-      dueDate: '-',
-      condition: 'Excellent',
-      assignedStatus: 'Available',
-    },
-  ];
-
-  const assignedToolData: ToolDetailData[] = [
-    {
-      id: '3',
-      toolId: '11345',
-      barcode: 'QR12345',
-      assignedTo: {
-        name: 'Liam Anderson',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Good',
-      assignedStatus: 'Temporary',
-    },
-    {
-      id: '4',
-      toolId: '10345',
-      barcode: 'QR12346',
-      assignedTo: {
-        name: 'Emma Thompson',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Excellent',
-      assignedStatus: 'Temporary',
-    },
-    {
-      id: '5',
-      toolId: '12745',
-      barcode: 'QR12347',
-      assignedTo: {
-        name: 'Noah Johnson',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Decent',
-      assignedStatus: 'Permanent',
-    },
-    {
-      id: '6',
-      toolId: '12344',
-      barcode: 'QR12386',
-      assignedTo: {
-        name: 'Olivia Davis',
-        avatar: '/images/avatars/avatar-6.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Good',
-      assignedStatus: 'Temporary',
-    },
-    {
-      id: '7',
-      toolId: '12748',
-      barcode: 'QR12350',
-      assignedTo: {
-        name: 'William Brown',
-        avatar: '/images/avatars/avatar-7.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Excellent',
-      assignedStatus: 'Permanent',
-    },
-    {
-      id: '8',
-      toolId: '12749',
-      barcode: 'QR12351',
-      assignedTo: {
-        name: 'Sophia Wilson',
-        avatar: '/images/avatars/avatar-8.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '26/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Decent',
-      assignedStatus: 'Temporary',
-    },
-  ];
-
-  const maintenanceToolData: ToolDetailData[] = [
-    {
-      id: '1',
-      toolId: '11345',
-      barcode: 'QR12345',
-      assignedTo: {
-        name: 'Liam Anderson',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Jam',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '2',
-      toolId: '10345',
-      barcode: 'QR12346',
-      assignedTo: {
-        name: 'Emma Thompson',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Overheat',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '3',
-      toolId: '12745',
-      barcode: 'QR12347',
-      assignedTo: {
-        name: 'Noah Johnson',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Vibration',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '4',
-      toolId: '12344',
-      barcode: 'QR12386',
-      assignedTo: {
-        name: 'Olivia Davis',
-        avatar: '/images/avatars/avatar-6.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Stall',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '5',
-      toolId: '12746',
-      barcode: 'QR12348',
-      assignedTo: {
-        name: 'William Brown',
-        avatar: '/images/avatars/avatar-7.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Noise',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '6',
-      toolId: '12747',
-      barcode: 'QR12349',
-      assignedTo: {
-        name: 'Sophia Wilson',
-        avatar: '/images/avatars/avatar-8.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Leak',
-      assignedStatus: 'Maintenance',
-    },
-    {
-      id: '7',
-      toolId: '12748',
-      barcode: 'QR12350',
-      assignedTo: {
-        name: 'Michael Garcia',
-        avatar: '/images/avatars/avatar-1.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Poor',
-      issue: 'Short',
-      assignedStatus: 'Maintenance',
-    },
-  ];
-
-  const lostToolData: ToolDetailData[] = [
-    {
-      id: '1',
-      toolId: '11345',
-      barcode: 'QR12345',
-      assignedTo: {
-        name: 'Liam Anderson',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-    {
-      id: '2',
-      toolId: '10345',
-      barcode: 'QR12346',
-      assignedTo: {
-        name: 'Emma Thompson',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-    {
-      id: '3',
-      toolId: '12745',
-      barcode: 'QR12347',
-      assignedTo: {
-        name: 'Noah Johnson',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-    {
-      id: '4',
-      toolId: '12344',
-      barcode: 'QR12386',
-      assignedTo: {
-        name: 'Olivia Davis',
-        avatar: '/images/avatars/avatar-6.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-    {
-      id: '5',
-      toolId: '12746',
-      barcode: 'QR12348',
-      assignedTo: {
-        name: 'William Brown',
-        avatar: '/images/avatars/avatar-7.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-    {
-      id: '6',
-      toolId: '12747',
-      barcode: 'QR12349',
-      assignedTo: {
-        name: 'Sophia Wilson',
-        avatar: '/images/avatars/avatar-8.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '30/08/2024',
-      dueDate: '30/08/2024',
-      condition: 'Unknown',
-      assignedStatus: 'Lost',
-    },
-  ];
-
-  // Column configuration for the DynamicTable
+  // Column configuration for the DynamicTable - Updated to match image
   const toolTableColumns = [
     {
       key: 'toolId',
@@ -429,10 +109,10 @@ export default function ToolDetailPage() {
       subKey: 'barcode',
     },
     {
-      key: 'assignedTo',
-      label: 'Assigned to',
+      key: 'returnedBy',
+      label: 'Returned By',
       type: 'avatar' as const,
-      avatarKey: 'assignedTo',
+      avatarKey: 'returnedBy',
       subtitleKey: 'employeeType',
     },
     {
@@ -441,7 +121,44 @@ export default function ToolDetailPage() {
       type: 'text' as const,
     },
     {
-      key: 'assignedDate',
+      key: 'dueDate',
+      label: 'Due Date',
+      type: 'date' as const,
+    },
+    {
+      key: 'returnedDate',
+      label: 'Returned Date',
+      type: 'date' as const,
+    },
+    {
+      key: 'condition',
+      label: 'Condition',
+      type: 'status' as const,
+    },
+  ];
+
+  // Column configuration specifically for assigned tab - Updated to match image
+  const assignedTableColumns = [
+    {
+      key: 'toolId',
+      label: 'Tool ID / Barcode',
+      type: 'combined' as const,
+      subKey: 'barcode',
+    },
+    {
+      key: 'returnedBy',
+      label: 'Assigned to',
+      type: 'avatar' as const,
+      avatarKey: 'returnedBy',
+      subtitleKey: 'employeeType',
+    },
+    {
+      key: 'assignedJob',
+      label: 'Assigned Job',
+      type: 'text' as const,
+    },
+    {
+      key: 'returnedDate',
       label: 'Assigned Date',
       type: 'date' as const,
     },
@@ -462,44 +179,7 @@ export default function ToolDetailPage() {
     },
   ];
 
-  // Column configuration specifically for assigned tab
-  const assignedTableColumns = [
-    {
-      key: 'toolId',
-      label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
-    },
-    {
-      key: 'assignedTo',
-      label: 'Assigned to',
-      type: 'avatar' as const,
-      avatarKey: 'assignedTo',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'assignedDate',
-      label: 'Assigned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'dueDate',
-      label: 'Due Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'condition',
-      label: 'Condition',
-      type: 'status' as const,
-    },
-  ];
-
-  // Column configuration specifically for maintenance tab
+  // Column configuration specifically for maintenance tab - Updated to match image
   const maintenanceTableColumns = [
     {
       key: 'toolId',
@@ -508,10 +188,10 @@ export default function ToolDetailPage() {
       subKey: 'barcode',
     },
     {
-      key: 'assignedTo',
+      key: 'returnedBy',
       label: 'Assigned to',
       type: 'avatar' as const,
-      avatarKey: 'assignedTo',
+      avatarKey: 'returnedBy',
       subtitleKey: 'employeeType',
     },
     {
@@ -520,7 +200,7 @@ export default function ToolDetailPage() {
       type: 'text' as const,
     },
     {
-      key: 'assignedDate',
+      key: 'returnedDate',
       label: 'Returned Date',
       type: 'date' as const,
     },
@@ -531,7 +211,7 @@ export default function ToolDetailPage() {
     },
   ];
 
-  // Column configuration specifically for lost tab
+  // Column configuration specifically for lost tab - Updated to match image
   const lostTableColumns = [
     {
       key: 'toolId',
@@ -540,10 +220,10 @@ export default function ToolDetailPage() {
       subKey: 'barcode',
     },
     {
-      key: 'assignedTo',
+      key: 'returnedBy',
       label: 'Assigned to',
       type: 'avatar' as const,
-      avatarKey: 'assignedTo',
+      avatarKey: 'returnedBy',
       subtitleKey: 'employeeType',
     },
     {
@@ -552,44 +232,64 @@ export default function ToolDetailPage() {
       type: 'text' as const,
     },
     {
-      key: 'assignedDate',
+      key: 'returnedDate',
       label: 'Lost Date',
       type: 'date' as const,
     },
   ];
 
-  // Actions for the DynamicTable
-  const toolTableActions = [
+  // Actions for Available tab - from constants
+  const availableTableActions = [
     {
       key: 'more',
-      icon: 'More',
+      icon: TABLE_ACTION_TRIGGER_ICON,
+      iconClassName: 'text-gray-600 hover:text-gray-800 !h-5 !w-5',
       isDropdown: true,
-      dropdownOptions: [
-        {
-          label: 'View Details',
-          action: 'view',
-          icon: Eye,
-        },
-        {
-          label: 'Edit Assignment',
-          action: 'edit',
-          icon: Edit,
-        },
-        {
-          label: 'Delete',
-          action: 'delete',
-          icon: Trash,
-          variant: 'destructive' as const,
-        },
-      ],
+      dropdownOptions: TOOL_ACTIONS.available,
       onDropdownAction: (action: string, row: ToolDetailData) => {
-        if (action === 'delete') {
-          setItemToDelete(row);
-          setShowDeleteModal(true);
-        } else if (action === 'view') {
-          console.log('View details for:', row);
-        } else if (action === 'edit') {
-          console.log('Edit assignment for:', row);
+        if (action === 'assign') {
+          setAssignDefaults({
+            toolName: 'Drill Machine',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            assignDate: '',
+            dueDate: '',
+            assignee: '',
+            job: row.assignedJob,
+          });
+          setActiveSheet('assign');
+          setSideSheetOpen(true);
+        } else if (action === 'maintenance') {
+          setMaintenanceDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            returnedDate: '',
+            returnedBy: '',
+            job: row.assignedJob,
+            issues: '',
+          });
+          setActiveSheet('maintenance');
+          setSideSheetOpen(true);
+        } else if (action === 'lost') {
+          setLostDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            acknowledgeDate: '',
+            subsEmployees: '',
+            job: row.assignedJob,
+            reason: '',
+          });
+          setActiveSheet('lost');
+          setSideSheetOpen(true);
+        } else if (action === 'details') {
+          router.push(`/tools-management/tool-detail/${row.toolId}`);
         }
       },
       variant: 'ghost' as const,
@@ -597,18 +297,132 @@ export default function ToolDetailPage() {
     },
   ];
 
-  const handleConfirmDelete = () => {
-    if (itemToDelete) {
-      console.log('Deleted item:', itemToDelete);
-    }
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  };
+  // Actions for Assigned tab - from constants
+  const assignedTableActions = [
+    {
+      key: 'more',
+      icon: TABLE_ACTION_TRIGGER_ICON,
+      iconClassName: 'text-gray-600 hover:text-gray-800 !h-5 !w-5',
+      isDropdown: true,
+      dropdownOptions: TOOL_ACTIONS.assigned,
+      onDropdownAction: (action: string, row: ToolDetailData) => {
+        if (action === 'return') {
+          setReturnDefaults({
+            toolName: 'Drill Machine',
+            dueDate: row.dueDate,
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            returnedDate: '',
+            returnedBy: '',
+            job: row.assignedJob,
+          });
+          setActiveSheet('return');
+          setSideSheetOpen(true);
+        } else if (action === 'maintenance') {
+          setMaintenanceDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            returnedDate: '',
+            returnedBy: '',
+            job: row.assignedJob,
+            issues: '',
+          });
+          setActiveSheet('maintenance');
+          setSideSheetOpen(true);
+        } else if (action === 'lost') {
+          setLostDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            acknowledgeDate: '',
+            subsEmployees: '',
+            job: row.assignedJob,
+            reason: '',
+          });
+          setActiveSheet('lost');
+          setSideSheetOpen(true);
+        } else if (action === 'details') {
+          router.push(`/tools-management/tool-detail/${row.toolId}`);
+        }
+      },
+      variant: 'ghost' as const,
+      size: 'sm' as const,
+    },
+  ];
 
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setItemToDelete(null);
-  };
+  // Actions for Maintenance tab - from constants
+  const maintenanceTableActions = [
+    {
+      key: 'more',
+      icon: TABLE_ACTION_TRIGGER_ICON,
+      iconClassName: 'text-gray-600 hover:text-gray-800 !h-5 !w-5',
+      isDropdown: true,
+      dropdownOptions: TOOL_ACTIONS.maintenance,
+      onDropdownAction: (action: string, row: ToolDetailData) => {
+        if (action === 'available') {
+          console.log('Mark as available:', row);
+        } else if (action === 'lost') {
+          setLostDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            acknowledgeDate: '',
+            subsEmployees: '',
+            job: row.assignedJob,
+            reason: '',
+          });
+          setActiveSheet('lost');
+          setSideSheetOpen(true);
+        } else if (action === 'details') {
+          router.push(`/tools-management/tool-detail/${row.toolId}`);
+        }
+      },
+      variant: 'ghost' as const,
+      size: 'sm' as const,
+    },
+  ];
+
+  // Actions for Lost tab - from constants
+  const lostTableActions = [
+    {
+      key: 'more',
+      icon: TABLE_ACTION_TRIGGER_ICON,
+      iconClassName: 'text-gray-600 hover:text-gray-800 !h-5 !w-5',
+      isDropdown: true,
+      dropdownOptions: TOOL_ACTIONS.lost,
+      onDropdownAction: (action: string, row: ToolDetailData) => {
+        if (action === 'edit') {
+          console.log('Edit tool:', row);
+        } else if (action === 'maintenance') {
+          setMaintenanceDefaults({
+            toolName: 'Drill Machine',
+            dueDate: '',
+            toolId: row.toolId,
+            barcode: row.barcode,
+            condition: row.condition,
+            returnedDate: '',
+            returnedBy: '',
+            job: row.assignedJob,
+            issues: '',
+          });
+          setActiveSheet('maintenance');
+          setSideSheetOpen(true);
+        } else if (action === 'details') {
+          router.push(`/tools-management/tool-detail/${row.toolId}`);
+        }
+      },
+      variant: 'ghost' as const,
+      size: 'sm' as const,
+    },
+  ];
 
   // Get data based on selected tab
   const getCurrentTabData = () => {
@@ -632,7 +446,7 @@ export default function ToolDetailPage() {
       searchQuery === '' ||
       item.toolId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.barcode.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.assignedTo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.returnedBy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.assignedJob.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesSearch;
@@ -644,59 +458,30 @@ export default function ToolDetailPage() {
     { name: 'Drill Machine' },
   ];
 
+  const router = useRouter();
+
   return (
     <div className='w-full space-y-6'>
       {/* Breadcrumbs */}
       <Breadcrumb items={breadcrumbData} className='mb-4' />
 
       {/* Main Tool Information Block */}
-      <div className='bg-white rounded-xl border border-[var(--border-dark)] p-6'>
-        <div className='flex items-start gap-6'>
-          {/* Tool Image */}
-          <div className='w-24 h-24 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0'>
-            <Image
-              src='/images/tools-management/tools-img-1.png'
-              alt='Drill Machine'
-              className='w-full h-full object-cover'
-              height={80}
-              width={80}
-            />
-          </div>
-
-          {/* Tool Info */}
-          <div className='flex-1'>
-            <h1 className='text-lg font-bold text-[var(--text-dark)] mb-4'>
-              Drill Machine
-            </h1>
-
-            {/* Statistics */}
-            <div className='flex gap-8 mb-6'>
-              <div>
-                <span className='text-sm text-[var(--text-secondary)]'>
-                  Quantity
-                </span>
-                <p className='text-lg font-bold text-[var(--text-dark)]'>100</p>
-              </div>
-              <div>
-                <span className='text-sm text-[var(--text-secondary)]'>
-                  Videos
-                </span>
-                <p className='text-lg font-bold text-[var(--text-dark)]'>02</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className='flex gap-3 flex-shrink-0'>
-            <Button variant='outline' className='px-4 py-2 btn-secondary'>
-              Videos Tutorial
-            </Button>
-            <Button variant='outline' className='px-4 py-2 btn-secondary'>
-              Assign Tool
-            </Button>
-            <Button className='px-4 py-2 btn-primary'>Add More</Button>
-          </div>
-        </div>
+      <div className='bg-[--card-background] rounded-xl border border-[var(--border-dark)] p-6'>
+        <ToolsDetailTopBlock
+          imageSrc='/images/tools-management/tools-img-1.png'
+          title='Drill Machine'
+          quantity={100}
+          videosCount={2}
+          videosHref='/tools-management/tool-detail/videos-tutorial'
+          onAssign={() => {
+            setActiveSheet('assign');
+            setSideSheetOpen(true);
+          }}
+          onAddMore={() => {
+            setActiveSheet('addMore');
+            setSideSheetOpen(true);
+          }}
+        />
         {/* Status Tabs and Search */}
         <div className='flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between'>
           {/* Status Tabs */}
@@ -705,55 +490,69 @@ export default function ToolDetailPage() {
             onValueChange={setSelectedTab}
             className='w-full mb-4'
           >
-            <div className='flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between'>
-              <TabsList className='flex bg-[var(--dark-background)] p-1 rounded-[32px] h-auto font-normal border border-[var(--border-dark)]'>
-                <TabsTrigger
-                  value='available'
-                  className='px-6 py-[10px] text-base text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg rounded-[28px] font-normal'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span>Available</span>
-                    <Badge className='bg-[var(--badge-bg)] text-white font-bold'>
-                      50
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value='assigned'
-                  className='px-6 py-[10px] text-base text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg rounded-[28px] font-normal'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span>Assigned</span>
-                    <Badge className='bg-transparent text-[var(--text-dark)] font-bold'>
-                      16
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value='maintenance'
-                  className='px-6 py-[10px] text-base text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg rounded-[28px] font-normal'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span>Maintenance</span>
-                    <Badge className='bg-orange-100 text-orange-600 font-bold'>
-                      09
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value='lost'
-                  className='px-6 py-[10px] text-base text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg rounded-[28px] font-normal'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span>Lost</span>
-                    <Badge className='bg-orange-100 text-orange-600 font-bold'>
-                      10
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-              </TabsList>
+            <div className='flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center justify-between w-full'>
+              <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_84px)]'>
+                <DynamicScrollArea className='w-full'>
+                  <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+                    <TabsTrigger
+                      value='available'
+                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    >
+                      <span className='flex items-center gap-2'>
+                        <span className='text-sm xl:text-base'>Available</span>
+                        <Badge
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'available' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#90C91D]'}`}
+                        >
+                          50
+                        </Badge>
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='assigned'
+                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    >
+                      <span className='flex items-center gap-2'>
+                        <span className='text-sm xl:text-base'>Assigned</span>
+                        <Badge
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'assigned' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--text-secondary)]'}`}
+                        >
+                          16
+                        </Badge>
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='maintenance'
+                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    >
+                      <span className='flex items-center gap-2'>
+                        <span className='text-sm xl:text-base'>
+                          Maintenance
+                        </span>
+                        <Badge
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#EBB402]'}`}
+                        >
+                          09
+                        </Badge>
+                      </span>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value='lost'
+                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    >
+                      <span className='flex items-center gap-2'>
+                        <span className='text-sm xl:text-base'>Lost</span>
+                        <Badge
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'lost' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#00A8BF]'}`}
+                        >
+                          10
+                        </Badge>
+                      </span>
+                    </TabsTrigger>
+                  </TabsList>
+                </DynamicScrollArea>
+              </div>
               {/* Search Bar */}
-              <div className='relative sm:flex-initial ml-auto'>
+              <div className='relative w-full sm:w-auto sm:flex-initial lg:ml-auto'>
                 <SearchNormal1
                   className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]'
                   color='var(--primary)'
@@ -763,7 +562,7 @@ export default function ToolDetailPage() {
                   placeholder='Search here...'
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  className='pl-10 pr-4 lg:w-[360px] w-full h-[42px] border-2 border-[var(--border-dark)] rounded-[30px]'
+                  className='pl-10 pr-4 w-full sm:w-auto lg:w-[360px] h-[42px] border-2 border-[var(--border-dark)] rounded-[30px]'
                 />
               </div>
             </div>
@@ -773,14 +572,15 @@ export default function ToolDetailPage() {
               <DynamicTable
                 columns={toolTableColumns}
                 data={filteredData}
-                actions={toolTableActions}
+                actions={availableTableActions}
                 emptyMessage='No available tools found'
                 showRowNumbers={false}
                 tableConfig={{
-                  headerBgColor: 'bg-[#F5F7FA]',
+                  headerBgColor: 'bg-[var(--background)]',
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
+                className='max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -788,14 +588,15 @@ export default function ToolDetailPage() {
               <DynamicTable
                 columns={assignedTableColumns}
                 data={filteredData}
-                actions={toolTableActions}
+                actions={assignedTableActions}
                 emptyMessage='No assigned tools found'
                 showRowNumbers={false}
                 tableConfig={{
-                  headerBgColor: 'bg-[#F5F7FA]',
+                  headerBgColor: 'bg-[var(--background)]',
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
+                className='max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -803,14 +604,15 @@ export default function ToolDetailPage() {
               <DynamicTable
                 columns={maintenanceTableColumns}
                 data={filteredData}
-                actions={toolTableActions}
+                actions={maintenanceTableActions}
                 emptyMessage='No tools under maintenance found'
                 showRowNumbers={false}
                 tableConfig={{
-                  headerBgColor: 'bg-[#F5F7FA]',
+                  headerBgColor: 'bg-[var(--background)]',
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
+                className='max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -818,29 +620,112 @@ export default function ToolDetailPage() {
               <DynamicTable
                 columns={lostTableColumns}
                 data={filteredData}
-                actions={toolTableActions}
+                actions={lostTableActions}
                 emptyMessage='No lost tools found'
                 showRowNumbers={false}
                 tableConfig={{
-                  headerBgColor: 'bg-[#F5F7FA]',
+                  headerBgColor: 'bg-[var(--background)]',
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
+                className='max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
           </Tabs>
         </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmDeleteModal
-        open={showDeleteModal}
-        title={`Delete ${itemToDelete?.toolId} / ${itemToDelete?.barcode}?`}
-        subtitle='Are you sure you want to delete this tool? This action cannot be undone.'
-        onCancel={handleCancelDelete}
-        onDelete={handleConfirmDelete}
-        archiveButtonText='Delete'
-      />
+        {/* Unified SideSheet */}
+        <SideSheet
+          open={sideSheetOpen}
+          onOpenChange={open => {
+            setSideSheetOpen(open);
+            if (!open) setActiveSheet(null);
+          }}
+          title={
+            activeSheet === 'assign'
+              ? 'Assign'
+              : activeSheet === 'return'
+                ? 'Return Tool'
+                : activeSheet === 'maintenance'
+                  ? 'Maintenance'
+                  : activeSheet === 'lost'
+                    ? 'Lost'
+                    : 'Add More Tools'
+          }
+          size='600px'
+        >
+          {activeSheet === 'addMore' && (
+            <>
+              <QRCodeSection
+                toolIds={qrToolIds}
+                onToolIdsChange={setQrToolIds}
+              />
+              <div className='flex gap-3 items-center pt-4'>
+                <Button
+                  variant='outline'
+                  onClick={() => setSideSheetOpen(false)}
+                  className='btn-secondary'
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    console.log('Add more tools:', qrToolIds);
+                    setSideSheetOpen(false);
+                  }}
+                  className='btn-primary'
+                >
+                  Add
+                </Button>
+              </div>
+            </>
+          )}
+
+          {activeSheet === 'assign' && (
+            <AssignForm
+              defaultValues={assignDefaults}
+              onCancel={() => setSideSheetOpen(false)}
+              onSubmit={vals => {
+                console.log('Assign submit:', vals);
+                setSideSheetOpen(false);
+              }}
+            />
+          )}
+
+          {activeSheet === 'return' && (
+            <ReturnForm
+              defaultValues={returnDefaults}
+              onCancel={() => setSideSheetOpen(false)}
+              onSubmit={vals => {
+                console.log('Return submit:', vals);
+                setSideSheetOpen(false);
+              }}
+            />
+          )}
+
+          {activeSheet === 'maintenance' && (
+            <MaintenanceForm
+              defaultValues={maintenanceDefaults}
+              onCancel={() => setSideSheetOpen(false)}
+              onSubmit={vals => {
+                console.log('Maintenance submit:', vals);
+                setSideSheetOpen(false);
+              }}
+            />
+          )}
+
+          {activeSheet === 'lost' && (
+            <LostForm
+              defaultValues={lostDefaults}
+              onCancel={() => setSideSheetOpen(false)}
+              onSubmit={vals => {
+                console.log('Lost submit:', vals);
+                setSideSheetOpen(false);
+              }}
+            />
+          )}
+        </SideSheet>
+      </div>
     </div>
   );
 }

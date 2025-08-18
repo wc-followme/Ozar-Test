@@ -1,14 +1,12 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { DocUploads } from './DocUploads';
 import { DynamicTable } from './DynamicTable';
+import { QRCodeListingCard } from './QRCodeListingCard';
 
 interface ToolIdBarcode {
   id: string;
@@ -101,10 +99,10 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   };
 
   const handleConfirmDelete = () => {
-    if (itemToDelete) {
+    if (itemToDelete && (itemToDelete as any).id) {
       // Remove from sample data (in real app, this would be API call)
       const updatedData = sampleToolData.filter(
-        item => item.id !== itemToDelete.id
+        item => item.id !== (itemToDelete as any).id
       );
       console.log('Deleted item:', itemToDelete);
       console.log('Updated data:', updatedData);
@@ -132,8 +130,14 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
+  const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
+
   const handleBulkUpload = (file: File | null) => {
     if (file) {
+      // Avoid duplicate listing for the same file name in a single upload
+      setUploadedFileNames(prev =>
+        prev.includes(file.name) ? prev : [...prev, file.name]
+      );
       // Handle CSV file upload
       const reader = new FileReader();
       reader.onload = event => {
@@ -143,7 +147,7 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
 
         // Skip header row and process data
         for (let i = 1; i < lines.length; i++) {
-          const [toolId, barcode] = lines[i].split(',');
+          const [toolId, barcode] = (lines[i] || '').split(',');
           if (toolId && barcode) {
             newToolIds.push({
               id: `tool-${Date.now()}-${i}`,
@@ -157,6 +161,14 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       };
       reader.readAsText(file);
     }
+  };
+
+  const handleBulkUploads = (files: File[]) => {
+    if (!files || files.length === 0) return;
+    // De-duplicate by name for display
+    const names = files.map(f => f.name);
+    setUploadedFileNames(prev => Array.from(new Set([...prev, ...names])));
+    files.forEach(file => handleBulkUpload(file));
   };
 
   return (
@@ -181,52 +193,9 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value='qr-doc' className='space-y-4'>
+        <TabsContent value='qr-scan' className='space-y-4'>
           {/* Tool Management Table */}
           <div className='space-y-4'>
-            <div className='flex items-center justify-between'>
-              <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-                Tool Management
-              </h3>
-              <Button
-                type='button'
-                onClick={handleAddToolId}
-                disabled={!newToolId.trim() || !newBarcode.trim()}
-                className='text-sm'
-                size='sm'
-              >
-                Add New
-              </Button>
-            </div>
-
-            {/* Add New Tool ID Form */}
-            <div className='grid grid-cols-2 gap-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='tool-id' className='text-sm font-medium'>
-                  Tool ID
-                </Label>
-                <Input
-                  id='tool-id'
-                  placeholder='Enter Tool ID'
-                  value={newToolId}
-                  onChange={e => setNewToolId(e.target.value)}
-                  className='input-field border-[var(--border-dark)]'
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='barcode' className='text-sm font-medium'>
-                  Barcode
-                </Label>
-                <Input
-                  id='barcode'
-                  placeholder='Enter Barcode'
-                  value={newBarcode}
-                  onChange={e => setNewBarcode(e.target.value)}
-                  className='input-field border-[var(--border-dark)]'
-                />
-              </div>
-            </div>
-
             {/* Dynamic Table with Simple Tool Data */}
             <DynamicTable
               columns={toolTableColumns}
@@ -253,14 +222,30 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           </div>
         </TabsContent>
 
-        <TabsContent value='qr-scan' className='space-y-4'>
+        <TabsContent value='qr-doc' className='space-y-4'>
           <DocUploads
             title='Bulk Import QR Code'
             description='Download template to see the required format'
             supportedFormats='Supported formats: .csv, .xlsx'
             onFileChange={handleBulkUpload}
+            onFilesChange={handleBulkUploads}
             onDownloadTemplate={handleDownloadTemplate}
           />
+          {uploadedFileNames.length > 0 && (
+            <div className='space-y-2'>
+              {uploadedFileNames.map((fileName, index) => (
+                <QRCodeListingCard
+                  key={`${fileName}-${index}`}
+                  fileName={fileName}
+                  onRemove={() =>
+                    setUploadedFileNames(prev =>
+                      prev.filter((_, i) => i !== index)
+                    )
+                  }
+                />
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

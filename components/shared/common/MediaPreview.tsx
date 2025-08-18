@@ -1,8 +1,9 @@
 'use client';
 
+import { IconPlayerPlayFilled } from '@tabler/icons-react';
 import { CloseCircle } from 'iconsax-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface MediaPreviewProps {
   files: File[];
@@ -31,6 +32,78 @@ export const MediaPreview = ({
     return URL.createObjectURL(file);
   };
 
+  // Generate a thumbnail for a given video file
+  const generateVideoThumbnail = (file: File): Promise<string> => {
+    return new Promise(resolve => {
+      const videoElement: HTMLVideoElement = document.createElement('video');
+      const objectUrl: string = URL.createObjectURL(file);
+      videoElement.preload = 'metadata';
+      videoElement.src = objectUrl;
+      videoElement.muted = true;
+      videoElement.playsInline = true;
+
+      const cleanup = () => {
+        URL.revokeObjectURL(objectUrl);
+      };
+
+      const captureFrame = () => {
+        try {
+          const canvas: HTMLCanvasElement = document.createElement('canvas');
+          const width: number = videoElement.videoWidth || 320;
+          const height: number = videoElement.videoHeight || 180;
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(videoElement, 0, 0, width, height);
+            const dataUrl: string = canvas.toDataURL('image/png');
+            cleanup();
+            resolve(dataUrl);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+        cleanup();
+        resolve('');
+      };
+
+      videoElement.addEventListener('loadedmetadata', () => {
+        try {
+          // Seek a bit into the video to ensure a frame is available
+          videoElement.currentTime = Math.min(
+            0.1,
+            videoElement.duration || 0.1
+          );
+        } catch {
+          captureFrame();
+        }
+      });
+
+      videoElement.addEventListener('seeked', captureFrame);
+      videoElement.addEventListener('error', () => {
+        cleanup();
+        resolve('');
+      });
+    });
+  };
+
+  const [videoThumbnails, setVideoThumbnails] = useState<
+    Record<number, string>
+  >({});
+
+  useEffect(() => {
+    files.forEach((file: File, index: number) => {
+      if (isVideo(file) && !videoThumbnails[index]) {
+        generateVideoThumbnail(file).then((thumb: string) => {
+          setVideoThumbnails(prev => ({ ...prev, [index]: thumb }));
+        });
+      }
+    });
+    // We intentionally skip videoThumbnails from deps to avoid re-generating
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files]);
+
   if (files.length === 0) {
     return null;
   }
@@ -50,41 +123,30 @@ export const MediaPreview = ({
               className={`w-full rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 ${previewClassName}`}
             >
               {isVideoFile ? (
-                <div className='w-full h-full flex items-center justify-center bg-gray-100'>
-                  <div className='text-center'>
-                    <div className='w-8 h-8 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center'>
-                      <svg
-                        className='w-4 h-4 text-gray-600'
-                        fill='currentColor'
-                        viewBox='0 0 20 20'
-                      >
-                        <path
-                          fillRule='evenodd'
-                          d='M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z'
-                          clipRule='evenodd'
-                        />
-                      </svg>
-                    </div>
-                    <p className='text-xs text-gray-600'>Video</p>
-                  </div>
+                <div className='relative w-full h-full'>
+                  <Image
+                    src={
+                      videoThumbnails[index] || '/images/img-placeholder-sm.png'
+                    }
+                    alt={`Video ${index + 1}`}
+                    fill
+                    className='object-cover'
+                  />
+                  <span className='absolute inset-0 flex items-center justify-center'>
+                    <span className='w-7 h-7 rounded-full bg-[rgba(0,0,0,0.25)] shadow-2xl flex items-center justify-center'>
+                      <IconPlayerPlayFilled color='white' size={16} />
+                    </span>
+                  </span>
                 </div>
               ) : hasError ? (
-                <div className='w-full h-full flex items-center justify-center bg-gray-100'>
-                  <div className='text-center'>
-                    <div className='w-8 h-8 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center'>
-                      <svg
-                        className='w-4 h-4 text-gray-600'
-                        fill='currentColor'
-                        viewBox='0 0 20 20'
-                      >
-                        <path
-                          fillRule='evenodd'
-                          d='M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z'
-                          clipRule='evenodd'
-                        />
-                      </svg>
-                    </div>
-                    <p className='text-xs text-gray-600'>Image</p>
+                <div className='w-full h-full bg-gray-100'>
+                  <div className='relative w-full h-full'>
+                    <Image
+                      src='/images/img-placeholder-sm.png'
+                      alt='Placeholder'
+                      fill
+                      className='object-cover'
+                    />
                   </div>
                 </div>
               ) : (
