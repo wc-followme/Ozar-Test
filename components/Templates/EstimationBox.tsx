@@ -1476,7 +1476,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   return (
-    <div className='flex bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] overflow-hidden'>
+    <div className='flex bg-[var(--card-background)] rounded-[20px] w-full border border-[var(--border-dark)] overflow-hidden'>
       {/* Sidebar */}
       <EstimationBoxSidebar
         isSidebarCollapsed={isSidebarCollapsed}

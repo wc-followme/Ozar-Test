@@ -53,7 +53,7 @@ export function StepEstimation({
   };
 
   return (
-    <div className='w-full max-w-[1200px] bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
+    <div className='w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
       <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
         Estimation
       </h2>
