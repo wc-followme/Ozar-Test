@@ -23,7 +23,7 @@ import {
   calculateTradeTotal,
   MARKUP_TYPES,
 } from '@/lib/estimation-calculations';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
+import { extractApiErrorMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 import { updateLocalStorageFromState } from './EstimateComponent';
@@ -121,7 +121,7 @@ const generateUniqueKey = (
 };
 
 export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
-  const { showSuccessToast, showErrorToast } = useToast();
+  const { showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>(['0']);
@@ -1310,15 +1310,12 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           const jobRooms = JSON.parse(jobRoomsData);
 
           // Make API call using makeGenericRequest
-          const response = await apiService.makeGenericRequest(
-            `/jobs/${props.jobId}/rooms`,
-            {
-              method: 'POST',
-              body: JSON.stringify({
-                job_rooms: jobRooms,
-              }),
-            }
-          );
+          await apiService.makeGenericRequest(`/jobs/${props.jobId}/rooms`, {
+            method: 'POST',
+            body: JSON.stringify({
+              job_rooms: jobRooms,
+            }),
+          });
 
           // Show success toast with API response message
           // showSuccessToast(
