@@ -423,7 +423,7 @@ export default function EstimationServiceForm({
         tools={tools}
         onAddTool={onAddTool || (() => {})}
         onRemoveTool={onRemoveTool || (() => {})}
-        onReplaceTools={onReplaceTools}
+        onReplaceTools={onReplaceTools || (() => {})}
         defaultExpanded={true}
         roomName={roomName}
         tradeName={tradeName}

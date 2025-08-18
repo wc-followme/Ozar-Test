@@ -889,16 +889,6 @@ export default function HomeOwnerWizardPage() {
   const cancelButtonClass =
     'h-[48px] px-8 border-2 border-[var(--border-dark)] bg-transparent rounded-full font-semibold text-[var(--text-dark)] flex items-center';
 
-  // Breadcrumb data for estimate component
-  const breadcrumbData: { name: string; href?: string }[] = [];
-
-  // Handle add room for estimate component
-  const handleAddRoom = () => {
-    // This will trigger the EstimationBox to open
-    // The EstimateComponent handles this internally
-    console.log('Add room clicked - EstimationBox should open');
-  };
-
   // Loading state
   if (isLoading) {
     return (

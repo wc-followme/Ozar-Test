@@ -1321,9 +1321,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           );
 
           // Show success toast with API response message
-          showSuccessToast(
-            extractApiSuccessMessage(response, 'Estimation saved successfully!')
-          );
+          // showSuccessToast(
+          //   extractApiSuccessMessage(response, 'Estimation saved successfully!')
+          // );
 
           // Call success callback if provided
           if (props.onSaveSuccess) {
@@ -1332,7 +1332,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         }
       } else {
         // Show success toast for localStorage save only
-        showSuccessToast('Estimation saved to local storage successfully!');
+        //showSuccessToast('Estimation saved to local storage successfully!');
       }
     } catch (error) {
       console.error('Error saving job rooms:', error);
