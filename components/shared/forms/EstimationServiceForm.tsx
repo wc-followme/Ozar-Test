@@ -36,6 +36,7 @@ interface EstimationServiceFormProps {
   tools?: Tool[];
   onAddTool?: (tool: Tool) => void;
   onRemoveTool?: (toolId: string) => void;
+  onReplaceTools?: (tools: Tool[]) => void; // Add callback for replacing all tools
   roomName?: string;
   tradeName?: string;
   tradeId?: string | undefined; // Add trade ID prop
@@ -56,6 +57,7 @@ export default function EstimationServiceForm({
   tools = [],
   onAddTool,
   onRemoveTool,
+  onReplaceTools,
   roomName = 'Room',
   tradeName = 'Trade',
   tradeId, // Add trade ID prop
@@ -421,6 +423,7 @@ export default function EstimationServiceForm({
         tools={tools}
         onAddTool={onAddTool || (() => {})}
         onRemoveTool={onRemoveTool || (() => {})}
+        onReplaceTools={onReplaceTools}
         defaultExpanded={true}
         roomName={roomName}
         tradeName={tradeName}

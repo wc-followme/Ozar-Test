@@ -1135,6 +1135,38 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   };
 
+  const handleToolReplace = (newTools: Tool[]) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? {
+                                ...service,
+                                tools: newTools, // Replace entire tools array
+                              }
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+
+      // Update calculations after tool replace
+      setTimeout(() => updateAllCalculations(), 0);
+    }
+  };
+
   // Delete handlers
   const handleDeleteClick = () => {
     if (showServiceForm && selectedService) {
@@ -1528,6 +1560,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                 tools={selectedServiceData.tools}
                 onAddTool={handleToolAdd}
                 onRemoveTool={handleToolRemove}
+                onReplaceTools={handleToolReplace}
                 roomName={selectedRoom?.name || 'Room'}
                 tradeName={selectedTradeData?.name || 'Trade'}
                 tradeId={selectedTrade || undefined}

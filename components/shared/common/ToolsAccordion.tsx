@@ -26,6 +26,7 @@ interface ToolsAccordionProps {
   tools: Tool[];
   onAddTool: (tool: Tool) => void;
   onRemoveTool: (toolId: string) => void;
+  onReplaceTools?: (tools: Tool[]) => void; // Add callback for replacing all tools
   defaultExpanded?: boolean;
   roomName?: string;
   tradeName?: string;
@@ -39,6 +40,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
     tools,
     onAddTool,
     onRemoveTool,
+    onReplaceTools,
     defaultExpanded = true,
     roomName = 'Room',
     tradeName = 'Trade',
@@ -49,10 +51,16 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
   const [isSideSheetOpen, setIsSideSheetOpen] = useState(false);
 
   const handleAddTools = (tools: Tool[]) => {
-    // Add selected tools to the service
-    tools.forEach(tool => {
-      onAddTool(tool);
-    });
+    // Replace all existing tools with the new selection to avoid duplicates
+    if (onReplaceTools) {
+      // Use the new replace callback if available
+      onReplaceTools(tools);
+    } else {
+      // Fallback to individual add/remove if replace callback is not provided
+      tools.forEach(tool => {
+        onAddTool(tool);
+      });
+    }
     setIsSideSheetOpen(false);
   };
 
@@ -154,6 +162,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
           tradeName={tradeName}
           serviceName={serviceName}
           serviceId={serviceId}
+          existingTools={tools}
         />
       </SideSheet>
     </>
