@@ -16,6 +16,7 @@ interface EstimateComponentProps {
   jobId?: string; // Add job ID prop for API calls
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
+  onFormSubmit?: number; // Trigger value for form submission
 }
 
 // Common function to update localStorage from component state
@@ -213,6 +214,7 @@ export default function EstimateComponent({
   jobId,
   onSaveSuccess,
   onSaveError,
+  onFormSubmit,
 }: EstimateComponentProps) {
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [showEstimationBox, setShowEstimationBox] = useState(false);
@@ -245,6 +247,7 @@ export default function EstimateComponent({
         {...(jobId && { jobId })}
         {...(onSaveSuccess && { onSaveSuccess })}
         {...(onSaveError && { onSaveError })}
+        {...(onFormSubmit && { onFormSubmit })}
       />
     );
   }

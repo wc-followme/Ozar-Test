@@ -97,6 +97,7 @@ interface EstimationBoxProps {
   jobId?: string; // Add job ID prop for API calls
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
+  onFormSubmit?: number; // Trigger value for form submission
 }
 
 // Utility function to generate unique keys
@@ -285,6 +286,14 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       updateAllCalculations();
     }
   }, []);
+
+  // Listen for form submission and trigger save
+  useEffect(() => {
+    if (props.onFormSubmit && props.onFormSubmit > 0) {
+      console.log('Form submission triggered - calling save function');
+      handleSave();
+    }
+  }, [props.onFormSubmit]);
 
   // Function to update calculations for a service
   const updateServiceCalculations = (service: Service): Service => {
@@ -1611,9 +1620,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               </span>
             </div>
             <div className='flex gap-3'>
-              <button onClick={handleSave} className='btn-secondary'>
-                Save
-              </button>
+              {/* Save button hidden - will be triggered by form submission */}
             </div>
           </div>
         </div>
