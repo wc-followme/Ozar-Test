@@ -1,8 +1,9 @@
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, ROUTES } from '@/constants/common';
 import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Badge } from '../../ui/badge';
 import { Label } from '../../ui/label';
@@ -27,6 +28,7 @@ interface ToolCardProps {
   }[];
   onDelete: () => void;
   onEdit?: () => void;
+  uuid?: string; // Add uuid prop for navigation
 }
 
 export default function ToolCard({
@@ -38,9 +40,11 @@ export default function ToolCard({
   menuOptions,
   onDelete,
   onEdit,
+  uuid,
 }: ToolCardProps) {
   const [showDelete, setShowDelete] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const router = useRouter();
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
@@ -61,8 +65,18 @@ export default function ToolCard({
   // Only show menu if there are any visible options
   const showMenu = filteredMenuOptions.length > 0;
 
+  // Handle card click to navigate to tool detail
+  const handleCardClick = () => {
+    if (uuid) {
+      router.push(`${ROUTES.TOOLS_MANAGEMENT}/tool-detail`);
+    }
+  };
+
   return (
-    <div className='bg-[var(--card-background)] hover:shadow-card-hover rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
+    <div
+      className='bg-[var(--card-background)] hover:shadow-card-hover rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+      onClick={handleCardClick}
+    >
       <div className='flex gap-3'>
         {/* Image */}
         <div className='w-[80px] h-[80px] rounded-[12px] overflow-hidden bg-[var(--border-light)] flex items-center justify-center flex-shrink-0'>
@@ -105,7 +119,10 @@ export default function ToolCard({
 
         {/* Menu */}
         {showMenu && (
-          <div className='absolute top-2.5 right-2'>
+          <div
+            className='absolute top-2.5 right-2'
+            onClick={e => e.stopPropagation()}
+          >
             <Dropdown
               menuOptions={filteredMenuOptions}
               onAction={action => {

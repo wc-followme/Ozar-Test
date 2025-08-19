@@ -21,31 +21,14 @@ import { AssignForm } from '@/components/shared/forms/AssignForm';
 import { LostForm } from '@/components/shared/forms/LostForm';
 import { MaintenanceForm } from '@/components/shared/forms/MaintenanceForm';
 import { ReturnForm } from '@/components/shared/forms/ReturnForm';
-import { DynamicScrollArea } from '../../../../components/shared/common/DynamicScrollArea';
 import { DynamicTable } from '../../../../components/shared/common/DynamicTable';
-import { availableToolData } from './dummy-data';
-
-interface ToolDetailData {
-  id: string;
-  toolId: string;
-  barcode: string;
-  returnedBy: {
-    name: string;
-    avatar: string;
-  };
-  employeeType: string;
-  assignedJob: string;
-  dueDate: string;
-  returnedDate: string;
-  condition: string;
-  issue?: string;
-  assignedStatus:
-    | 'Temporary'
-    | 'Permanent'
-    | 'Available'
-    | 'Maintenance'
-    | 'Lost';
-}
+import {
+  assignedToolData,
+  availableToolData,
+  lostToolData,
+  maintenanceToolData,
+} from './dummy-data';
+import { ToolDetailData } from './types';
 
 export default function ToolDetailPage() {
   const [selectedTab, setSelectedTab] = useState('available');
@@ -490,69 +473,67 @@ export default function ToolDetailPage() {
             onValueChange={setSelectedTab}
             className='w-full mb-4'
           >
-            <div className='flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center justify-between w-full'>
-              <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_84px)]'>
-                <DynamicScrollArea className='w-full'>
-                  <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
-                    <TabsTrigger
-                      value='available'
-                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                    >
-                      <span className='flex items-center gap-2'>
-                        <span className='text-sm xl:text-base'>Available</span>
-                        <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'available' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#90C91D]'}`}
-                        >
-                          50
-                        </Badge>
-                      </span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value='assigned'
-                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                    >
-                      <span className='flex items-center gap-2'>
-                        <span className='text-sm xl:text-base'>Assigned</span>
-                        <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'assigned' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--text-secondary)]'}`}
-                        >
-                          16
-                        </Badge>
-                      </span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value='maintenance'
-                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                    >
-                      <span className='flex items-center gap-2'>
-                        <span className='text-sm xl:text-base'>
-                          Maintenance
-                        </span>
-                        <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#EBB402]'}`}
-                        >
-                          09
-                        </Badge>
-                      </span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value='lost'
-                      className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                    >
-                      <span className='flex items-center gap-2'>
-                        <span className='text-sm xl:text-base'>Lost</span>
-                        <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'lost' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#00A8BF]'}`}
-                        >
-                          10
-                        </Badge>
-                      </span>
-                    </TabsTrigger>
-                  </TabsList>
-                </DynamicScrollArea>
+            <div className='flex flex-col lg:flex-row gap-3 flex-wrap sm:gap-4 items-start lg:items-center justify-between w-full'>
+              <div className='flex flex-row items-center gap-2 w-fit overflow-auto max-w-[calc(100vw_-_84px)]'>
+                {/* <DynamicScrollArea className='w-full'> */}
+                <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+                  <TabsTrigger
+                    value='available'
+                    className='px-6 lg:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-2'>
+                      <span className='text-sm xl:text-base'>Available</span>
+                      <Badge
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'available' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#90C91D]'}`}
+                      >
+                        50
+                      </Badge>
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value='assigned'
+                    className='px-6 lg:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-2'>
+                      <span className='text-sm xl:text-base'>Assigned</span>
+                      <Badge
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'assigned' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--text-secondary)]'}`}
+                      >
+                        16
+                      </Badge>
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value='maintenance'
+                    className='px-6 lg:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-2'>
+                      <span className='text-sm xl:text-base'>Maintenance</span>
+                      <Badge
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#EBB402]'}`}
+                      >
+                        09
+                      </Badge>
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value='lost'
+                    className='px-6 lg:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-2'>
+                      <span className='text-sm xl:text-base'>Lost</span>
+                      <Badge
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'lost' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#00A8BF]'}`}
+                      >
+                        10
+                      </Badge>
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+                {/* </DynamicScrollArea> */}
               </div>
               {/* Search Bar */}
-              <div className='relative w-full sm:w-auto sm:flex-initial lg:ml-auto'>
+              <div className='relative w-full sm:w-auto lg:w-[360px] ml-auto'>
                 <SearchNormal1
                   className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]'
                   color='var(--primary)'
@@ -580,7 +561,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='max-w-[calc(100vw_-_80px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_82px)]'
               />
             </TabsContent>
 
@@ -596,7 +577,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='max-w-[calc(100vw_-_80px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
               />
             </TabsContent>
 
@@ -612,7 +593,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='max-w-[calc(100vw_-_80px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
               />
             </TabsContent>
 
@@ -628,7 +609,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='max-w-[calc(100vw_-_80px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
               />
             </TabsContent>
           </Tabs>

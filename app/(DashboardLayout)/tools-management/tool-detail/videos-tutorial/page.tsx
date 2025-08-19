@@ -27,10 +27,10 @@ export default function ToolVideosPage() {
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
+      <div className='flex md:flex-row flex-col md:items-center gap-4'>
         <Breadcrumb items={breadcrumbItems} />
         <Button
-          className='btn-primary px-4 py-2'
+          className='btn-primary px-4 py-2 ml-auto'
           onClick={() => setIsOpen(true)}
         >
           Add Videos

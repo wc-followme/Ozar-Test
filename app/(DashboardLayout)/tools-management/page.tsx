@@ -528,6 +528,7 @@ export default function ToolsManagement() {
                           menuOptions={menuOptions}
                           onDelete={() => handleDelete(uuid)}
                           onEdit={() => handleEdit(uuid)}
+                          uuid={uuid}
                         />
                       );
                     })}

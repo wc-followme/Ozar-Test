@@ -39,7 +39,7 @@ export const ToolsDetailTopBlock: React.FC<ToolsDetailTopBlockProps> = ({
         </div>
 
         <div className='flex-1'>
-          <h1 className='text-lg font-bold text-[var(--text-dark)] mb-4'>
+          <h1 className='text-lg font-bold text-[var(--text-dark)] mb-4 break-words'>
             {title}
           </h1>
           <div className='flex gap-8'>
