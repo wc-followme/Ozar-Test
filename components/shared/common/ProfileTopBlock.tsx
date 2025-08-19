@@ -7,11 +7,15 @@ import {
 } from '@/components/shared/forms/ReviewForm';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { IconShare, IconStar, IconStarFilled } from '@tabler/icons-react';
 import { DocumentText, Edit2, Star1 } from 'iconsax-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { APP_CONFIG, ROUTES } from '../../../constants/common';
 
 interface ProfileTopBlockProps {
   coverImage?: string;
@@ -36,16 +40,17 @@ interface ProfileTopBlockProps {
   fiveBoxSystemLink?: string;
   isUserProfile?: boolean;
   companyProfileLink?: string;
+  companyId?: string;
+  isReviewed?: boolean;
 }
 
 export const ProfileTopBlock = ({
-  coverImage = '/images/profile-block-bg.png',
-  logoImage = '/images/logo.svg',
+  coverImage = APP_CONFIG.IMAGES.PROFILE_BLOCK_BG,
+  logoImage = APP_CONFIG.IMAGES.LOGO,
   companyName = 'Envision Construction',
   tagline = 'Construction Company',
-  rating = 4.0,
-  reviewCount = 5,
-  onWriteReview,
+  rating = 0,
+  reviewCount = 0,
   onEditProfile,
   onRequestQuote,
   onShare,
@@ -61,13 +66,21 @@ export const ProfileTopBlock = ({
   fiveBoxSystemLink = '/company-profile/five-box-system',
   isUserProfile = false,
   companyProfileLink = '/company-profile',
+  companyId,
+  isReviewed = false,
 }: ProfileTopBlockProps) => {
+  const { IMAGES, CDN_URL } = APP_CONFIG;
+  const { AUTH_LOGIN } = ROUTES;
+  const { isAuthenticated } = useAuth();
+  const router = useRouter();
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleWriteReview = () => {
-    if (onWriteReview) {
-      onWriteReview();
+    if (!isAuthenticated) {
+      // Redirect to login page if user is not authenticated
+      router.push(AUTH_LOGIN);
+      return;
     } else {
       setIsReviewFormOpen(true);
     }
@@ -76,33 +89,62 @@ export const ProfileTopBlock = ({
   const handleReviewSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true);
     try {
-      console.log('Submitting review:', data);
-      // Add your API call here to save the review
+      if (!companyId) {
+        setIsSubmitting(false);
+        return;
+      }
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Destructure form data
+      const { title, rating, review } = data;
 
-      // Create new review object
-      const newReview = {
-        id: `review-${Date.now()}`,
-        reviewTitle: `Review ${Date.now()}`,
-        rating: parseFloat(data.rating),
-        reviewText: data.review,
-        reviewerName: 'Anonymous User', // You can get this from user context
-        reviewDate: new Date().toISOString(),
+      // Call the API to submit the review
+      const reviewData = {
+        company_id: companyId,
+        title,
+        rating: parseFloat(rating),
+        review,
       };
 
-      // Dispatch custom event to notify ReviewTab
-      const event = new CustomEvent('newReviewSubmitted', {
-        detail: newReview,
-      });
-      window.dispatchEvent(event);
+      const response = await apiService.createCompanyReview(reviewData);
 
-      // Close the side sheet after successful submission
-      setIsReviewFormOpen(false);
-      setIsSubmitting(false);
+      if (response.statusCode === 200 || response.statusCode === 201) {
+        // Use actual API response data for UI update
+        const {
+          uuid,
+          reviewer_name,
+          rating: reviewRating,
+          review,
+          created_at,
+          reviewer_images,
+        } = response.data;
+
+        const newReview = {
+          id: uuid,
+          reviewTitle: title || `Review by ${reviewer_name}`,
+          rating: parseFloat(reviewRating),
+          reviewText: review,
+          reviewerName: reviewer_name,
+          reviewDate: created_at,
+          profileImage: reviewer_images
+            ? `${CDN_URL}${reviewer_images}`
+            : undefined,
+        };
+
+        // Dispatch custom event to notify ReviewTab and company profile
+        const event = new CustomEvent('newReviewSubmitted', {
+          detail: {
+            ...newReview,
+            rating: parseFloat(reviewRating), // Ensure rating is passed for average calculation
+          },
+        });
+        window.dispatchEvent(event);
+
+        // Close the side sheet after successful submission
+        setIsReviewFormOpen(false);
+      } else {
+      }
     } catch (error) {
-      console.error('Error submitting review:', error);
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -208,7 +250,7 @@ export const ProfileTopBlock = ({
                               className='text-[var(--text-dark)] flex items-center gap-2 text-base font-bold leading-[18px] tracking-[0%] hover:text-[var(--primary)] transition-colors'
                             >
                               <Image
-                                src={'/images/logo.svg'}
+                                src={IMAGES.LOGO}
                                 width={24}
                                 height={24}
                                 className='object-contain'
@@ -271,9 +313,16 @@ export const ProfileTopBlock = ({
                           className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
                           onClick={handleWriteReview}
                         >
-                          <IconStar size='32' color='currentcolor' />
+                          {isReviewed ? (
+                            <IconStarFilled
+                              size='32'
+                              className='text-yellow-500 fill-yellow-500'
+                            />
+                          ) : (
+                            <IconStar size='32' color='currentcolor' />
+                          )}
                           <span className='hidden sm:inline'>
-                            Write a Review
+                            {'Write a Review'}
                           </span>
                         </Button>
                       )}

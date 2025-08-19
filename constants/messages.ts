@@ -141,6 +141,23 @@ export const SKIP_MESSAGES = {
   SKIP_TO_ESTIMATION: 'Skip to Estimation',
 };
 
+// Profile Details Messages
+export const PROFILE_DETAILS_MESSAGES = {
+  BUSINESS_NAME: 'Business Name',
+  EMAIL: 'Email',
+  PHONE_NUMBER: 'Phone Number',
+  COMMUNICATION: 'Communication',
+  PROJECTS: 'Projects',
+  WEBSITE: 'Website',
+  ADDRESS: 'Address',
+  VIEW_COMPANY_PROFILE: 'View Company Profile',
+  COMPANY_NAME_NOT_AVAILABLE: 'Company Name Not Available',
+  EMAIL_NOT_AVAILABLE: 'Email Not Available',
+  PHONE_NOT_AVAILABLE: 'Phone Not Available',
+  COMMUNICATION_NOT_AVAILABLE: 'Communication Not Available',
+  WEBSITE_NOT_AVAILABLE: 'Website Not Available',
+  ADDRESS_NOT_AVAILABLE: 'Address Not Available',
+} as const;
 // Estimation Messages
 export const ESTIMATION_MESSAGES = {
   NO_TRADE_OPTIONS_AVAILABLE: 'No trade options available',
