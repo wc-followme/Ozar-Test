@@ -63,6 +63,11 @@ export default function JobManagement() {
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [boxDefaults, setBoxDefaults] = useState<Array<{
+    id: string;
+    enabled: boolean;
+  }> | null>(null);
+  const [questionJson, setQuestionJson] = useState<any>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const isInitialMount = useRef(true);
@@ -107,6 +112,26 @@ export default function JobManagement() {
         return; // Don't show toast if it's an auth error
       }
       // Error handled silently - filter counts are not critical
+    }
+  }, [handleAuthError]);
+
+  // Fetch 5-box default selections for the selected company
+  const fetchBoxDefaults = useCallback(async () => {
+    try {
+      const company_id = getCompanyId();
+      const response = await apiService.getBoxSettings(
+        company_id ? { company_id } : {}
+      );
+      if (response.statusCode === 200 && response.data) {
+        const { default_selected_json, question_json } = response.data;
+        setBoxDefaults(default_selected_json);
+        setQuestionJson(question_json);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      // Non-critical: ignore toast for this auxiliary fetch
     }
   }, [handleAuthError]);
 
@@ -257,7 +282,7 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
     fetchFilterCounts();
     isInitialDataLoaded.current = true;
-  }, [selectedTab]);
+  }, [selectedTab, fetchFilterCounts, fetchJobsByTab]);
 
   useCompanyChange(refetchJobs);
 
@@ -302,6 +327,13 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
   }, [selectedTab]); // Remove fetchJobsByTab from dependencies
 
+  // Effect to fetch box defaults when form opens
+  useEffect(() => {
+    if (isOpen) {
+      fetchBoxDefaults();
+    }
+  }, [isOpen, fetchBoxDefaults]);
+
   // Infinite scroll
   useEffect(() => {
     const handleScroll = () => {
@@ -342,30 +374,16 @@ export default function JobManagement() {
 
     setIsSubmitting(true);
     try {
-      // Prepare job_boxes_step with automatic logic
-      let jobBoxesStep = '';
-      if (Array.isArray(job_boxes_step) && job_boxes_step.length > 0) {
-        if (job_boxes_step.length === 1) {
-          jobBoxesStep = 'FIRST';
-        } else if (job_boxes_step.length === 2) {
-          jobBoxesStep = 'SECOND';
-        } else if (job_boxes_step.length === 3) {
-          jobBoxesStep = 'THIRD';
-        }
-      }
-
       // Prepare payload for API
       const payload: any = {
         client_name,
         client_email,
         client_phone_number,
         job_privacy,
+        job_boxes_step,
+        question_json: questionJson,
       };
 
-      // Only add job_boxes_step if array length is not 0
-      if (job_boxes_step?.length !== 0) {
-        payload.job_boxes_step = jobBoxesStep;
-      }
       // Only include client_id if it has a value
       if (client_id !== undefined && client_id !== null && client_id !== '') {
         // Convert string to number if needed
@@ -398,7 +416,7 @@ export default function JobManagement() {
         if (homeOwnerLink) {
           setGeneratedLink(homeOwnerLink);
         }
-        if (job_boxes_step?.length === 0) {
+        if (!job_boxes_step || job_boxes_step.length === 0) {
           setIsOpen(false);
           setGeneratedLink('');
           fetchJobsByTab(selectedTab, 1, false);
@@ -513,22 +531,9 @@ export default function JobManagement() {
           onValueChange={handleTabChange}
           className='w-full'
         >
-          <div className='flex flex-row items-center gap-2 w-full overflow-hidden max-w-full'>
-            <DynamicScrollArea
-              className='flex-1 rounded-full min-w-0 max-w-full'
-              widthOptions={{
-                mobilePadding: 40,
-                tabletPadding: 48,
-                desktopPadding: 56,
-                maxMobileWidth: 640,
-                maxTabletWidth: 768,
-                maxLargeTabletWidth: 1024,
-                defaultDesktopWidth: 180,
-                buttonWidth: canEdit ? 70 : 0, // 48px button + 8px gap + 14px safety margin
-                buttonWidthDesktop: canEdit ? 200 : 0, // Auto width button + gap + safety margin
-              }}
-            >
-              <TabsList className='flex w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full overflow-hidden shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+          <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_32px)] sm:max-w-full'>
+            <DynamicScrollArea className='w-full'>
+              <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
                 <TabsTrigger
                   value={NEW_LEADS_TAB}
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
@@ -716,6 +721,7 @@ export default function JobManagement() {
         title={JOB_MESSAGES.ADD_JOB_TITLE}
       >
         <CreateJobForm
+          boxDefaults={boxDefaults}
           onSubmit={handleCreateJob}
           isSubmitting={isSubmitting}
           generatedLink={generatedLink}

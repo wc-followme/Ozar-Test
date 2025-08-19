@@ -253,6 +253,7 @@ body {
     --radius: 0.5rem;
     --badge-bg: #6b77bf;
     --dark-border-other: #bfbfbf;
+    --dark-background-other: #e8eaed;
   }
 
   .dark {
@@ -285,6 +286,7 @@ body {
     --destructive-foreground: 0 86% 97%;
     --badge-bg: #6b77bf;
     --dark-border-other: #bfbfbf;
+    --dark-background-other: #000;
   }
 }
 @layer utilities {

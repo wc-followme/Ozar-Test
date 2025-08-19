@@ -1,4 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gallery } from 'iconsax-react';
 import React from 'react';
@@ -56,7 +55,7 @@ const JobCardSkeleton: React.FC = () => (
 const JobManagementPageSkeleton: React.FC = () => (
   <div className=''>
     {/* Stats Cards Skeleton */}
-    <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
+    {/* <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
       {[...Array(4)].map((_, i) => (
         <Card
           key={i}
@@ -77,7 +76,7 @@ const JobManagementPageSkeleton: React.FC = () => (
           </CardContent>
         </Card>
       ))}
-    </div>
+    </div> */}
     {/* Tabs and Create Job Button Skeleton */}
     <div className='flex flex-row items-start lg:items-center gap-2 w-full sm:mb-10 mb-6'>
       <Skeleton className='h-16 sm:h-12 rounded-full bg-[var(--bg-skeleton)] w-full sm:w-1/2' />

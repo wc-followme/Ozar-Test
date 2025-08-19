@@ -127,3 +127,22 @@ export const PROJECT_MESSAGES = {
   FORM_LOAD_ERROR: 'Failed to load project information',
   VALIDATION_ERROR: 'Please check the form for errors',
 };
+
+// Thank You Messages
+export const THANK_YOU_MESSAGES = {
+  DEFAULT_TITLE: 'Thank You!',
+  DEFAULT_MESSAGE:
+    'Your project details have been successfully submitted. We will review your information and get back to you soon.',
+  GO_TO_LOGIN_BUTTON: 'Go to Log in',
+};
+
+// Skip to Estimation Messages
+export const SKIP_MESSAGES = {
+  SKIP_TO_ESTIMATION: 'Skip to Estimation',
+};
+
+// Estimation Messages
+export const ESTIMATION_MESSAGES = {
+  NO_TRADE_OPTIONS_AVAILABLE: 'No trade options available',
+  DEFAULT_TRADE_NAME: 'Default Trade',
+};

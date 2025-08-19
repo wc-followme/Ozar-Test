@@ -26,6 +26,8 @@ export const STEP_MESSAGES = {
   YOUR_BUDGET_LABEL: 'Your Budget',
   PREFERRED_CONTRACTOR_LABEL: 'Preferred Contractor',
   ADDRESS_LABEL: 'Address',
+  PREFERRED_CONTACT_METHOD_LABEL: 'Preferred contact method',
+  BEST_TIME_TO_CONTACT_LABEL: 'Best time to contact',
 
   // Optional Details Form Labels
   TYPE_OF_PROPERTY_LABEL: 'Type of Property',
@@ -47,6 +49,9 @@ export const STEP_MESSAGES = {
   SELECT_DATE: 'Select Date',
   SELECT_CONTRACTOR: 'Select contractor',
   LOADING_CONTRACTORS: 'Loading contractors...',
+  SELECT_CONTACT_METHOD: 'Select contact method',
+  SELECT_START_TIME: 'Select start time',
+  SELECT_END_TIME: 'Select end time',
 
   // Optional Details Placeholders
   RESIDENTIAL: 'Residential',
@@ -77,6 +82,9 @@ export const STEP_MESSAGES = {
   BUDGET_REQUIRED: 'Budget is required',
   CONTRACTOR_REQUIRED: 'Contractor preference is required',
   ADDRESS_REQUIRED: 'Address is required',
+  PREFERRED_CONTACT_METHOD_REQUIRED: 'Preferred contact method is required',
+  CONTACT_START_TIME_REQUIRED: 'Contact start time is required',
+  CONTACT_END_TIME_REQUIRED: 'Contact end time is required',
 
   // Optional Details Validation Messages
   PROPERTY_TYPE_REQUIRED: 'Property type is required',

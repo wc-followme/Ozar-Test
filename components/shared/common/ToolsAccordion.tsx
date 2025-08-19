@@ -6,7 +6,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Add, ArrowSquareDown, CloseCircle } from 'iconsax-react';
 import { useState } from 'react';
@@ -15,6 +14,7 @@ import SideSheet from './SideSheet';
 
 interface Tool {
   id: string;
+  uuid?: string; // Add UUID field for database tool UUID
   name: string;
   category: string;
   description: string;
@@ -26,30 +26,41 @@ interface ToolsAccordionProps {
   tools: Tool[];
   onAddTool: (tool: Tool) => void;
   onRemoveTool: (toolId: string) => void;
+  onReplaceTools?: (tools: Tool[]) => void; // Add callback for replacing all tools
   defaultExpanded?: boolean;
   roomName?: string;
   tradeName?: string;
   serviceName?: string;
+  serviceId?: string | undefined; // Add service ID prop for fetching tools
 }
 
-export default function ToolsAccordion({
-  title,
-  tools,
-  onAddTool,
-  onRemoveTool,
-  defaultExpanded = true,
-  roomName = 'Room',
-  tradeName = 'Trade',
-  serviceName = 'Service',
-}: ToolsAccordionProps) {
+export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
+  const {
+    title,
+    tools,
+    onAddTool,
+    onRemoveTool,
+    onReplaceTools,
+    defaultExpanded = true,
+    roomName = 'Room',
+    tradeName = 'Trade',
+    serviceName = 'Service',
+    serviceId, // Add service ID prop
+  } = props;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isSideSheetOpen, setIsSideSheetOpen] = useState(false);
 
   const handleAddTools = (tools: Tool[]) => {
-    // Add selected tools to the service
-    tools.forEach(tool => {
-      onAddTool(tool);
-    });
+    // Replace all existing tools with the new selection to avoid duplicates
+    if (onReplaceTools) {
+      // Use the new replace callback if available
+      onReplaceTools(tools);
+    } else {
+      // Fallback to individual add/remove if replace callback is not provided
+      tools.forEach(tool => {
+        onAddTool(tool);
+      });
+    }
     setIsSideSheetOpen(false);
   };
 
@@ -81,11 +92,21 @@ export default function ToolsAccordion({
                     {title}
                   </h3>
                 </div>
-                <Button
-                  className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
+                <div
+                  role='button'
+                  tabIndex={0}
+                  aria-label='Add tools'
+                  className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
                   onClick={e => {
                     e.stopPropagation();
                     setIsSideSheetOpen(true);
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setIsSideSheetOpen(true);
+                    }
                   }}
                 >
                   <Add
@@ -94,7 +115,7 @@ export default function ToolsAccordion({
                     className='!h-6 !w-6'
                   />
                   Tools
-                </Button>
+                </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
@@ -140,6 +161,8 @@ export default function ToolsAccordion({
           roomName={roomName}
           tradeName={tradeName}
           serviceName={serviceName}
+          serviceId={serviceId}
+          existingTools={tools}
         />
       </SideSheet>
     </>

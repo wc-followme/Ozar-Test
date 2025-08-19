@@ -52,8 +52,17 @@ export const ROUTES = {
   MATERIAL_MANAGEMENT: '/material-management',
   SERVICE_MANAGEMENT: '/service-management',
   TRADE_MANAGEMENT: '/trade-management',
+  COMPANY_PROFILE: '/company-profile',
+  FIVE_BOX_SYSTEM: '/company-profile/five-box-system',
+  FIVE_BOX_GENERAL_INFO: '/company-profile/five-box-system/general-information',
+  FIVE_BOX_PROPERTY_INFO:
+    '/company-profile/five-box-system/property-information',
+  FIVE_BOX_PROJECT_INFO: '/company-profile/five-box-system/project-information',
+  FIVE_BOX_CATEGORY: '/company-profile/five-box-system/category',
+  FIVE_BOX_ESTIMATION: '/company-profile/five-box-system/estimation',
   TEMPLATES_MANAGEMENT: '/templates',
   CREATE_TEMPLATE: '/templates/create',
+  AUTH_LOGIN: '/auth/login',
 } as const;
 
 // Action constants for menu options and permissions
@@ -61,6 +70,7 @@ export const ACTIONS = {
   EDIT: 'edit',
   DELETE: 'delete',
   ARCHIVE: 'archive',
+  RETRIEVE: 'retrieve',
   VIEW: 'view',
   CREATE: 'create',
   CUSTOMIZE: 'customize',
@@ -399,3 +409,40 @@ export const CUSTOM_EVENTS = {
   COMPANY_CHANGED: 'company-changed',
   STORAGE: 'storage',
 } as const;
+
+// Company Profile Tab Constants
+export const COMPANY_TABS = {
+  COMPANY_INFO: 'company-info',
+  TEAM: 'team',
+  REVIEW: 'review',
+  PORTFOLIO: 'portfolio',
+  WARRANTIES: 'warranties',
+} as const;
+
+export const COMPANY_TAB_ITEMS = [
+  {
+    value: COMPANY_TABS.COMPANY_INFO,
+    label: 'Company info',
+    className: 'pt-6 max-w-full',
+  },
+  {
+    value: COMPANY_TABS.TEAM,
+    label: 'Team',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.REVIEW,
+    label: 'Review',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.PORTFOLIO,
+    label: 'Portfolio',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.WARRANTIES,
+    label: 'Warranties',
+    className: 'pt-6',
+  },
+];
