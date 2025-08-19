@@ -4,22 +4,53 @@ import { ProfileCategoryTabComponent } from '../shared/common/ProfileCategoryTab
 import { ProfileDetailsComponent } from '../shared/common/ProfileDetailsComponent';
 import { ProfileOtherDetailsComponent } from '../shared/common/ProfileOtherDetailsComponent';
 
-export const CompanyInfoTab = () => {
+interface CompanyInfoTabProps {
+  companyData?:
+    | {
+        name: string;
+        tagline: string;
+        image: string;
+        about: string;
+        phone: string;
+        email: string;
+        website: string;
+        communication: string;
+        city: string;
+        pincode: string;
+        preferred_communication_method: string;
+        projects: string;
+        uuid: string;
+      }
+    | undefined;
+  showViewCompanyProfileButton?: boolean;
+  companyId?: string;
+}
+
+export const CompanyInfoTab = ({
+  companyData,
+  showViewCompanyProfileButton = true,
+  companyId,
+}: CompanyInfoTabProps) => {
   return (
     <div className='space-y-6 w-full'>
       {/* About Section */}
       <div className='space-y-4'>
-        <ProfileDetailsComponent />
+        <ProfileDetailsComponent companyData={companyData || undefined} />
       </div>
 
       {/* Services Section */}
       <div className='space-y-4'>
-        <ProfileCategoryTabComponent />
+        <ProfileCategoryTabComponent
+          companyId={companyId || companyData?.uuid}
+        />
       </div>
 
       {/* Company Information */}
       <div className='space-y-4'>
-        <ProfileOtherDetailsComponent />
+        <ProfileOtherDetailsComponent
+          companyData={companyData}
+          showViewCompanyProfileButton={showViewCompanyProfileButton}
+        />
       </div>
     </div>
   );

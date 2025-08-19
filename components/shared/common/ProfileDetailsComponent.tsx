@@ -4,7 +4,23 @@ import { Video } from '@/components/ui/video';
 import { IconPlayerPlayFilled } from '@tabler/icons-react';
 import { Button } from '../../ui/button';
 
-export const ProfileDetailsComponent = () => {
+interface ProfileDetailsComponentProps {
+  companyData?:
+    | {
+        name: string;
+        tagline: string;
+        image: string;
+        about: string;
+        phone: string;
+        email: string;
+        website: string;
+      }
+    | undefined;
+}
+
+export const ProfileDetailsComponent = ({
+  companyData,
+}: ProfileDetailsComponentProps) => {
   return (
     <div className='bg-[var(--card-background)] rounded-lg p-5 border border-[var(--border-dark)] w-full'>
       <div className='flex gap-6 lg:flex-row flex-col'>
@@ -12,18 +28,7 @@ export const ProfileDetailsComponent = () => {
         <div className='flex-1 max-w-full'>
           <h3 className='text-sm text-[var(--text-secondary)] mb-2'>About</h3>
           <div className='text-[var(--text-dark)] leading-snug font-medium space-y-3'>
-            Lorem ipsum dolor sit amet consecte tur adipiscing elit semper dalar
-            dolor elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
-            adipiscing elit semper dalar dolor elementum tempus hac.Lorem ipsum
-            dolor sit amet consecte tur adipiscing elit semper dalar dolor
-            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
-            adipiscing elit semper dalar dolor elementum tempus hac .Lorem ipsum
-            dolor sit amet consecte tur adipiscing elit semper dalar dolor
-            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
-            adipiscing elit semper dalar dolor elementum tempus hac.Lorem ipsum
-            dolor sit amet consecte tur adipiscing elit semper dalar dolor
-            elementum tempus hac.Lorem ipsum dolor sit amet consecte tur
-            adipiscing elit semper dalar dolor elementum tempus hac.
+            {companyData?.about || 'No company description available.'}
           </div>
         </div>
 

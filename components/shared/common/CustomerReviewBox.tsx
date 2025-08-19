@@ -66,17 +66,32 @@ export const CustomerReviewBox = ({
               &ldquo;{reviewTitle}&rdquo;
             </h4>
             <div className='flex items-center gap-1'>
-              {[...Array(5)].map((_, starIndex) => (
-                <Star1
-                  key={starIndex}
-                  size={16}
-                  className={
-                    starIndex < rating
-                      ? 'text-yellow-500 fill-yellow-500'
-                      : 'text-gray-300 fill-gray-300'
-                  }
-                />
-              ))}
+              {[...Array(5)].map((_, starIndex) => {
+                const fillLevel = Math.max(0, Math.min(1, rating - starIndex));
+                const fillPercent = `${Math.round(fillLevel * 100)}%`;
+                return (
+                  <div
+                    key={starIndex}
+                    className='relative inline-block'
+                    style={{ width: 16, height: 16 }}
+                  >
+                    {/* Base (empty) star */}
+                    <Star1 size={16} className='text-gray-300 fill-gray-300' />
+                    {/* Filled portion */}
+                    {fillLevel > 0 && (
+                      <div
+                        className='absolute top-0 left-0 h-full overflow-hidden'
+                        style={{ width: fillPercent }}
+                      >
+                        <Star1
+                          size={16}
+                          className='text-yellow-500 fill-yellow-500'
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

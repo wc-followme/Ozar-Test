@@ -12,8 +12,9 @@ interface PortfolioBoxProps {
   image?: string;
   imageCount?: number;
   videoCount?: number;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onEdit?: ((id: string) => void) | undefined;
+  onDelete?: ((id: string) => void) | undefined;
+  showEditMenu?: boolean;
 }
 
 export const PortfolioBox = ({
@@ -24,6 +25,7 @@ export const PortfolioBox = ({
   videoCount = 0,
   onEdit,
   onDelete,
+  showEditMenu = true,
 }: PortfolioBoxProps) => {
   const handleMenuAction = (action: string) => {
     switch (action) {
@@ -98,25 +100,27 @@ export const PortfolioBox = ({
         <h4 className='font-semibold text-[var(--text-dark)] truncate text-base'>
           {title}
         </h4>
-        <Dropdown
-          menuOptions={menuOptions}
-          onAction={handleMenuAction}
-          trigger={
-            <Button
-              variant='ghost'
-              size='icon'
-              className='h-8 w-8 p-0'
-              onClick={e => e.stopPropagation()}
-            >
-              <MoreVertical
-                size={30}
-                color='var(--text-dark)'
-                className='!h-6 !w-6'
-              />
-            </Button>
-          }
-          align='end'
-        />
+        {showEditMenu && (
+          <Dropdown
+            menuOptions={menuOptions}
+            onAction={handleMenuAction}
+            trigger={
+              <Button
+                variant='ghost'
+                size='icon'
+                className='h-8 w-8 p-0'
+                onClick={e => e.stopPropagation()}
+              >
+                <MoreVertical
+                  size={30}
+                  color='var(--text-dark)'
+                  className='!h-6 !w-6'
+                />
+              </Button>
+            }
+            align='end'
+          />
+        )}
       </div>
     </div>
   );
