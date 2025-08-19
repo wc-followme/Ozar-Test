@@ -1,46 +1,186 @@
 'use client';
 
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { CustomerReviewBox } from '@/components/shared/common/CustomerReviewBox';
 import Dropdown from '@/components/shared/common/Dropdown';
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
-import SideSheet from '@/components/shared/common/SideSheet';
-import { ReviewForm } from '@/components/shared/forms/ReviewForm';
 import { Button } from '@/components/ui/button';
-import { customerReviews } from '@/constants/dummy-data';
+import { APP_CONFIG } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { getCompanyId } from '@/lib/utils';
 import { Sort } from 'iconsax-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-export const ReviewTab = () => {
-  const [localReviews, setLocalReviews] = useState(customerReviews);
+// Rating filter constants with range values
+const RATING_FILTERS = {
+  POSITIVE: { min: 4, max: 5, range: '4-5' },
+  NEGATIVE: { min: 1, max: 2.5, range: '1-2.5' },
+  NEUTRAL: { min: 3, max: 3.5, range: '3-3.5' },
+} as const;
+
+interface ReviewTabProps {
+  companyId?: string;
+}
+
+export const ReviewTab = ({ companyId }: ReviewTabProps) => {
+  // Destructure APP_CONFIG
+  const { CDN_URL } = APP_CONFIG;
+
+  const [localReviews, setLocalReviews] = useState<any[]>([]);
   const [filterType, setFilterType] = useState('all');
-  const [sortType, setSortType] = useState('most-relevant');
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingReview, setEditingReview] = useState<any>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [reviewToDelete, setReviewToDelete] = useState<any>(null);
+  const [sortType, setSortType] = useState('newest');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const loadMoreRef = useRef<HTMLDivElement>(null);
 
   // Filter options
   const filterOptions = [
     { value: 'all', label: 'All Reviews' },
-    { value: 'positive', label: 'Positive' },
-    { value: 'negative', label: 'Negative' },
-    { value: 'neutral', label: 'Neutral' },
+    { value: 'positive', label: 'Positive (4-5 stars)' },
+    { value: 'negative', label: 'Negative (1-2.5 stars)' },
+    { value: 'neutral', label: 'Neutral (3-3.5 stars)' },
   ];
 
   // Sort options for dropdown
   const sortOptions = [
-    { label: 'Most Relevant', action: 'most-relevant' },
     { label: 'Newest', action: 'newest' },
+    { label: 'Oldest', action: 'oldest' },
     { label: 'Highest Rated', action: 'highest-rated' },
     { label: 'Lowest Rated', action: 'lowest-rated' },
   ];
 
+  // Fetch reviews from API
+  const fetchReviews = useCallback(
+    async (targetPage = 1, append = false) => {
+      try {
+        if (targetPage === 1) {
+          setLoading(true);
+        } else {
+          setIsLoadingMore(true);
+        }
+        setError(null);
+
+        const currentCompanyId = companyId || getCompanyId();
+
+        if (!currentCompanyId) {
+          setError('No company ID available');
+          setLoading(false);
+          return;
+        }
+
+        // Map sort type to API parameters
+        let sortBy = 'created_at';
+        let sortOrder: 'ASC' | 'DESC' = 'DESC';
+
+        switch (sortType) {
+          case 'newest':
+            sortBy = 'created_at';
+            sortOrder = 'DESC';
+            break;
+          case 'oldest':
+            sortBy = 'created_at';
+            sortOrder = 'ASC';
+            break;
+          case 'highest-rated':
+            sortBy = 'rating';
+            sortOrder = 'DESC';
+            break;
+          case 'lowest-rated':
+            sortBy = 'rating';
+            sortOrder = 'ASC';
+            break;
+        }
+
+        // Handle rating range filtering (e.g., "1-2.5", "3-3.5", "4-5")
+        let ratingFilter: string | undefined;
+        if (filterType !== 'all') {
+          const filterRange =
+            filterType === 'positive'
+              ? RATING_FILTERS.POSITIVE
+              : filterType === 'negative'
+                ? RATING_FILTERS.NEGATIVE
+                : filterType === 'neutral'
+                  ? RATING_FILTERS.NEUTRAL
+                  : null;
+
+          if (filterRange) {
+            ratingFilter = filterRange.range;
+          }
+        }
+
+        const response = await apiService.fetchCompanyReviews({
+          page: targetPage,
+          limit: 10,
+          company_id: currentCompanyId,
+          ...(ratingFilter && { rating: ratingFilter }),
+          sortBy,
+          sortOrder,
+        });
+
+        if (response.statusCode === 200 && response.data) {
+          const { data: responseData } = response;
+          const { data: reviewsData, totalPages } = responseData;
+
+          const newReviews = reviewsData.map((review: any) => {
+            const {
+              uuid,
+              title,
+              rating,
+              review: reviewText,
+              reviewer_name,
+              reviewer_uuid,
+              reviewer_images,
+              created_at,
+            } = review;
+            return {
+              id: uuid,
+              reviewTitle: title || `Review by ${reviewer_name}`,
+              rating,
+              reviewText,
+              reviewerName: reviewer_name,
+              reviewDate: created_at,
+              reviewerId: reviewer_uuid,
+              profileImage: reviewer_images
+                ? `${CDN_URL}${reviewer_images}`
+                : undefined,
+            };
+          });
+
+          setLocalReviews(prev =>
+            append ? [...prev, ...newReviews] : newReviews
+          );
+
+          // Check if there are more pages based on totalPages from API response
+          const hasMorePages = totalPages > targetPage;
+          setHasMore(hasMorePages);
+          setPage(targetPage);
+        } else {
+          throw new Error(response.message || 'Failed to fetch reviews');
+        }
+      } catch (err) {
+        setError('Failed to load reviews');
+      } finally {
+        setLoading(false);
+        setIsLoadingMore(false);
+      }
+    },
+    [companyId, filterType, sortType]
+  );
+
+  // Initial fetch and refetch when filters change
+  useEffect(() => {
+    fetchReviews(1, false);
+  }, [fetchReviews]);
+
   // Listen for new reviews from the ReviewForm submission
   useEffect(() => {
     const handleNewReview = (event: CustomEvent) => {
-      const newReview = event.detail;
-      setLocalReviews(prev => [...prev, newReview]);
+      const { detail: newReview } = event;
+      setLocalReviews(prev => [newReview, ...prev]);
     };
 
     window.addEventListener(
@@ -56,103 +196,50 @@ export const ReviewTab = () => {
     };
   }, []);
 
-  // Filter and sort reviews
-  const filteredAndSortedReviews = useMemo(() => {
-    let filtered = localReviews;
-
-    // Apply filter
-    if (filterType !== 'all') {
-      filtered = localReviews.filter(review => {
-        if (filterType === 'positive') return review.rating >= 4;
-        if (filterType === 'negative') return review.rating <= 2;
-        if (filterType === 'neutral')
-          return review.rating > 2 && review.rating < 4;
-        return true;
-      });
+  // Load more reviews
+  const loadMore = useCallback(() => {
+    if (!isLoadingMore && hasMore) {
+      fetchReviews(page + 1, true);
     }
+  }, [fetchReviews, page, hasMore, isLoadingMore]);
 
-    // Apply sort
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortType) {
-        case 'newest':
-          return (
-            new Date(b.reviewDate || 0).getTime() -
-            new Date(a.reviewDate || 0).getTime()
-          );
-        case 'highest-rated':
-          return b.rating - a.rating;
-        case 'lowest-rated':
-          return a.rating - b.rating;
-        case 'most-relevant':
-        default:
-          return 0; // Keep original order for most relevant
+  // Set up intersection observer for infinite scrolling (same as TeamTab)
+  useEffect(() => {
+    if (!hasMore || isLoadingMore) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const entry = entries[0];
+        if (entry && entry.isIntersecting && hasMore && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      {
+        root: null,
+        rootMargin: '100px', // Start loading 100px before reaching the bottom
+        threshold: 0.1,
       }
-    });
+    );
 
-    return sorted;
-  }, [localReviews, filterType, sortType]);
+    observerRef.current = observer;
+
+    // Add a small timeout to ensure the DOM element is rendered
+    const timeoutId = setTimeout(() => {
+      if (loadMoreRef.current) {
+        observer.observe(loadMoreRef.current);
+      }
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
+    };
+  }, [hasMore, isLoadingMore, loadMore]);
 
   const handleSortAction = (action: string) => {
     setSortType(action);
-  };
-
-  const handleEditReview = (review: any) => {
-    setEditingReview(review);
-    setIsEditModalOpen(true);
-  };
-
-  const handleDeleteReview = (review: any) => {
-    setReviewToDelete(review);
-    setIsDeleteModalOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (reviewToDelete) {
-      setLocalReviews(prev =>
-        prev.filter(review => review.id !== reviewToDelete.id)
-      );
-      setIsDeleteModalOpen(false);
-      setReviewToDelete(null);
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setIsDeleteModalOpen(false);
-    setReviewToDelete(null);
-  };
-
-  const handleEditSubmit = (data: any) => {
-    if (editingReview) {
-      setLocalReviews(prev =>
-        prev.map(review =>
-          review.id === editingReview.id
-            ? {
-                ...review,
-                reviewTitle: data.reviewTitle || review.reviewTitle,
-                rating: parseFloat(data.rating),
-                reviewText: data.review,
-              }
-            : review
-        )
-      );
-      setIsEditModalOpen(false);
-      setEditingReview(null);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditModalOpen(false);
-    setEditingReview(null);
-  };
-
-  // Helper function to determine if review belongs to current user
-  const isCurrentUserReview = (review: any) => {
-    // For demo purposes, consider reviews with specific names as current user
-    // In real app, this would check against actual user ID
-    return (
-      review.reviewerName === 'Anonymous User' ||
-      review.reviewerName.includes('Anonymous')
-    );
   };
 
   return (
@@ -187,46 +274,75 @@ export const ReviewTab = () => {
         </div>
       </div>
 
+      {/* Loading State */}
+      {loading && (
+        <div className='flex items-center justify-center min-h-[200px]'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
+            <p className='text-gray-600'>Loading reviews...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className='flex items-center justify-center min-h-[200px]'>
+          <div className='text-center'>
+            <p className='text-red-600 mb-4'>{error}</p>
+            <Button onClick={() => fetchReviews(1, false)} variant='outline'>
+              Try Again
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Reviews List */}
-      <div className='space-y-4'>
-        {filteredAndSortedReviews.map((review, index) => (
-          <CustomerReviewBox
-            key={review.id}
-            reviewTitle={review.reviewTitle}
-            rating={review.rating}
-            reviewText={review.reviewText}
-            reviewerName={review.reviewerName}
-            isLast={index === filteredAndSortedReviews.length - 1}
-            isCurrentUser={isCurrentUserReview(review)}
-            onEdit={() => handleEditReview(review)}
-            onDelete={() => handleDeleteReview(review)}
-          />
-        ))}
-      </div>
+      {!loading && !error && (
+        <div className='space-y-4'>
+          {localReviews.length === 0 ? (
+            <div className='text-center py-8'>
+              <p className='text-gray-600'>No reviews found.</p>
+            </div>
+          ) : (
+            <>
+              {localReviews.map((review: any, index: number) => {
+                const {
+                  id,
+                  profileImage,
+                  reviewTitle,
+                  rating,
+                  reviewText,
+                  reviewerName,
+                } = review;
 
-      {/* Edit Review SideSheet */}
-      <SideSheet
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        title='Edit Review'
-        size='600px'
-      >
-        <ReviewForm
-          onSubmit={handleEditSubmit}
-          onCancel={handleCancelEdit}
-          initialData={editingReview}
-        />
-      </SideSheet>
+                return (
+                  <CustomerReviewBox
+                    key={id}
+                    profileImage={profileImage}
+                    reviewTitle={reviewTitle}
+                    rating={rating}
+                    reviewText={reviewText}
+                    reviewerName={reviewerName}
+                    isLast={index === localReviews.length - 1}
+                    isCurrentUser={false}
+                  />
+                );
+              })}
 
-      {/* Delete Confirmation Modal */}
-      <ConfirmDeleteModal
-        open={isDeleteModalOpen}
-        onCancel={handleCancelDelete}
-        onDelete={handleConfirmDelete}
-        title='Delete Review'
-        subtitle='Are you sure you want to delete this review? This action cannot be undone.'
-        archiveButtonText='Delete'
-      />
+              {/* Infinite scroll trigger element (same as TeamTab) */}
+              {hasMore && (
+                <div ref={loadMoreRef} className='flex justify-center pt-4'>
+                  {isLoadingMore && (
+                    <div className='text-center py-4'>
+                      <LoadingComponent variant='inline' size='md' text='' />
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 };

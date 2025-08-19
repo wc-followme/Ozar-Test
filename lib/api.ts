@@ -282,6 +282,7 @@ export interface UpdateCompanyRequest {
   pincode?: string;
   projects?: string;
   image?: string;
+  cover_image?: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
 }
@@ -294,6 +295,69 @@ export interface UpdateCompanyResponse {
 
 // Company delete response
 export interface DeleteCompanyResponse {
+  statusCode: number;
+  message: string;
+}
+
+// Portfolio/Projects interfaces
+export interface PortfolioProject {
+  uuid: string;
+  name: string;
+  images?: string[];
+  company_uuid: string;
+  company_name: string;
+  created_at: string;
+  updated_at: string;
+  // Legacy fields for backward compatibility
+  id?: number;
+  title?: string;
+  type?: string;
+  year?: string;
+  image?: string;
+  imageCount?: number;
+  videoCount?: number;
+  company_id?: string;
+}
+
+export interface FetchPortfolioResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    data: PortfolioProject[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateProjectRequest {
+  // DTO: name and images[]
+  name: string;
+  images?: string[];
+  // Optional: if not provided, server may take from auth context
+  company_id?: string;
+}
+
+export interface CreatePortfolioResponse {
+  statusCode: number;
+  message: string;
+  data?: PortfolioProject;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  images?: string[];
+  company_id?: string;
+}
+
+export interface UpdatePortfolioResponse {
+  statusCode: number;
+  message: string;
+  data?: PortfolioProject;
+}
+
+export interface DeletePortfolioResponse {
   statusCode: number;
   message: string;
 }
@@ -454,6 +518,10 @@ export interface GetCompanyResponse {
     contractor_name: string;
     contractor_email: string;
     contractor_phone: string;
+    cover_image?: string;
+    averageRating?: number;
+    reviewCount?: number;
+    isReviewed?: boolean;
   };
 }
 
@@ -1021,6 +1089,56 @@ class ApiService {
     });
   }
 
+  // Projects management methods
+  async fetchProjects({
+    page = 1,
+    limit = 10,
+    company_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id?: string;
+  }): Promise<FetchPortfolioResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(company_id && { company_id }),
+    });
+
+    return this.makeRequest(`/companies/projects?${params}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createProject(
+    data: CreateProjectRequest
+  ): Promise<CreatePortfolioResponse> {
+    return this.makeRequest('/companies/projects', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProject(
+    uuid: string,
+    data: UpdateProjectRequest
+  ): Promise<UpdatePortfolioResponse> {
+    return this.makeRequest(`/companies/projects/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProject(uuid: string): Promise<DeletePortfolioResponse> {
+    return this.makeRequest(`/companies/projects/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   // Get company details
   async getCompanyDetails(uuid: string): Promise<GetCompanyResponse> {
     return this.makeRequest(`/companies/${uuid}`, {
@@ -1148,6 +1266,121 @@ class ApiService {
   async deleteCategory(uuid: string): Promise<DeleteCategoryResponse> {
     return this.makeRequest(`/categories/${uuid}`, {
       method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch categories with services
+  async fetchCategoriesWithServices({
+    page = 1,
+    limit = 10,
+    search = '',
+    status = 'ACTIVE',
+    sortBy = 'name',
+    sortOrder = 'ASC',
+    company_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: 'ACTIVE' | 'INACTIVE' | '';
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    company_id?: string | number;
+  }): Promise<FetchCategoriesResponse> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    if (company_id) params.append('company_id', String(company_id));
+
+    return this.makeRequest(`/categories/with-services?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Create company review
+  async createCompanyReview(payload: {
+    company_id: string;
+    rating: number;
+    review: string;
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data?: any;
+  }> {
+    return this.makeRequest('/companies/reviews', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch company reviews
+  async fetchCompanyReviews({
+    page = 1,
+    limit = 10,
+    company_id = '',
+    reviewer_id = '',
+    rating,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id?: string | number;
+    reviewer_id?: string | number;
+    rating?: number | string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data: {
+      data: Array<{
+        id: number;
+        uuid: string;
+        company_id: string;
+        reviewer_id: string;
+        rating: number;
+        review: string;
+        created_at: string;
+        updated_at: string;
+        reviewer?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          profile_image?: string;
+        };
+        company?: {
+          id: number;
+          uuid: string;
+          name: string;
+        };
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (company_id) params.append('company_id', String(company_id));
+    if (reviewer_id) params.append('reviewer_id', String(reviewer_id));
+    if (rating) params.append('rating', String(rating));
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    return this.makeRequest(`/companies/reviews?${params.toString()}`, {
+      method: 'GET',
       headers: this.getRoleHeaders(),
     });
   }
@@ -1582,11 +1815,13 @@ class ApiService {
   // Job management API
   async createJob(payload: {
     client_id?: string | number;
-    client_name: string;
-    client_email: string;
-    client_phone_number: string;
-    job_boxes_step: string;
+    client_name?: string;
+    client_email?: string;
+    client_phone_number?: string;
+    job_boxes_step: string[] | string;
     job_privacy: string;
+    question_json?: any;
+    company_id?: string;
   }): Promise<any> {
     return this.makeRequest('/jobs', {
       method: 'POST',
@@ -1972,4 +2207,3 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
-

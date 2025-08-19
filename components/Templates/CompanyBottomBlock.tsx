@@ -24,7 +24,31 @@ const TAB_ITEMS = COMPANY_TAB_ITEMS.map((item, index) => ({
   component: COMPONENTS[index]!,
 }));
 
-export const CompanyBottomBlock = () => {
+interface CompanyBottomBlockProps {
+  companyData?: {
+    name: string;
+    tagline: string;
+    image: string;
+    about: string;
+    phone: string;
+    email: string;
+    website: string;
+    communication: string;
+    city: string;
+    pincode: string;
+    preferred_communication_method: string;
+    projects: string;
+    uuid: string;
+  };
+  showViewCompanyProfileButton?: boolean;
+  canEditCompany?: boolean;
+}
+
+export const CompanyBottomBlock = ({
+  companyData,
+  showViewCompanyProfileButton = true,
+  canEditCompany = false,
+}: CompanyBottomBlockProps) => {
   const [selectedTab, setSelectedTab] = useState<string>(
     COMPANY_TABS.COMPANY_INFO
   );
@@ -75,7 +99,12 @@ export const CompanyBottomBlock = () => {
 
           {TAB_ITEMS.map(({ value, component: Component, className }) => (
             <TabsContent key={value} value={value} className={className}>
-              <Component />
+              <Component
+                companyData={companyData || undefined}
+                showViewCompanyProfileButton={showViewCompanyProfileButton}
+                canEditCompany={canEditCompany}
+                {...(companyData?.uuid && { companyId: companyData.uuid })}
+              />
             </TabsContent>
           ))}
         </Tabs>

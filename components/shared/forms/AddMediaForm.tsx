@@ -6,6 +6,7 @@ import { ImageUpload } from '@/components/shared/ImageUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Image from 'next/image';
 import { useRef, useState } from 'react';
 
 interface AddMediaFormProps {
@@ -18,6 +19,7 @@ interface AddMediaFormProps {
 export interface AddMediaFormData {
   projectName: string;
   media: File[];
+  existingImages?: string[];
 }
 
 export const AddMediaForm = ({
@@ -27,24 +29,35 @@ export const AddMediaForm = ({
   initialData,
 }: AddMediaFormProps) => {
   const [formData, setFormData] = useState<AddMediaFormData>({
-    projectName: initialData?.projectName || '',
-    media: initialData?.media || [],
+    projectName: initialData?.name || '',
+    media: [], // Start with empty media array for edit mode
   });
-
+  const [existingImages, setExistingImages] = useState<string[]>(
+    initialData?.images || []
+  );
   const [errors, setErrors] = useState<{
     projectName?: string;
     media?: string;
+    existingImages?: string;
   }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateForm = () => {
-    const newErrors: { projectName?: string; media?: string } = {};
+    const newErrors: {
+      projectName?: string;
+      media?: string;
+      existingImages?: string;
+    } = {};
 
     if (!formData.projectName.trim()) {
       newErrors.projectName = 'Project name is required';
     }
-    if (!formData.media || formData.media.length === 0) {
+    // Allow existing images or new media files
+    if (
+      (!formData.media || formData.media.length === 0) &&
+      existingImages.length === 0
+    ) {
       newErrors.media = 'At least one media file is required';
     }
 
@@ -57,7 +70,11 @@ export const AddMediaForm = ({
     setIsSubmitted(true);
 
     if (validateForm()) {
-      onSubmit(formData);
+      // Pass both new media files and existing images
+      onSubmit({
+        ...formData,
+        existingImages,
+      });
     }
   };
 
@@ -105,6 +122,10 @@ export const AddMediaForm = ({
     }));
   };
 
+  const handleRemoveExistingImage = (index: number) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
       {/* Media Upload */}
@@ -125,9 +146,45 @@ export const AddMediaForm = ({
           />
         </div>
 
-        {/* Media Preview */}
+        {/* Existing Images Preview */}
+        {existingImages.length > 0 && (
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium text-gray-600'>
+              Existing Images
+            </Label>
+            <div className='flex flex-wrap gap-2'>
+              {existingImages.map((imageUrl, index) => (
+                <div key={index} className='relative'>
+                  <Image
+                    src={
+                      imageUrl.startsWith('http') || imageUrl.startsWith('/')
+                        ? imageUrl
+                        : `${process.env['NEXT_PUBLIC_CDN_URL'] || ''}${imageUrl}`
+                    }
+                    alt={`Existing image ${index + 1}`}
+                    width={80}
+                    height={80}
+                    className='aspect-square h-[80px] w-[80px] object-cover rounded-lg border'
+                  />
+                  <button
+                    type='button'
+                    onClick={() => handleRemoveExistingImage(index)}
+                    className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600'
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* New Media Preview */}
         {formData.media.length > 0 && (
           <div className='space-y-2'>
+            <Label className='text-sm font-medium text-gray-600'>
+              New Media Files
+            </Label>
             <MediaPreview
               files={formData.media}
               onRemove={handleRemoveMedia}
