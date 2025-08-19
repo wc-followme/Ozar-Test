@@ -45,6 +45,7 @@ export default function JobManagement() {
   const { DONE } = JobStatus;
   const { HOME_OWNER } = ROUTES;
   const { JOBS_LIMIT } = PAGINATION;
+  const { BASE_URL } = APP_CONFIG;
   const {
     NEW_LEADS: NEW_LEADS_TAB,
     INFO,
@@ -83,7 +84,7 @@ export default function JobManagement() {
 
   // Helper function to generate home-owner link
   const generateHomeOwnerLink = (jobUuid: string) =>
-    `${APP_CONFIG.BASE_URL}${HOME_OWNER}/${jobUuid}`;
+    `${BASE_URL}${HOME_OWNER}/${jobUuid}`;
 
   // State for filter counts
   const [filterCounts, setFilterCounts] = useState<JobFilterCounts>({

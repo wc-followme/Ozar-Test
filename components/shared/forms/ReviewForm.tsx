@@ -16,6 +16,7 @@ interface ReviewFormProps {
 }
 
 export interface ReviewFormData {
+  title: string;
   rating: string;
   review: string;
 }
@@ -39,6 +40,7 @@ export const ReviewForm = ({
   initialData,
 }: ReviewFormProps) => {
   const [formData, setFormData] = useState<ReviewFormData>({
+    title: initialData?.title || '',
     rating: initialData?.rating?.toString() || '4.5',
     review: initialData?.review || '',
   });
@@ -49,6 +51,9 @@ export const ReviewForm = ({
   const validateForm = () => {
     const newErrors: Partial<ReviewFormData> = {};
 
+    if (!formData.title.trim()) {
+      newErrors.title = 'Title is required';
+    }
     if (!formData.rating) {
       newErrors.rating = 'Rating is required';
     }
@@ -108,6 +113,26 @@ export const ReviewForm = ({
           </div>
         </div>
         {errors.rating && <FormErrorMessage message={errors.rating} />}
+      </div>
+
+      {/* Review Title */}
+      <div className='space-y-2'>
+        <Label htmlFor='title' className='field-label'>
+          Review Title
+        </Label>
+        <input
+          type='text'
+          id='title'
+          placeholder='Enter a title for your review...'
+          value={formData.title}
+          onChange={e => handleInputChange('title', e.target.value)}
+          className={`w-full input-field border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] px-4 py-3 ${
+            errors.title
+              ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
+              : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
+          }`}
+        />
+        {errors.title && <FormErrorMessage message={errors.title} />}
       </div>
 
       {/* Review Text */}
