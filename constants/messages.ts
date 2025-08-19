@@ -158,3 +158,8 @@ export const PROFILE_DETAILS_MESSAGES = {
   WEBSITE_NOT_AVAILABLE: 'Website Not Available',
   ADDRESS_NOT_AVAILABLE: 'Address Not Available',
 } as const;
+// Estimation Messages
+export const ESTIMATION_MESSAGES = {
+  NO_TRADE_OPTIONS_AVAILABLE: 'No trade options available',
+  DEFAULT_TRADE_NAME: 'Default Trade',
+};

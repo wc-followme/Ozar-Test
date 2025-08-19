@@ -2203,6 +2203,127 @@ class ApiService {
       ...options,
     });
   }
+
+  // Public APIs for estimation (no auth required)
+  async fetchTradesPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    category_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    category_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (category_id) {
+      params.append('category_id', String(category_id));
+    }
+
+    return this.makeRequest(`/trades/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchServicesPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    trade_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    trade_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (trade_id) {
+      params.append('trade_id', String(trade_id));
+    }
+
+    return this.makeRequest(`/services/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchMaterialsPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    service_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    service_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
+
+    return this.makeRequest(`/materials/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchToolsPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    service_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    service_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
+
+    return this.makeRequest(`/tools/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();

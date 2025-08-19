@@ -36,6 +36,7 @@ interface EstimationServiceFormProps {
   tools?: Tool[];
   onAddTool?: (tool: Tool) => void;
   onRemoveTool?: (toolId: string) => void;
+  onReplaceTools?: (tools: Tool[]) => void; // Add callback for replacing all tools
   roomName?: string;
   tradeName?: string;
   tradeId?: string | undefined; // Add trade ID prop
@@ -56,6 +57,7 @@ export default function EstimationServiceForm({
   tools = [],
   onAddTool,
   onRemoveTool,
+  onReplaceTools,
   roomName = 'Room',
   tradeName = 'Trade',
   tradeId, // Add trade ID prop
@@ -96,12 +98,11 @@ export default function EstimationServiceForm({
 
     setLoading(true);
     try {
-      const response = await apiService.fetchServices({
+      const response = await apiService.fetchServicesPublic({
         page: 1,
         limit: 50,
-        trade_uuid: tradeUuid,
         company_id: companyUuid,
-        status: 'ACTIVE',
+        trade_id: tradeUuid,
       });
 
       type ServiceItem = { id?: string | number; uuid?: string; name?: string };
@@ -122,10 +123,8 @@ export default function EstimationServiceForm({
         }));
 
       setServiceOptions(options);
-    } catch (error) {
-      console.error('Error fetching services:', error);
-      console.error('Trade UUID:', tradeUuid);
-      console.error('Company UUID:', companyUuid);
+    } catch (_error) {
+      // Gracefully degrade to empty options when API fails or returns no data
       setServiceOptions([]);
     } finally {
       setLoading(false);
@@ -192,11 +191,18 @@ export default function EstimationServiceForm({
                     onServiceNameChange(newName);
                   }
                   if (onServiceUpdate) {
-                    onServiceUpdate({
+                    const updatedService = {
                       ...service,
                       name: newName,
-                      ...(serviceUuid && { uuid: serviceUuid }), // Only add uuid if it exists
-                    });
+                    };
+
+                    if (serviceUuid) {
+                      (updatedService as any).uuid = serviceUuid;
+                    } else {
+                      delete (updatedService as any).uuid;
+                    }
+
+                    onServiceUpdate(updatedService);
                   }
                 }}
                 options={serviceOptions}
@@ -373,7 +379,9 @@ export default function EstimationServiceForm({
         onItemUpdate={onMaterialUpdate || (() => {})}
         onItemDelete={onMaterialDelete || (() => {})}
         defaultExpanded={true}
-        serviceId={service.uuid || service.id}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
 
       {/* Finishes Accordion */}
@@ -402,7 +410,9 @@ export default function EstimationServiceForm({
         onItemUpdate={onFinishUpdate || (() => {})}
         onItemDelete={onFinishDelete || (() => {})}
         defaultExpanded={true}
-        serviceId={service.uuid || service.id}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
 
       {/* Tools Accordion */}
@@ -411,11 +421,14 @@ export default function EstimationServiceForm({
         tools={tools}
         onAddTool={onAddTool || (() => {})}
         onRemoveTool={onRemoveTool || (() => {})}
+        onReplaceTools={onReplaceTools || (() => {})}
         defaultExpanded={true}
         roomName={roomName}
         tradeName={tradeName}
         serviceName={service.name}
-        serviceId={service.uuid || service.id}
+        serviceId={
+          service.name ? service.uuid || service.id || undefined : undefined
+        }
       />
     </div>
   );
