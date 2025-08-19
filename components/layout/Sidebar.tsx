@@ -21,6 +21,9 @@ import { MinimalSidebar } from './MinimalSidebar';
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [versionInfo, setVersionInfo] = useState(
+    process.env['NEXT_PUBLIC_VERSION']
+  );
   const { permissions, isLoading, hasPermission } = usePermissions();
   const pathname = usePathname();
 
@@ -182,6 +185,9 @@ export function Sidebar() {
                 )}
               </ul>
             </ScrollArea>
+          </div>
+          <div className='p-4 border-t border-[var(--border-dark)]'>
+            {versionInfo}
           </div>
         </div>
       </aside>
