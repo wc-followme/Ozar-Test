@@ -226,6 +226,7 @@ const CompanyProfile = ({ params }: PageProps) => {
     reviewCount,
     isReviewed,
     cover_image,
+    country_code,
   } = company;
 
   return (
@@ -234,7 +235,7 @@ const CompanyProfile = ({ params }: PageProps) => {
         coverImage={
           cover_image ? `${CDN_URL}${cover_image}` : IMAGES.PROFILE_BLOCK_BG
         }
-        logoImage={image ? `${CDN_URL}${image}` : IMAGES.LOGO}
+        logoImage={image ? `${CDN_URL}${image}` : ''}
         companyName={name}
         tagline={tagline}
         rating={averageRating || 0}
@@ -262,6 +263,7 @@ const CompanyProfile = ({ params }: PageProps) => {
           image,
           about,
           phone: phone_number,
+          phone_number,
           email,
           website,
           communication,
@@ -270,6 +272,7 @@ const CompanyProfile = ({ params }: PageProps) => {
           preferred_communication_method,
           projects,
           uuid,
+          country_code,
         }}
         showViewCompanyProfileButton={false}
         canEditCompany={false}

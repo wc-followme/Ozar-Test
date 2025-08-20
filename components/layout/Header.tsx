@@ -2,7 +2,12 @@
 import { ModeToggle } from '@/components/mode-toggle';
 import ChangePasswordForm from '@/components/shared/forms/ChangePasswordForm';
 import { Button } from '@/components/ui/button';
-import { CUSTOM_EVENTS, ROLE_IDS, STORAGE_KEYS } from '@/constants/common';
+import {
+  APP_CONFIG,
+  CUSTOM_EVENTS,
+  ROLE_IDS,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { COMPANY_IMAGES, HEADER_MESSAGES } from '@/constants/header-messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -27,6 +32,11 @@ const menuOptions = [
 export function Header() {
   const { logout, user } = useAuth();
 
+  // Destructure user data
+  const { role, company, profile_picture_url } = user || {};
+  const { id: userRoleId } = role || {};
+  const { name: userCompany } = company || {};
+
   // Add scroll direction state
   const [showHeader, setShowHeader] = useState(true);
   const lastScrollY = useRef(0);
@@ -40,9 +50,7 @@ export function Header() {
   useEffect(() => {
     if (!user) return;
 
-    const { role: userRole } = user;
-    const { id: roleId } = userRole;
-    const isAdmin = roleId === ROLE_IDS.ADMIN;
+    const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
     // Only fetch companies if user is admin
     if (isAdmin) {
@@ -167,9 +175,6 @@ export function Header() {
   const renderCompanySection = () => {
     if (!user) return null;
 
-    const { role, company } = user;
-    const { id: userRoleId } = role;
-    const { name: userCompany } = company;
     const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
     // Show loading state only for admin users while fetching companies
@@ -277,8 +282,9 @@ export function Header() {
               >
                 <Image
                   src={
-                    user?.profile_picture_url ||
-                    '/images/user-img-placeholder.png'
+                    profile_picture_url
+                      ? `${APP_CONFIG.CDN_URL}${profile_picture_url}`
+                      : APP_CONFIG.IMAGES.USER_PLACEHOLDER
                   }
                   alt='profile'
                   width={40}

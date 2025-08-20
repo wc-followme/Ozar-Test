@@ -70,8 +70,8 @@ const FiveBoxSystem = () => {
         company_id: currentCompanyId,
       });
 
-      if (response.statusCode === 200 && response.data) {
-        const { default_selected_json } = response.data;
+      if (response.statusCode === 200 && response?.data) {
+        const { default_selected_json } = response?.data || {};
 
         // Update box data with API response
         const updatedBoxData = FIVE_BOX_DATA.map(box => {
@@ -85,8 +85,6 @@ const FiveBoxSystem = () => {
         });
 
         setBoxData(updatedBoxData);
-      } else {
-        showErrorToast(response?.message ?? FIVE_BOX_MESSAGES.FETCH_ERROR);
       }
     } catch (err: unknown) {
       if (handleAuthError(err)) {

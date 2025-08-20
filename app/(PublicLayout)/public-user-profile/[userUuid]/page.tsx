@@ -14,6 +14,7 @@ import {
 import { apiService, GetUserResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
+import { useRouter } from 'next/navigation';
 import { use, useCallback, useEffect, useState } from 'react';
 
 interface ProfilePageProps {
@@ -24,11 +25,12 @@ interface ProfilePageProps {
 
 const Profile = ({ params }: ProfilePageProps) => {
   const { CDN_URL, IMAGES, BASE_URL } = APP_CONFIG;
-  const { COMPANY_PROFILE, PUBLIC_USER_PROFILE } = ROUTES;
+  const { PUBLIC_COMPANY_PROFILE, PUBLIC_USER_PROFILE, USER_PROFILE } = ROUTES;
   const { URL_COPIED_SUCCESS, COPY_FAILED_ERROR, SHARE_URL_ALERT } =
     SHARE_MESSAGES;
   const { handleAuthError, user: currentUser, isAuthenticated } = useAuth();
   const { showSuccessToast, showErrorToast } = useToast();
+  const router = useRouter();
 
   // Unwrap params using React.use()
   const { userUuid } = use(params);
@@ -40,6 +42,7 @@ const Profile = ({ params }: ProfilePageProps) => {
   const [coverFileKey, setCoverFileKey] = useState<string>('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [showCoverImageDialog, setShowCoverImageDialog] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Type guard for API response
   const isUserApiResponse = (obj: unknown): obj is GetUserResponse => {
@@ -80,10 +83,25 @@ const Profile = ({ params }: ProfilePageProps) => {
     }
   }, [userUuid]);
 
+  // Redirect logged-in users to dashboard user profile
+  useEffect(() => {
+    if (isAuthenticated && userUuid && !isRedirecting) {
+      setIsRedirecting(true);
+      // Add a small delay for smooth transition
+      setTimeout(() => {
+        router.push(`${USER_PROFILE}/${userUuid}`);
+      }, 100);
+    }
+  }, [isAuthenticated, userUuid, router, isRedirecting]);
+
   // Initial fetch when component mounts or userUuid changes
   useEffect(() => {
+    // Don't fetch if redirecting
+    if (isRedirecting) {
+      return;
+    }
     fetchUserDetails();
-  }, [fetchUserDetails]);
+  }, [fetchUserDetails, isRedirecting]);
 
   // Listen for new reviews and update user data
   useEffect(() => {
@@ -289,10 +307,12 @@ const Profile = ({ params }: ProfilePageProps) => {
     }
   };
 
-  const handleAddToNetwork = () => {};
+  const handleAddToNetwork = () => {
+    // Add to network functionality
+  };
 
   // Show loading state
-  if (loading) {
+  if (loading || isRedirecting) {
     return (
       <div className='flex items-center justify-center min-h-screen'>
         <LoadingComponent />
@@ -355,7 +375,7 @@ const Profile = ({ params }: ProfilePageProps) => {
         showChangeCoverButton={canEditUser()}
         editProfileLink={`${ROUTES.USER_MANAGEMENT}/edit-user/${userUuid}`}
         isUserProfile={true}
-        companyProfileLink={`${COMPANY_PROFILE}/${company?.uuid}`}
+        companyProfileLink={`${PUBLIC_COMPANY_PROFILE}/${company?.uuid}`}
         userId={userUuid}
         userCompanyName={companyName}
         userCompanyLogo={companyLogo ? `${CDN_URL}${companyLogo}` : undefined}

@@ -58,30 +58,35 @@ export default function UserList({
                   profile_picture_url,
                   status,
                   id,
-                }) => (
-                  <UserCard
-                    key={uuid}
-                    name={name}
-                    role={role?.name || ''}
-                    phone={phone_number}
-                    email={email}
-                    image={
-                      profile_picture_url
-                        ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
-                          profile_picture_url
-                        : ''
-                    }
-                    status={status === CommonStatus.ACTIVE}
-                    onToggle={() =>
-                      onToggle(id, status === CommonStatus.ACTIVE)
-                    }
-                    menuOptions={menuOptions}
-                    onDelete={() => onDelete(uuid)}
-                    onRetrieve={onRetrieve ? () => onRetrieve(uuid) : undefined}
-                    disableActions={loading}
-                    userUuid={uuid}
-                  />
-                )
+                }) => {
+                  return (
+                    <UserCard
+                      key={uuid}
+                      name={name}
+                      role={role?.name || ''}
+                      phone={phone_number}
+                      email={email}
+                      image={
+                        profile_picture_url
+                          ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
+                            profile_picture_url
+                          : ''
+                      }
+                      status={status === CommonStatus.ACTIVE}
+                      onToggle={() =>
+                        onToggle(id, status === CommonStatus.ACTIVE)
+                      }
+                      menuOptions={menuOptions}
+                      onDelete={() => onDelete(uuid)}
+                      onRetrieve={
+                        onRetrieve ? () => onRetrieve(uuid) : undefined
+                      }
+                      disableActions={loading}
+                      userUuid={uuid}
+                      roleId={role?.id as number}
+                    />
+                  );
+                }
               )}
             </div>
           )}

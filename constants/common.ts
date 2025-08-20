@@ -38,6 +38,7 @@ export const APP_CONFIG = {
     LOGO: '/images/logo.svg',
     PROFILE_BLOCK_BG: '/images/profile-block-bg.png',
     PROJECT_PLACEHOLDER: '/images/project-placeholder.png',
+    USER_PLACEHOLDER: '/images/user-img-placeholder.png',
   },
 } as const;
 
@@ -64,6 +65,7 @@ export const ROUTES = {
   TRADE_MANAGEMENT: '/trade-management',
   COMPANY_PROFILE: '/company-profile',
   PUBLIC_COMPANY_PROFILE: '/public-company-profile',
+  PUBLIC_USER_PROFILE: '/public-user-profile',
   EDIT_COMPANY_PROFILE: '/company-profile/edit-profile',
   FIVE_BOX_SYSTEM: '/company-profile/five-box-system',
   FIVE_BOX_GENERAL_INFO: '/company-profile/five-box-system/general-information',

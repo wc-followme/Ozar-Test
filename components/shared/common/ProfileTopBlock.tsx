@@ -21,6 +21,7 @@ import {
   PROFILE_DEFAULTS,
   ROUTES,
 } from '../../../constants/common';
+import { Avatar } from '../common/Avatar';
 
 interface ProfileTopBlockProps {
   coverImage?: string;
@@ -54,7 +55,7 @@ interface ProfileTopBlockProps {
 
 export const ProfileTopBlock = ({
   coverImage = APP_CONFIG.IMAGES.PROFILE_BLOCK_BG,
-  logoImage = APP_CONFIG.IMAGES.LOGO,
+  logoImage,
   companyName = PROFILE_DEFAULTS.COMPANY_NAME,
   tagline = PROFILE_DEFAULTS.TAGLINE,
   rating = PROFILE_DEFAULTS.RATING,
@@ -80,7 +81,7 @@ export const ProfileTopBlock = ({
   userCompanyName,
   userCompanyLogo,
 }: ProfileTopBlockProps) => {
-  const { IMAGES, CDN_URL } = APP_CONFIG;
+  const { CDN_URL } = APP_CONFIG;
   const { AUTH_LOGIN } = ROUTES;
   const {
     WRITE_REVIEW,
@@ -252,15 +253,15 @@ export const ProfileTopBlock = ({
             <div className='flex flex-col lg:flex-row gap-4 md:gap-6 -mt-[70px]'>
               {/* Logo */}
               <div className='relative'>
-                <div className='w-[150px] h-[150px] rounded-[10px] border-2 border-transparent bg-[var(--card-background)] overflow-hidden'>
-                  <Image
-                    src={logoImage}
-                    height={150}
-                    width={150}
-                    alt={`${companyName} Logo`}
-                    className='w-full h-full object-contain'
-                  />
-                </div>
+                <Avatar
+                  name={companyName}
+                  image={logoImage || ''}
+                  height={150}
+                  width={150}
+                  className='rounded-[10px] [&>span]:text-2xl text-white bg-opacity-100 shadow-lg sm:shadow-none transition-transform duration-300 hover:scale-105 sm:hover:scale-100'
+                  swapColors={true}
+                  autoTextColor={true}
+                />
               </div>
 
               {/* Company Details */}
@@ -283,14 +284,14 @@ export const ProfileTopBlock = ({
                               href={companyProfileLink}
                               className='text-[var(--text-dark)] flex items-center gap-2 text-base font-bold leading-[18px] tracking-[0%] hover:text-[var(--primary)] transition-colors'
                             >
-                              <Image
-                                src={userCompanyLogo || IMAGES.LOGO}
-                                width={24}
+                              <Avatar
+                                name={userCompanyName || '-'}
+                                image={userCompanyLogo || ''}
                                 height={24}
-                                className='object-contain'
-                                alt='logo'
+                                width={24}
+                                className='object-contain text-sm'
                               />
-                              {userCompanyName || 'Envision Construction'}
+                              {userCompanyName || '-'}
                             </Link>
                             <div className='w-px h-6 bg-[var(--border-dark)]'></div>
                             <div className='flex items-center gap-2'>

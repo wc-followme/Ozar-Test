@@ -377,6 +377,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
     reviewCount,
     isReviewed,
     cover_image,
+    country_code,
   } = company;
 
   // Determine if user can edit this company
@@ -389,7 +390,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
         coverImage={
           cover_image ? `${CDN_URL}${cover_image}` : IMAGES.PROFILE_BLOCK_BG
         }
-        logoImage={image ? `${CDN_URL}${image}` : IMAGES.LOGO}
+        logoImage={image ? `${CDN_URL}${image}` : ''}
         companyName={name}
         tagline={tagline}
         rating={averageRating || 0}
@@ -416,6 +417,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
           image,
           about,
           phone: phone_number,
+          phone_number,
           email,
           website,
           communication,
@@ -424,6 +426,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
           preferred_communication_method,
           projects,
           uuid,
+          country_code,
         }}
         showViewCompanyProfileButton={false}
         canEditCompany={userCanEdit}

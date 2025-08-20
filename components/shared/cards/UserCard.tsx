@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ACTIONS, ROUTES } from '@/constants/common';
+import { ACTIONS, ROLE_IDS, ROUTES } from '@/constants/common';
 import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { Call, Icon, Sms } from 'iconsax-react';
@@ -36,6 +36,7 @@ interface UserCardProps {
   avatarColor?: { bg: string; color: string };
   hideMenu?: boolean;
   hideToggle?: boolean;
+  roleId?: number;
 }
 
 export function UserCard({
@@ -54,6 +55,7 @@ export function UserCard({
   avatarColor,
   hideMenu = false,
   hideToggle = false,
+  roleId,
 }: UserCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -99,13 +101,23 @@ export function UserCard({
   };
 
   const handleCardClick = () => {
-    router.push(`${ROUTES.USER_PROFILE}/${userUuid}`);
+    // Only redirect to profile if user role is contractor (role ID: 2)
+    if (roleId === ROLE_IDS.CONTRACTOR) {
+      router.push(`${ROUTES.USER_PROFILE}/${userUuid}`);
+    }
   };
+
+  // Determine if card should be clickable (only for contractors)
+  const isClickable = roleId === ROLE_IDS.CONTRACTOR;
 
   return (
     <div
-      className='flex flex-col gap-2 bg-[var(--card-background)] rounded-[16px] sm:rounded-[12px] border border-[var(--border-dark)] p-4 sm:p-[10px] hover:shadow-card-hover transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
-      onClick={handleCardClick}
+      className={`flex flex-col gap-2 bg-[var(--card-background)] rounded-[16px] sm:rounded-[12px] border border-[var(--border-dark)] p-4 sm:p-[10px] shadow-lg sm:shadow-none transition-all duration-300 ${
+        isClickable
+          ? 'hover:shadow-card-hover transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+          : ''
+      }`}
+      onClick={isClickable ? handleCardClick : undefined}
     >
       {/* Header with Avatar, User Info and Menu */}
       <div className='flex items-start gap-4'>
