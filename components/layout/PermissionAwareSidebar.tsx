@@ -21,6 +21,7 @@ import {
 import { MinimalSidebar } from './MinimalSidebar';
 
 export function PermissionAwareSidebar() {
+  const versionInfo = process.env['NEXT_PUBLIC_VERSION'];
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
@@ -271,8 +272,8 @@ export function PermissionAwareSidebar() {
           </div>
 
           {/* Sidebar Links */}
-          <div className='flex-1 min-h-0'>
-            <ScrollArea className='h-full w-full px-4'>
+          <div className='flex-1 min-h-0 flex flex-col'>
+            <ScrollArea className='h-full w-full px-4 flex-1'>
               <ul className='py-2 [&>li+li]:mt-0.5'>
                 {filteredSidebarItems.map(item => (
                   <li key={item.menu_id}>
@@ -300,6 +301,9 @@ export function PermissionAwareSidebar() {
                 ))}
               </ul>
             </ScrollArea>
+            <div className='p-4 flex text-xs justify-center items-center border-t border-[var(--border-dark)] mt-auto'>
+              V-{versionInfo}
+            </div>
           </div>
         </div>
       </aside>
