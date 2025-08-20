@@ -22,6 +22,8 @@ import { MinimalSidebar } from './MinimalSidebar';
 
 export function PermissionAwareSidebar() {
   const versionInfo = process.env['NEXT_PUBLIC_VERSION'];
+  const versionUrl = process.env['NEXT_PUBLIC_GITHUB_URL'] || '#';
+
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
@@ -302,7 +304,7 @@ export function PermissionAwareSidebar() {
               </ul>
             </ScrollArea>
             <div className='p-4 flex text-xs justify-center items-center border-t border-[var(--border-dark)] mt-auto'>
-              V-{versionInfo}
+              <Link href={versionUrl}>V-{versionInfo}</Link>
             </div>
           </div>
         </div>
