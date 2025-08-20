@@ -99,6 +99,12 @@ export function EstimationTemplateForm({
     fetchCategories();
   }, []);
 
+  // Update EstimationBox when category changes
+  useEffect(() => {
+    // This will trigger the EstimationBox to re-fetch trades with the new categoryId
+    // The EstimationBox component will handle this automatically due to the categoryId dependency
+  }, [formData.category]);
+
   const handleSubmit = () => {
     if (onSubmit) {
       onSubmit(formData);
@@ -145,7 +151,7 @@ export function EstimationTemplateForm({
 
       {/* EstimationBox Component */}
       <div className='mb-6'>
-        <EstimationBox _onClose={() => {}} />
+        <EstimationBox _onClose={() => {}} categoryId={formData.category} />
       </div>
 
       {/* Footer */}

@@ -250,12 +250,12 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         handleCompanyChanged as EventListener
       );
     };
-  }, []);
+  }, [props.categoryId]); // Add categoryId as dependency
 
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-              updateLocalStorageFromState(rooms, props.jobId);
+      updateLocalStorageFromState(rooms, props.jobId);
     }
   }, [rooms]);
 
