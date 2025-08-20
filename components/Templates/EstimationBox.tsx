@@ -273,6 +273,17 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   }, [props.onFormSubmit]);
 
+  // Recalculate width when sidebar states change
+  useEffect(() => {
+    // Force re-render when sidebar states change
+    const handleResize = () => {
+      // This will trigger a re-render and recalculate width
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isSidebarCollapsed]);
+
   // Function to update calculations for a service
   const updateServiceCalculations = (service: Service): Service => {
     const serviceTotal = calculateServiceTotal(service.rate, service.qty);
@@ -1340,6 +1351,17 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  // Calculate dynamic width based on sidebar states
+  const calculateContentWidth = () => {
+    const baseWidth = '100vw';
+    const sidebarWidth = isSidebarCollapsed ? '80px' : '280px';
+    const estimationSidebarWidth = '320px'; // Fixed width for estimation sidebar
+    const padding = '48px'; // 24px on each side
+    const margins = '32px'; // 16px on each side
+
+    return `calc(${baseWidth} - ${sidebarWidth} - ${estimationSidebarWidth} - ${padding} - ${margins})`;
+  };
+
   const toggleMainAccordion = () => {
     // Check if all accordions are currently expanded
     const allRoomIds = rooms.map(room => room.id);
@@ -1456,7 +1478,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       />
 
       {/* Main Content */}
-      <div className='flex-1 flex flex-col h-[calc(100vh_-_120px)]'>
+      <div
+        className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out'
+        style={{ width: calculateContentWidth() }}
+      >
         {/* Header */}
         <EstimationHeader
           showAddService={showAddService}
@@ -1476,95 +1501,99 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         />
 
         {/* Content Area */}
-        <div className='flex-1 p-6 overflow-auto bg-[var(--background)]'>
-          {!showAddService ? (
-            // Room view - show trades list
-            selectedRoom && selectedRoom.trades.length > 0 ? (
-              <Sortable
-                items={selectedRoom.trades}
-                onReorder={handleTradeReorder}
-                idField='id'
-              >
-                <div className='space-y-4'>
-                  {selectedRoom.trades.map(trade => (
-                    <SortableItem
-                      key={`${selectedRoom.uniqueKey}_${trade.uniqueKey}`}
-                      id={trade.id}
-                    >
-                      {dragHandleProps => (
-                        <TradeListCardComponent
-                          trade={trade}
-                          onClick={() => handleTradeSelect(trade.uniqueKey)}
-                          dragHandleProps={dragHandleProps}
-                        />
-                      )}
-                    </SortableItem>
-                  ))}
-                </div>
-              </Sortable>
-            ) : (
-              <div className='text-center py-12'>
-                <NoDataFound
-                  title='No trades added yet.'
-                  description='Click "+ Add Trade" to get started.'
-                />
-              </div>
-            )
-          ) : showServiceForm && selectedService ? (
-            // Service form view - check if we have the data
-            selectedServiceData ? (
-              <EstimationServiceForm
-                service={selectedServiceData}
-                onServiceUpdate={handleServiceUpdate}
-                onAddMaterial={() => {}}
-                onAddFinish={() => {}}
-                onServiceNameChange={handleServiceNameChange}
-                onMaterialAdd={handleMaterialAdd}
-                onFinishAdd={handleFinishAdd}
-                onMaterialUpdate={handleMaterialUpdate}
-                onMaterialDelete={handleMaterialDelete}
-                onFinishUpdate={handleFinishUpdate}
-                onFinishDelete={handleFinishDelete}
-                tools={selectedServiceData.tools}
-                onAddTool={handleToolAdd}
-                onRemoveTool={handleToolRemove}
-                onReplaceTools={handleToolReplace}
-                roomName={selectedRoom?.name || 'Room'}
-                tradeName={selectedTradeData?.name || 'Trade'}
-                tradeId={selectedTrade || undefined}
-              />
-            ) : (
-              // Service selected but data not found
-              <div className='text-center py-12'>
-                <NoDataFound
-                  title='No Service found.'
-                  description='Click "+ Add Service" to get started.'
-                />
-              </div>
-            )
-          ) : selectedTrade ? (
-            // Trade view - show trade details and services
-            selectedTradeData ? (
-              <EstimationTradeForm
-                trade={selectedTradeData}
-                roomUniqueKey={selectedRoom?.uniqueKey || ''}
-                tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
-                _onTradeUpdate={handleTradeUpdate}
-                onTradeNameChange={handleTradeNameChange}
-                onTradeReplacement={handleTradeReplacement}
-                onServiceSelect={serviceId => {
-                  handleServiceSelect(serviceId);
-                }}
-                onServiceReorder={handleServiceReorder}
-                onLocalStorageUpdate={saveCurrentState}
-                tradeOptions={tradeOptions}
-              />
-            ) : (
-              <div className='text-center py-12'>
-                <p className='text-gray-500'>Trade not found.</p>
-              </div>
-            )
-          ) : null}
+        <div className='flex-1 overflow-hidden bg-[var(--background)]'>
+          <div className='h-full overflow-x-auto overflow-y-auto'>
+            <div className='p-6 min-w-[800px] max-w-none w-full'>
+              {!showAddService ? (
+                // Room view - show trades list
+                selectedRoom && selectedRoom.trades.length > 0 ? (
+                  <Sortable
+                    items={selectedRoom.trades}
+                    onReorder={handleTradeReorder}
+                    idField='id'
+                  >
+                    <div className='space-y-4'>
+                      {selectedRoom.trades.map(trade => (
+                        <SortableItem
+                          key={`${selectedRoom.uniqueKey}_${trade.uniqueKey}`}
+                          id={trade.id}
+                        >
+                          {dragHandleProps => (
+                            <TradeListCardComponent
+                              trade={trade}
+                              onClick={() => handleTradeSelect(trade.uniqueKey)}
+                              dragHandleProps={dragHandleProps}
+                            />
+                          )}
+                        </SortableItem>
+                      ))}
+                    </div>
+                  </Sortable>
+                ) : (
+                  <div className='text-center py-12'>
+                    <NoDataFound
+                      title='No trades added yet.'
+                      description='Click "+ Add Trade" to get started.'
+                    />
+                  </div>
+                )
+              ) : showServiceForm && selectedService ? (
+                // Service form view - check if we have the data
+                selectedServiceData ? (
+                  <EstimationServiceForm
+                    service={selectedServiceData}
+                    onServiceUpdate={handleServiceUpdate}
+                    onAddMaterial={() => {}}
+                    onAddFinish={() => {}}
+                    onServiceNameChange={handleServiceNameChange}
+                    onMaterialAdd={handleMaterialAdd}
+                    onFinishAdd={handleFinishAdd}
+                    onMaterialUpdate={handleMaterialUpdate}
+                    onMaterialDelete={handleMaterialDelete}
+                    onFinishUpdate={handleFinishUpdate}
+                    onFinishDelete={handleFinishDelete}
+                    tools={selectedServiceData.tools}
+                    onAddTool={handleToolAdd}
+                    onRemoveTool={handleToolRemove}
+                    onReplaceTools={handleToolReplace}
+                    roomName={selectedRoom?.name || 'Room'}
+                    tradeName={selectedTradeData?.name || 'Trade'}
+                    tradeId={selectedTrade || undefined}
+                  />
+                ) : (
+                  // Service selected but data not found
+                  <div className='text-center py-12'>
+                    <NoDataFound
+                      title='No Service found.'
+                      description='Click "+ Add Service" to get started.'
+                    />
+                  </div>
+                )
+              ) : selectedTrade ? (
+                // Trade view - show trade details and services
+                selectedTradeData ? (
+                  <EstimationTradeForm
+                    trade={selectedTradeData}
+                    roomUniqueKey={selectedRoom?.uniqueKey || ''}
+                    tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
+                    _onTradeUpdate={handleTradeUpdate}
+                    onTradeNameChange={handleTradeNameChange}
+                    onTradeReplacement={handleTradeReplacement}
+                    onServiceSelect={serviceId => {
+                      handleServiceSelect(serviceId);
+                    }}
+                    onServiceReorder={handleServiceReorder}
+                    onLocalStorageUpdate={saveCurrentState}
+                    tradeOptions={tradeOptions}
+                  />
+                ) : (
+                  <div className='text-center py-12'>
+                    <p className='text-gray-500'>Trade not found.</p>
+                  </div>
+                )
+              ) : null}
+            </div>
+          </div>
         </div>
 
         {/* Project Total and Submit Buttons */}
