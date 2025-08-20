@@ -7,46 +7,30 @@ pipeline {
   }
 
   stages {
-    stage('Only run for versioninfo branch') {
+    stage('Checkout Code') {
       when {
-        expression {
-          def branch = sh(returnStdout: true, script: "git rev-parse --abbrev-ref HEAD").trim()
-          env.CURRENT_BRANCH = branch
-          return branch == "versioninfo"
-        }
+        branch 'versioninfo'
       }
-      stages {
-        stage('Checkout Code') {
-          steps {
-            checkout scm
-          }
-        }
+      steps {
+        checkout scm
+      }
+    }
 
-        stage('Collect Git Info') {
-          steps {
-            script {
-              def commit = sh(returnStdout: true, script: "git rev-parse HEAD").trim()
-              env.CURRENT_COMMIT = commit
-
-              echo "🔹 Branch: ${env.CURRENT_BRANCH}"
-              echo "🔹 Commit: ${env.CURRENT_COMMIT}"
-            }
-          }
-        }
-
-        stage('Run Deployment Script on Staging EC2') {
-          steps {
-            sshagent(credentials: ['envision-ssh-key']) {
-              sh """
-                ssh -o StrictHostKeyChecking=no $EC2_USER_HOST \\
-                  'PR_NUMBER=\${CHANGE_ID:-} \\
-                   BUILD_NUMBER=${BUILD_NUMBER} \\
-                   BRANCH_NAME=${env.CURRENT_BRANCH} \\
-                   GIT_COMMIT=${env.CURRENT_COMMIT} \\
-                   bash /home/ubuntu/scripts/test-frontend-deploy.sh'
-              """
-            }
-          }
+    stage('Run Deployment Script on Staging EC2') {
+      when {
+        branch 'versioninfo'
+      }
+      steps {
+        sshagent(credentials: ['envision-ssh-key']) {
+          sh '''
+            ssh -o StrictHostKeyChecking=no $EC2_USER_HOST "
+              export BUILD_NUMBER='${BUILD_NUMBER}' &&
+              export BRANCH_NAME='${BRANCH_NAME}' &&
+              export GIT_COMMIT='${GIT_COMMIT}' &&
+              export PR_NUMBER='${CHANGE_ID:-}' &&
+              bash /home/ubuntu/scripts/test-frontend-deploy.sh
+            "
+          '''
         }
       }
     }
