@@ -1,8 +1,6 @@
 'use client';
 
-import { UserCard } from '@/components/shared/cards/UserCard';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,10 +17,11 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import UserCardSkeleton from '../../../components/shared/skeleton/UserCardSkeleton';
+import ArchiveList from './ArchiveList';
+import UserList from './UserList';
 import { MenuOption, Role, RoleApiResponse } from './types';
 import { USER_MESSAGES } from './user-messages';
 
@@ -87,11 +86,15 @@ export default function UserManagement() {
         const companyId = getCompanyId();
 
         const role_id = filter !== 'all' ? filter : '';
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
           role_id,
-          status: CommonStatus.ACTIVE, // Only fetch active users
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
         const newUsers = usersRes.data;
@@ -123,18 +126,26 @@ export default function UserManagement() {
         setLoading(false);
       }
     },
-    [filter]
+    [filter, selectedTab]
   );
 
-  // Handle company changes
+  // Handle company changes - refetch based on current tab
   const refetchUsers = useCallback(() => {
     setPage(1);
     setHasMore(true);
     setUsers([]);
     fetchUsers(1, false);
-  }, []);
+  }, [fetchUsers]);
 
   useCompanyChange(refetchUsers);
+
+  // Refetch when role filter or tab changes
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setUsers([]);
+    fetchUsers(1, false);
+  }, [filter, selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -172,6 +183,8 @@ export default function UserManagement() {
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
       );
+      // Refresh list to reflect latest server state based on current tab
+      refetchUsers();
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -204,26 +217,60 @@ export default function UserManagement() {
     }
   };
 
+  // Retrieve handler
+  const handleRetrieveUser = async (uuid: string) => {
+    try {
+      const response = await apiService.updateUserStatus(
+        uuid,
+        CommonStatus.ACTIVE
+      );
+      showSuccessToast(
+        extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
+      );
+      // Refresh list to reflect latest server state based on current tab
+      refetchUsers();
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message =
+        err instanceof Error ? err.message : USER_MESSAGES.STATUS_UPDATE_ERROR;
+      showErrorToast(message);
+    }
+  };
+
   // Handler for create user navigation with loading state
   const handleCreateUser = useCallback(() => {
     setIsNavigating(true);
     router.push(ROUTES.CREATE_USER);
   }, [router]);
 
-  const menuOptions: MenuOption[] = [
-    {
-      label: USER_MESSAGES.EDIT_USER_TITLE,
-      action: ACTIONS.EDIT,
-      icon: Edit2,
-      variant: 'default',
-    },
-    {
-      label: USER_MESSAGES.ARCHIVE_BUTTON,
-      action: ACTIONS.DELETE,
-      icon: Trash,
-      variant: 'destructive',
-    },
-  ];
+  const menuOptions: MenuOption[] =
+    selectedTab === 'archive'
+      ? [
+          {
+            label: USER_MESSAGES.RETRIEVE_BUTTON,
+            action: ACTIONS.RETRIEVE,
+            icon: Refresh,
+            variant: 'default',
+          },
+        ]
+      : [
+          {
+            label: USER_MESSAGES.EDIT_USER_TITLE,
+            action: ACTIONS.EDIT,
+            icon: Edit2,
+            variant: 'default',
+          },
+          {
+            label: USER_MESSAGES.ARCHIVE_BUTTON,
+            action: ACTIONS.DELETE,
+            icon: Trash,
+            variant: 'destructive',
+          },
+        ];
 
   // Check if user has permission to view users
   if (userPermissions && !canViewUsers) {
@@ -279,10 +326,17 @@ export default function UserManagement() {
                 onValueChange={setFilter}
                 options={[
                   { value: 'all', label: USER_MESSAGES.ALL_USERS },
-                  ...roles.map(({ uuid, name }) => ({
-                    value: String(uuid),
-                    label: name,
-                  })),
+                  ...roles
+                    .filter(
+                      ({ name }) =>
+                        !['homeowner', 'vendor', 'admin'].includes(
+                          name.toLowerCase()
+                        )
+                    )
+                    .map(({ uuid, name }) => ({
+                      value: String(uuid),
+                      label: name,
+                    })),
                 ]}
                 placeholder={USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40'
@@ -295,7 +349,11 @@ export default function UserManagement() {
                   className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                   disabled={loading}
                 >
-                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <Add
+                    size='24'
+                    color='var(--icon-dark)'
+                    className='sm:hidden'
+                  />
                   <span className='hidden sm:inline'>
                     {USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
                   </span>
@@ -305,85 +363,28 @@ export default function UserManagement() {
           </div>
           {/* Users Tab Content */}
           <TabsContent value='users' className='mt-6'>
-            {/* Initial Loading State */}
-            {users.length === 0 && loading ? (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
-                {[...Array(8)].map((_, i) => (
-                  <UserCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* User Grid */}
-                {users.length === 0 && !loading ? (
-                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-                    <NoDataFound
-                      description={USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION}
-                      buttonText={USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
-                      onButtonClick={handleCreateUser}
-                      showButton={canEdit ?? false}
-                    />
-                  </div>
-                ) : (
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-4 sm:gap-3 xl:gap-6'>
-                    {users?.map(
-                      ({
-                        uuid,
-                        name,
-                        role,
-                        phone_number,
-                        email,
-                        profile_picture_url,
-                        status,
-                        id,
-                      }) => (
-                        <UserCard
-                          key={uuid} // Use uuid instead of id for unique keys
-                          name={name}
-                          role={role?.name || ''}
-                          phone={phone_number}
-                          email={email}
-                          image={
-                            profile_picture_url
-                              ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
-                                profile_picture_url
-                              : ''
-                          }
-                          status={status === CommonStatus.ACTIVE}
-                          onToggle={() =>
-                            handleToggleStatus(
-                              id,
-                              status === CommonStatus.ACTIVE
-                            )
-                          }
-                          menuOptions={menuOptions}
-                          onDelete={() => handleDeleteUser(uuid)}
-                          disableActions={loading}
-                          userUuid={uuid}
-                        />
-                      )
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {loading && users.length > 0 && (
-              <div className='text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <UserList
+              users={users}
+              loading={loading}
+              noDataDescription={USER_MESSAGES.NO_USERS_FOUND_DESCRIPTION}
+              menuOptions={menuOptions}
+              onToggle={handleToggleStatus}
+              onDelete={handleDeleteUser}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Users'
-                description='No archived users found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              users={users}
+              loading={loading}
+              noDataTitle={USER_MESSAGES.ARCHIVED_USERS_TITLE}
+              noDataDescription={USER_MESSAGES.NO_ARCHIVED_USERS_FOUND}
+              menuOptions={menuOptions}
+              onToggle={handleToggleStatus}
+              onDelete={handleDeleteUser}
+              onRetrieve={handleRetrieveUser}
+            />
           </TabsContent>
         </Tabs>
       </div>

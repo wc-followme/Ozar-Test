@@ -3,7 +3,11 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, value, onChange, readOnly, ...rest }, ref) => {
+    const isControlled = value !== undefined;
+    const finalReadOnly =
+      readOnly ?? (isControlled && typeof onChange !== 'function');
+
     return (
       <input
         type={type}
@@ -12,7 +16,10 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
           className
         )}
         ref={ref}
-        {...props}
+        value={value}
+        onChange={onChange}
+        readOnly={finalReadOnly}
+        {...rest}
       />
     );
   }

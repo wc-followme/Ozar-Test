@@ -43,6 +43,7 @@ export const MATERIAL_MESSAGES = {
 
   // Loading and empty states
   LOADING_MATERIALS: 'Loading materials...',
+  LOADING_MATERIALS_DROPDOWN: 'Loading materials...',
   NO_MATERIALS_FOUND: 'No materials found',
   NO_MATERIALS_FOUND_DESCRIPTION:
     "You haven't created any materials yet. Start by adding your first one to organize your materials.",

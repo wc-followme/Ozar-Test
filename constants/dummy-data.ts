@@ -114,3 +114,426 @@ export const fiveBoxSystemData = [
     slug: 'estimation',
   },
 ];
+
+export const customerReviews = [
+  {
+    id: '1',
+    reviewTitle: 'Transformed Our Home!',
+    rating: 5,
+    reviewText:
+      'We hired [Contractor Name] for a complete home renovation, and they exceeded our expectations! From design to execution, everything was flawless. The team was professional, on time, and ensured quality craftsmanship. Highly recommended!',
+    reviewerName: 'Emma & Michael R.',
+    reviewDate: '2024-01-15T10:30:00Z',
+  },
+  {
+    id: '2',
+    reviewTitle: 'Outstanding Kitchen Remodel',
+    rating: 5,
+    reviewText:
+      'The kitchen renovation project was completed perfectly. The attention to detail was incredible, and the quality of work exceeded our expectations. The team was punctual and professional throughout.',
+    reviewerName: 'Sarah Johnson',
+    reviewDate: '2024-01-10T14:20:00Z',
+  },
+  {
+    id: '3',
+    reviewTitle: 'Professional Bathroom Upgrade',
+    rating: 4,
+    reviewText:
+      'Great work on our bathroom renovation. The team was skilled and efficient. The only minor issue was a slight delay in material delivery, but overall very satisfied with the results.',
+    reviewerName: 'David Chen',
+    reviewDate: '2024-01-05T09:15:00Z',
+  },
+  {
+    id: '4',
+    reviewTitle: 'Excellent Exterior Painting',
+    rating: 5,
+    reviewText:
+      'The exterior painting job was done beautifully. The color selection was perfect and the finish is outstanding. The crew was careful and cleaned up thoroughly after completion.',
+    reviewerName: 'Lisa Thompson',
+    reviewDate: '2023-12-28T16:45:00Z',
+  },
+  {
+    id: '5',
+    reviewTitle: 'Quality Roofing Work',
+    rating: 4,
+    reviewText:
+      'The roofing project was completed efficiently and with high quality materials. The team was knowledgeable and addressed all our concerns. Very reliable service.',
+    reviewerName: 'Robert Williams',
+    reviewDate: '2023-12-20T11:30:00Z',
+  },
+];
+
+export const portfolioProjects = [
+  {
+    id: '1',
+    title: 'Modern Kitchen Renovation',
+    type: 'Interior',
+    year: '2024',
+    image: '/images/company-management/company-img-1.png',
+    imageCount: 20,
+    videoCount: 2,
+  },
+  {
+    id: '2',
+    title: 'Luxury Bathroom Design',
+    type: 'Interior',
+    year: '2023',
+    image: '/images/company-management/company-img-2.png',
+    imageCount: 15,
+    videoCount: 1,
+  },
+  {
+    id: '3',
+    title: 'Custom Home Build',
+    type: 'Full Home',
+    year: '2023',
+    image: '/images/company-management/company-img-3.png',
+    imageCount: 35,
+    videoCount: 3,
+  },
+  {
+    id: '4',
+    title: 'Outdoor Kitchen Project',
+    type: 'Exterior',
+    year: '2023',
+    image: '/images/company-management/company-img-4.png',
+    imageCount: 12,
+    videoCount: 0,
+  },
+  {
+    id: '5',
+    title: 'Office Renovation',
+    type: 'Commercial',
+    year: '2022',
+    imageCount: 8,
+    videoCount: 1,
+  },
+  {
+    id: '6',
+    title: 'Basement Finishing',
+    type: 'Interior',
+    year: '2022',
+    imageCount: 18,
+    videoCount: 2,
+  },
+  {
+    id: '7',
+    title: 'Deck Construction',
+    type: 'Exterior',
+    year: '2022',
+    imageCount: 10,
+    videoCount: 0,
+  },
+  {
+    id: '8',
+    title: 'Garage Addition',
+    type: 'Addition',
+    year: '2021',
+    imageCount: 6,
+    videoCount: 1,
+  },
+];
+
+export const warranties = [
+  {
+    id: '1',
+    title: 'Workmanship Warranty',
+    duration: '2 Years',
+    description:
+      'Covers all workmanship and installation quality. Ensures that all work performed meets industry standards and specifications.',
+    type: 'Workmanship',
+  },
+  {
+    id: '2',
+    title: 'Timeframe Warranty',
+    duration: '5 Years',
+    description:
+      'Covers warranty periods and time-based guarantees. Ensures coverage for specified time periods.',
+    type: 'Timeframe',
+  },
+  {
+    id: '3',
+    title: 'Product Warranty',
+    duration: '3 Years',
+    description:
+      'Covers product quality and manufacturing defects. Ensures products meet quality standards.',
+    type: 'Product',
+  },
+  {
+    id: '4',
+    title: 'Brand Warranty',
+    duration: '1 Year',
+    description:
+      'Covers brand-specific guarantees and manufacturer warranties. Ensures brand quality assurance.',
+    type: 'Brand',
+  },
+  {
+    id: '5',
+    title: 'Extended Workmanship Warranty',
+    duration: '10 Years',
+    description:
+      'Extended coverage for workmanship quality. Provides long-term protection for installation work.',
+    type: 'Workmanship',
+  },
+  {
+    id: '6',
+    title: 'Premium Timeframe Warranty',
+    duration: '15 Years',
+    description:
+      'Premium time-based warranty coverage. Offers extended protection periods.',
+    type: 'Timeframe',
+  },
+  {
+    id: '7',
+    title: 'Standard Product Warranty',
+    duration: '2 Years',
+    description:
+      'Standard product warranty coverage. Ensures basic product quality protection.',
+    type: 'Product',
+  },
+  {
+    id: '8',
+    title: 'Premium Brand Warranty',
+    duration: '5 Years',
+    description:
+      'Premium brand warranty with extended coverage. Ensures comprehensive brand protection.',
+    type: 'Brand',
+  },
+];
+
+export const warrantyTabs = [
+  {
+    id: 'workmanship',
+    label: 'Workmanship',
+    value: 'workmanship',
+  },
+  {
+    id: 'timeframe',
+    label: 'Timeframe',
+    value: 'timeframe',
+  },
+  {
+    id: 'product',
+    label: 'Product',
+    value: 'product',
+  },
+  {
+    id: 'brand',
+    label: 'Brand',
+    value: 'brand',
+  },
+];
+
+// Tool Management Dummy Data
+export const toolBorrowedHistoryData = [
+  {
+    id: '1',
+    borrowedBy: {
+      name: 'Liam Anderson',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '2',
+    borrowedBy: {
+      name: 'Emma Thompson',
+      avatar: '/images/avatars/avatar-4.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '3',
+    borrowedBy: {
+      name: 'Noah Johnson',
+      avatar: '/images/avatars/avatar-5.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '4',
+    borrowedBy: {
+      name: 'Olivia Martinez',
+      avatar: '/images/avatars/avatar-6.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '5',
+    borrowedBy: {
+      name: 'Ava Robinson',
+      avatar: '/images/avatars/avatar-7.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '6',
+    borrowedBy: {
+      name: 'Ethan Clark',
+      avatar: '/images/avatars/avatar-8.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '7',
+    borrowedBy: {
+      name: 'Sophia Lewis',
+      avatar: '/images/avatars/avatar-1.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '8',
+    borrowedBy: {
+      name: 'Mason Walker',
+      avatar: '/images/avatars/avatar-2.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '9',
+    borrowedBy: {
+      name: 'Isabella Hall',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+];
+
+export const toolMaintenanceHistoryData = [
+  {
+    id: '1',
+    returnedBy: {
+      name: 'Liam Anderson',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Jam',
+  },
+  {
+    id: '2',
+    returnedBy: {
+      name: 'Emma Thompson',
+      avatar: '/images/avatars/avatar-4.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Overheat',
+  },
+  {
+    id: '3',
+    returnedBy: {
+      name: 'Noah Johnson',
+      avatar: '/images/avatars/avatar-5.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Vibration',
+  },
+  {
+    id: '4',
+    returnedBy: {
+      name: 'Olivia Martinez',
+      avatar: '/images/avatars/avatar-6.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Stall',
+  },
+  {
+    id: '5',
+    returnedBy: {
+      name: 'Ava Robinson',
+      avatar: '/images/avatars/avatar-7.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Noise',
+  },
+  {
+    id: '6',
+    returnedBy: {
+      name: 'Ethan Clark',
+      avatar: '/images/avatars/avatar-8.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Leak',
+  },
+  {
+    id: '7',
+    returnedBy: {
+      name: 'Sophia Lewis',
+      avatar: '/images/avatars/avatar-1.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Leak',
+  },
+  {
+    id: '8',
+    returnedBy: {
+      name: 'Mason Walker',
+      avatar: '/images/avatars/avatar-2.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Short',
+  },
+  {
+    id: '9',
+    returnedBy: {
+      name: 'Isabella Hall',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Short',
+  },
+];

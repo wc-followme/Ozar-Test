@@ -160,7 +160,6 @@ export default function EstimationHeader({
               className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={() => {
                 // Handle option template logic here
-                console.log('Option Template clicked');
               }}
             >
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />

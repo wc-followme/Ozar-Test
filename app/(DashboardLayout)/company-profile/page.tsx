@@ -1,135 +1,505 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { IconShare } from '@tabler/icons-react';
-import { DocumentText, Edit2, Star1 } from 'iconsax-react';
-import Image from 'next/image';
-import Link from 'next/link';
+import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
+import { ProfileTopBlock } from '@/components/shared/common/ProfileTopBlock';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  APP_CONFIG,
+  JOB_MESSAGES,
+  JOB_PRIVACY,
+  ROLE_IDS,
+  ROUTES,
+  SHARE_MESSAGES,
+  UPLOAD_PURPOSES,
+} from '@/constants/common';
+import { useCompanyChange } from '@/hooks/use-company-change';
+import { apiService, GetCompanyResponse } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
+import { getCompanyId } from '@/lib/utils';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
+import { FIVE_BOX_DATA } from './five-box-system/five-box-constants';
 
 const CompanyProfile = () => {
-  return (
-    <div className='rounded-[10px]'>
-      {/* Cover Image Section */}
-      <div className='relative w-full lg:aspect-[5.25/1] min-h-[250px] lg:min-h-max'>
-        {/* Cover Image */}
-        <div className='w-full h-full'>
-          <Image
-            src='/images/profile-block-bg.png'
-            alt='scaffolding'
-            fill
-            className='object-cover rounded-tl-[10px] rounded-tr-[10px]'
-            priority
-          />
-        </div>
+  const { CDN_URL, IMAGES, BASE_URL } = APP_CONFIG;
+  const {
+    PUBLIC_COMPANY_PROFILE,
+    EDIT_COMPANY_PROFILE,
+    FIVE_BOX_SYSTEM,
+    HOME_OWNER,
+  } = ROUTES;
+  const { URL_COPIED_SUCCESS, COPY_FAILED_ERROR } = SHARE_MESSAGES;
+  const { QUOTE_CREATE_SUCCESS, QUOTE_CREATE_ERROR } = JOB_MESSAGES;
+  const { PRIVATE } = JOB_PRIVACY;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const companyId = searchParams.get('companyId');
+  const { handleAuthError, user, isAuthenticated } = useAuth();
+  const { showSuccessToast, showErrorToast } = useToast();
 
-        {/* Change Cover Button */}
-        <Button
-          variant='secondary'
-          size='sm'
-          className='absolute top-4 right-4 btn-secondary !bg-[var(--white-background)] !px-[24px] text-[14px] !py-[10px] !h-9'
-        >
-          Change Cover
-        </Button>
+  const [company, setCompany] = useState<GetCompanyResponse['data'] | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCoverModal, setShowCoverModal] = useState(false);
+  const [coverPhotoFile, setCoverPhotoFile] = useState<File | null>(null);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [coverFileKey, setCoverFileKey] = useState<string>('');
+
+  // Check if user can edit this company profile
+  const canEditCompany = useCallback(() => {
+    if (!isAuthenticated || !user || !company) {
+      return false;
+    }
+
+    const userRoleId = user.role?.id;
+
+    // Admin has full access to all companies
+    if (userRoleId === ROLE_IDS.ADMIN) {
+      return true;
+    }
+
+    // Contractor needs to belong to the same company
+    if (userRoleId === ROLE_IDS.CONTRACTOR) {
+      const userCompanyId = user.company?.uuid;
+      const currentCompanyId = company.uuid;
+      return userCompanyId === currentCompanyId;
+    }
+
+    return false;
+  }, [isAuthenticated, user, company]);
+
+  // Check if user should see the review button
+  const canShowReviewButton = useCallback(() => {
+    if (!isAuthenticated || !user || !company) {
+      return true; // Allow reviews for non-authenticated users
+    }
+
+    const userRoleId = user.role?.id;
+    const userCompanyId = user.company?.uuid;
+    const currentCompanyId = company.uuid;
+
+    // Contractors cannot review their own company
+    if (
+      userRoleId === ROLE_IDS.CONTRACTOR &&
+      userCompanyId === currentCompanyId
+    ) {
+      return false;
+    }
+
+    return true;
+  }, [isAuthenticated, user, company]);
+
+  // Type guard for API response
+  const isCompanyApiResponse = (obj: unknown): obj is GetCompanyResponse => {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'statusCode' in obj &&
+      'data' in obj &&
+      typeof (obj as GetCompanyResponse).data === 'object'
+    );
+  };
+
+  // Fetch company details function
+  const fetchCompanyDetails = useCallback(async () => {
+    setLoading(true);
+    if (!companyId) {
+      setError('No company ID found');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setError(null);
+
+      const response = await apiService.getCompanyDetails(companyId);
+
+      if (isCompanyApiResponse(response)) {
+        const { data } = response;
+        setCompany(data);
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (err: unknown) {
+      setError('Failed to load company details');
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId]);
+
+  // Initial fetch when component mounts or companyId changes
+  useEffect(() => {
+    fetchCompanyDetails();
+  }, [fetchCompanyDetails]);
+
+  const updateRouter = useCallback(() => {
+    const currentCompanyId = getCompanyId();
+    if (currentCompanyId && currentCompanyId !== companyId) {
+      router.replace(`${ROUTES.COMPANY_PROFILE}?companyId=${currentCompanyId}`);
+    }
+  }, [companyId, router]);
+
+  useCompanyChange(updateRouter);
+
+  // Listen for new review submissions and update local company data (no API call)
+  useEffect(() => {
+    const handleNewReview = (event: Event) => {
+      const { detail } = event as CustomEvent<
+        { rating?: number } & Record<string, any>
+      >;
+      const newRating =
+        typeof detail?.rating === 'number' ? detail.rating : undefined;
+
+      setCompany(prev => {
+        if (!prev) return prev;
+
+        const currentCount =
+          (prev as any)?.reviewCount ?? (prev as any)?.review_count ?? 0;
+        const currentAvg =
+          (prev as any)?.averageRating ?? (prev as any)?.rating ?? 0;
+
+        const nextCount = currentCount + 1;
+        const nextAvg =
+          typeof newRating === 'number'
+            ? (currentAvg * currentCount + newRating) / nextCount
+            : currentAvg;
+
+        return {
+          ...prev,
+          averageRating: Number(nextAvg.toFixed(1)), // Format to 1 decimal place
+          reviewCount: nextCount,
+          isReviewed: true,
+        } as typeof prev;
+      });
+    };
+
+    window.addEventListener(
+      'newReviewSubmitted',
+      handleNewReview as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        'newReviewSubmitted',
+        handleNewReview as EventListener
+      );
+    };
+  }, []);
+
+  const handleEditProfile = () => {
+    // Edit profile functionality
+  };
+
+  const handleRequestQuote = async () => {
+    const { uuid } = company || {};
+    if (!uuid) {
+      return;
+    }
+
+    try {
+      // Fetch box settings for the company
+      const boxSettingsResponse = await apiService.getBoxSettings({
+        company_id: uuid,
+      });
+
+      const { data: boxSettings } = boxSettingsResponse;
+      const { default_selected_json, question_json: questionJson } =
+        boxSettings || {};
+
+      // Create job_boxes_step array based on enabled boxes
+      const enabledBoxes = (default_selected_json || [])
+        .filter((box: any) => box.enabled)
+        .map((box: any) => {
+          const fiveBoxItem = FIVE_BOX_DATA.find(item => item.id === box.id);
+          return fiveBoxItem ? fiveBoxItem.step : null;
+        })
+        .filter(Boolean); // Remove null values
+
+      // Create job payload
+      const jobPayload = {
+        job_privacy: PRIVATE,
+        job_boxes_step: enabledBoxes, // Keep as array of step values
+        company_id: uuid,
+        question_json: questionJson,
+      };
+
+      // Create the job
+      const response = await apiService.createJob(jobPayload);
+      const { data: responseData } = response;
+
+      if (responseData) {
+        showSuccessToast(QUOTE_CREATE_SUCCESS);
+        // Redirect to home-owner page with job UUID
+        const jobUuid = responseData.uuid;
+
+        router.push(`${HOME_OWNER}/${jobUuid}`);
+      } else {
+        showErrorToast(QUOTE_CREATE_ERROR);
+      }
+    } catch (error) {
+      if (handleAuthError(error)) return;
+      showErrorToast(QUOTE_CREATE_ERROR);
+    }
+  };
+
+  const handleShare = async () => {
+    const { uuid } = company || {};
+    if (!uuid) {
+      return;
+    }
+
+    try {
+      // Construct the public company profile URL
+      const publicUrl = `${BASE_URL}${PUBLIC_COMPANY_PROFILE}/${uuid}`;
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(publicUrl);
+
+      showSuccessToast(URL_COPIED_SUCCESS);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : COPY_FAILED_ERROR;
+      showErrorToast(errorMessage);
+    }
+  };
+
+  const handleCoverPhotoChange = async (file: File | null) => {
+    if (!file) {
+      setCoverPhotoFile(null);
+      setCoverFileKey('');
+      return;
+    }
+    setCoverPhotoFile(file);
+    setCoverUploading(true);
+    try {
+      const { name: fileName, type: fileType, size: fileSize } = file;
+      const ext = fileName.split('.').pop() || 'png';
+      const timestamp = Date.now();
+      const companyUuid = uuidv4();
+      const generatedFileName = `company_cover_${companyUuid}_${timestamp}.${ext}`;
+      const { COMPANY_COVER_IMAGE } = UPLOAD_PURPOSES;
+      const presigned = await getPresignedUrl({
+        fileName: generatedFileName,
+        fileType,
+        fileSize,
+        purpose: COMPANY_COVER_IMAGE,
+        customPath: '',
+      });
+      const { data: presignedData } = presigned;
+      const { uploadUrl, fileKey } = presignedData;
+      await uploadFileToPresignedUrl(uploadUrl, file);
+      setCoverFileKey(fileKey || '');
+    } catch (_: unknown) {
+      setCoverPhotoFile(null);
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
+  const handleDeleteCoverPhoto = () => {
+    setCoverPhotoFile(null);
+    setCoverFileKey('');
+  };
+
+  const handleChangeCover = () => {
+    setShowCoverModal(true);
+  };
+
+  const handleSaveCover = async () => {
+    const { uuid } = company || {};
+    if (!coverFileKey || !uuid) {
+      return;
+    }
+
+    try {
+      // Update company with new cover image
+      const updatePayload = {
+        cover_image: coverFileKey,
+      };
+
+      const response = await apiService.updateCompany(uuid, updatePayload);
+      const { statusCode } = response;
+
+      if (statusCode === 200) {
+        // Refresh company data to show updated cover image
+        await fetchCompanyDetails();
+        setShowCoverModal(false);
+        setCoverPhotoFile(null);
+        setCoverFileKey('');
+      } else {
+        // Handle update failure silently or show user feedback
+      }
+    } catch (error) {
+      if (handleAuthError(error)) return;
+      // Handle error silently or show user feedback
+    }
+  };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        <LoadingComponent />
       </div>
+    );
+  }
 
-      {/* Profile Section */}
-      <div className='relative bg-[var(--white-background)]'>
-        <div className='mx-auto'>
-          <Card className='px-4 lg:pl-[52px] lg:pr-6 py-6 border-0'>
-            <div className='flex flex-col lg:flex-row items-start gap-4 md:gap-6 -mt-16'>
-              {/* Logo */}
-              <div className='relative'>
-                <div className='w-[150px] h-[150px] rounded-2xl md:w-32 md:h-32 bg-[var(--card-background)] overflow-hidden p-2'>
-                  <Image
-                    src='/images/logo.svg'
-                    height={150}
-                    width={150}
-                    alt='Envision Construction Logo'
-                    className='w-full h-full object-contain'
-                  />
-                </div>
-              </div>
+  // Show error state
+  if (error || !company) {
+    return (
+      <div className='flex items-center justify-center min-h-screen'>
+        <div className='text-center'>
+          <h2 className='text-xl font-semibold text-gray-800 mb-2'>
+            Company Not Found
+          </h2>
+          <p className='text-gray-600'>
+            {error || 'The requested company could not be found.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-              {/* Company Details */}
-              <div className='flex-1 min-w-0 pt-4 lg:pt-16 w-full'>
-                <div className='space-y-2'>
-                  <h1 className='text-[var(--text-dark)] text-2xl font-bold leading-[18px] tracking-[0%]'>
-                    Envision Construction
-                  </h1>
-                  <div className='flex flex-wrap items-end gap-2'>
-                    <div>
-                      <p className='text-[var(--text-secondary)] text-base font-normal leading-[18px] tracking-[0%] mb-2'>
-                        Construction Company
-                      </p>
+  const {
+    name,
+    tagline,
+    image,
+    about,
+    phone_number,
+    email,
+    website,
+    communication,
+    city,
+    pincode,
+    preferred_communication_method,
+    projects,
+    uuid,
+    averageRating,
+    reviewCount,
+    isReviewed,
+    cover_image,
+  } = company;
 
-                      {/* Rating */}
-                      <div className='flex items-center gap-2'>
-                        <span className='text-[var(--text-dark)] text-base font-bold leading-[18px] tracking-[0%]'>
-                          4.0
-                        </span>
-                        <div className='flex items-center gap-1'>
-                          {[...Array(5)].map((_, index) => (
-                            <Star1
-                              key={index}
-                              size='16'
-                              className={
-                                index < 4
-                                  ? 'text-yellowbrand fill-yellowbrand'
-                                  : 'text-placeholdergray fill-placeholdergray'
-                              }
-                            />
-                          ))}
-                        </div>
-                        <span className='text-gray-500 text-sm'>5 Reviews</span>
-                      </div>
-                    </div>
-                    <div className='flex gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
-                      <Link
-                        href='/company-profile/five-box-system'
-                        className='btn-secondary text-[14px] gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                      >
-                        <DocumentText
-                          size='18'
-                          color='var(--text-dark)'
-                          className='[&_path]:!stroke-[2px]'
-                        />
-                        <span className='hidden sm:inline'>5-box system</span>
-                      </Link>
+  // Determine if user can edit this company
+  const userCanEdit = canEditCompany();
+  const userCanReview = canShowReviewButton();
 
-                      <Button
-                        variant='secondary'
-                        className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                      >
-                        <IconShare
-                          size='18'
-                          color='var(--text-dark)'
-                          className='[&_path]:!stroke-[2px]'
-                        />
-                        <span className='hidden sm:inline'>Share</span>
-                      </Button>
+  return (
+    <div className=''>
+      <ProfileTopBlock
+        coverImage={
+          cover_image ? `${CDN_URL}${cover_image}` : IMAGES.PROFILE_BLOCK_BG
+        }
+        logoImage={image ? `${CDN_URL}${image}` : IMAGES.LOGO}
+        companyName={name}
+        tagline={tagline}
+        rating={averageRating || 0}
+        reviewCount={reviewCount || 0}
+        isReviewed={isReviewed || false}
+        onEditProfile={handleEditProfile}
+        onRequestQuote={handleRequestQuote}
+        onShare={handleShare}
+        onChangeCover={handleChangeCover}
+        editProfileLink={`${EDIT_COMPANY_PROFILE}/${uuid}`}
+        fiveBoxSystemLink={FIVE_BOX_SYSTEM}
+        companyId={uuid}
+        showEditButton={userCanEdit}
+        showFiveBoxSystemButton={userCanEdit}
+        showChangeCoverButton={userCanEdit}
+        showReviewButton={userCanReview}
+      />
 
-                      <Button
-                        variant='secondary'
-                        className='btn-secondary gap-1 !px-0 sm:!px-[12px] xl:!px-[26px] !py-[10px] !w-9 sm:!w-auto !h-9 rounded-full'
-                      >
-                        <Edit2
-                          size='18'
-                          color='var(--text-dark)'
-                          className='[&_path]:!stroke-[2px]'
-                        />
-                        <span className='hidden sm:inline'>Edit Profile</span>
-                      </Button>
+      {/* Company Bottom Block with Tabs */}
+      <CompanyBottomBlock
+        companyData={{
+          name,
+          tagline,
+          image,
+          about,
+          phone: phone_number,
+          email,
+          website,
+          communication,
+          city,
+          pincode,
+          preferred_communication_method,
+          projects,
+          uuid,
+        }}
+        showViewCompanyProfileButton={false}
+        canEditCompany={userCanEdit}
+      />
+
+      {/* Cover Image Change Modal */}
+      <Dialog open={showCoverModal} onOpenChange={setShowCoverModal}>
+        <DialogContent className='max-w-lg bg-[var(--card-background)] border border-[var(--border-dark)] rounded-[20px] shadow-xl'>
+          <DialogHeader className='pb-4'>
+            <DialogTitle className='text-xl font-bold text-[var(--text-primary)]'>
+              Change Cover Image
+            </DialogTitle>
+            <p className='text-sm text-[var(--text-secondary)] mt-1'>
+              Upload a new cover image for your company profile
+            </p>
+          </DialogHeader>
+
+          <div className='space-y-6'>
+            <div className='w-full bg-[var(--white-background)] rounded-[16px] border-2 border-dashed border-[var(--border-light)] p-6 relative transition-all duration-300 hover:border-[var(--secondary)]'>
+              <PhotoUploadField
+                photo={coverPhotoFile}
+                onPhotoChange={handleCoverPhotoChange}
+                onDeletePhoto={handleDeleteCoverPhoto}
+                label='Upload Cover Photo'
+                text='Click to upload or drag and drop your cover image'
+                uploading={coverUploading}
+                existingImageUrl={
+                  coverFileKey && !coverPhotoFile
+                    ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') + coverFileKey
+                    : ''
+                }
+                cardHeight='h-[280px]'
+                className='rounded-[12px] border-0'
+              />
+              {coverUploading && (
+                <div className='absolute inset-0 bg-black/20 rounded-[16px] flex items-center justify-center'>
+                  <div className='bg-white rounded-lg px-4 py-2 shadow-lg'>
+                    <div className='flex items-center gap-2 text-sm font-medium'>
+                      <div className='w-4 h-4 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin'></div>
+                      Uploading...
                     </div>
                   </div>
                 </div>
-              </div>
-
-              {/* Action Buttons */}
+              )}
             </div>
-          </Card>
-        </div>
-      </div>
+
+            <div className='flex gap-3 pt-2'>
+              <button
+                onClick={() => setShowCoverModal(false)}
+                className='btn-secondary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95'
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCover}
+                disabled={!coverFileKey || coverUploading}
+                className='btn-primary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
+              >
+                {coverUploading ? 'Uploading...' : 'Save Cover'}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

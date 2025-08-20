@@ -30,6 +30,15 @@ export const APP_CONFIG = {
   // Frontend base URL for generating links (e.g., home-owner links)
   // Set NEXT_PUBLIC_BASE_URL in your .env.local file
   BASE_URL: process.env['NEXT_PUBLIC_BASE_URL'] || 'http://localhost:3000',
+  // CDN URL for static assets (images, files, etc.)
+  // Set NEXT_PUBLIC_CDN_URL in your .env.local file
+  CDN_URL: process.env['NEXT_PUBLIC_CDN_URL'] || '',
+  // Static image paths
+  IMAGES: {
+    LOGO: '/images/logo.svg',
+    PROFILE_BLOCK_BG: '/images/profile-block-bg.png',
+    PROJECT_PLACEHOLDER: '/images/project-placeholder.png',
+  },
 } as const;
 
 // Application Routes
@@ -52,8 +61,19 @@ export const ROUTES = {
   MATERIAL_MANAGEMENT: '/material-management',
   SERVICE_MANAGEMENT: '/service-management',
   TRADE_MANAGEMENT: '/trade-management',
+  COMPANY_PROFILE: '/company-profile',
+  PUBLIC_COMPANY_PROFILE: '/public-company-profile',
+  EDIT_COMPANY_PROFILE: '/company-profile/edit-profile',
+  FIVE_BOX_SYSTEM: '/company-profile/five-box-system',
+  FIVE_BOX_GENERAL_INFO: '/company-profile/five-box-system/general-information',
+  FIVE_BOX_PROPERTY_INFO:
+    '/company-profile/five-box-system/property-information',
+  FIVE_BOX_PROJECT_INFO: '/company-profile/five-box-system/project-information',
+  FIVE_BOX_CATEGORY: '/company-profile/five-box-system/category',
+  FIVE_BOX_ESTIMATION: '/company-profile/five-box-system/estimation',
   TEMPLATES_MANAGEMENT: '/templates',
   CREATE_TEMPLATE: '/templates/create',
+  AUTH_LOGIN: '/auth/login',
 } as const;
 
 // Action constants for menu options and permissions
@@ -61,6 +81,7 @@ export const ACTIONS = {
   EDIT: 'edit',
   DELETE: 'delete',
   ARCHIVE: 'archive',
+  RETRIEVE: 'retrieve',
   VIEW: 'view',
   CREATE: 'create',
   CUSTOMIZE: 'customize',
@@ -376,6 +397,45 @@ export const MOCK_JOBS = [
   { value: 'job-3', label: 'Living Room Painting' },
 ];
 
+// File Upload Purpose Constants
+export const UPLOAD_PURPOSES = {
+  COMPANY_COVER_IMAGE: 'company-cover-image',
+  COMPANY_PROJECT: 'company-project',
+} as const;
+
+// Project Management Messages
+export const PROJECT_MESSAGES = {
+  CREATE_SUCCESS: 'Project created successfully',
+  CREATE_ERROR: 'Failed to create project',
+  UPDATE_SUCCESS: 'Project updated successfully',
+  UPDATE_ERROR: 'Failed to update project',
+  DELETE_SUCCESS: 'Project deleted successfully',
+  DELETE_ERROR: 'Failed to delete project',
+  FETCH_ERROR: 'Failed to load projects',
+  UPLOAD_ERROR: 'Failed to upload one or more project images',
+  COMPANY_ID_REQUIRED: 'Company ID is required',
+} as const;
+
+// Share/Copy Messages
+export const SHARE_MESSAGES = {
+  URL_COPIED_SUCCESS: 'Company profile URL copied to clipboard!',
+  COPY_FAILED_ERROR: 'Failed to copy URL to clipboard',
+  SHARE_URL_ALERT: 'Share this URL:',
+  CLIPBOARD_ERROR_LOG: 'Failed to copy URL to clipboard',
+} as const;
+
+// Job/Quote Messages
+export const JOB_MESSAGES = {
+  QUOTE_CREATE_SUCCESS: 'Job created successfully for quote request!',
+  QUOTE_CREATE_ERROR: 'Failed to create job for quote request',
+} as const;
+
+// Job Privacy Constants
+export const JOB_PRIVACY = {
+  PRIVATE: 'PRIVATE',
+  PUBLIC: 'PUBLIC',
+} as const;
+
 // Future constants can be added here
 // export const OTHER_CONSTANTS = {
 //   // Add new constants as needed
@@ -399,3 +459,40 @@ export const CUSTOM_EVENTS = {
   COMPANY_CHANGED: 'company-changed',
   STORAGE: 'storage',
 } as const;
+
+// Company Profile Tab Constants
+export const COMPANY_TABS = {
+  COMPANY_INFO: 'company-info',
+  TEAM: 'team',
+  REVIEW: 'review',
+  PORTFOLIO: 'portfolio',
+  WARRANTIES: 'warranties',
+} as const;
+
+export const COMPANY_TAB_ITEMS = [
+  {
+    value: COMPANY_TABS.COMPANY_INFO,
+    label: 'Company info',
+    className: 'pt-6 max-w-full',
+  },
+  {
+    value: COMPANY_TABS.TEAM,
+    label: 'Team',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.REVIEW,
+    label: 'Review',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.PORTFOLIO,
+    label: 'Portfolio',
+    className: 'pt-6',
+  },
+  {
+    value: COMPANY_TABS.WARRANTIES,
+    label: 'Warranties',
+    className: 'pt-6',
+  },
+];

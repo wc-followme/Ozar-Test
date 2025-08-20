@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Avatar } from '../common/Avatar';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { ConfirmRetrieveModal } from '../common/ConfirmRetrieveModal';
 import Dropdown from '../common/Dropdown';
 
 interface MenuOption {
@@ -29,9 +30,12 @@ interface UserCardProps {
   onToggle: () => void;
   menuOptions: MenuOption[];
   onDelete?: () => void;
+  onRetrieve?: (() => void) | undefined;
   disableActions?: boolean;
   userUuid: string;
   avatarColor?: { bg: string; color: string };
+  hideMenu?: boolean;
+  hideToggle?: boolean;
 }
 
 export function UserCard({
@@ -44,12 +48,16 @@ export function UserCard({
   onToggle,
   menuOptions,
   onDelete,
+  onRetrieve,
   disableActions,
   userUuid,
   avatarColor,
+  hideMenu = false,
+  hideToggle = false,
 }: UserCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showRetrieve, setShowRetrieve] = useState(false);
   const router = useRouter();
 
   // Get user permissions for users
@@ -68,8 +76,8 @@ export function UserCard({
     return true; // Show other actions by default
   });
 
-  // Only show menu if there are any visible options
-  const showMenu = filteredMenuOptions.length > 0;
+  // Only show menu if there are any visible options and hideMenu is false
+  const showMenu = filteredMenuOptions.length > 0 && !hideMenu;
 
   const handleToggle = async () => {
     setIsToggling(true);
@@ -85,13 +93,15 @@ export function UserCard({
       router.push(`/user-management/edit-user/${userUuid}`);
     } else if (action === ACTIONS.DELETE) {
       setShowDelete(true);
+    } else if (action === ACTIONS.RETRIEVE) {
+      setShowRetrieve(true);
     }
   };
 
   return (
-    <div className='flex flex-col bg-[var(--card-background)] rounded-[16px] sm:rounded-[12px] border border-[var(--border-dark)] p-4 sm:p-[10px] hover:shadow-card-hover transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
+    <div className='flex flex-col gap-2 bg-[var(--card-background)] rounded-[16px] sm:rounded-[12px] border border-[var(--border-dark)] p-4 sm:p-[10px] hover:shadow-card-hover transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
       {/* Header with Avatar, User Info and Menu */}
-      <div className='flex items-start gap-4 mb-2'>
+      <div className='flex items-start gap-4'>
         <Avatar
           name={name}
           image={image}
@@ -159,7 +169,7 @@ export function UserCard({
       </div>
 
       {/* Status Toggle */}
-      {canEdit && (
+      {canEdit && !hideToggle && (
         <div className='flex items-center mt-auto justify-between bg-[var(--border-light)] rounded-[30px] py-2 px-3 shadow-sm sm:shadow-none'>
           <span className='text-xs font-medium text-[var(--text-dark)]'>
             Enable
@@ -192,6 +202,17 @@ export function UserCard({
           if (onDelete) await onDelete();
         }}
       />
+      <ConfirmRetrieveModal
+        open={showRetrieve}
+        title={`Are you sure you want to retrieve?`}
+        subtitle={`This will restore the user to active status.`}
+        onCancel={() => setShowRetrieve(false)}
+        onRetrieve={async () => {
+          setShowRetrieve(false);
+          if (onRetrieve) await onRetrieve();
+        }}
+      />
+        
     </div>
   );
 }
