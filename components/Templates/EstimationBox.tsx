@@ -255,7 +255,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-      updateLocalStorageFromState(rooms);
+              updateLocalStorageFromState(rooms, props.jobId);
     }
   }, [rooms]);
 
@@ -703,7 +703,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData);
+        updateLocalStorageFromState(roomsData, props.jobId);
       }, 0);
     }
   };
@@ -767,7 +767,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData);
+        updateLocalStorageFromState(roomsData, props.jobId);
       }, 0);
 
       return updatedRooms;
@@ -1279,7 +1279,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       })),
     }));
 
-    updateLocalStorageFromState(roomsData);
+    updateLocalStorageFromState(roomsData, props.jobId);
   };
 
   const handleSave = async () => {
@@ -1290,7 +1290,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       // If jobId is provided, make API call
       if (props.jobId) {
         // Get the job_rooms data from localStorage
-        const jobRoomsData = localStorage.getItem('job_rooms');
+        const storageKey = `job_rooms_${props.jobId}`;
+        const jobRoomsData = localStorage.getItem(storageKey);
         if (jobRoomsData) {
           const jobRooms = JSON.parse(jobRoomsData);
 

@@ -4,8 +4,9 @@ import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Edit2 } from 'iconsax-react';
-import { useState } from 'react';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { useEffect, useState } from 'react';
 import EstimationBox from '../../Templates/EstimationBox';
 
 interface EstimationTemplateFormData {
@@ -27,6 +28,12 @@ export function EstimationTemplateForm({
     category: initialData?.category || '',
   });
 
+  // Category dropdown state
+  const [categoryOptions, setCategoryOptions] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+
   const handleInputChange = (
     field: keyof EstimationTemplateFormData,
     value: string
@@ -36,6 +43,61 @@ export function EstimationTemplateForm({
       [field]: value,
     }));
   };
+
+  // Get company ID from localStorage
+  const getCompanyId = (): string => {
+    try {
+      const selectedCompany = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      if (selectedCompany) {
+        const parsedCompany = JSON.parse(selectedCompany);
+        return parsedCompany.id || '';
+      }
+    } catch (error) {
+      console.error('Error parsing selected company:', error);
+    }
+    return '';
+  };
+
+  // Fetch categories from API
+  const fetchCategories = async () => {
+    const companyId = getCompanyId();
+    if (!companyId) {
+      setCategoryOptions([]);
+      return;
+    }
+
+    setIsLoadingCategories(true);
+    try {
+      const response = await apiService.fetchCategoriesPublic({
+        page: 1,
+        limit: 50,
+        status: 'ACTIVE',
+        company_id: companyId,
+      });
+
+      if (response.statusCode === 200 && response.data?.data) {
+        const categories = response.data.data.map((category: any) => ({
+          value: category.uuid || '',
+          label: category.name || '',
+        }));
+        setCategoryOptions(categories);
+      } else {
+        setCategoryOptions([]);
+      }
+    } catch (_error) {
+      // Gracefully handle errors - show empty dropdown
+      setCategoryOptions([]);
+    } finally {
+      setIsLoadingCategories(false);
+    }
+  };
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   const handleSubmit = () => {
     if (onSubmit) {
@@ -64,23 +126,22 @@ export function EstimationTemplateForm({
             label='Category'
             value={formData.category}
             onValueChange={value => handleInputChange('category', value)}
-            options={[
-              { value: 'interior', label: 'Interior' },
-              { value: 'exterior', label: 'Exterior' },
-              { value: 'general', label: 'General' },
-            ]}
-            placeholder='Select Category'
+            options={categoryOptions}
+            placeholder={
+              isLoadingCategories ? 'Loading categories...' : 'Select Category'
+            }
+            disabled={isLoadingCategories}
           />
         </div>
       </div>
 
       {/* Edit Button */}
-      <div className='flex justify-end my-4'>
+      {/* <div className='flex justify-end my-4'>
         <Button variant='outline' size='sm' className='btn-secondary'>
           <Edit2 size={16} color='var(--text)' />
           Edit
         </Button>
-      </div>
+      </div> */}
 
       {/* EstimationBox Component */}
       <div className='mb-6'>
