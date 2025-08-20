@@ -323,3 +323,217 @@ export const warrantyTabs = [
     value: 'brand',
   },
 ];
+
+// Tool Management Dummy Data
+export const toolBorrowedHistoryData = [
+  {
+    id: '1',
+    borrowedBy: {
+      name: 'Liam Anderson',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '2',
+    borrowedBy: {
+      name: 'Emma Thompson',
+      avatar: '/images/avatars/avatar-4.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '3',
+    borrowedBy: {
+      name: 'Noah Johnson',
+      avatar: '/images/avatars/avatar-5.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '4',
+    borrowedBy: {
+      name: 'Olivia Martinez',
+      avatar: '/images/avatars/avatar-6.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '5',
+    borrowedBy: {
+      name: 'Ava Robinson',
+      avatar: '/images/avatars/avatar-7.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '6',
+    borrowedBy: {
+      name: 'Ethan Clark',
+      avatar: '/images/avatars/avatar-8.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '7',
+    borrowedBy: {
+      name: 'Sophia Lewis',
+      avatar: '/images/avatars/avatar-1.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '8',
+    borrowedBy: {
+      name: 'Mason Walker',
+      avatar: '/images/avatars/avatar-2.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+  {
+    id: '9',
+    borrowedBy: {
+      name: 'Isabella Hall',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    borrowedDate: '16/08/2024',
+    returnedDate: '30/08/2024',
+  },
+];
+
+export const toolMaintenanceHistoryData = [
+  {
+    id: '1',
+    returnedBy: {
+      name: 'Liam Anderson',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Jam',
+  },
+  {
+    id: '2',
+    returnedBy: {
+      name: 'Emma Thompson',
+      avatar: '/images/avatars/avatar-4.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Overheat',
+  },
+  {
+    id: '3',
+    returnedBy: {
+      name: 'Noah Johnson',
+      avatar: '/images/avatars/avatar-5.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Vibration',
+  },
+  {
+    id: '4',
+    returnedBy: {
+      name: 'Olivia Martinez',
+      avatar: '/images/avatars/avatar-6.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Stall',
+  },
+  {
+    id: '5',
+    returnedBy: {
+      name: 'Ava Robinson',
+      avatar: '/images/avatars/avatar-7.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Noise',
+  },
+  {
+    id: '6',
+    returnedBy: {
+      name: 'Ethan Clark',
+      avatar: '/images/avatars/avatar-8.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Leak',
+  },
+  {
+    id: '7',
+    returnedBy: {
+      name: 'Sophia Lewis',
+      avatar: '/images/avatars/avatar-1.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Leak',
+  },
+  {
+    id: '8',
+    returnedBy: {
+      name: 'Mason Walker',
+      avatar: '/images/avatars/avatar-2.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Short',
+  },
+  {
+    id: '9',
+    returnedBy: {
+      name: 'Isabella Hall',
+      avatar: '/images/avatars/avatar-3.png',
+    },
+    employeeType: 'Employees',
+    assignedJob: 'Job#456 Downtown Project',
+    assignedDate: '16/08/2024',
+    returnedDate: '16/08/2024',
+    issue: 'Short',
+  },
+];

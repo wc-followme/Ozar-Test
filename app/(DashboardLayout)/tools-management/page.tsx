@@ -267,8 +267,12 @@ export default function ToolsManagement() {
     name: string;
     available_quantity: number;
     manufacturer: string;
+    brandName: string;
     tool_assets: string;
     service_ids: string;
+    videos?: File[];
+    videoLinks?: string[];
+    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
   }) => {
     const { name, available_quantity, manufacturer, service_ids } = data;
 
@@ -460,7 +464,11 @@ export default function ToolsManagement() {
                   onClick={handleOpenCreateForm}
                   className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 >
-                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <Add
+                    size='24'
+                    color='var(--icon-dark)'
+                    className='sm:hidden'
+                  />
                   <span className='hidden sm:inline'>Add Tool</span>
                 </button>
               )}
@@ -515,6 +523,7 @@ export default function ToolsManagement() {
                           menuOptions={menuOptions}
                           onDelete={() => handleDelete(uuid)}
                           onEdit={() => handleEdit(uuid)}
+                          uuid={uuid}
                         />
                       );
                     })}
@@ -590,7 +599,11 @@ export default function ToolsManagement() {
                       name,
                       available_quantity,
                       manufacturer,
+                      brandName: manufacturer, // Use manufacturer as brand name for now
                       services: services?.map(s => s.id) || [],
+                      videos: [],
+                      videoLinks: [],
+                      toolIds: [],
                     };
                   })()
                 : {}

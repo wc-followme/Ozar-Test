@@ -204,18 +204,18 @@ export function PermissionAwareSidebar() {
     const menuItemContent = (
       <div
         className={cn(
-          'flex items-center flex-nowrap w-full pl-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group relative',
+          'flex items-center flex-nowrap w-full pl-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] hover:text-white transition-colors hover:bg-[var(--primary)] relative',
           isActive && 'bg-[var(--primary)] text-white'
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className='stroke-[var(--text)] group-hover:text-white'>
-          <item.icon size='24' color='currentcolor' />
+        <div className='stroke-[var(--text)] '>
+          <item.icon size='24' color={isActive ? 'white' : 'currentcolor'} />
         </div>
         <span
           className={cn(
-            'ml-2 max-w-[180px] overflow-hidden text-nowrap text-sm font-medium transition-all duration-300 group-hover:text-white',
+            'ml-2 max-w-[180px] overflow-hidden text-nowrap text-sm font-medium transition-all duration-300 ',
             isOpen ? 'opacity-100' : 'opacity-0 max-w-0'
           )}
         >
@@ -347,9 +347,14 @@ export function PermissionAwareSidebar() {
                   onClick={() => setHoveredItem(null)} // Close submenu when clicking a link
                 >
                   <div className='mr-3'>
-                    <subItem.icon size='20' color='currentcolor' />
+                    <subItem.icon
+                      size='20'
+                      color={
+                        pathname === subItem.href ? 'white' : 'currentcolor'
+                      }
+                    />
                   </div>
-                  <span className='text-sm font-medium text-[var(--text-dark)])'>
+                  <span className={cn('text-sm font-medium')}>
                     {subItem.title}
                   </span>
                 </Link>

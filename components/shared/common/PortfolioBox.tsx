@@ -74,10 +74,14 @@ export const PortfolioBox = ({
         )}
         {/* Media Count Badge */}
         {(imageCount > 0 || videoCount > 0) && (
-          <div className='absolute bottom-2 right-2 bg-[#2D2D2DB2] backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2'>
+          <div className='absolute bottom-2 right-2 bg-[var(--text-dark)]/70 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2'>
             {imageCount > 0 && (
               <div className='flex items-center gap-1'>
-                <Gallery size={16} className='text-white' color='#fff' />
+                <Gallery
+                  size={16}
+                  className='text-white'
+                  color='var(--icon-dark)'
+                />
                 <span className='text-white text-sm font-medium'>
                   {imageCount}
                 </span>
@@ -85,7 +89,11 @@ export const PortfolioBox = ({
             )}
             {videoCount > 0 && (
               <div className='flex items-center gap-1'>
-                <VideoPlay size={16} className='text-white' color='#fff' />
+                <VideoPlay
+                  size={16}
+                  className='text-white'
+                  color='var(--icon-dark)'
+                />
                 <span className='text-white text-sm font-medium'>
                   {videoCount}
                 </span>

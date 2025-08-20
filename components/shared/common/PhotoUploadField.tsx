@@ -66,8 +66,8 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({
       <div className='mb-2 h-full w-full'>
         <div
           className={cn(
-            'w-full h-full px-4 min-h-[9.375rem] rounded-xl border-2 border-dashed border-cyanwave-main bg-cyanwave-light flex flex-col items-center justify-center cursor-pointer relative py-10',
-            cardHeight
+            'w-full h-full px-4 rounded-xl border-2 border-dashed border-cyanwave-main bg-cyanwave-light flex flex-col items-center justify-center cursor-pointer relative py-10',
+            cardHeight || 'min-h-[9.375rem]'
           )}
           onClick={handleClick}
         >

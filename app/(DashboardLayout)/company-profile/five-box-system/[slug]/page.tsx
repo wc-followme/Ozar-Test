@@ -140,8 +140,8 @@ const DynamicBoxPage = ({ params }: PageProps) => {
               opt => opt.value === icon
             ) || {
               icon: () => null,
-              color: '#EBB402',
-              bgColor: '#EBB4021A',
+              color: 'var(--error)',
+              bgColor: 'var(--error-10)',
             };
 
             return {

@@ -43,7 +43,7 @@ export const ProfileDetailsComponent = ({
             aspectRatio={1.49}
             className='rounded-2xl'
           />
-          <Button className='absolute h-8 w-8 bg-[#2D2D2DB2] rounded-full hover:bg-[#2D2D2DB2]'>
+          <Button className='absolute h-8 w-8 bg-[var(--text-dark)]/70 rounded-full hover:bg-[var(--text-dark)]/70'>
             <IconPlayerPlayFilled size={24} color='white' />
           </Button>
         </div>
