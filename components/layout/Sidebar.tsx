@@ -21,9 +21,10 @@ import { MinimalSidebar } from './MinimalSidebar';
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [versionInfo, setVersionInfo] = useState(
-    process.env['NEXT_PUBLIC_VERSION']
-  );
+  // const [versionInfo, setVersionInfo] = useState(
+  //  process.env['NEXT_PUBLIC_VERSION']
+  // );
+  const versionInfo = process.env['NEXT_PUBLIC_VERSION']
   const { permissions, isLoading, hasPermission } = usePermissions();
   const pathname = usePathname();
 
