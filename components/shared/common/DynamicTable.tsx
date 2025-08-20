@@ -94,102 +94,105 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
         },
         ...columns,
       ]
-    : columns;
+    : [...columns];
 
-  if (actions.length > 0) {
+  if (actions.length > 0 && !allColumns.some(col => col.key === 'actions')) {
     allColumns.push({
       key: 'actions',
       label: 'Action',
       width: 'w-20',
       align: 'center' as const,
-      render: (value: any, row: any, index: number) => (
-        <div className='flex items-center justify-center gap-1'>
-          {actions.map(action => {
-            // Check if action should be shown based on condition
-            if (action.showCondition && !action.showCondition(row)) {
-              return null;
-            }
+      render: (value: any, row: any, index: number) => {
+        void value;
+        return (
+          <div className='flex items-center justify-center gap-1'>
+            {actions.map(action => {
+              // Check if action should be shown based on condition
+              if (action.showCondition && !action.showCondition(row)) {
+                return null;
+              }
 
-            // Get icon component dynamically with fallback
-            let IconComponent;
-            if (typeof action.icon === 'string') {
-              // If icon is a string, get it from Iconsax library
-              IconComponent = (Iconsax as any)[action.icon] || Iconsax.Trash;
-            } else if (action.icon) {
-              // If icon is a component, use it directly
-              IconComponent = action.icon;
-            } else {
-              // Fallback to Trash icon
-              IconComponent = Iconsax.Trash;
-            }
+              // Get icon component dynamically with fallback
+              let IconComponent;
+              if (typeof action.icon === 'string') {
+                // If icon is a string, get it from Iconsax library
+                IconComponent = (Iconsax as any)[action.icon] || Iconsax.Trash;
+              } else if (action.icon) {
+                // If icon is a component, use it directly
+                IconComponent = action.icon;
+              } else {
+                // Fallback to Trash icon
+                IconComponent = Iconsax.Trash;
+              }
 
-            // If action is a dropdown, render dropdown component
-            if (
-              action.isDropdown &&
-              action.dropdownOptions &&
-              action.onDropdownAction
-            ) {
+              // If action is a dropdown, render dropdown component
+              if (
+                action.isDropdown &&
+                action.dropdownOptions &&
+                action.onDropdownAction
+              ) {
+                return (
+                  <Dropdown
+                    key={action.key}
+                    menuOptions={action.dropdownOptions}
+                    onAction={dropdownAction =>
+                      action.onDropdownAction!(dropdownAction, row)
+                    }
+                    trigger={
+                      <Button
+                        type='button'
+                        variant={action.variant || 'ghost'}
+                        size={action.size || 'sm'}
+                        className={cn(
+                          'text-[var(--text-secondary)] hover:text-[var(--text-dark)] p-0 h-auto',
+                          action.className
+                        )}
+                      >
+                        <IconComponent
+                          size={20}
+                          color='var(--text-dark)'
+                          className={action.iconClassName}
+                        />
+                        {action.label && (
+                          <span className='ml-1'>{action.label}</span>
+                        )}
+                      </Button>
+                    }
+                    align='end'
+                  />
+                );
+              }
+
+              // Otherwise render as regular button
               return (
-                <Dropdown
+                <Button
                   key={action.key}
-                  menuOptions={action.dropdownOptions}
-                  onAction={dropdownAction =>
-                    action.onDropdownAction!(dropdownAction, row)
-                  }
-                  trigger={
-                    <Button
-                      type='button'
-                      variant={action.variant || 'ghost'}
-                      size={action.size || 'sm'}
-                      className={cn(
-                        'text-[var(--text-secondary)] hover:text-[var(--text-dark)] p-0 h-auto',
-                        action.className
-                      )}
-                    >
-                      <IconComponent
-                        size={20}
-                        color='var(--text-dark)'
-                        className={action.iconClassName}
-                      />
-                      {action.label && (
-                        <span className='ml-1'>{action.label}</span>
-                      )}
-                    </Button>
-                  }
-                  align='end'
-                />
+                  type='button'
+                  onClick={() => action.onClick?.(row, index)}
+                  variant={action.variant || 'ghost'}
+                  size={action.size || 'sm'}
+                  className={cn(
+                    'text-[var(--text-secondary)] hover:text-[var(--text-dark)] p-0 h-auto',
+                    action.className
+                  )}
+                >
+                  <IconComponent
+                    size={16}
+                    color='var(--text-dark)'
+                    className={action.iconClassName}
+                  />
+                  {action.label && <span className='ml-1'>{action.label}</span>}
+                </Button>
               );
-            }
-
-            // Otherwise render as regular button
-            return (
-              <Button
-                key={action.key}
-                type='button'
-                onClick={() => action.onClick?.(row, index)}
-                variant={action.variant || 'ghost'}
-                size={action.size || 'sm'}
-                className={cn(
-                  'text-[var(--text-secondary)] hover:text-[var(--text-dark)] p-0 h-auto',
-                  action.className
-                )}
-              >
-                <IconComponent
-                  size={16}
-                  color='var(--text-dark)'
-                  className={action.iconClassName}
-                />
-                {action.label && <span className='ml-1'>{action.label}</span>}
-              </Button>
-            );
-          })}
-        </div>
-      ),
+            })}
+          </div>
+        );
+      },
     });
   }
 
   const {
-    headerBgColor = 'bg-[#F5F7FA]',
+    headerBgColor = 'bg-[var(--background)]',
     borderColor = 'border-[var(--border-dark)]',
     hoverColor = 'hover:bg-[var(--background-light)]',
   } = tableConfig;

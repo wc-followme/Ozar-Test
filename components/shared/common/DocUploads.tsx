@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { DocumentDownload } from 'iconsax-react';
 import { Info } from 'lucide-react';
-import { useState } from 'react';
 
 interface DocUploadsProps {
   title: string;
@@ -13,9 +12,7 @@ interface DocUploadsProps {
   supportedFormats?: string;
   onFileChange: (file: File | null) => void;
   onFilesChange?: (files: File[]) => void;
-  onDeleteFile?: () => void;
   uploading?: boolean;
-  existingFileUrl?: string | undefined;
   className?: string;
   onDownloadTemplate?: () => void;
 }
@@ -26,22 +23,12 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
   supportedFormats = 'Supported formats: .csv, .xlsx',
   onFileChange,
   onFilesChange,
-  onDeleteFile,
   uploading = false,
-  existingFileUrl,
   className = '',
   onDownloadTemplate,
 }) => {
-  const [file, setFile] = useState<File | null>(null);
-
   const handleFileChange = (newFile: File | null) => {
-    setFile(newFile);
     onFileChange(newFile);
-  };
-
-  const handleDeleteFile = () => {
-    setFile(null);
-    onDeleteFile?.();
   };
 
   const handleDownloadTemplate = () => {
@@ -88,6 +75,10 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
           Download Template
         </Button>
       </div>
+
+      {description && (
+        <p className='text-xs text-[var(--text-secondary)]'>{description}</p>
+      )}
 
       {/* Upload Section */}
       <FileUploadField

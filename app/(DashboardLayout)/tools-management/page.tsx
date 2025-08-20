@@ -274,16 +274,7 @@ export default function ToolsManagement() {
     videoLinks?: string[];
     toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
   }) => {
-    const {
-      name,
-      available_quantity,
-      manufacturer,
-      brandName,
-      service_ids,
-      videos,
-      videoLinks,
-      toolIds,
-    } = data;
+    const { name, available_quantity, manufacturer, service_ids } = data;
 
     setFormLoading(true);
     try {
@@ -473,7 +464,11 @@ export default function ToolsManagement() {
                   onClick={handleOpenCreateForm}
                   className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                 >
-                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <Add
+                    size='24'
+                    color='var(--icon-dark)'
+                    className='sm:hidden'
+                  />
                   <span className='hidden sm:inline'>Add Tool</span>
                 </button>
               )}

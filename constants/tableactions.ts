@@ -42,7 +42,6 @@ export const TOOL_ACTIONS: Record<
   ],
   lost: [
     { label: 'Edit', action: 'edit', icon: Edit2 },
-    { label: 'Maintenance', action: 'maintenance', icon: Setting2 },
     { label: 'Details', action: 'details', icon: DetailsIcon },
   ],
 };

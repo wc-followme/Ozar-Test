@@ -30,7 +30,7 @@ export const QRCodeListingCard: React.FC<QRCodeListingCardProps> = ({
       <button
         type='button'
         onClick={onRemove}
-        className='w-7 h-7 rounded-[10px] border-2 border-[#C0C6CD] flex items-center justify-center shrink-0'
+        className='w-7 h-7 rounded-[10px] border-2 border-[var(--text-placeholder)] flex items-center justify-center shrink-0'
         aria-label='Remove file'
       >
         <Minus size={16} color='var(--text-secondary)' />

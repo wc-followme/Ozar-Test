@@ -186,7 +186,7 @@ export const WarrantiesTab = () => {
                     <TabsTrigger
                       key={tab.id}
                       value={tab.value}
-                      className={`w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[#F5F7FA] data-[state=active]:text-[#24338C] rounded-lg font-medium ${
+                      className={`w-full justify-start px-3 py-4 leading-none text-[var(--text-dark)] data-[state=active]:bg-[var(--background)] data-[state=active]:text-[var(--primary)] rounded-lg font-medium ${
                         index !== warrantyTabs.length - 1
                           ? 'border-b border-[var(--border-dark)]'
                           : ''

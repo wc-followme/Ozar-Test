@@ -23,6 +23,12 @@ import { MaintenanceForm } from '@/components/shared/forms/MaintenanceForm';
 import { ReturnForm } from '@/components/shared/forms/ReturnForm';
 import { DynamicTable } from '../../../../components/shared/common/DynamicTable';
 import {
+  TOOL_DETAIL_ASSIGNED_COLUMNS,
+  TOOL_DETAIL_AVAILABLE_COLUMNS,
+  TOOL_DETAIL_LOST_COLUMNS,
+  TOOL_DETAIL_MAINTENANCE_COLUMNS,
+} from '../../../../constants/tablecolumns';
+import {
   assignedToolData,
   availableToolData,
   lostToolData,
@@ -83,143 +89,17 @@ export default function ToolDetailPage() {
     reason: '',
   });
 
-  // Column configuration for the DynamicTable - Updated to match image
-  const toolTableColumns = [
-    {
-      key: 'toolId',
-      label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
-    },
-    {
-      key: 'returnedBy',
-      label: 'Returned By',
-      type: 'avatar' as const,
-      avatarKey: 'returnedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'dueDate',
-      label: 'Due Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Returned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'condition',
-      label: 'Condition',
-      type: 'status' as const,
-    },
-  ];
+  // Column configuration for the DynamicTable - moved to constants/tablecolumns
+  const toolTableColumns = TOOL_DETAIL_AVAILABLE_COLUMNS;
 
-  // Column configuration specifically for assigned tab - Updated to match image
-  const assignedTableColumns = [
-    {
-      key: 'toolId',
-      label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
-    },
-    {
-      key: 'returnedBy',
-      label: 'Assigned to',
-      type: 'avatar' as const,
-      avatarKey: 'returnedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Assigned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'dueDate',
-      label: 'Due Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'condition',
-      label: 'Condition',
-      type: 'status' as const,
-    },
-    {
-      key: 'assignedStatus',
-      label: 'Assigned Status',
-      type: 'status' as const,
-    },
-  ];
+  // Column configuration specifically for assigned tab - moved to constants/tablecolumns
+  const assignedTableColumns = TOOL_DETAIL_ASSIGNED_COLUMNS;
 
-  // Column configuration specifically for maintenance tab - Updated to match image
-  const maintenanceTableColumns = [
-    {
-      key: 'toolId',
-      label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
-    },
-    {
-      key: 'returnedBy',
-      label: 'Assigned to',
-      type: 'avatar' as const,
-      avatarKey: 'returnedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Returned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'issue',
-      label: 'Issue',
-      type: 'text' as const,
-    },
-  ];
+  // Column configuration specifically for maintenance tab - moved to constants/tablecolumns
+  const maintenanceTableColumns = TOOL_DETAIL_MAINTENANCE_COLUMNS;
 
-  // Column configuration specifically for lost tab - Updated to match image
-  const lostTableColumns = [
-    {
-      key: 'toolId',
-      label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
-    },
-    {
-      key: 'returnedBy',
-      label: 'Assigned to',
-      type: 'avatar' as const,
-      avatarKey: 'returnedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Lost Date',
-      type: 'date' as const,
-    },
-  ];
+  // Column configuration specifically for lost tab - moved to constants/tablecolumns
+  const lostTableColumns = TOOL_DETAIL_LOST_COLUMNS;
 
   // Actions for Available tab - from constants
   const availableTableActions = [
@@ -484,7 +364,7 @@ export default function ToolDetailPage() {
                     <span className='flex items-center gap-2'>
                       <span className='text-sm xl:text-base'>Available</span>
                       <Badge
-                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'available' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#90C91D]'}`}
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'available' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--success)]'}`}
                       >
                         50
                       </Badge>
@@ -510,7 +390,7 @@ export default function ToolDetailPage() {
                     <span className='flex items-center gap-2'>
                       <span className='text-sm xl:text-base'>Maintenance</span>
                       <Badge
-                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#EBB402]'}`}
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--error)]'}`}
                       >
                         09
                       </Badge>
@@ -523,7 +403,7 @@ export default function ToolDetailPage() {
                     <span className='flex items-center gap-2'>
                       <span className='text-sm xl:text-base'>Lost</span>
                       <Badge
-                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'lost' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#00A8BF]'}`}
+                        className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'lost' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--info)]'}`}
                       >
                         10
                       </Badge>
