@@ -49,15 +49,15 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
     onVideosChange(videos.filter((_, i) => i !== index));
   };
 
-  const handleAddVideoLink = (id: string, value: string) => {
-    if (value.trim()) {
-      onVideoLinksChange([...videoLinks, value.trim()]);
-      // Clear the input after adding
-      setVideoLinkInputs(prev =>
-        prev.map(input => (input.id === id ? { ...input, value: '' } : input))
-      );
-    }
-  };
+  // const handleAddVideoLink = (id: string, value: string) => {
+  //   if (value.trim()) {
+  //     onVideoLinksChange([...videoLinks, value.trim()]);
+  //     // Clear the input after adding
+  //     setVideoLinkInputs(prev =>
+  //       prev.map(input => (input.id === id ? { ...input, value: '' } : input))
+  //     );
+  //   }
+  // };
 
   const handleRemoveVideoLink = (index: number) => {
     onVideoLinksChange(videoLinks.filter((_, i) => i !== index));
@@ -99,9 +99,9 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
             <button
               type='button'
               onClick={handleAddVideo}
-              className='w-24 h-24 bg-[#00A8BF26] border-2 border-dashed border-[#00A8BF] rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors'
+              className='w-24 h-24 bg-[var(--info)]/15 border-2 border-dashed border-[var(--info)] rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-colors'
             >
-              <IconVideoPlus size={36} className='text-[#00A8BF]' />
+              <IconVideoPlus size={36} className='text-[var(--info)]' />
             </button>
             <input
               ref={fileInputRef}
@@ -138,7 +138,7 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
         </div>
 
         <div className='space-y-3'>
-          {videoLinkInputs.map(({ id, value }, index) => (
+          {videoLinkInputs.map(({ id, value }) => (
             <div key={id} className='flex items-center gap-3'>
               <Input
                 type='url'

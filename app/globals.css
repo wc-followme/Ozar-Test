@@ -254,6 +254,32 @@ body {
     --badge-bg: #6b77bf;
     --dark-border-other: #bfbfbf;
     --dark-background-other: #e8eaed;
+    /* Additional brand color tokens */
+    --blue-alt: #1a57bf;
+    --blue-alt-10: #1a57bf1a;
+    --success-15: #90c91d26;
+    --info-10: #00a8bf1a;
+    --info-15: #00a8bf26;
+    --error-10: #ebb4021a;
+    --warning-15: #d4323226;
+    --secondary-15: #34ad4426;
+    /* Utility palette used in five-box slug constants */
+    --emerald-500: #10b981;
+    --emerald-500-10: #10b9811a;
+    --blue-500: #3b82f6;
+    --blue-500-10: #3b82f61a;
+    --orange-500: #f97316;
+    --orange-500-10: #f973161a;
+    --amber-500: #eab308;
+    --amber-500-10: #eab3081a;
+    --cyan-500: #06b6d4;
+    --cyan-500-10: #06b6d41a;
+    --green-600: #059669;
+    --green-600-10: #0596691a;
+    --red-600: #dc2626;
+    --red-600-10: #dc26261a;
+    --blue-600: #2563eb;
+    --blue-600-10: #2563eb1a;
   }
 
   .dark {
@@ -287,6 +313,31 @@ body {
     --badge-bg: #6b77bf;
     --dark-border-other: #bfbfbf;
     --dark-background-other: #000;
+    /* Mirror additional tokens in dark (can be adjusted if needed) */
+    --blue-alt: #1a57bf;
+    --blue-alt-10: #1a57bf1a;
+    --success-15: #90c91d26;
+    --info-10: #00a8bf1a;
+    --info-15: #00a8bf26;
+    --error-10: #ebb4021a;
+    --warning-15: #d4323226;
+    --secondary-15: #34ad4426;
+    --emerald-500: #10b981;
+    --emerald-500-10: #10b9811a;
+    --blue-500: #3b82f6;
+    --blue-500-10: #3b82f61a;
+    --orange-500: #f97316;
+    --orange-500-10: #f973161a;
+    --amber-500: #eab308;
+    --amber-500-10: #eab3081a;
+    --cyan-500: #06b6d4;
+    --cyan-500-10: #06b6d41a;
+    --green-600: #059669;
+    --green-600-10: #0596691a;
+    --red-600: #dc2626;
+    --red-600-10: #dc26261a;
+    --blue-600: #2563eb;
+    --blue-600-10: #2563eb1a;
   }
 }
 @layer utilities {

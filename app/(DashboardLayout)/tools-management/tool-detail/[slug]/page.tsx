@@ -9,31 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchNormal1 } from 'iconsax-react';
 import Image from 'next/image';
 import { useState } from 'react';
-
-interface ToolHistoryData {
-  id: string;
-  borrowedBy: {
-    name: string;
-    avatar: string;
-  };
-  employeeType: string;
-  assignedJob: string;
-  borrowedDate: string;
-  returnedDate: string;
-}
-
-interface ToolMaintenanceData {
-  id: string;
-  returnedBy: {
-    name: string;
-    avatar: string;
-  };
-  employeeType: string;
-  assignedJob: string;
-  assignedDate: string;
-  returnedDate: string;
-  issue: string;
-}
+import {
+  toolBorrowedHistoryData,
+  toolMaintenanceHistoryData,
+} from '../../../../../constants/dummy-data';
+import {
+  TOOL_HISTORY_BORROWED_COLUMNS,
+  TOOL_HISTORY_MAINTENANCE_COLUMNS,
+} from '../../../../../constants/tablecolumns';
 
 export default function ToolDetailSlugPage({
   params,
@@ -43,287 +26,21 @@ export default function ToolDetailSlugPage({
   const [selectedTab, setSelectedTab] = useState('borrowed');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sample data for borrowed history - matching the image
-  const borrowedHistoryData: ToolHistoryData[] = [
-    {
-      id: '1',
-      borrowedBy: {
-        name: 'Liam Anderson',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '2',
-      borrowedBy: {
-        name: 'Emma Thompson',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '3',
-      borrowedBy: {
-        name: 'Noah Johnson',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '4',
-      borrowedBy: {
-        name: 'Olivia Martinez',
-        avatar: '/images/avatars/avatar-6.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '5',
-      borrowedBy: {
-        name: 'Ava Robinson',
-        avatar: '/images/avatars/avatar-7.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '6',
-      borrowedBy: {
-        name: 'Ethan Clark',
-        avatar: '/images/avatars/avatar-8.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '7',
-      borrowedBy: {
-        name: 'Sophia Lewis',
-        avatar: '/images/avatars/avatar-1.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '8',
-      borrowedBy: {
-        name: 'Mason Walker',
-        avatar: '/images/avatars/avatar-2.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-    {
-      id: '9',
-      borrowedBy: {
-        name: 'Isabella Hall',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      borrowedDate: '16/08/2024',
-      returnedDate: '30/08/2024',
-    },
-  ];
+  // Column configuration for borrowed history table - moved to constants/tablecolumns
+  const borrowedHistoryColumns = TOOL_HISTORY_BORROWED_COLUMNS;
 
-  // Sample data for maintenance history - matching the image
-  const maintenanceHistoryData: ToolMaintenanceData[] = [
-    {
-      id: '1',
-      returnedBy: {
-        name: 'Liam Anderson',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Jam',
-    },
-    {
-      id: '2',
-      returnedBy: {
-        name: 'Emma Thompson',
-        avatar: '/images/avatars/avatar-4.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Overheat',
-    },
-    {
-      id: '3',
-      returnedBy: {
-        name: 'Noah Johnson',
-        avatar: '/images/avatars/avatar-5.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Vibration',
-    },
-    {
-      id: '4',
-      returnedBy: {
-        name: 'Olivia Martinez',
-        avatar: '/images/avatars/avatar-6.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Stall',
-    },
-    {
-      id: '5',
-      returnedBy: {
-        name: 'Ava Robinson',
-        avatar: '/images/avatars/avatar-7.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Noise',
-    },
-    {
-      id: '6',
-      returnedBy: {
-        name: 'Ethan Clark',
-        avatar: '/images/avatars/avatar-8.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Leak',
-    },
-    {
-      id: '7',
-      returnedBy: {
-        name: 'Sophia Lewis',
-        avatar: '/images/avatars/avatar-1.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Leak',
-    },
-    {
-      id: '8',
-      returnedBy: {
-        name: 'Mason Walker',
-        avatar: '/images/avatars/avatar-2.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Short',
-    },
-    {
-      id: '9',
-      returnedBy: {
-        name: 'Isabella Hall',
-        avatar: '/images/avatars/avatar-3.png',
-      },
-      employeeType: 'Employees',
-      assignedJob: 'Job#456 Downtown Project',
-      assignedDate: '16/08/2024',
-      returnedDate: '16/08/2024',
-      issue: 'Short',
-    },
-  ];
-
-  // Column configuration for borrowed history table
-  const borrowedHistoryColumns = [
-    {
-      key: 'borrowedBy',
-      label: 'Borrowed By',
-      type: 'avatar' as const,
-      avatarKey: 'borrowedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'borrowedDate',
-      label: 'Borrowed Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Returned Date',
-      type: 'date' as const,
-    },
-  ];
-
-  // Column configuration for maintenance history table
-  const maintenanceHistoryColumns = [
-    {
-      key: 'returnedBy',
-      label: 'Returned By',
-      type: 'avatar' as const,
-      avatarKey: 'returnedBy',
-      subtitleKey: 'employeeType',
-    },
-    {
-      key: 'assignedJob',
-      label: 'Assigned Job',
-      type: 'text' as const,
-    },
-    {
-      key: 'assignedDate',
-      label: 'Assigned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'returnedDate',
-      label: 'Returned Date',
-      type: 'date' as const,
-    },
-    {
-      key: 'issue',
-      label: 'Issue',
-      type: 'text' as const,
-    },
-  ];
+  // Column configuration for maintenance history table - moved to constants/tablecolumns
+  const maintenanceHistoryColumns = TOOL_HISTORY_MAINTENANCE_COLUMNS;
 
   // Get data based on selected tab
   const getCurrentTabData = () => {
     switch (selectedTab) {
       case 'borrowed':
-        return borrowedHistoryData;
+        return toolBorrowedHistoryData;
       case 'maintenance':
-        return maintenanceHistoryData;
+        return toolMaintenanceHistoryData;
       default:
-        return borrowedHistoryData;
+        return toolBorrowedHistoryData;
     }
   };
 
@@ -404,9 +121,9 @@ export default function ToolDetailSlugPage({
                           Borrowed History
                         </span>
                         <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'borrowed' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#90C91D]'}`}
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'borrowed' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--success)]'}`}
                         >
-                          {borrowedHistoryData.length}
+                          {toolBorrowedHistoryData.length}
                         </Badge>
                       </span>
                     </TabsTrigger>
@@ -419,9 +136,9 @@ export default function ToolDetailSlugPage({
                           Maintenance History
                         </span>
                         <Badge
-                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[#EBB402]'}`}
+                          className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'maintenance' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--error)]'}`}
                         >
-                          {maintenanceHistoryData.length}
+                          {toolMaintenanceHistoryData.length}
                         </Badge>
                       </span>
                     </TabsTrigger>

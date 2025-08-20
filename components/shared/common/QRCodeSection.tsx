@@ -26,8 +26,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   className = '',
 }) => {
   const [activeTab, setActiveTab] = useState('qr-doc');
-  const [newToolId, setNewToolId] = useState('');
-  const [newBarcode, setNewBarcode] = useState('');
 
   // Sample data for the table matching the image
   const sampleToolData = [
@@ -81,22 +79,11 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     },
   ];
 
-  const handleAddToolId = () => {
-    if (newToolId.trim() && newBarcode.trim()) {
-      const newId: ToolIdBarcode = {
-        id: `tool-${Date.now()}`,
-        toolId: newToolId.trim(),
-        barcode: newBarcode.trim(),
-      };
-      onToolIdsChange([...toolIds, newId]);
-      setNewToolId('');
-      setNewBarcode('');
-    }
-  };
+  // Removed unused handleAddToolId
 
-  const handleRemoveToolId = (id: string) => {
-    onToolIdsChange(toolIds.filter(tool => tool.id !== id));
-  };
+  // const handleRemoveToolId = (id: string) => {
+  //   onToolIdsChange(toolIds.filter(tool => tool.id !== id));
+  // };
 
   const handleConfirmDelete = () => {
     if (itemToDelete && (itemToDelete as any).id) {
@@ -204,7 +191,7 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
               emptyMessage='No tools found'
               showRowNumbers={true}
               tableConfig={{
-                headerBgColor: 'bg-[#F5F7FA]',
+                headerBgColor: 'bg-[var(--background)]',
                 borderColor: 'border-[var(--border-dark)]',
                 hoverColor: 'hover:bg-[var(--background-light)]',
               }}

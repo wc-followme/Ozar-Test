@@ -87,7 +87,9 @@ export default function UserManagement() {
 
         const role_id = filter !== 'all' ? filter : '';
         const statusParam =
-          selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
@@ -218,7 +220,10 @@ export default function UserManagement() {
   // Retrieve handler
   const handleRetrieveUser = async (uuid: string) => {
     try {
-      const response = await apiService.updateUserStatus(uuid, CommonStatus.ACTIVE);
+      const response = await apiService.updateUserStatus(
+        uuid,
+        CommonStatus.ACTIVE
+      );
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
       );
@@ -242,29 +247,30 @@ export default function UserManagement() {
     router.push(ROUTES.CREATE_USER);
   }, [router]);
 
-  const menuOptions: MenuOption[] = selectedTab === 'archive' 
-    ? [
-        {
-          label: USER_MESSAGES.RETRIEVE_BUTTON,
-          action: ACTIONS.RETRIEVE,
-          icon: Refresh,
-          variant: 'default',
-        },
-      ]
-    : [
-        {
-          label: USER_MESSAGES.EDIT_USER_TITLE,
-          action: ACTIONS.EDIT,
-          icon: Edit2,
-          variant: 'default',
-        },
-        {
-          label: USER_MESSAGES.ARCHIVE_BUTTON,
-          action: ACTIONS.DELETE,
-          icon: Trash,
-          variant: 'destructive',
-        },
-      ];
+  const menuOptions: MenuOption[] =
+    selectedTab === 'archive'
+      ? [
+          {
+            label: USER_MESSAGES.RETRIEVE_BUTTON,
+            action: ACTIONS.RETRIEVE,
+            icon: Refresh,
+            variant: 'default',
+          },
+        ]
+      : [
+          {
+            label: USER_MESSAGES.EDIT_USER_TITLE,
+            action: ACTIONS.EDIT,
+            icon: Edit2,
+            variant: 'default',
+          },
+          {
+            label: USER_MESSAGES.ARCHIVE_BUTTON,
+            action: ACTIONS.DELETE,
+            icon: Trash,
+            variant: 'destructive',
+          },
+        ];
 
   // Check if user has permission to view users
   if (userPermissions && !canViewUsers) {
@@ -321,15 +327,16 @@ export default function UserManagement() {
                 options={[
                   { value: 'all', label: USER_MESSAGES.ALL_USERS },
                   ...roles
-                  .filter(({ name }) =>
-                    !['homeowner', 'vendor', 'admin'].includes(
-                      name.toLowerCase()
+                    .filter(
+                      ({ name }) =>
+                        !['homeowner', 'vendor', 'admin'].includes(
+                          name.toLowerCase()
+                        )
                     )
-                  )
-                  .map(({ uuid, name }) => ({
-                    value: String(uuid),
-                    label: name,
-                  })),
+                    .map(({ uuid, name }) => ({
+                      value: String(uuid),
+                      label: name,
+                    })),
                 ]}
                 placeholder={USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40'
@@ -342,7 +349,11 @@ export default function UserManagement() {
                   className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
                   disabled={loading}
                 >
-                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <Add
+                    size='24'
+                    color='var(--icon-dark)'
+                    className='sm:hidden'
+                  />
                   <span className='hidden sm:inline'>
                     {USER_MESSAGES.ADD_ADMIN_USER_BUTTON}
                   </span>
