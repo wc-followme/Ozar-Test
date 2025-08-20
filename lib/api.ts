@@ -106,6 +106,7 @@ export interface User {
   country_code: string;
   phone_number: string;
   profile_picture_url: string;
+  cover_image?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -115,6 +116,9 @@ export interface User {
   address?: string;
   city?: string;
   pincode?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  isReviewed?: boolean;
   role: {
     id?: number | string; // Not provided in login response
     uuid: string;
@@ -124,6 +128,7 @@ export interface User {
     id?: number | string;
     uuid: string;
     name: string;
+    image?: string;
   };
 }
 
@@ -185,6 +190,7 @@ export interface UpdateUserRequest {
   country_code?: string;
   phone_number?: string;
   profile_picture_url?: string;
+  cover_image?: string;
   date_of_joining?: string;
   designation?: string;
   preferred_communication_method?: string;
@@ -1139,6 +1145,56 @@ class ApiService {
     });
   }
 
+  // User projects management methods
+  async fetchUserProjects({
+    page = 1,
+    limit = 10,
+    user_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    user_id?: string;
+  }): Promise<FetchPortfolioResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(user_id && { user_id }),
+    });
+
+    return this.makeRequest(`/users/projects?${params}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createUserProject(
+    data: CreateProjectRequest
+  ): Promise<CreatePortfolioResponse> {
+    return this.makeRequest('/users/projects', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUserProject(
+    uuid: string,
+    data: UpdateProjectRequest
+  ): Promise<UpdatePortfolioResponse> {
+    return this.makeRequest(`/users/projects/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUserProject(uuid: string): Promise<DeletePortfolioResponse> {
+    return this.makeRequest(`/users/projects/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   // Get company details
   async getCompanyDetails(uuid: string): Promise<GetCompanyResponse> {
     return this.makeRequest(`/companies/${uuid}`, {
@@ -1320,6 +1376,23 @@ class ApiService {
     });
   }
 
+  // Create user review
+  async createUserReview(payload: {
+    user_id: string;
+    rating: number;
+    review: string;
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data?: any;
+  }> {
+    return this.makeRequest('/users/reviews', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Fetch company reviews
   async fetchCompanyReviews({
     page = 1,
@@ -1380,6 +1453,73 @@ class ApiService {
     if (sortOrder) params.append('sortOrder', sortOrder);
 
     return this.makeRequest(`/companies/reviews?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch user reviews
+  async fetchUserReviews({
+    page = 1,
+    limit = 10,
+    user_id = '',
+    reviewer_id = '',
+    rating,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+  }: {
+    page?: number;
+    limit?: number;
+    user_id?: string | number;
+    reviewer_id?: string | number;
+    rating?: number | string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data: {
+      data: Array<{
+        id: number;
+        uuid: string;
+        user_id: string;
+        reviewer_id: string;
+        rating: number;
+        review: string;
+        created_at: string;
+        updated_at: string;
+        reviewer?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          profile_image?: string;
+        };
+        user?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+        };
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (user_id) params.append('user_id', String(user_id));
+    if (reviewer_id) params.append('reviewer_id', String(reviewer_id));
+    if (rating) params.append('rating', String(rating));
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    return this.makeRequest(`/users/reviews?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });

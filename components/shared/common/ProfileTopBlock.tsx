@@ -15,7 +15,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { APP_CONFIG, ROUTES } from '../../../constants/common';
+import {
+  APP_CONFIG,
+  PROFILE_BUTTON_LABELS,
+  PROFILE_DEFAULTS,
+  ROUTES,
+} from '../../../constants/common';
+import { Avatar } from '../common/Avatar';
 
 interface ProfileTopBlockProps {
   coverImage?: string;
@@ -41,36 +47,51 @@ interface ProfileTopBlockProps {
   isUserProfile?: boolean;
   companyProfileLink?: string;
   companyId?: string;
+  userId?: string;
   isReviewed?: boolean;
+  userCompanyName?: string;
+  userCompanyLogo?: string | undefined;
 }
 
 export const ProfileTopBlock = ({
   coverImage = APP_CONFIG.IMAGES.PROFILE_BLOCK_BG,
-  logoImage = APP_CONFIG.IMAGES.LOGO,
-  companyName = 'Envision Construction',
-  tagline = 'Construction Company',
-  rating = 0,
-  reviewCount = 0,
+  logoImage,
+  companyName = PROFILE_DEFAULTS.COMPANY_NAME,
+  tagline = PROFILE_DEFAULTS.TAGLINE,
+  rating = PROFILE_DEFAULTS.RATING,
+  reviewCount = PROFILE_DEFAULTS.REVIEW_COUNT,
   onEditProfile,
   onRequestQuote,
   onShare,
   onChangeCover,
   onAddToNetwork,
-  showReviewButton = true,
-  showEditButton = true,
-  showRequestQuoteButton = true,
-  showShareButton = true,
-  showChangeCoverButton = true,
-  showFiveBoxSystemButton = true,
-  editProfileLink = '/company-profile/edit-profile',
-  fiveBoxSystemLink = '/company-profile/five-box-system',
-  isUserProfile = false,
-  companyProfileLink = '/company-profile',
+  showReviewButton = PROFILE_DEFAULTS.SHOW_REVIEW_BUTTON,
+  showEditButton = PROFILE_DEFAULTS.SHOW_EDIT_BUTTON,
+  showRequestQuoteButton = PROFILE_DEFAULTS.SHOW_REQUEST_QUOTE_BUTTON,
+  showShareButton = PROFILE_DEFAULTS.SHOW_SHARE_BUTTON,
+  showChangeCoverButton = PROFILE_DEFAULTS.SHOW_CHANGE_COVER_BUTTON,
+  showFiveBoxSystemButton = PROFILE_DEFAULTS.SHOW_FIVE_BOX_SYSTEM_BUTTON,
+  editProfileLink = PROFILE_DEFAULTS.EDIT_PROFILE_LINK,
+  fiveBoxSystemLink = PROFILE_DEFAULTS.FIVE_BOX_SYSTEM_LINK,
+  isUserProfile = PROFILE_DEFAULTS.IS_USER_PROFILE,
+  companyProfileLink = PROFILE_DEFAULTS.COMPANY_PROFILE_LINK,
   companyId,
-  isReviewed = false,
+  userId,
+  isReviewed = PROFILE_DEFAULTS.IS_REVIEWED,
+  userCompanyName,
+  userCompanyLogo,
 }: ProfileTopBlockProps) => {
-  const { IMAGES, CDN_URL } = APP_CONFIG;
+  const { CDN_URL } = APP_CONFIG;
   const { AUTH_LOGIN } = ROUTES;
+  const {
+    WRITE_REVIEW,
+    FIVE_BOX_SYSTEM,
+    SHARE,
+    EDIT_PROFILE,
+    REQUEST_QUOTE,
+    ADD_TO_NETWORK,
+    CHANGE_COVER,
+  } = PROFILE_BUTTON_LABELS;
   const { isAuthenticated } = useAuth();
   const router = useRouter();
   const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
@@ -89,7 +110,9 @@ export const ProfileTopBlock = ({
   const handleReviewSubmit = async (data: ReviewFormData) => {
     setIsSubmitting(true);
     try {
-      if (!companyId) {
+      // Check if we have the required ID based on profile type
+      const targetId = isUserProfile ? userId : companyId;
+      if (!targetId) {
         setIsSubmitting(false);
         return;
       }
@@ -97,15 +120,27 @@ export const ProfileTopBlock = ({
       // Destructure form data
       const { title, rating, review } = data;
 
-      // Call the API to submit the review
-      const reviewData = {
-        company_id: companyId,
-        title,
-        rating: parseFloat(rating),
-        review,
-      };
-
-      const response = await apiService.createCompanyReview(reviewData);
+      // Call the appropriate API based on profile type
+      let response;
+      if (isUserProfile) {
+        // Create user review
+        const reviewData = {
+          user_id: targetId,
+          title,
+          rating: parseFloat(rating),
+          review,
+        };
+        response = await apiService.createUserReview(reviewData);
+      } else {
+        // Create company review
+        const reviewData = {
+          company_id: targetId,
+          title,
+          rating: parseFloat(rating),
+          review,
+        };
+        response = await apiService.createCompanyReview(reviewData);
+      }
 
       if (response.statusCode === 200 || response.statusCode === 201) {
         // Use actual API response data for UI update
@@ -130,7 +165,7 @@ export const ProfileTopBlock = ({
             : undefined,
         };
 
-        // Dispatch custom event to notify ReviewTab and company profile
+        // Dispatch custom event to notify ReviewTab and profile
         const event = new CustomEvent('newReviewSubmitted', {
           detail: {
             ...newReview,
@@ -206,7 +241,7 @@ export const ProfileTopBlock = ({
             className='absolute top-4 right-4 btn-secondary !bg-[var(--white-background)] !px-[24px] text-[14px] !py-[10px] !h-9'
             onClick={handleChangeCover}
           >
-            Change Cover
+            {CHANGE_COVER}
           </Button>
         )}
       </div>
@@ -218,15 +253,15 @@ export const ProfileTopBlock = ({
             <div className='flex flex-col lg:flex-row gap-4 md:gap-6 -mt-[70px]'>
               {/* Logo */}
               <div className='relative'>
-                <div className='w-[150px] h-[150px] rounded-[10px] border-2 border-transparent bg-[var(--card-background)] overflow-hidden'>
-                  <Image
-                    src={logoImage}
-                    height={150}
-                    width={150}
-                    alt={`${companyName} Logo`}
-                    className='w-full h-full object-contain'
-                  />
-                </div>
+                <Avatar
+                  name={companyName}
+                  image={logoImage || ''}
+                  height={150}
+                  width={150}
+                  className='rounded-[10px] [&>span]:text-2xl text-white bg-opacity-100 shadow-lg sm:shadow-none transition-transform duration-300 hover:scale-105 sm:hover:scale-100'
+                  swapColors={true}
+                  autoTextColor={true}
+                />
               </div>
 
               {/* Company Details */}
@@ -249,14 +284,14 @@ export const ProfileTopBlock = ({
                               href={companyProfileLink}
                               className='text-[var(--text-dark)] flex items-center gap-2 text-base font-bold leading-[18px] tracking-[0%] hover:text-[var(--primary)] transition-colors'
                             >
-                              <Image
-                                src={IMAGES.LOGO}
-                                width={24}
+                              <Avatar
+                                name={userCompanyName || '-'}
+                                image={userCompanyLogo || ''}
                                 height={24}
-                                className='object-contain'
-                                alt='logo'
+                                width={24}
+                                className='object-contain text-sm'
                               />
-                              Envision Construction
+                              {userCompanyName || '-'}
                             </Link>
                             <div className='w-px h-6 bg-[var(--border-dark)]'></div>
                             <div className='flex items-center gap-2'>
@@ -322,7 +357,7 @@ export const ProfileTopBlock = ({
                             <IconStar size='32' color='currentcolor' />
                           )}
                           <span className='hidden sm:inline'>
-                            {'Write a Review'}
+                            {WRITE_REVIEW}
                           </span>
                         </Button>
                       )}
@@ -337,7 +372,9 @@ export const ProfileTopBlock = ({
                             color='var(--text-dark)'
                             className='[&_path]:!stroke-[2px]'
                           />
-                          <span className='hidden sm:inline'>5-box system</span>
+                          <span className='hidden sm:inline'>
+                            {FIVE_BOX_SYSTEM}
+                          </span>
                         </Link>
                       )}
 
@@ -352,7 +389,7 @@ export const ProfileTopBlock = ({
                             color='var(--text-dark)'
                             className='[&_path]:!stroke-[2px]'
                           />
-                          <span className='hidden sm:inline'>Share</span>
+                          <span className='hidden sm:inline'>{SHARE}</span>
                         </Button>
                       )}
 
@@ -367,7 +404,9 @@ export const ProfileTopBlock = ({
                             color='var(--text-dark)'
                             className='[&_path]:!stroke-[2px]'
                           />
-                          <span className='hidden sm:inline'>Edit Profile</span>
+                          <span className='hidden sm:inline'>
+                            {EDIT_PROFILE}
+                          </span>
                         </Link>
                       )}
 
@@ -377,7 +416,7 @@ export const ProfileTopBlock = ({
                           className='btn-primary gap-1 !py-[10px] sm:!w-auto !h-9 rounded-full'
                           onClick={handleRequestQuote}
                         >
-                          Request Quote
+                          {REQUEST_QUOTE}
                         </Button>
                       )}
 
@@ -387,7 +426,7 @@ export const ProfileTopBlock = ({
                           className='btn-primary gap-1 !py-[10px] sm:!w-auto !h-9 rounded-full'
                           onClick={handleAddToNetwork}
                         >
-                          Add to Network
+                          {ADD_TO_NETWORK}
                         </Button>
                       )}
                     </div>

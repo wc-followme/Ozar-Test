@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, ROUTES } from '@/constants/common';
 import { cn, getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import Image from 'next/image';
@@ -102,7 +102,7 @@ export function CompanyCard({
   };
 
   const handleCardClick = () => {
-    router.push(`/company-management/company-details/${companyUuid}`);
+    router.push(`${ROUTES.COMPANY_PROFILE}/${companyUuid}`);
   };
 
   const handleMenuAction = (action: string) => {
