@@ -9,7 +9,7 @@ pipeline {
   stages {
     stage('Checkout Code') {
       when {
-        branch 'versioninfo'
+        expression { env.BRANCH_NAME == "versioninfo" }
       }
       steps {
         checkout scm
@@ -18,7 +18,7 @@ pipeline {
 
     stage('Run Deployment Script on Staging EC2') {
       when {
-        branch 'versioninfo'
+        expression { env.BRANCH_NAME == "versioninfo" }
       }
       steps {
         sshagent(credentials: ['envision-ssh-key']) {
