@@ -9,8 +9,9 @@ import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { calculateLineTotal } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { EyeSlash, Paintbucket, Trash } from 'iconsax-react';
+import { EyeSlash, Trash } from 'iconsax-react';
 import { useEffect, useState } from 'react';
+import { PaintDishIcon } from '../../icons/PaintDishIcon';
 import Dropdown from '../common/Dropdown';
 import { EstimationItem } from './estimation-types';
 
@@ -142,9 +143,9 @@ export default function EstimationItemForm({
   };
 
   return (
-    <div className='border border-[var(--border-dark)] rounded-[10px] p-4 bg-[var(--white-background)]'>
-      <div className='flex items-start gap-4 mb-2'>
-        <div className='space-y-2 flex-1'>
+    <div className='border border-[var(--border-dark)] rounded-[10px] p-4 bg-[var(--white-background)] w-full min-w-max'>
+      <div className='flex items-start gap-4 mb-2 flex-wrap'>
+        <div className='space-y-2 flex-1 min-w-[300px]'>
           <Label className='field-label text-sm'>Material Name</Label>
           <SelectField
             value={(() => {
@@ -185,7 +186,7 @@ export default function EstimationItemForm({
             disabled={loading}
           />
         </div>
-        <div className='space-y-2 flex-1'>
+        <div className='space-y-2 flex-1 min-w-[200px]'>
           <Label className='field-label text-sm'>Variant</Label>
           <SelectField
             value={item.variant}
@@ -195,7 +196,7 @@ export default function EstimationItemForm({
             className='mb-0'
           />
         </div>
-        <div className='space-y-2 w-[150px]'>
+        <div className='space-y-2 w-[100px] min-w-[100px]'>
           <Label className='field-label text-sm'>Qty</Label>
           <Input
             type='text'
@@ -233,7 +234,7 @@ export default function EstimationItemForm({
             className='input-field'
           />
         </div>
-        <div className='space-y-2 w-[150px]'>
+        <div className='space-y-2 w-[150px] min-w-[150px]'>
           <Label className='field-label text-sm'>Unit</Label>
           <SelectField
             value={item.unit}
@@ -254,7 +255,7 @@ export default function EstimationItemForm({
               {
                 label: 'Send to Finishes',
                 action: 'send-to-finishes',
-                icon: Paintbucket,
+                icon: PaintDishIcon,
               },
               {
                 label: 'Delete line item',
@@ -290,8 +291,8 @@ export default function EstimationItemForm({
           />
         </div>
       </div>
-      <div className='flex items-start gap-4 justify-between mt-4'>
-        <div className='flex-1 space-y-2'>
+      <div className='flex items-start gap-4 justify-between mt-4 flex-wrap'>
+        <div className='flex-1 space-y-2 min-w-[300px]'>
           <Label className='field-label text-sm'>Description</Label>
           <Textarea
             value={item.description}
@@ -300,7 +301,7 @@ export default function EstimationItemForm({
             className='input-field min-h-12'
           />
         </div>
-        <div className='space-y-2'>
+        <div className='space-y-2 min-w-[150px]'>
           <Label className='field-label text-sm'>Rate</Label>
           <Input
             type='text'
@@ -313,7 +314,7 @@ export default function EstimationItemForm({
             className='input-field'
           />
         </div>
-        <div className='space-y-2'>
+        <div className='space-y-2 min-w-[200px]'>
           <Label className='field-label text-sm'>Markup </Label>
           <div className='flex focus-within:ring-2 focus-within:ring-[var(--secondary)] focus-within:ring-opacity-50'>
             <div className='w-[60px]'>
@@ -347,7 +348,7 @@ export default function EstimationItemForm({
             />
           </div>
         </div>
-        <div className='ml-4 space-y-1 pt-7'>
+        <div className='ml-4 space-y-1 pt-7 min-w-[150px] flex-shrink-0'>
           <Label className='field-label font-medium text-[var(--text-dark)] text-xs'>
             Line Total
           </Label>

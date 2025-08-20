@@ -1479,7 +1479,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
       {/* Main Content */}
       <div
-        className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out'
+        className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
         style={{ width: calculateContentWidth() }}
       >
         {/* Header */}
@@ -1502,7 +1502,18 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
 
         {/* Content Area */}
         <div className='flex-1 overflow-hidden bg-[var(--background)]'>
-          <div className='h-full overflow-x-auto overflow-y-auto'>
+          <div
+            className='h-full overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300'
+            style={{
+              WebkitOverflowScrolling: 'touch',
+              scrollBehavior: 'smooth',
+              touchAction: 'pan-x pan-y',
+              msOverflowStyle: 'auto',
+              scrollbarWidth: 'auto',
+              overflowX: 'auto',
+              overflowY: 'auto',
+            }}
+          >
             <div className='p-6 min-w-[800px] max-w-none w-full'>
               {!showAddService ? (
                 // Room view - show trades list
@@ -1597,13 +1608,14 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         </div>
 
         {/* Project Total and Submit Buttons */}
-        <div className='p-6 bg-white border-t border-gray-200 shadow-sm'>
+        <div className='p-6 py-3 bg-[var(--card-background)] border-t border-[var(--border-dark)] shadow-sm'>
           <div className='flex justify-between items-center'>
             <div className='flex items-center gap-4'>
-              <h3 className='text-xl font-semibold text-gray-900'>
+              <h3 className='text-base font-semibold text-[var(--text-dark)]'>
                 Project Total:
               </h3>
-              <span className='text-2xl font-bold text-gray-900'>
+              <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
+              <span className='text-xl font-bold text-[var(--primary)]'>
                 {formatCurrency(projectTotal)}
               </span>
             </div>
