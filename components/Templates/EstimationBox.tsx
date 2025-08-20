@@ -250,12 +250,12 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         handleCompanyChanged as EventListener
       );
     };
-  }, []);
+  }, [props.categoryId]); // Add categoryId as dependency
 
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-      updateLocalStorageFromState(rooms);
+      updateLocalStorageFromState(rooms, props.jobId);
     }
   }, [rooms]);
 
@@ -412,9 +412,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Use the UUID from the first trade option in the dropdown
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
-      console.error(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
-      showErrorToast(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
-      // Create a default trade if no options are available
+      // Create a default trade if no options are available (silently)
       const defaultTrade: Trade = {
         id: 'default-trade',
         uniqueKey: generateUniqueKey(
@@ -716,7 +714,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData);
+        updateLocalStorageFromState(roomsData, props.jobId);
       }, 0);
     }
   };
@@ -780,7 +778,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData);
+        updateLocalStorageFromState(roomsData, props.jobId);
       }, 0);
 
       return updatedRooms;
@@ -1292,7 +1290,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       })),
     }));
 
-    updateLocalStorageFromState(roomsData);
+    updateLocalStorageFromState(roomsData, props.jobId);
   };
 
   const handleSave = async () => {
@@ -1303,7 +1301,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       // If jobId is provided, make API call
       if (props.jobId) {
         // Get the job_rooms data from localStorage
-        const jobRoomsData = localStorage.getItem('job_rooms');
+        const storageKey = `job_rooms_${props.jobId}`;
+        const jobRoomsData = localStorage.getItem(storageKey);
         if (jobRoomsData) {
           const jobRooms = JSON.parse(jobRoomsData);
 

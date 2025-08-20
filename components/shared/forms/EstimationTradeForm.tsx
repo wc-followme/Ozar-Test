@@ -132,45 +132,43 @@ export default function EstimationTradeForm({
         <div className='space-y-4'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex-1'>
-              {/* Trade dropdown - only show if trades are available */}
-              {finalTradeOptions.length > 0 && (
-                <SelectField
-                  label='Trade'
-                  value={selectedTrade}
-                  onValueChange={newValue => {
-                    setSelectedTrade(newValue);
-                    // Convert the selected value (uuid) to its display label (name)
-                    const selectedOption = finalTradeOptions.find(
-                      option => option.value === newValue
-                    );
-                    const newTradeName = selectedOption
-                      ? selectedOption.label
-                      : newValue;
+              {/* Trade dropdown - always show, even when empty */}
+              <SelectField
+                label='Trade'
+                value={selectedTrade}
+                onValueChange={newValue => {
+                  setSelectedTrade(newValue);
+                  // Convert the selected value (uuid) to its display label (name)
+                  const selectedOption = finalTradeOptions.find(
+                    option => option.value === newValue
+                  );
+                  const newTradeName = selectedOption
+                    ? selectedOption.label
+                    : newValue;
 
-                    // Get the current trade unique key to identify the specific trade instance
-                    const currentTradeUniqueKey = tradeUniqueKey;
+                  // Get the current trade unique key to identify the specific trade instance
+                  const currentTradeUniqueKey = tradeUniqueKey;
 
-                    // Call the trade replacement handler to update component state
-                    onTradeReplacement?.(
-                      currentTradeUniqueKey,
-                      newValue,
-                      newTradeName
-                    );
+                  // Call the trade replacement handler to update component state
+                  onTradeReplacement?.(
+                    currentTradeUniqueKey,
+                    newValue,
+                    newTradeName
+                  );
 
-                    // Also call the trade name change handler for backward compatibility
-                    onTradeNameChange?.(newTradeName);
+                  // Also call the trade name change handler for backward compatibility
+                  onTradeNameChange?.(newTradeName);
 
-                    // Save data after trade selection
-                    const updates: any = {};
-                    if (startDate) updates.start_date = startDate.toISOString();
-                    if (endDate) updates.end_date = endDate.toISOString();
-                    onLocalStorageUpdate?.();
-                  }}
-                  options={finalTradeOptions}
-                  placeholder='Select a trade'
-                  className='mb-0'
-                />
-              )}
+                  // Save data after trade selection
+                  const updates: any = {};
+                  if (startDate) updates.start_date = startDate.toISOString();
+                  if (endDate) updates.end_date = endDate.toISOString();
+                  onLocalStorageUpdate?.();
+                }}
+                options={finalTradeOptions}
+                placeholder='Select a trade'
+                className='mb-0'
+              />
             </div>
             <div className='min-w-[240px] pt-7 ml-auto'>
               <div className='grid grid-cols-3 gap-4'>
