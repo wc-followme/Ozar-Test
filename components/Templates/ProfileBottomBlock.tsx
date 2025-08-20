@@ -39,7 +39,19 @@ const TAB_ITEMS = PROFILE_TAB_ITEMS.map((item, index) => ({
   component: COMPONENTS[index]!,
 }));
 
-export const ProfileBottomBlock = () => {
+interface ProfileBottomBlockProps {
+  userData?: any;
+  isCompanyOrUserProfile?: boolean;
+  userId?: string;
+  canEditUser?: boolean;
+}
+
+export const ProfileBottomBlock = ({
+  userData,
+  isCompanyOrUserProfile = false,
+  userId,
+  canEditUser = false,
+}: ProfileBottomBlockProps) => {
   const [selectedTab, setSelectedTab] = useState<string>(
     PROFILE_TABS.PROFILE_INFO
   );
@@ -90,7 +102,12 @@ export const ProfileBottomBlock = () => {
 
           {TAB_ITEMS.map(({ value, component: Component, className }) => (
             <TabsContent key={value} value={value} className={className}>
-              <Component />
+              <Component
+                userData={userData}
+                isCompanyOrUserProfile={isCompanyOrUserProfile}
+                userId={userId}
+                canEditCompany={canEditUser}
+              />
             </TabsContent>
           ))}
         </Tabs>
