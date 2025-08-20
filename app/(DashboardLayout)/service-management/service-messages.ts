@@ -43,6 +43,7 @@ export const SERVICE_MESSAGES = {
 
   // Loading and empty states
   LOADING_SERVICES: 'Loading services...',
+  LOADING_SERVICES_DROPDOWN: 'Loading services...',
   NO_SERVICES_FOUND: 'No services found',
   NO_SERVICES_FOUND_DESCRIPTION:
     "You haven't created any services yet. Start by adding your first one to organize your services.",

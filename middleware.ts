@@ -4,6 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 const publicRoutes = [
   '/auth/login',
   '/home-owner',
+  '/public-company-profile',
   '/_next',
   '/api',
   '/favicon.ico',

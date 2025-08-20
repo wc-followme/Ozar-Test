@@ -72,4 +72,5 @@ export interface CompanyInfoFormProps {
   error?: string | undefined;
   initialData?: CompanyInitialData;
   isEditMode?: boolean;
+  showExpiryDate?: boolean;
 }

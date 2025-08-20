@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
   dateRange: string;
@@ -31,45 +32,86 @@ interface Trade {
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface EstimationTradeFormProps {
   trade: Trade;
+  roomUniqueKey: string; // Add room unique key prop
+  tradeUniqueKey: string; // Add trade unique key prop
   _onTradeUpdate?: (updatedTrade: Trade) => void;
   onServiceSelect?: (serviceId: string) => void;
   _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
+  onTradeReplacement?: (
+    oldTradeUniqueKey: string,
+    newTradeId: string,
+    newTradeName: string
+  ) => void;
   onServiceReorder?: (reorderedServices: Service[]) => void;
+  tradeOptions?: Array<{ value: string; label: string }>;
+  onLocalStorageUpdate?: () => void; // New prop to trigger localStorage update
 }
 
 export default function EstimationTradeForm({
   trade,
+  roomUniqueKey,
+  tradeUniqueKey,
+  _onTradeUpdate,
   onServiceSelect,
   onTradeNameChange,
+  onTradeReplacement,
   onServiceReorder,
+  onLocalStorageUpdate,
+  tradeOptions = [],
 }: EstimationTradeFormProps) {
-  const [selectedTrade, setSelectedTrade] = useState(trade.name || 'Plumbing');
+  const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
-  const [startDate, setStartDate] = useState<Date | undefined>(
-    new Date('2024-03-20')
-  );
-  const [endDate, setEndDate] = useState<Date | undefined>(
-    new Date('2024-03-23')
-  );
   const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
 
+  // Use trade-specific data instead of local state
+  const startDate = trade.startDate || new Date();
+  const endDate =
+    trade.endDate ||
+    (() => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      return tomorrow;
+    })();
+
+  // Use provided tradeOptions or show nothing if no trades available
+  const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
+
   // Sync selectedTrade with trade prop to avoid duplicates
   useEffect(() => {
-    if (
-      trade.name &&
-      tradeOptions.some(option => option.value === trade.name)
-    ) {
-      setSelectedTrade(trade.name);
+    // Prefer matching by label (human-readable name). Fallback to matching by value.
+    const matchingOption = tradeOptions.find(
+      option => option.label === trade.name || option.value === trade.name
+    );
+
+    if (matchingOption) {
+      setSelectedTrade(matchingOption.value);
+    } else if (tradeOptions.length > 0 && tradeOptions[0]) {
+      // Default to first available option when nothing matches
+      setSelectedTrade(tradeOptions[0].value);
     } else {
-      setSelectedTrade('Plumbing'); // Default to first option if trade.name is not in options
+      setSelectedTrade('');
     }
-  }, [trade.name]);
+  }, [trade.name, tradeOptions]);
+
+  // Save initial data when component mounts
+  useEffect(() => {
+    if (selectedTrade) {
+      const updates: any = {};
+      if (startDate) updates.start_date = startDate.toISOString();
+      if (endDate) updates.end_date = endDate.toISOString();
+      onLocalStorageUpdate?.();
+    }
+  }, [selectedTrade, startDate, endDate, onLocalStorageUpdate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -78,20 +120,9 @@ export default function EstimationTradeForm({
     }).format(amount);
   };
 
-  // Sample options for the select fields - avoid duplicates
-  const tradeOptions = [
-    { value: 'Plumbing', label: 'Plumbing' },
-    { value: 'Electrical', label: 'Electrical' },
-    { value: 'HVAC', label: 'HVAC' },
-    { value: 'Carpentry', label: 'Carpentry' },
-    { value: 'Roofing', label: 'Roofing' },
-    { value: 'Painting', label: 'Painting' },
-  ];
-
   const currencyOptions = [
     { value: '$', label: '$' },
-    { value: '€', label: '€' },
-    { value: '£', label: '£' },
+    { value: '%', label: '%' },
   ];
 
   return (
@@ -101,17 +132,45 @@ export default function EstimationTradeForm({
         <div className='space-y-4'>
           <div className='flex items-center justify-between gap-4'>
             <div className='flex-1'>
-              <SelectField
-                label='Trade'
-                value={selectedTrade}
-                onValueChange={newValue => {
-                  setSelectedTrade(newValue);
-                  onTradeNameChange?.(newValue);
-                }}
-                options={tradeOptions}
-                placeholder='Select a trade'
-                className='mb-0'
-              />
+              {/* Trade dropdown - only show if trades are available */}
+              {finalTradeOptions.length > 0 && (
+                <SelectField
+                  label='Trade'
+                  value={selectedTrade}
+                  onValueChange={newValue => {
+                    setSelectedTrade(newValue);
+                    // Convert the selected value (uuid) to its display label (name)
+                    const selectedOption = finalTradeOptions.find(
+                      option => option.value === newValue
+                    );
+                    const newTradeName = selectedOption
+                      ? selectedOption.label
+                      : newValue;
+
+                    // Get the current trade unique key to identify the specific trade instance
+                    const currentTradeUniqueKey = tradeUniqueKey;
+
+                    // Call the trade replacement handler to update component state
+                    onTradeReplacement?.(
+                      currentTradeUniqueKey,
+                      newValue,
+                      newTradeName
+                    );
+
+                    // Also call the trade name change handler for backward compatibility
+                    onTradeNameChange?.(newTradeName);
+
+                    // Save data after trade selection
+                    const updates: any = {};
+                    if (startDate) updates.start_date = startDate.toISOString();
+                    if (endDate) updates.end_date = endDate.toISOString();
+                    onLocalStorageUpdate?.();
+                  }}
+                  options={finalTradeOptions}
+                  placeholder='Select a trade'
+                  className='mb-0'
+                />
+              )}
             </div>
             <div className='min-w-[240px] pt-7 ml-auto'>
               <div className='grid grid-cols-3 gap-4'>
@@ -172,9 +231,16 @@ export default function EstimationTradeForm({
                     mode='single'
                     selected={startDate}
                     onSelect={date => {
-                      setStartDate(date);
-                      setStartDatePickerOpen(false);
+                      if (date) {
+                        _onTradeUpdate?.({
+                          ...trade,
+                          startDate: date,
+                        });
+                        setStartDatePickerOpen(false);
+                        onLocalStorageUpdate?.();
+                      }
                     }}
+                    disabled={date => date < new Date()}
                     initialFocus
                   />
                 </PopoverContent>
@@ -214,8 +280,28 @@ export default function EstimationTradeForm({
                     mode='single'
                     selected={endDate}
                     onSelect={date => {
-                      setEndDate(date);
-                      setEndDatePickerOpen(false);
+                      if (date) {
+                        _onTradeUpdate?.({
+                          ...trade,
+                          endDate: date,
+                        });
+                        setEndDatePickerOpen(false);
+                        onLocalStorageUpdate?.();
+                      }
+                    }}
+                    disabled={date => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      const startDateOnly = startDate
+                        ? new Date(startDate.getTime())
+                        : null;
+                      if (startDateOnly) {
+                        startDateOnly.setHours(0, 0, 0, 0);
+                      }
+                      return (
+                        date < today ||
+                        (startDateOnly ? date <= startDateOnly : false)
+                      );
                     }}
                     initialFocus
                   />
@@ -224,7 +310,7 @@ export default function EstimationTradeForm({
             </div>
             <div className='flex-1 space-y-2'>
               <Label className='field-label'>Total Markup</Label>
-              <div className='flex '>
+              <div className='flex'>
                 <div className='w-[60px]'>
                   <SelectField
                     value={selectedCurrency}
@@ -232,14 +318,15 @@ export default function EstimationTradeForm({
                     options={currencyOptions}
                     placeholder='$'
                     className='mb-0'
+                    disabled={true}
                     triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
                   />
                 </div>
                 <Input
                   type='text'
-                  value=''
-                  placeholder='00.00'
-                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
+                  value={formatCurrency(trade.markup || 0)}
+                  disabled={true}
+                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] opacity-75 cursor-not-allowed'
                 />
               </div>
             </div>
@@ -256,7 +343,10 @@ export default function EstimationTradeForm({
         >
           <div className='space-y-4'>
             {trade.serviceList.map(service => (
-              <SortableItem key={service.id} id={service.id}>
+              <SortableItem
+                key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
+                id={service.id}
+              >
                 {dragHandleProps => (
                   <TradeListCardComponent
                     service={service}

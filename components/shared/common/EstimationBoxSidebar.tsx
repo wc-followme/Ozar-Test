@@ -55,6 +55,7 @@ interface Service {
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
   dateRange: string;
@@ -68,6 +69,7 @@ interface Trade {
 
 interface Room {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   total: number;
   trades: Trade[];
@@ -84,7 +86,7 @@ interface EstimationBoxSidebarProps {
   handleRoomSelect: (roomId: string) => void;
   expandedTrades: string[];
   handleTradeAccordionChange: (value: string[]) => void;
-  handleTradeSelect: (tradeId: string) => void;
+  handleTradeSelect: (tradeUniqueKey: string) => void;
   selectedService: string | null;
   handleServiceSelect: (serviceId: string) => void;
   formatCurrency: (amount: number) => string;
@@ -182,7 +184,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
           >
             {rooms.map(room => (
               <AccordionItem
-                key={room.id}
+                key={room.uniqueKey}
                 value={room.id}
                 className='border-none'
               >
@@ -235,20 +237,22 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                       >
                         {room.trades.map(trade => (
                           <AccordionItem
-                            key={trade.id}
-                            value={trade.id}
+                            key={`${room.uniqueKey}_${trade.uniqueKey}`}
+                            value={trade.uniqueKey}
                             className='border-none'
                           >
                             <AccordionPrimitive.Header className='flex'>
                               <AccordionPrimitive.Trigger
                                 className={`flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full `}
-                                onClick={() => handleTradeSelect(trade.id)}
+                                onClick={() =>
+                                  handleTradeSelect(trade.uniqueKey)
+                                }
                               >
                                 <div className='flex items-center flex-1 min-w-0'>
                                   <IconChevronDown
                                     size={16}
                                     className={`mr-2 transition-transform duration-200 ${
-                                      expandedTrades.includes(trade.id)
+                                      expandedTrades.includes(trade.uniqueKey)
                                         ? 'rotate-180'
                                         : ''
                                     } text-[var(--text-dark)]`}
@@ -267,7 +271,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                 <div className='ml-6 mt-1 animate-in slide-in-from-top-2 duration-200'>
                                   {trade.serviceList.map(service => (
                                     <div
-                                      key={service.id}
+                                      key={`${room.uniqueKey}_${trade.uniqueKey}_${service.id}`}
                                       className={`flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg ${
                                         selectedService === service.id
                                           ? 'bg-[var(--background)]'

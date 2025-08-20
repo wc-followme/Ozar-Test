@@ -6,7 +6,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Add, ArrowSquareDown } from 'iconsax-react';
 import { useState } from 'react';
@@ -21,6 +20,7 @@ interface EstimationItemsAccordionProps {
   onItemUpdate: (itemId: string, updatedItem: EstimationItem) => void;
   onItemDelete: (itemId: string) => void;
   defaultExpanded?: boolean;
+  serviceId?: string | undefined; // Add service ID prop for fetching materials
 }
 
 export default function EstimationItemsAccordion({
@@ -31,6 +31,7 @@ export default function EstimationItemsAccordion({
   onItemUpdate,
   onItemDelete,
   defaultExpanded = true,
+  serviceId, // Add service ID prop
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -62,11 +63,11 @@ export default function EstimationItemsAccordion({
                   color='var(--text-dark)'
                 />
                 <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-                  {title} - {items.length} services
+                  {title} - {items.length}
                 </h3>
               </div>
-              <Button
-                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
+              <div
+                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
                 onClick={e => {
                   e.stopPropagation();
                   onAddItem();
@@ -74,7 +75,7 @@ export default function EstimationItemsAccordion({
               >
                 <Add size='20' color='var(--secondary)' className='!h-5 !w-5' />
                 {addButtonText}
-              </Button>
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
@@ -87,6 +88,7 @@ export default function EstimationItemsAccordion({
                     handleItemUpdate(item.id, updatedItem)
                   }
                   onDelete={() => handleItemDelete(item.id)}
+                  serviceId={serviceId}
                 />
               ))}
             </div>

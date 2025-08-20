@@ -1,8 +1,14 @@
+import {
+  FIVE_BOX_SLUGS,
+  GENERAL_INFORMATION_FIELDS,
+  PROJECT_INFORMATION_FIELDS,
+  PROPERTY_INFORMATION_FIELDS,
+} from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import { PROJECT_MESSAGES } from '@/constants/messages';
 import { FormConfig } from './DynamicForm';
 
 export const formConfigs: Record<string, FormConfig> = {
-  'general-information': {
+  [FIVE_BOX_SLUGS.GENERAL_INFORMATION]: {
     id: '01',
     number: '01',
     color: '#10B981',
@@ -11,7 +17,7 @@ export const formConfigs: Record<string, FormConfig> = {
       'Fill out your details to help us contact you and understand your project better.',
     fields: [
       {
-        name: 'yourName',
+        name: GENERAL_INFORMATION_FIELDS.YOUR_NAME,
         label: 'Your Name',
         type: 'text',
         placeholder: 'Enter your full name',
@@ -23,7 +29,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-6', // Full width
       },
       {
-        name: 'email',
+        name: GENERAL_INFORMATION_FIELDS.EMAIL,
         label: 'Email',
         type: 'email',
         placeholder: 'Enter your email',
@@ -34,7 +40,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'phoneNumber',
+        name: GENERAL_INFORMATION_FIELDS.PHONE_NUMBER,
         label: 'Phone Number',
         type: 'tel',
         placeholder: 'Enter your number',
@@ -45,7 +51,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (right column)
       },
       {
-        name: 'address',
+        name: GENERAL_INFORMATION_FIELDS.ADDRESS,
         label: 'Address',
         type: 'textarea',
         placeholder: 'Enter your address',
@@ -57,7 +63,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-6', // Full width
       },
       {
-        name: 'preferredContactMethod',
+        name: GENERAL_INFORMATION_FIELDS.PREFERRED_CONTACT_METHOD,
         label: 'Preferred contact method',
         type: 'select',
         placeholder: 'Select contact method',
@@ -70,7 +76,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'bestTimeToContact',
+        name: GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT,
         label: 'Best time to contact',
         type: 'timerange',
         placeholder: 'Start time',
@@ -82,7 +88,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (right column)
       },
       {
-        name: 'animalsInHome',
+        name: GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME,
         label: 'Animals in the Home',
         type: 'select',
         placeholder: 'Select option',
@@ -94,7 +100,7 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'petType',
+        name: GENERAL_INFORMATION_FIELDS.PET_TYPE,
         label: 'Pet type?',
         type: 'select',
         placeholder: 'Select pet type',
@@ -110,7 +116,7 @@ export const formConfigs: Record<string, FormConfig> = {
       },
     ],
   },
-  'property-information': {
+  [FIVE_BOX_SLUGS.PROPERTY_INFORMATION]: {
     id: '02',
     number: '02',
     color: '#3B82F6',
@@ -119,7 +125,7 @@ export const formConfigs: Record<string, FormConfig> = {
       'Share key property details to help us tailor solutions that suit your space and structure.',
     fields: [
       {
-        name: 'property',
+        name: PROPERTY_INFORMATION_FIELDS.PROPERTY,
         label: 'Property',
         type: 'select',
         placeholder: 'Select property type',
@@ -132,7 +138,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'propertyType',
+        name: PROPERTY_INFORMATION_FIELDS.PROPERTY_TYPE,
         label: 'Type of Property',
         type: 'select',
         placeholder: 'Select property type',
@@ -146,7 +152,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'bhk',
+        name: PROPERTY_INFORMATION_FIELDS.BHK,
         label: 'BHK',
         type: 'select',
         placeholder: 'Select BHK',
@@ -161,7 +167,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'floor',
+        name: PROPERTY_INFORMATION_FIELDS.FLOOR,
         label: 'Floor',
         type: 'select',
         placeholder: 'Select floor',
@@ -176,7 +182,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'approxSqFt',
+        name: PROPERTY_INFORMATION_FIELDS.APPROX_SQ_FT,
         label: 'Approx. sq ft',
         type: 'select',
         placeholder: 'Select square footage',
@@ -191,7 +197,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'ageOfProperty',
+        name: PROPERTY_INFORMATION_FIELDS.AGE_OF_PROPERTY,
         label: 'Age of Property',
         type: 'select',
         placeholder: 'Select property age',
@@ -207,7 +213,7 @@ export const formConfigs: Record<string, FormConfig> = {
       },
     ],
   },
-  'project-information': {
+  [FIVE_BOX_SLUGS.PROJECT_INFORMATION]: {
     id: '03',
     number: '03',
     color: '#06B6D4',
@@ -215,7 +221,7 @@ export const formConfigs: Record<string, FormConfig> = {
     description: PROJECT_MESSAGES.FORM_DESCRIPTION,
     fields: [
       {
-        name: 'projectName',
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_NAME,
         label: PROJECT_MESSAGES.PROJECT_NAME_LABEL,
         type: 'text',
         placeholder: PROJECT_MESSAGES.PROJECT_NAME_PLACEHOLDER,
@@ -226,21 +232,21 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'projectStartDate',
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_START_DATE,
         label: PROJECT_MESSAGES.PROJECT_START_DATE_LABEL,
         type: 'date',
         placeholder: PROJECT_MESSAGES.SELECT_START_DATE,
         required: true,
       },
       {
-        name: 'projectFinishDate',
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_FINISH_DATE,
         label: PROJECT_MESSAGES.PROJECT_FINISH_DATE_LABEL,
         type: 'date',
         placeholder: PROJECT_MESSAGES.SELECT_FINISH_DATE,
         required: true,
       },
       {
-        name: 'ownerPresence',
+        name: PROJECT_INFORMATION_FIELDS.OWNER_PRESENCE,
         label: PROJECT_MESSAGES.OWNER_PRESENCE_LABEL,
         type: 'select',
         placeholder: PROJECT_MESSAGES.SELECT_OWNER_PRESENCE,
@@ -251,7 +257,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'weekendWork',
+        name: PROJECT_INFORMATION_FIELDS.WEEKEND_WORK,
         label: PROJECT_MESSAGES.WEEKEND_WORK_LABEL,
         type: 'select',
         placeholder: PROJECT_MESSAGES.SELECT_WEEKEND_WORK,
@@ -262,7 +268,7 @@ export const formConfigs: Record<string, FormConfig> = {
         ],
       },
       {
-        name: 'dailyWorkTiming',
+        name: PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING,
         label: PROJECT_MESSAGES.DAILY_WORK_TIMING_LABEL,
         type: 'timerange',
         placeholder: PROJECT_MESSAGES.START_TIME_PLACEHOLDER,
@@ -273,7 +279,7 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'budget',
+        name: PROJECT_INFORMATION_FIELDS.BUDGET,
         label: PROJECT_MESSAGES.BUDGET_LABEL,
         type: 'text',
         placeholder: PROJECT_MESSAGES.BUDGET_PLACEHOLDER,
@@ -284,7 +290,7 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'preferredContractor',
+        name: PROJECT_INFORMATION_FIELDS.PREFERRED_CONTRACTOR,
         label: PROJECT_MESSAGES.PREFERRED_CONTRACTOR_LABEL,
         type: 'select',
         placeholder: PROJECT_MESSAGES.SELECT_CONTRACTOR,

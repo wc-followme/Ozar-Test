@@ -6,12 +6,12 @@ import { JobCard } from '@/components/shared/cards/JobCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 
 import ComingSoon from '@/components/shared/common/ComingSoon';
-import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { CreateJobForm } from '@/components/shared/forms/CreateJobForm';
 import { JobCardSkeleton } from '@/components/shared/skeleton/JobCardSkeleton';
 import JobManagementPageSkeleton from '@/components/shared/skeleton/JobManagementPageSkeleton';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -34,6 +34,7 @@ import {
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
 
@@ -44,6 +45,7 @@ export default function JobManagement() {
   const { DONE } = JobStatus;
   const { HOME_OWNER } = ROUTES;
   const { JOBS_LIMIT } = PAGINATION;
+  const { BASE_URL } = APP_CONFIG;
   const {
     NEW_LEADS: NEW_LEADS_TAB,
     INFO,
@@ -63,6 +65,11 @@ export default function JobManagement() {
   const [generatedLink, setGeneratedLink] = useState<string>('');
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [boxDefaults, setBoxDefaults] = useState<Array<{
+    id: string;
+    enabled: boolean;
+  }> | null>(null);
+  const [questionJson, setQuestionJson] = useState<any>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
   const isInitialMount = useRef(true);
@@ -77,7 +84,7 @@ export default function JobManagement() {
 
   // Helper function to generate home-owner link
   const generateHomeOwnerLink = (jobUuid: string) =>
-    `${APP_CONFIG.BASE_URL}${HOME_OWNER}/${jobUuid}`;
+    `${BASE_URL}${HOME_OWNER}/${jobUuid}`;
 
   // State for filter counts
   const [filterCounts, setFilterCounts] = useState<JobFilterCounts>({
@@ -107,6 +114,26 @@ export default function JobManagement() {
         return; // Don't show toast if it's an auth error
       }
       // Error handled silently - filter counts are not critical
+    }
+  }, [handleAuthError]);
+
+  // Fetch 5-box default selections for the selected company
+  const fetchBoxDefaults = useCallback(async () => {
+    try {
+      const company_id = getCompanyId();
+      const response = await apiService.getBoxSettings(
+        company_id ? { company_id } : {}
+      );
+      if (response.statusCode === 200 && response.data) {
+        const { default_selected_json, question_json } = response.data;
+        setBoxDefaults(default_selected_json);
+        setQuestionJson(question_json);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      // Non-critical: ignore toast for this auxiliary fetch
     }
   }, [handleAuthError]);
 
@@ -257,7 +284,7 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
     fetchFilterCounts();
     isInitialDataLoaded.current = true;
-  }, [selectedTab]);
+  }, [selectedTab, fetchFilterCounts, fetchJobsByTab]);
 
   useCompanyChange(refetchJobs);
 
@@ -302,26 +329,12 @@ export default function JobManagement() {
     fetchJobsByTab(selectedTab, 1, false);
   }, [selectedTab]); // Remove fetchJobsByTab from dependencies
 
-  // Infinite scroll
+  // Effect to fetch box defaults when form opens
   useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 200 &&
-        !loading &&
-        !tabLoading &&
-        hasMore
-      ) {
-        setPage(prevPage => {
-          const nextPage = prevPage + 1;
-          fetchJobsByTab(selectedTab, nextPage, true);
-          return nextPage;
-        });
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, tabLoading, hasMore, fetchJobsByTab, selectedTab]);
+    if (isOpen) {
+      fetchBoxDefaults();
+    }
+  }, [isOpen, fetchBoxDefaults]);
 
   // Handle tab change
   const handleTabChange = (value: string) => {
@@ -342,30 +355,16 @@ export default function JobManagement() {
 
     setIsSubmitting(true);
     try {
-      // Prepare job_boxes_step with automatic logic
-      let jobBoxesStep = '';
-      if (Array.isArray(job_boxes_step) && job_boxes_step.length > 0) {
-        if (job_boxes_step.length === 1) {
-          jobBoxesStep = 'FIRST';
-        } else if (job_boxes_step.length === 2) {
-          jobBoxesStep = 'SECOND';
-        } else if (job_boxes_step.length === 3) {
-          jobBoxesStep = 'THIRD';
-        }
-      }
-
       // Prepare payload for API
       const payload: any = {
         client_name,
         client_email,
         client_phone_number,
         job_privacy,
+        job_boxes_step,
+        question_json: questionJson,
       };
 
-      // Only add job_boxes_step if array length is not 0
-      if (job_boxes_step?.length !== 0) {
-        payload.job_boxes_step = jobBoxesStep;
-      }
       // Only include client_id if it has a value
       if (client_id !== undefined && client_id !== null && client_id !== '') {
         // Convert string to number if needed
@@ -398,7 +397,7 @@ export default function JobManagement() {
         if (homeOwnerLink) {
           setGeneratedLink(homeOwnerLink);
         }
-        if (job_boxes_step?.length === 0) {
+        if (!job_boxes_step || job_boxes_step.length === 0) {
           setIsOpen(false);
           setGeneratedLink('');
           fetchJobsByTab(selectedTab, 1, false);
@@ -513,22 +512,9 @@ export default function JobManagement() {
           onValueChange={handleTabChange}
           className='w-full'
         >
-          <div className='flex flex-row items-center gap-2 w-full overflow-hidden max-w-full'>
-            <DynamicScrollArea
-              className='flex-1 rounded-full min-w-0 max-w-full'
-              widthOptions={{
-                mobilePadding: 40,
-                tabletPadding: 48,
-                desktopPadding: 56,
-                maxMobileWidth: 640,
-                maxTabletWidth: 768,
-                maxLargeTabletWidth: 1024,
-                defaultDesktopWidth: 180,
-                buttonWidth: canEdit ? 70 : 0, // 48px button + 8px gap + 14px safety margin
-                buttonWidthDesktop: canEdit ? 200 : 0, // Auto width button + gap + safety margin
-              }}
-            >
-              <TabsList className='flex w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full overflow-hidden shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+          <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_32px)] sm:max-w-full'>
+            <DynamicScrollArea className='w-full'>
+              <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
                 <TabsTrigger
                   value={NEW_LEADS_TAB}
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
@@ -618,85 +604,139 @@ export default function JobManagement() {
               </div>
             )}
           </div>
-          <TabsContent
-            value={NEW_LEADS_TAB}
-            className='pt-4 sm:pt-8 lg:max-h-[calc(100vh_-_226px)] overflow-auto'
-          >
-            {jobs.length === 0 && (loading || tabLoading) ? (
-              // Show skeleton for initial loading or tab loading
-              <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading && !tabLoading ? (
-              <NoDataFound
-                description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                onButtonClick={() => setIsOpen(true)}
-              />
-            ) : (
-              <>
-                <JobGrid jobs={jobs} />
-                {/* Loading more jobs */}
-                {tabLoading && jobs.length > 0 && (
-                  <div className='w-full text-center py-4'>
-                    <LoadingComponent variant='inline' size='md' text={''} />
-                  </div>
-                )}
-              </>
-            )}
+          <TabsContent value={NEW_LEADS_TAB} className='pt-4 sm:pt-8'>
+            <ScrollArea
+              className='h-[calc(100vh_-_276px)]'
+              onScroll={e => {
+                const target = e.currentTarget;
+                if (loading || tabLoading || !hasMore) return;
+
+                const { scrollTop, clientHeight, scrollHeight } = target;
+                if (scrollTop + clientHeight >= scrollHeight - 200) {
+                  setPage(prevPage => {
+                    const nextPage = prevPage + 1;
+                    fetchJobsByTab(NEW_LEADS_TAB, nextPage, true);
+                    return nextPage;
+                  });
+                }
+              }}
+            >
+              {jobs.length === 0 && (loading || tabLoading) ? (
+                // Show skeleton for initial loading or tab loading
+                <JobSkeletonGrid />
+              ) : jobs.length === 0 && !loading && !tabLoading ? (
+                <NoDataFound
+                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
+                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+                  onButtonClick={() => setIsOpen(true)}
+                />
+              ) : (
+                <>
+                  <JobGrid jobs={jobs} />
+                  {/* Loading more jobs */}
+                  {tabLoading && jobs.length > 0 && (
+                    <div className='w-full text-center py-4'>
+                      <LoadingComponent variant='inline' size='md' text={''} />
+                    </div>
+                  )}
+                </>
+              )}
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value={INFO} className='pt-4 sm:pt-8'>
-            <ComingSoon />
+            <ScrollArea className='h-[calc(100vh_-_276px)]'>
+              <ComingSoon />
+            </ScrollArea>
           </TabsContent>
 
           <TabsContent value={ONGOING_JOB} className='p-8'>
-            <NoDataFound buttonText='Create Job' />
+            <ScrollArea className='h-[calc(100vh_-_276px)]'>
+              <NoDataFound buttonText='Create Job' />
+            </ScrollArea>
           </TabsContent>
           <TabsContent value={WAITING_ON_CLIENT} className='p-8'>
-            <NoDataFound buttonText='Create Job' />
+            <ScrollArea className='h-[calc(100vh_-_276px)]'>
+              <NoDataFound buttonText='Create Job' />
+            </ScrollArea>
           </TabsContent>
           <TabsContent value={CLOSED} className='pt-4 sm:pt-8'>
-            {jobs.length === 0 && (loading || tabLoading) ? (
-              // Show skeleton for initial loading or tab loading
-              <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading && !tabLoading ? (
-              <NoDataFound
-                description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                onButtonClick={() => setIsOpen(true)}
-              />
-            ) : (
-              <>
-                <JobGrid jobs={jobs} />
-                {/* Loading more jobs */}
-                {tabLoading && jobs.length > 0 && (
-                  <div className='w-full text-center py-4'>
-                    <LoadingComponent variant='inline' size='md' text={''} />
-                  </div>
-                )}
-              </>
-            )}
+            <ScrollArea
+              className='h-[calc(100vh_-_276px)]'
+              onScroll={e => {
+                const target = e.currentTarget;
+                if (loading || tabLoading || !hasMore) return;
+
+                const { scrollTop, clientHeight, scrollHeight } = target;
+                if (scrollTop + clientHeight >= scrollHeight - 200) {
+                  setPage(prevPage => {
+                    const nextPage = prevPage + 1;
+                    fetchJobsByTab(CLOSED, nextPage, true);
+                    return nextPage;
+                  });
+                }
+              }}
+            >
+              {jobs.length === 0 && (loading || tabLoading) ? (
+                // Show skeleton for initial loading or tab loading
+                <JobSkeletonGrid />
+              ) : jobs.length === 0 && !loading && !tabLoading ? (
+                <NoDataFound
+                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
+                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+                  onButtonClick={() => setIsOpen(true)}
+                />
+              ) : (
+                <>
+                  <JobGrid jobs={jobs} />
+                  {/* Loading more jobs */}
+                  {tabLoading && jobs.length > 0 && (
+                    <div className='w-full text-center py-4'>
+                      <LoadingComponent variant='inline' size='md' text={''} />
+                    </div>
+                  )}
+                </>
+              )}
+            </ScrollArea>
           </TabsContent>
           <TabsContent value={ARCHIVE} className='pt-4 sm:pt-8'>
-            {jobs.length === 0 && (loading || tabLoading) ? (
-              // Show skeleton for initial loading or tab loading
-              <JobSkeletonGrid />
-            ) : jobs.length === 0 && !loading && !tabLoading ? (
-              <NoDataFound
-                description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                onButtonClick={() => setIsOpen(true)}
-              />
-            ) : (
-              <>
-                <JobGrid jobs={jobs} />
-                {/* Loading more jobs */}
-                {tabLoading && jobs.length > 0 && (
-                  <div className='w-full text-center py-4'>
-                    <LoadingComponent variant='inline' size='md' text={''} />
-                  </div>
-                )}
-              </>
-            )}
+            <ScrollArea
+              className='h-[calc(100vh_-_276px)]'
+              onScroll={e => {
+                const target = e.currentTarget;
+                if (loading || tabLoading || !hasMore) return;
+
+                const { scrollTop, clientHeight, scrollHeight } = target;
+                if (scrollTop + clientHeight >= scrollHeight - 200) {
+                  setPage(prevPage => {
+                    const nextPage = prevPage + 1;
+                    fetchJobsByTab(ARCHIVE, nextPage, true);
+                    return nextPage;
+                  });
+                }
+              }}
+            >
+              {jobs.length === 0 && (loading || tabLoading) ? (
+                // Show skeleton for initial loading or tab loading
+                <JobSkeletonGrid />
+              ) : jobs.length === 0 && !loading && !tabLoading ? (
+                <NoDataFound
+                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
+                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+                  onButtonClick={() => setIsOpen(true)}
+                />
+              ) : (
+                <>
+                  <JobGrid jobs={jobs} />
+                  {/* Loading more jobs */}
+                  {tabLoading && jobs.length > 0 && (
+                    <div className='w-full text-center py-4'>
+                      <LoadingComponent variant='inline' size='md' text={''} />
+                    </div>
+                  )}
+                </>
+              )}
+            </ScrollArea>
           </TabsContent>
         </Tabs>
       </div>
@@ -716,6 +756,7 @@ export default function JobManagement() {
         title={JOB_MESSAGES.ADD_JOB_TITLE}
       >
         <CreateJobForm
+          boxDefaults={boxDefaults}
           onSubmit={handleCreateJob}
           isSubmitting={isSubmitting}
           generatedLink={generatedLink}

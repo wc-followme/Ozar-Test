@@ -4,6 +4,8 @@ import { TOOL_MESSAGES } from '@/app/(DashboardLayout)/tools-management/tool-mes
 import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
 import MultiSelect from '@/components/shared/common/MultiSelect';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
+import { QRCodeSection } from '@/components/shared/common/QRCodeSection';
+import { VideoTutorialSection } from '@/components/shared/common/VideoTutorialSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +22,7 @@ import * as yup from 'yup';
 const toolFormSchema = yup.object({
   name: yup.string().required(TOOL_MESSAGES.NAME_REQUIRED),
   manufacturer: yup.string().required(TOOL_MESSAGES.MANUFACTURER_REQUIRED),
+  brandName: yup.string().required('Brand name is required.'),
   available_quantity: yup
     .number()
     .min(1, TOOL_MESSAGES.QUANTITY_MIN)
@@ -36,8 +39,12 @@ interface ToolFormProps {
     name: string;
     available_quantity: number;
     manufacturer: string;
+    brandName: string;
     tool_assets: string;
     service_ids: string;
+    videos?: File[];
+    videoLinks?: string[];
+    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
   }) => void;
   loading?: boolean;
   onCancel?: () => void;
@@ -49,7 +56,11 @@ interface ToolFormProps {
     name?: string;
     available_quantity?: number;
     manufacturer?: string;
+    brandName?: string;
     services?: (string | number)[];
+    videos?: File[];
+    videoLinks?: string[];
+    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
   };
   isEdit?: boolean;
 }
@@ -84,11 +95,21 @@ const ToolForm: React.FC<ToolFormProps> = ({
     defaultValues: {
       name: initialValues?.name || '',
       manufacturer: initialValues?.manufacturer || '',
+      brandName: initialValues?.brandName || '',
       available_quantity: initialValues?.available_quantity || 1,
       services:
         initialValues?.services?.map(s => s.toString()).filter(Boolean) || [],
     },
   });
+
+  // State for videos and QR codes
+  const [videos, setVideos] = useState<File[]>([]);
+  const [videoLinks, setVideoLinks] = useState<string[]>(
+    initialValues?.videoLinks || []
+  );
+  const [toolIds, setToolIds] = useState<
+    Array<{ id: string; toolId: string; barcode: string }>
+  >(initialValues?.toolIds || []);
 
   // Update form state when initialValues change (for switching between create/edit modes)
   const initializeForm = useCallback(() => {
@@ -97,18 +118,26 @@ const ToolForm: React.FC<ToolFormProps> = ({
       reset({
         name: initialValues.name || '',
         manufacturer: initialValues.manufacturer || '',
+        brandName: initialValues.brandName || '',
         available_quantity: initialValues.available_quantity || 1,
         services:
           initialValues.services?.map(s => s.toString()).filter(Boolean) || [],
       });
+      setVideos([]);
+      setVideoLinks(initialValues.videoLinks || []);
+      setToolIds(initialValues.toolIds || []);
     } else if (!isEdit) {
       // Create mode - reset to empty form
       reset({
         name: '',
         manufacturer: '',
+        brandName: '',
         available_quantity: 1,
         services: [],
       });
+      setVideos([]);
+      setVideoLinks([]);
+      setToolIds([]);
     }
   }, [isEdit, initialValues, reset]);
 
@@ -210,14 +239,19 @@ const ToolForm: React.FC<ToolFormProps> = ({
     services?: any[] | undefined;
     name: string;
     manufacturer: string;
+    brandName: string;
     available_quantity: number;
   }) => {
     onSubmit({
       name: data.name.trim(),
       available_quantity: data.available_quantity,
       manufacturer: data.manufacturer.trim(),
+      brandName: data.brandName.trim(),
       tool_assets: preservedToolAssets || '', // Use preserved tool assets to prevent loss during re-renders
       service_ids: (data.services || []).join(','), // Convert array to comma-separated string
+      videos,
+      videoLinks,
+      toolIds,
     });
   };
 
@@ -247,77 +281,104 @@ const ToolForm: React.FC<ToolFormProps> = ({
         )} */}
 
         {/* Photo Upload */}
-        <PhotoUploadField
-          photo={photo}
-          onPhotoChange={handlePhotoChange}
-          onDeletePhoto={handleDeletePhoto}
-          uploading={uploading}
-          label={TOOL_MESSAGES.TOOL_IMAGE_LABEL}
-          text={
-            <>
-              1600 x 1200 (4:3) recommended. <br /> PNG and JPG files are
-              allowed
-            </>
-          }
-          existingImageUrl={existingImageUrl}
-        />
-
-        {/* Services Select */}
-        <Controller
-          name='services'
-          control={control}
-          render={({ field }) => (
-            <MultiSelect
-              label={TOOL_MESSAGES.SERVICES_LABEL}
-              options={services}
-              getOptionLabel={(option: Service) => option?.name || ''}
-              getOptionValue={(option: Service) => String(option?.id)}
-              value={
-                Array.isArray(field.value)
-                  ? field.value.filter(
-                      (v): v is string => typeof v === 'string'
-                    )
-                  : []
-              }
-              onChange={field.onChange}
-              placeholder={
-                loadingServices
-                  ? TOOL_MESSAGES.LOADING_SERVICES
-                  : TOOL_MESSAGES.SELECT_SERVICES
-              }
-              error={errors.services?.message || ''}
-              name='services'
-            />
-          )}
-        />
-
-        {/* Tool Name */}
-        <div className='space-y-1 md:space-y-2'>
-          <Label htmlFor='tool-name' className='field-label'>
-            {TOOL_MESSAGES.TOOL_NAME_LABEL}
-          </Label>
-          <Controller
-            name='name'
-            control={control}
-            render={({ field }) => (
-              <Input
-                id='tool-name'
-                placeholder={TOOL_MESSAGES.ENTER_TOOL_NAME}
-                {...field}
-                className={cn(
-                  'input-field',
-                  errors.name
-                    ? 'border-[var(--warning)]'
-                    : 'border-[var(--border-dark)]'
+        <div className='flex items-start gap-4 shrink-0'>
+          <PhotoUploadField
+            photo={photo}
+            onPhotoChange={handlePhotoChange}
+            onDeletePhoto={handleDeletePhoto}
+            uploading={uploading}
+            label={TOOL_MESSAGES.TOOL_IMAGE_LABEL}
+            text={''}
+            existingImageUrl={existingImageUrl}
+            cardHeight='h-[120px] py-3'
+            className='min-w-[120px]'
+          />
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+            <div className='space-y-1 md:space-y-2'>
+              <Label htmlFor='tool-name' className='field-label'>
+                {TOOL_MESSAGES.TOOL_NAME_LABEL}
+              </Label>
+              <Controller
+                name='name'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='tool-name'
+                    placeholder={TOOL_MESSAGES.ENTER_TOOL_NAME}
+                    {...field}
+                    className={cn(
+                      'input-field',
+                      errors.name
+                        ? 'border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
                 )}
               />
-            )}
-          />
-          <FormErrorMessage message={errors.name?.message || ''} />
+              <FormErrorMessage message={errors.name?.message || ''} />
+            </div>
+
+            <div className='space-y-1 md:space-y-2'>
+              <Label htmlFor='brand-name' className='field-label'>
+                {TOOL_MESSAGES.BRAND_NAME_LABEL}
+              </Label>
+              <Controller
+                name='brandName'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='brand-name'
+                    placeholder={TOOL_MESSAGES.ENTER_BRAND_NAME}
+                    {...field}
+                    className={cn(
+                      'input-field',
+                      errors.brandName
+                        ? 'border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
+              />
+              <FormErrorMessage message={errors.brandName?.message || ''} />
+            </div>
+            <div className='col-span-full'>
+              <Controller
+                name='services'
+                control={control}
+                render={({ field }) => (
+                  <MultiSelect
+                    label={TOOL_MESSAGES.SERVICES_LABEL}
+                    options={services}
+                    getOptionLabel={(option: Service) => option?.name || ''}
+                    getOptionValue={(option: Service) => String(option?.id)}
+                    value={
+                      Array.isArray(field.value)
+                        ? field.value.filter(
+                            (v): v is string => typeof v === 'string'
+                          )
+                        : []
+                    }
+                    onChange={field.onChange}
+                    placeholder={
+                      loadingServices
+                        ? TOOL_MESSAGES.LOADING_SERVICES
+                        : TOOL_MESSAGES.SELECT_SERVICES
+                    }
+                    error={errors.services?.message || ''}
+                    name='services'
+                  />
+                )}
+              />
+            </div>
+          </div>
         </div>
 
+        {/* Services Select */}
+
+        {/* Tool Name and Brand Name */}
+
         {/* Manufacturer */}
-        <div className='space-y-1 md:space-y-2'>
+        {/* <div className='space-y-1 md:space-y-2'>
           <Label htmlFor='manufacturer' className='field-label'>
             {TOOL_MESSAGES.MANUFACTURER_LABEL}
           </Label>
@@ -339,40 +400,21 @@ const ToolForm: React.FC<ToolFormProps> = ({
             )}
           />
           <FormErrorMessage message={errors.manufacturer?.message || ''} />
-        </div>
+        </div> */}
 
-        {/* Quantity */}
-        <div className='space-y-1 md:space-y-2'>
-          <Label htmlFor='quantity' className='field-label'>
-            {TOOL_MESSAGES.QUANTITY_LABEL}
-          </Label>
-          <Controller
-            name='available_quantity'
-            control={control}
-            render={({ field }) => (
-              <Input
-                id='quantity'
-                type='number'
-                min='1'
-                placeholder={TOOL_MESSAGES.ENTER_QUANTITY}
-                {...field}
-                onChange={e => field.onChange(parseInt(e.target.value) || 1)}
-                className={cn(
-                  'input-field',
-                  errors.available_quantity
-                    ? 'border-[var(--warning)]'
-                    : 'border-[var(--border-dark)]'
-                )}
-              />
-            )}
-          />
-          <FormErrorMessage
-            message={errors.available_quantity?.message || ''}
-          />
-        </div>
+        {/* Video Tutorial Section */}
+        <VideoTutorialSection
+          videos={videos}
+          onVideosChange={setVideos}
+          videoLinks={videoLinks}
+          onVideoLinksChange={setVideoLinks}
+        />
+
+        {/* QR Code Section */}
+        <QRCodeSection toolIds={toolIds} onToolIdsChange={setToolIds} />
 
         {/* Form Actions */}
-        <div className='flex items-center justify-end space-x-3 pt-4'>
+        <div className='flex items-center space-x-3 pt-4'>
           <Button
             type='button'
             variant='outline'
