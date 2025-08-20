@@ -160,12 +160,12 @@ export default function EstimationServiceForm({
   };
 
   return (
-    <div className='space-y-6'>
+    <div className='space-y-6 w-full min-w-fit'>
       {/* Service Details Card */}
-      <Card className='p-6 rounded-[10px] bg-[var(--card-background)] border-none'>
-        <div className='flex gap-6 items-start'>
-          <div className='flex-1 flex items-center gap-4'>
-            <div className='flex-1 space-y-2'>
+      <Card className='p-6 rounded-[10px] bg-[var(--card-background)] border-none min-w-max'>
+        <div className='flex gap-6 items-start flex-wrap min-w-fit'>
+          <div className='flex-1 flex items-center gap-4 min-w-0 gap-y-4'>
+            <div className='flex-1 space-y-2 min-w-[280px] overflow-hidden'>
               <Label className='field-label'>Service</Label>
               <SelectField
                 value={(() => {
@@ -215,7 +215,7 @@ export default function EstimationServiceForm({
                 disabled={loading}
               />
             </div>
-            <div className='space-y-2 w-[100px]'>
+            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
               <Label className='field-label'>Qty</Label>
               <Input
                 type='text'
@@ -258,7 +258,7 @@ export default function EstimationServiceForm({
                 className='input-field'
               />
             </div>
-            <div className='space-y-2'>
+            <div className='space-y-2 w-[160px] min-w-[160px] overflow-hidden'>
               <Label className='field-label'>Rate</Label>
               <Input
                 type='text'
@@ -277,23 +277,29 @@ export default function EstimationServiceForm({
               />
             </div>
           </div>
-          <div className='min-w-[240px] pt-7 ml-auto'>
-            <div className='grid grid-cols-3'>
-              <div className='px-4'>
-                <Label className='field-label text-xs'>Line Total</Label>
-                <p className='text-lg font-semibold text-[var(--primary)]'>
+          <div className='pt-7 ml-auto flex-shrink-0 min-w-fit'>
+            <div className='grid grid-cols-3 min-w-fit'>
+              <div className='px-4 min-w-[160px]'>
+                <Label className='field-label text-xs whitespace-nowrap'>
+                  Line Total
+                </Label>
+                <p className='text-lg font-semibold text-[var(--primary)] truncate'>
                   {formatCurrency(currentValues.lineTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
-                <Label className='field-label text-xs'>Service Total</Label>
-                <p className='text-lg font-semibold text-[var(--primary)]'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
+                <Label className='field-label text-xs whitespace-nowrap'>
+                  Service Total
+                </Label>
+                <p className='text-lg font-semibold text-[var(--primary)] truncate'>
                   {formatCurrency(currentValues.serviceTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
-                <Label className='field-label text-xs'>Trade Total</Label>
-                <p className='text-lg font-semibold text-[var(--primary)]'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
+                <Label className='field-label text-xs whitespace-nowrap'>
+                  Trade Total
+                </Label>
+                <p className='text-lg font-semibold text-[var(--primary)] truncate'>
                   {formatCurrency(currentValues.tradeTotal)}
                 </p>
               </div>
