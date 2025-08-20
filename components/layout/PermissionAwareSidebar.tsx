@@ -21,6 +21,9 @@ import {
 import { MinimalSidebar } from './MinimalSidebar';
 
 export function PermissionAwareSidebar() {
+  const versionInfo = process.env['NEXT_PUBLIC_VERSION'];
+  const versionUrl = process.env['NEXT_PUBLIC_GITHUB_URL'] || '#';
+
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const [submenuPosition, setSubmenuPosition] = useState({ top: 0, left: 0 });
@@ -204,18 +207,18 @@ export function PermissionAwareSidebar() {
     const menuItemContent = (
       <div
         className={cn(
-          'flex items-center flex-nowrap w-full pl-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group relative',
+          'flex items-center flex-nowrap w-full pl-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] hover:text-white transition-colors hover:bg-[var(--primary)] relative',
           isActive && 'bg-[var(--primary)] text-white'
         )}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        <div className='stroke-[var(--text)] group-hover:text-white'>
-          <item.icon size='24' color='currentcolor' />
+        <div className='stroke-[var(--text)] '>
+          <item.icon size='24' color={isActive ? 'white' : 'currentcolor'} />
         </div>
         <span
           className={cn(
-            'ml-2 max-w-[180px] overflow-hidden text-nowrap text-sm font-medium transition-all duration-300 group-hover:text-white',
+            'ml-2 max-w-[180px] overflow-hidden text-nowrap text-sm font-medium transition-all duration-300 ',
             isOpen ? 'opacity-100' : 'opacity-0 max-w-0'
           )}
         >
@@ -271,8 +274,8 @@ export function PermissionAwareSidebar() {
           </div>
 
           {/* Sidebar Links */}
-          <div className='flex-1 min-h-0'>
-            <ScrollArea className='h-full w-full px-4'>
+          <div className='flex-1 min-h-0 flex flex-col'>
+            <ScrollArea className='h-full w-full px-4 flex-1'>
               <ul className='py-2 [&>li+li]:mt-0.5'>
                 {filteredSidebarItems.map(item => (
                   <li key={item.menu_id}>
@@ -300,6 +303,9 @@ export function PermissionAwareSidebar() {
                 ))}
               </ul>
             </ScrollArea>
+            <div className='p-4 flex text-xs justify-center items-center border-t border-[var(--border-dark)] mt-auto'>
+              <Link href={versionUrl}>V-{versionInfo}</Link>
+            </div>
           </div>
         </div>
       </aside>
@@ -347,9 +353,14 @@ export function PermissionAwareSidebar() {
                   onClick={() => setHoveredItem(null)} // Close submenu when clicking a link
                 >
                   <div className='mr-3'>
-                    <subItem.icon size='20' color='currentcolor' />
+                    <subItem.icon
+                      size='20'
+                      color={
+                        pathname === subItem.href ? 'white' : 'currentcolor'
+                      }
+                    />
                   </div>
-                  <span className='text-sm font-medium text-[var(--text-dark)])'>
+                  <span className={cn('text-sm font-medium')}>
                     {subItem.title}
                   </span>
                 </Link>

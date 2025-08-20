@@ -51,12 +51,22 @@ export const TOOL_MESSAGES = {
   QUANTITY_LABEL: 'Total Quantity',
   SERVICES_LABEL: 'Services',
   TOOL_IMAGE_LABEL: 'Tool Image',
+  BRAND_NAME_LABEL: 'Brand Name',
+  VIDEO_TUTORIAL_LABEL: 'Video Tutorial',
+  VIDEO_LINK_LABEL: 'Video link',
+  QR_CODE_LABEL: 'QR Code',
+  TOOL_ID_BARCODE_LABEL: 'Tool ID / Barcode',
+  BULK_IMPORT_LABEL: 'Bulk Import QR Code',
 
   // Form Placeholders
   ENTER_TOOL_NAME: 'Enter Tool Name',
   ENTER_MANUFACTURER: 'Enter Manufacturer',
   ENTER_QUANTITY: 'Enter Quantity',
   SELECT_SERVICES: 'Select Services',
+  ENTER_BRAND_NAME: 'Enter Brand Name',
+  PASTE_VIDEO_LINK: 'Paste link here',
+  ENTER_TOOL_ID: 'Enter Tool ID',
+  ENTER_BARCODE: 'Enter Barcode',
 
   // Page Titles and Headers
   TOOL_MANAGEMENT_TITLE: 'Tools Management',

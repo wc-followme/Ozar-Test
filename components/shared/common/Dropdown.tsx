@@ -49,7 +49,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             onAction(action);
           }}
           className={cn(
-            'text-sm p-2 xl:p-[10px] cursor-pointer transition-colors rounded-none flex items-center gap-2 hover:!bg-[var(--select-option)]',
+            'p-2 xl:p-[10px] font-medium cursor-pointer text-base transition-colors rounded-none flex items-center gap-2 hover:!bg-[var(--select-option)]',
             itemsClass,
             index !== menuOptions.length - 1 &&
               'border-b border-[var(--border-dark)]'
@@ -59,7 +59,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
             <Icon
               size='20'
               color='var(--text-dark)'
-              className='!h-5 !w-5'
+              className='!h-6 !w-6'
               variant='Outline'
             />
           )}

@@ -22,10 +22,22 @@ pipeline {
 
         stage('Run Deployment Script on Staging EC2') {
           steps {
-            sshagent(credentials: ['envision-ssh-key']) {
-              sh """
-                ssh -o StrictHostKeyChecking=no $EC2_USER_HOST 'bash /home/ubuntu/scripts/frontend-deploy.sh'
-              """
+            script {
+              // Extract branch name from GIT_BRANCH (removes origin/ prefix if present)
+              def branchName = env.GIT_BRANCH ? env.GIT_BRANCH.replaceAll(/^origin\//, '') : (env.BRANCH_NAME ?: 'unknown')
+              def prNumber = env.CHANGE_ID ?: ''
+              
+              sshagent(credentials: ['envision-ssh-key']) {
+                sh """
+                  ssh -o StrictHostKeyChecking=no $EC2_USER_HOST "
+                    export BUILD_NUMBER='${BUILD_NUMBER}' &&
+                    export BRANCH_NAME='${branchName}' &&
+                    export GIT_COMMIT='${GIT_COMMIT}' &&
+                    export PR_NUMBER='${prNumber}' &&
+                    bash /home/ubuntu/scripts/frontend-deploy.sh
+                  "
+                """
+              }
             }
           }
         }
