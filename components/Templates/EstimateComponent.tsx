@@ -77,7 +77,7 @@ export const updateLocalStorageFromState = (
       }>;
     }>;
   }>,
-  jobId?: string
+  storageKey?: string
 ) => {
   try {
     const jobRooms = rooms.map(room => ({
@@ -121,8 +121,8 @@ export const updateLocalStorageFromState = (
       })),
     }));
 
-    const storageKey = jobId ? `job_rooms_${jobId}` : 'job_rooms';
-    localStorage.setItem(storageKey, JSON.stringify(jobRooms));
+    const key = storageKey || 'job_rooms';
+    localStorage.setItem(key, JSON.stringify(jobRooms));
     return true;
   } catch (error) {
     console.error('Error updating localStorage from state:', error);
@@ -140,11 +140,11 @@ export const replaceTradeInRoom = (
     end_date?: string;
     markup?: number;
   },
-  jobId?: string
+  storageKey?: string
 ) => {
   try {
-    const storageKey = jobId ? `job_rooms_${jobId}` : 'job_rooms';
-    const existingData = localStorage.getItem(storageKey);
+    const key = storageKey || 'job_rooms';
+    const existingData = localStorage.getItem(key);
     const jobRooms = existingData ? JSON.parse(existingData) : [];
 
     // Find the room
@@ -172,7 +172,7 @@ export const replaceTradeInRoom = (
       services: [], // Initialize with empty services array
     });
 
-    localStorage.setItem(storageKey, JSON.stringify(jobRooms));
+    localStorage.setItem(key, JSON.stringify(jobRooms));
     return true;
   } catch (error) {
     console.error('Error replacing trade in room:', error);
@@ -181,10 +181,10 @@ export const replaceTradeInRoom = (
 };
 
 // Function to clear and reset localStorage
-export const resetRoomTradeData = (jobId?: string) => {
+export const resetRoomTradeData = (storageKey?: string) => {
   try {
-    const storageKey = jobId ? `job_rooms_${jobId}` : 'job_rooms';
-    localStorage.removeItem(storageKey);
+    const key = storageKey || 'job_rooms';
+    localStorage.removeItem(key);
     return true;
   } catch (error) {
     console.error('Error resetting room trade data:', error);
@@ -193,10 +193,10 @@ export const resetRoomTradeData = (jobId?: string) => {
 };
 
 // Function to get room trade data from localStorage
-export const getRoomTradeData = (jobId?: string) => {
+export const getRoomTradeData = (storageKey?: string) => {
   try {
-    const storageKey = jobId ? `job_rooms_${jobId}` : 'job_rooms';
-    const existingData = localStorage.getItem(storageKey);
+    const key = storageKey || 'job_rooms';
+    const existingData = localStorage.getItem(key);
     return existingData ? JSON.parse(existingData) : [];
   } catch (error) {
     console.error('Error getting room trade data:', error);
@@ -205,10 +205,10 @@ export const getRoomTradeData = (jobId?: string) => {
 };
 
 // Function to clear room trade data from localStorage
-export const clearRoomTradeData = (jobId?: string) => {
+export const clearRoomTradeData = (storageKey?: string) => {
   try {
-    const storageKey = jobId ? `job_rooms_${jobId}` : 'job_rooms';
-    localStorage.removeItem(storageKey);
+    const key = storageKey || 'job_rooms';
+    localStorage.removeItem(key);
     return true;
   } catch (error) {
     console.error('Error clearing room trade data:', error);

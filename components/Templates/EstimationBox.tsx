@@ -95,6 +95,7 @@ interface Room {
 interface EstimationBoxProps {
   _onClose: () => void;
   jobId?: string; // Add job ID prop for API calls
+  templateId?: string | undefined; // Add template ID prop for template context
   categoryId?: string; // Add category ID prop for filtering trades
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
@@ -119,6 +120,17 @@ const generateUniqueKey = (
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `${prefix}_${timestamp}_${random}`;
+};
+
+// Helper function to get the appropriate localStorage key
+const getStorageKey = (jobId?: string, templateId?: string): string => {
+  if (templateId) {
+    return `template_rooms_${templateId}`;
+  } else if (jobId) {
+    return `job_rooms_${jobId}`;
+  } else {
+    return 'template_rooms'; // Default for new templates without ID
+  }
 };
 
 export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
@@ -255,7 +267,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-      updateLocalStorageFromState(rooms, props.jobId);
+      const storageKey = getStorageKey(props.jobId, props.templateId);
+      updateLocalStorageFromState(rooms, storageKey);
     }
   }, [rooms]);
 
@@ -703,7 +716,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData, props.jobId);
+        const storageKey = getStorageKey(props.jobId, props.templateId);
+        updateLocalStorageFromState(roomsData, storageKey);
       }, 0);
     }
   };
@@ -767,7 +781,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData, props.jobId);
+        const storageKey = getStorageKey(props.jobId, props.templateId);
+        updateLocalStorageFromState(roomsData, storageKey);
       }, 0);
 
       return updatedRooms;
@@ -1279,7 +1294,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       })),
     }));
 
-    updateLocalStorageFromState(roomsData, props.jobId);
+    const storageKey = getStorageKey(props.jobId, props.templateId);
+    updateLocalStorageFromState(roomsData, storageKey);
   };
 
   const handleSave = async () => {
@@ -1290,7 +1306,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       // If jobId is provided, make API call
       if (props.jobId) {
         // Get the job_rooms data from localStorage
-        const storageKey = `job_rooms_${props.jobId}`;
+        const storageKey = getStorageKey(props.jobId, props.templateId);
         const jobRoomsData = localStorage.getItem(storageKey);
         if (jobRoomsData) {
           const jobRooms = JSON.parse(jobRoomsData);

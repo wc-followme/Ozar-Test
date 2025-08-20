@@ -17,11 +17,13 @@ interface EstimationTemplateFormData {
 interface EstimationTemplateFormProps {
   onSubmit?: (data: EstimationTemplateFormData) => void;
   initialData?: Partial<EstimationTemplateFormData>;
+  templateId?: string; // Add template ID prop for existing templates
 }
 
 export function EstimationTemplateForm({
   onSubmit,
   initialData,
+  templateId,
 }: EstimationTemplateFormProps) {
   const [formData, setFormData] = useState<EstimationTemplateFormData>({
     templateName: initialData?.templateName || '',
@@ -151,7 +153,11 @@ export function EstimationTemplateForm({
 
       {/* EstimationBox Component */}
       <div className='mb-6'>
-        <EstimationBox _onClose={() => {}} categoryId={formData.category} />
+        <EstimationBox
+          _onClose={() => {}}
+          categoryId={formData.category}
+          templateId={templateId}
+        />
       </div>
 
       {/* Footer */}
