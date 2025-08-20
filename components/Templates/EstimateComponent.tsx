@@ -270,6 +270,7 @@ export default function EstimateComponent({
           buttonText='Add Room'
           onButtonClick={onAddRoom}
           showButton={false}
+          height='h-auto'
         />
         <div className='flex sm:flex-row flex-col gap-4 justify-center'>
           <Button className='btn-primary' onClick={handleAddRoom}>

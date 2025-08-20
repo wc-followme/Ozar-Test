@@ -59,7 +59,7 @@ export function StepEstimation({
       <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
         Estimation
       </h2>
-      <p className='text-[var(--text-secondary)] text-sm md:text-[18px] font-normal text-center mb-6 sm:mb-8 max-w-lg px-2 sm:px-0'>
+      <p className='text-[var(--text-secondary)] text-sm md:text-[18px] font-normal text-center mb-4 max-w-lg px-2 sm:px-0'>
         Get detailed cost estimates for your project
       </p>
 

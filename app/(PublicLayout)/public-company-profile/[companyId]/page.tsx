@@ -52,7 +52,7 @@ const CompanyProfile = ({ params }: PageProps) => {
       setIsRedirecting(true);
       // Add a small delay for smooth transition
       setTimeout(() => {
-        router.push(`${ROUTES.COMPANY_PROFILE}?companyId=${companyId}`);
+        router.push(`${ROUTES.COMPANY_PROFILE}/${companyId}`);
       }, 100);
     }
   }, [isAuthenticated, companyId, router, isRedirecting]);

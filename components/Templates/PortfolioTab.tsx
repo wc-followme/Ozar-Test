@@ -25,9 +25,13 @@ import { v4 as uuidv4 } from 'uuid';
 export const PortfolioTab = ({
   companyId,
   canEditCompany = false,
+  isCompanyOrUserProfile = false,
+  userId,
 }: {
   companyId?: string;
   canEditCompany?: boolean;
+  isCompanyOrUserProfile?: boolean;
+  userId?: string | undefined;
 }) => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
@@ -52,7 +56,9 @@ export const PortfolioTab = ({
   // Fetch projects with pagination
   const fetchProjects = useCallback(
     async (targetPage = 1, append = false) => {
-      if (!companyId) return;
+      // Use userId for user profiles, otherwise use companyId
+      const targetId = isCompanyOrUserProfile ? userId : companyId;
+      if (!targetId) return;
 
       try {
         if (targetPage === 1) {
@@ -62,11 +68,18 @@ export const PortfolioTab = ({
         }
         setError(null);
 
-        const response = await apiService.fetchProjects({
-          company_id: companyId,
-          page: targetPage,
-          limit: 12, // Smaller limit for pagination
-        });
+        // Use different API endpoints based on profile type
+        const response = isCompanyOrUserProfile
+          ? await apiService.fetchUserProjects({
+              user_id: targetId,
+              page: targetPage,
+              limit: 12, // Smaller limit for pagination
+            })
+          : await apiService.fetchProjects({
+              company_id: targetId,
+              page: targetPage,
+              limit: 12, // Smaller limit for pagination
+            });
 
         if (response.statusCode === 200 || response.statusCode === 201) {
           const newProjects = response.data.data;
@@ -91,7 +104,7 @@ export const PortfolioTab = ({
         setIsLoadingMore(false);
       }
     },
-    [companyId, handleAuthError, showErrorToast]
+    [companyId, userId, isCompanyOrUserProfile, handleAuthError, showErrorToast]
   );
 
   // Initial fetch and refetch when companyId changes
@@ -158,7 +171,9 @@ export const PortfolioTab = ({
     if (!projectToDelete) return;
 
     try {
-      const response = await apiService.deleteProject(projectToDelete);
+      const response = isCompanyOrUserProfile
+        ? await apiService.deleteUserProject(projectToDelete)
+        : await apiService.deleteProject(projectToDelete);
 
       if (response.statusCode === 200 || response.statusCode === 201) {
         showSuccessToast(response.message || PROJECT_MESSAGES.DELETE_SUCCESS);
@@ -192,8 +207,14 @@ export const PortfolioTab = ({
   };
 
   const handleProjectSubmit = async (data: AddMediaFormData) => {
-    if (!companyId) {
-      showErrorToast(PROJECT_MESSAGES.COMPANY_ID_REQUIRED);
+    // Use userId for user profiles, otherwise use companyId
+    const targetId = isCompanyOrUserProfile ? userId : companyId;
+    if (!targetId) {
+      showErrorToast(
+        isCompanyOrUserProfile
+          ? 'User ID is required'
+          : PROJECT_MESSAGES.COMPANY_ID_REQUIRED
+      );
       return;
     }
 
@@ -248,15 +269,16 @@ export const PortfolioTab = ({
       const projectData = {
         name: data.projectName,
         ...(finalImages.length > 0 && { images: finalImages }),
-        company_id: companyId,
+        ...(isCompanyOrUserProfile
+          ? { user_id: targetId }
+          : { company_id: targetId }),
       };
 
       if (editingProject) {
         // Update existing project
-        const response = await apiService.updateProject(
-          editingProject.uuid,
-          projectData
-        );
+        const response = isCompanyOrUserProfile
+          ? await apiService.updateUserProject(editingProject.uuid, projectData)
+          : await apiService.updateProject(editingProject.uuid, projectData);
 
         if (response.statusCode === 200 || response.statusCode === 201) {
           showSuccessToast(response.message || PROJECT_MESSAGES.UPDATE_SUCCESS);
@@ -277,7 +299,9 @@ export const PortfolioTab = ({
         }
       } else {
         // Create new project
-        const response = await apiService.createProject(projectData);
+        const response = isCompanyOrUserProfile
+          ? await apiService.createUserProject(projectData)
+          : await apiService.createProject(projectData);
 
         if (response.statusCode === 200 || response.statusCode === 201) {
           showSuccessToast(response.message || PROJECT_MESSAGES.CREATE_SUCCESS);

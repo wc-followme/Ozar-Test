@@ -12,6 +12,7 @@ interface ProfileOtherDetailsComponentProps {
         image: string;
         about: string;
         phone: string;
+        phone_number: string;
         email: string;
         website: string;
         communication: string;
@@ -20,19 +21,23 @@ interface ProfileOtherDetailsComponentProps {
         preferred_communication_method: string;
         projects: string;
         uuid: string;
+        country_code: string;
       }
     | undefined;
   showViewCompanyProfileButton?: boolean;
+  companyProfileUrl?: string;
 }
 
 export const ProfileOtherDetailsComponent = ({
   companyData,
   showViewCompanyProfileButton = true,
+  companyProfileUrl,
 }: ProfileOtherDetailsComponentProps) => {
   // Destructure company data for better readability
   const {
     name,
     email,
+    phone_number,
     phone,
     website,
     communication,
@@ -40,6 +45,7 @@ export const ProfileOtherDetailsComponent = ({
     pincode,
     preferred_communication_method,
     projects,
+    country_code,
   } = companyData || {};
 
   return (
@@ -66,7 +72,9 @@ export const ProfileOtherDetailsComponent = ({
             {PROFILE_DETAILS_MESSAGES.PHONE_NUMBER}
           </label>
           <p className='text-[var(--text-dark)] font-medium text-sm'>
-            {phone || '-'}
+            {phone || phone_number
+              ? `${country_code || ''} ${phone || phone_number}`
+              : '-'}
           </p>
         </div>
         <div className='lg:min-w-[260px] min-w-full max-w-full'>
@@ -114,7 +122,7 @@ export const ProfileOtherDetailsComponent = ({
             {showViewCompanyProfileButton && (
               <div className='lg:flex-shrink-0 ml-auto'>
                 <Link
-                  href='/company-profile'
+                  href={companyProfileUrl || ''}
                   className='btn-secondary text-[14px] gap-1 !px-[12px] xl:!px-[26px] !py-[10px] !h-9 rounded-full'
                 >
                   {PROFILE_DETAILS_MESSAGES.VIEW_COMPANY_PROFILE}

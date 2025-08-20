@@ -87,7 +87,9 @@ export default function UserManagement() {
 
         const role_id = filter !== 'all' ? filter : '';
         const statusParam =
-          selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
         const usersRes: FetchUsersResponse = await apiService.fetchUsers({
           page: targetPage,
           limit: PAGINATION.USERS_LIMIT,
@@ -218,7 +220,10 @@ export default function UserManagement() {
   // Retrieve handler
   const handleRetrieveUser = async (uuid: string) => {
     try {
-      const response = await apiService.updateUserStatus(uuid, CommonStatus.ACTIVE);
+      const response = await apiService.updateUserStatus(
+        uuid,
+        CommonStatus.ACTIVE
+      );
       showSuccessToast(
         extractApiSuccessMessage(response, USER_MESSAGES.STATUS_UPDATE_SUCCESS)
       );
@@ -242,29 +247,30 @@ export default function UserManagement() {
     router.push(ROUTES.CREATE_USER);
   }, [router]);
 
-  const menuOptions: MenuOption[] = selectedTab === 'archive' 
-    ? [
-        {
-          label: USER_MESSAGES.RETRIEVE_BUTTON,
-          action: ACTIONS.RETRIEVE,
-          icon: Refresh,
-          variant: 'default',
-        },
-      ]
-    : [
-        {
-          label: USER_MESSAGES.EDIT_USER_TITLE,
-          action: ACTIONS.EDIT,
-          icon: Edit2,
-          variant: 'default',
-        },
-        {
-          label: USER_MESSAGES.ARCHIVE_BUTTON,
-          action: ACTIONS.DELETE,
-          icon: Trash,
-          variant: 'destructive',
-        },
-      ];
+  const menuOptions: MenuOption[] =
+    selectedTab === 'archive'
+      ? [
+          {
+            label: USER_MESSAGES.RETRIEVE_BUTTON,
+            action: ACTIONS.RETRIEVE,
+            icon: Refresh,
+            variant: 'default',
+          },
+        ]
+      : [
+          {
+            label: USER_MESSAGES.EDIT_USER_TITLE,
+            action: ACTIONS.EDIT,
+            icon: Edit2,
+            variant: 'default',
+          },
+          {
+            label: USER_MESSAGES.ARCHIVE_BUTTON,
+            action: ACTIONS.DELETE,
+            icon: Trash,
+            variant: 'destructive',
+          },
+        ];
 
   // Check if user has permission to view users
   if (userPermissions && !canViewUsers) {
@@ -321,15 +327,16 @@ export default function UserManagement() {
                 options={[
                   { value: 'all', label: USER_MESSAGES.ALL_USERS },
                   ...roles
-                  .filter(({ name }) =>
-                    !['homeowner', 'vendor', 'admin'].includes(
-                      name.toLowerCase()
+                    .filter(
+                      ({ name }) =>
+                        !['homeowner', 'vendor', 'admin'].includes(
+                          name.toLowerCase()
+                        )
                     )
-                  )
-                  .map(({ uuid, name }) => ({
-                    value: String(uuid),
-                    label: name,
-                  })),
+                    .map(({ uuid, name }) => ({
+                      value: String(uuid),
+                      label: name,
+                    })),
                 ]}
                 placeholder={USER_MESSAGES.ALL_USERS}
                 className='w-full sm:w-40'

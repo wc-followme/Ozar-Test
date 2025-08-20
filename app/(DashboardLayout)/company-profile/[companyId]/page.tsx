@@ -1,15 +1,9 @@
 'use client';
 
 import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
+import { CoverImageUploadDialog } from '@/components/shared/common/CoverImageUploadDialog';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { ProfileTopBlock } from '@/components/shared/common/ProfileTopBlock';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { useToast } from '@/components/ui/use-toast';
 import {
   APP_CONFIG,
@@ -20,17 +14,21 @@ import {
   SHARE_MESSAGES,
   UPLOAD_PURPOSES,
 } from '@/constants/common';
-import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService, GetCompanyResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { getCompanyId } from '@/lib/utils';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { FIVE_BOX_DATA } from './five-box-system/five-box-constants';
+import { FIVE_BOX_DATA } from '../five-box-system/five-box-constants';
 
-const CompanyProfile = () => {
+interface CompanyProfileProps {
+  params: {
+    companyId: string;
+  };
+}
+
+const CompanyProfile = ({ params }: CompanyProfileProps) => {
   const { CDN_URL, IMAGES, BASE_URL } = APP_CONFIG;
   const {
     PUBLIC_COMPANY_PROFILE,
@@ -42,8 +40,7 @@ const CompanyProfile = () => {
   const { QUOTE_CREATE_SUCCESS, QUOTE_CREATE_ERROR } = JOB_MESSAGES;
   const { PRIVATE } = JOB_PRIVACY;
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const companyId = searchParams.get('companyId');
+  const { companyId } = params;
   const { handleAuthError, user, isAuthenticated } = useAuth();
   const { showSuccessToast, showErrorToast } = useToast();
 
@@ -143,15 +140,6 @@ const CompanyProfile = () => {
   useEffect(() => {
     fetchCompanyDetails();
   }, [fetchCompanyDetails]);
-
-  const updateRouter = useCallback(() => {
-    const currentCompanyId = getCompanyId();
-    if (currentCompanyId && currentCompanyId !== companyId) {
-      router.replace(`${ROUTES.COMPANY_PROFILE}?companyId=${currentCompanyId}`);
-    }
-  }, [companyId, router]);
-
-  useCompanyChange(updateRouter);
 
   // Listen for new review submissions and update local company data (no API call)
   useEffect(() => {
@@ -441,65 +429,17 @@ const CompanyProfile = () => {
         canEditCompany={userCanEdit}
       />
 
-      {/* Cover Image Change Modal */}
-      <Dialog open={showCoverModal} onOpenChange={setShowCoverModal}>
-        <DialogContent className='max-w-lg bg-[var(--card-background)] border border-[var(--border-dark)] rounded-[20px] shadow-xl'>
-          <DialogHeader className='pb-4'>
-            <DialogTitle className='text-xl font-bold text-[var(--text-primary)]'>
-              Change Cover Image
-            </DialogTitle>
-            <p className='text-sm text-[var(--text-secondary)] mt-1'>
-              Upload a new cover image for your company profile
-            </p>
-          </DialogHeader>
-
-          <div className='space-y-6'>
-            <div className='w-full bg-[var(--white-background)] rounded-[16px] border-2 border-dashed border-[var(--border-light)] p-6 relative transition-all duration-300 hover:border-[var(--secondary)]'>
-              <PhotoUploadField
-                photo={coverPhotoFile}
-                onPhotoChange={handleCoverPhotoChange}
-                onDeletePhoto={handleDeleteCoverPhoto}
-                label='Upload Cover Photo'
-                text='Click to upload or drag and drop your cover image'
-                uploading={coverUploading}
-                existingImageUrl={
-                  coverFileKey && !coverPhotoFile
-                    ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') + coverFileKey
-                    : ''
-                }
-                cardHeight='h-[280px]'
-                className='rounded-[12px] border-0'
-              />
-              {coverUploading && (
-                <div className='absolute inset-0 bg-black/20 rounded-[16px] flex items-center justify-center'>
-                  <div className='bg-white rounded-lg px-4 py-2 shadow-lg'>
-                    <div className='flex items-center gap-2 text-sm font-medium'>
-                      <div className='w-4 h-4 border-2 border-[var(--primary)] border-t-transparent rounded-full animate-spin'></div>
-                      Uploading...
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className='flex gap-3 pt-2'>
-              <button
-                onClick={() => setShowCoverModal(false)}
-                className='btn-secondary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95'
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSaveCover}
-                disabled={!coverFileKey || coverUploading}
-                className='btn-primary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
-              >
-                {coverUploading ? 'Uploading...' : 'Save Cover'}
-              </button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Cover Image Upload Dialog */}
+      <CoverImageUploadDialog
+        open={showCoverModal}
+        onOpenChange={setShowCoverModal}
+        coverPhotoFile={coverPhotoFile}
+        onPhotoChange={handleCoverPhotoChange}
+        onDeletePhoto={handleDeleteCoverPhoto}
+        uploading={coverUploading}
+        coverFileKey={coverFileKey}
+        onSave={handleSaveCover}
+      />
     </div>
   );
 };

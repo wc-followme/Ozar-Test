@@ -893,7 +893,6 @@ export default function HomeOwnerWizardPage() {
   if (isLoading) {
     return (
       <div className='min-h-screen bg-[var(--white-background)] flex flex-col items-center'>
-        <HomeOwnerHeader />
         <div className='flex-1 flex items-center justify-center'>
           <LoadingComponent variant='inline' size='md' text={''} />
         </div>
@@ -928,8 +927,8 @@ export default function HomeOwnerWizardPage() {
   }
 
   return (
-    <div className='min-h-screen bg-[var(--white-background)] flex flex-col items-center'>
-      <HomeOwnerHeader />
+    <div className='min-h-[calc(100vh_-_80px)] bg-[var(--white-background)] flex flex-col items-center'>
+      {/* <HomeOwnerHeader /> */}
       {/* Centered content with background */}
       <div className='mt-auto'>
         <div className=''>

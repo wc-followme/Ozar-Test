@@ -5,6 +5,7 @@ import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { useToast } from '@/components/ui/use-toast';
+import { ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
@@ -40,10 +41,10 @@ const CompanyInfoForm = dynamic(
   }
 );
 
-const breadcrumbData: BreadcrumbItem[] = [
+const getBreadcrumbData = (companyId: string): BreadcrumbItem[] => [
   {
     name: 'Profile',
-    href: '/company-profile',
+    href: `${ROUTES.COMPANY_PROFILE}/${companyId}`,
   },
   { name: 'Edit Profile' },
 ];
@@ -108,7 +109,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
           COMPANY_MESSAGES.FETCH_ERROR
         );
         showErrorToast(errorMessage);
-        router.push('/company-profile');
+        router.push(`${ROUTES.COMPANY_PROFILE}/${resolvedParams.uuid}`);
       } finally {
         setLoading(false);
       }
@@ -203,7 +204,7 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
         showSuccessToast(
           extractApiSuccessMessage(response, COMPANY_MESSAGES.UPDATE_SUCCESS)
         );
-        router.push('/company-profile');
+        router.push(`${ROUTES.COMPANY_PROFILE}/${resolvedParams.uuid}`);
       } else {
         showErrorToast(
           extractApiErrorMessage(response, COMPANY_MESSAGES.UPDATE_ERROR)
@@ -284,7 +285,10 @@ export default function EditProfilePage({ params }: EditProfilePageProps) {
       {/* Header */}
       <div className='flex items-center justify-between'>
         <div>
-          <Breadcrumb items={breadcrumbData} className='mb-2' />
+          <Breadcrumb
+            items={getBreadcrumbData(resolvedParams.uuid)}
+            className='mb-2'
+          />
         </div>
       </div>
 
