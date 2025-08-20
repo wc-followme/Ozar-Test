@@ -23,16 +23,14 @@ pipeline {
         stage('Run Deployment Script on Staging EC2') {
           steps {
             sshagent(credentials: ['envision-ssh-key']) {
-              sh '''
-                # Export Jenkins env variables for remote use
-                export PR_NUMBER="${CHANGE_ID:-}"
-                export BUILD_NUMBER="${BUILD_NUMBER}"
-                export BRANCH_NAME="${BRANCH_NAME}"
-                export GIT_COMMIT="${GIT_COMMIT}"
-
-                # Run deploy script on EC2
-                ssh -o StrictHostKeyChecking=no $EC2_USER_HOST "bash /home/ubuntu/scripts/test-frontend-deploy.sh"
-              '''
+              sh """
+                ssh -o StrictHostKeyChecking=no $EC2_USER_HOST \\
+                  'PR_NUMBER=${CHANGE_ID:-} \\
+                   BUILD_NUMBER=${BUILD_NUMBER} \\
+                   BRANCH_NAME=${BRANCH_NAME} \\
+                   GIT_COMMIT=${GIT_COMMIT} \\
+                   bash /home/ubuntu/scripts/test-frontend-deploy.sh'
+              """
             }
           }
         }
