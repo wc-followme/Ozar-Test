@@ -401,9 +401,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Use the UUID from the first trade option in the dropdown
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
-      console.error(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
-      showErrorToast(ESTIMATION_MESSAGES.NO_TRADE_OPTIONS_AVAILABLE);
-      // Create a default trade if no options are available
+      // Create a default trade if no options are available (silently)
       const defaultTrade: Trade = {
         id: 'default-trade',
         uniqueKey: generateUniqueKey(
