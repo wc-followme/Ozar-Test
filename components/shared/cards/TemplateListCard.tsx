@@ -196,15 +196,7 @@ export function TemplateListCard({
         return (
           <div className='flex flex-col gap-3'>
             <div className='flex justify-between items-start'>
-              <div>
-                <p className='text-sm text-[var(--text-secondary)] mb-1'>
-                  Property Type
-                </p>
-                <p className='text-sm text-[var(--text-dark)] font-medium truncate'>
-                  {template.propertyType}
-                </p>
-              </div>
-              <div className='ml-auto'>
+              <div className=''>
                 <p className='text-sm text-[var(--text-secondary)] mb-1'>
                   Created on
                 </p>

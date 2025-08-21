@@ -5,6 +5,10 @@ import { Dropdown } from '@/components/shared/common/Dropdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
+import { TEMPLATE_TYPES } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
 import {
   AddSquare,
   ArrowDown2,
@@ -12,21 +16,82 @@ import {
   TaskSquare,
 } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { OptionBidIcon } from '../../../components/icons/OptionBidIcon';
 import { Tool } from '../../../components/icons/Tool';
 import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
-import {
-  archiveTemplates,
-  disclaimersTemplates,
-  estimateTemplates,
-  optionBidTemplates,
-  toolsTemplates,
-} from './dummy-data';
+import { TemplateApiData } from './template-types';
 
 export default function TemplatesPage() {
   const router = useRouter();
+  const { showErrorToast } = useToast();
   const [selectedTab, setSelectedTab] = useState('estimate');
+  const [templates, setTemplates] = useState<TemplateApiData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch templates from API
+  const fetchTemplates = async (pageNum = 1, append = false) => {
+    try {
+      setLoading(true);
+      const companyId = getCompanyId();
+      
+      if (!companyId) {
+        showErrorToast('Company ID not found. Please select a company.');
+        return;
+      }
+
+      const response = await apiService.fetchTemplates({
+        page: pageNum,
+        limit: 50, // Fetch more templates per page
+        company_id: companyId,
+        status: 'ACTIVE',
+      });
+
+      if (response.statusCode === 200 && response.data) {
+        const { data: templatesData } = response.data;
+        
+        setTemplates(prev => append ? [...prev, ...templatesData] : templatesData);
+      } else {
+        showErrorToast(extractApiErrorMessage(response, 'Failed to fetch templates.'));
+      }
+    } catch (error: any) {
+      showErrorToast(extractApiErrorMessage(error, 'Failed to fetch templates.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch templates on component mount
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  // Filter templates by type
+  const getTemplatesByType = (type: string) => {
+    return templates.filter(template => template.template_type === type);
+  };
+
+  // Get templates for each tab
+  const estimateTemplates = getTemplatesByType(TEMPLATE_TYPES.ESTIMATE_TEMPLATES);
+  const optionBidTemplates = getTemplatesByType(TEMPLATE_TYPES.OPTION_BID_TEMPLATES);
+  const toolsTemplates = getTemplatesByType(TEMPLATE_TYPES.TOOL_TEMPLATES);
+  const disclaimersTemplates = getTemplatesByType(TEMPLATE_TYPES.DISCLAIMER_TEMPLATES);
+  const archiveTemplates = templates.filter(template => template.status === 'INACTIVE');
+
+  // Transform API data to match TemplateListCard props
+  const transformTemplateData = (template: TemplateApiData) => {
+    const templateType = template.template_type.toLowerCase().replace('_templates', '') as 'estimate' | 'option-bid' | 'tools' | 'disclaimer';
+    
+    return {
+      id: template.uuid,
+      type: templateType,
+      templateName: template.name,
+      propertyType: 'Residential', // Default value since API doesn't provide this
+      category: template.category?.name || 'Unknown',
+      categoryColor: '#8B5CF6', // Default color
+      createdDate: new Date(template.created_at).toLocaleDateString('en-GB'),
+    };
+  };
 
   return (
     <div className='w-full'>
@@ -208,147 +273,197 @@ export default function TemplatesPage() {
 
           {/* Estimate Tab Content */}
           <TabsContent value='estimate' className='mt-6'>
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {estimateTemplates.map(({ id, ...template }) => (
-                <TemplateListCard
-                  key={id}
-                  template={{ id, ...template }}
-                  onEdit={() => console.log(`Edit template ${id}`)}
-                  onDelete={() => console.log(`Delete template ${id}`)}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className='flex justify-center items-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+              </div>
+            ) : estimateTemplates.length === 0 ? (
+              <div className='text-center py-8 text-[var(--text-secondary)]'>
+                No estimate templates found.
+              </div>
+            ) : (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {estimateTemplates.map((template) => (
+                  <TemplateListCard
+                    key={template.uuid}
+                    template={transformTemplateData(template)}
+                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
+                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Option Bid Tab Content */}
           <TabsContent value='option-bid' className='mt-6'>
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {optionBidTemplates.map(({ id, ...template }) => (
-                <TemplateListCard
-                  key={id}
-                  template={{ id, ...template }}
-                  onEdit={() => console.log(`Edit template ${id}`)}
-                  onDelete={() => console.log(`Delete template ${id}`)}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className='flex justify-center items-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+              </div>
+            ) : optionBidTemplates.length === 0 ? (
+              <div className='text-center py-8 text-[var(--text-secondary)]'>
+                No option bid templates found.
+              </div>
+            ) : (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {optionBidTemplates.map((template) => (
+                  <TemplateListCard
+                    key={template.uuid}
+                    template={transformTemplateData(template)}
+                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
+                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Tools Tab Content */}
           <TabsContent value='tools' className='mt-6'>
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {toolsTemplates.map(({ id, ...template }) => (
-                <TemplateListCard
-                  key={id}
-                  template={{ id, ...template }}
-                  onEdit={() => console.log(`Edit template ${id}`)}
-                  onDelete={() => console.log(`Delete template ${id}`)}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className='flex justify-center items-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+              </div>
+            ) : toolsTemplates.length === 0 ? (
+              <div className='text-center py-8 text-[var(--text-secondary)]'>
+                No tools templates found.
+              </div>
+            ) : (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {toolsTemplates.map((template) => (
+                  <TemplateListCard
+                    key={template.uuid}
+                    template={transformTemplateData(template)}
+                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
+                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Disclaimers Tab Content */}
           <TabsContent value='disclaimers' className='mt-6'>
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {disclaimersTemplates.map(({ id, ...template }) => (
-                <TemplateListCard
-                  key={id}
-                  template={{ id, ...template }}
-                  onEdit={() => console.log(`Edit template ${id}`)}
-                  onDelete={() => console.log(`Delete template ${id}`)}
-                />
-              ))}
-            </div>
+            {loading ? (
+              <div className='flex justify-center items-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+              </div>
+            ) : disclaimersTemplates.length === 0 ? (
+              <div className='text-center py-8 text-[var(--text-secondary)]'>
+                No disclaimer templates found.
+              </div>
+            ) : (
+              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                {disclaimersTemplates.map((template) => (
+                  <TemplateListCard
+                    key={template.uuid}
+                    template={transformTemplateData(template)}
+                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
+                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                  />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='space-y-8'>
-              {/* Estimate Section */}
-              <div>
-                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                  Estimate
-                </h3>
-                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {archiveTemplates
-                    .filter(({ type }) => type === 'estimate')
-                    .map(({ id, ...template }) => (
-                      <TemplateListCard
-                        key={id}
-                        template={{ id, ...template }}
-                        isArchived={true}
-                        onRetrieve={() =>
-                          console.log(`Retrieve template ${id}`)
-                        }
-                      />
-                    ))}
-                </div>
+            {loading ? (
+              <div className='flex justify-center items-center py-8'>
+                <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
+            ) : archiveTemplates.length === 0 ? (
+              <div className='text-center py-8 text-[var(--text-secondary)]'>
+                No archived templates found.
+              </div>
+            ) : (
+              <div className='space-y-8'>
+                {/* Estimate Section */}
+                <div>
+                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
+                    Estimate
+                  </h3>
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {archiveTemplates
+                      .filter((template) => template.template_type === TEMPLATE_TYPES.ESTIMATE_TEMPLATES)
+                      .map((template) => (
+                        <TemplateListCard
+                          key={template.uuid}
+                          template={transformTemplateData(template)}
+                          isArchived={true}
+                          onRetrieve={() =>
+                            console.log(`Retrieve template ${template.uuid}`)
+                          }
+                        />
+                      ))}
+                  </div>
+                </div>
 
-              {/* Option Bid Section */}
-              <div>
-                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                  Option Bid
-                </h3>
-                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {archiveTemplates
-                    .filter(({ type }) => type === 'option-bid')
-                    .map(({ id, ...template }) => (
-                      <TemplateListCard
-                        key={id}
-                        template={{ id, ...template }}
-                        isArchived={true}
-                        onRetrieve={() =>
-                          console.log(`Retrieve template ${id}`)
-                        }
-                      />
-                    ))}
+                {/* Option Bid Section */}
+                <div>
+                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
+                    Option Bid
+                  </h3>
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {archiveTemplates
+                      .filter((template) => template.template_type === TEMPLATE_TYPES.OPTION_BID_TEMPLATES)
+                      .map((template) => (
+                        <TemplateListCard
+                          key={template.uuid}
+                          template={transformTemplateData(template)}
+                          isArchived={true}
+                          onRetrieve={() =>
+                            console.log(`Retrieve template ${template.uuid}`)
+                          }
+                        />
+                      ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Tools Section */}
-              <div>
-                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                  Tools
-                </h3>
-                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {archiveTemplates
-                    .filter(({ type }) => type === 'tools')
-                    .map(({ id, ...template }) => (
-                      <TemplateListCard
-                        key={id}
-                        template={{ id, ...template }}
-                        isArchived={true}
-                        onRetrieve={() =>
-                          console.log(`Retrieve template ${id}`)
-                        }
-                      />
-                    ))}
+                {/* Tools Section */}
+                <div>
+                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
+                    Tools
+                  </h3>
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {archiveTemplates
+                      .filter((template) => template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES)
+                      .map((template) => (
+                        <TemplateListCard
+                          key={template.uuid}
+                          template={transformTemplateData(template)}
+                          isArchived={true}
+                          onRetrieve={() =>
+                            console.log(`Retrieve template ${template.uuid}`)
+                          }
+                        />
+                      ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Disclaimers Section */}
-              <div>
-                <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                  Disclaimers
-                </h3>
-                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {archiveTemplates
-                    .filter(({ type }) => type === 'disclaimer')
-                    .map(({ id, ...template }) => (
-                      <TemplateListCard
-                        key={id}
-                        template={{ id, ...template }}
-                        isArchived={true}
-                        onRetrieve={() =>
-                          console.log(`Retrieve template ${id}`)
-                        }
-                      />
-                    ))}
+                {/* Disclaimers Section */}
+                <div>
+                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
+                    Disclaimers
+                  </h3>
+                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                    {archiveTemplates
+                      .filter((template) => template.template_type === TEMPLATE_TYPES.DISCLAIMER_TEMPLATES)
+                      .map((template) => (
+                        <TemplateListCard
+                          key={template.uuid}
+                          template={transformTemplateData(template)}
+                          isArchived={true}
+                          onRetrieve={() =>
+                            console.log(`Retrieve template ${template.uuid}`)
+                          }
+                        />
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

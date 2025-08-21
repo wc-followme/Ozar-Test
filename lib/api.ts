@@ -2464,6 +2464,34 @@ class ApiService {
       },
     });
   }
+
+  async fetchTemplates({
+    page = 1,
+    limit = 10,
+    company_id,
+    status = 'ACTIVE',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    status?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    params.append('status', status);
+
+    return this.makeRequest(`/templates?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
 }
 
 export const apiService = new ApiService();
