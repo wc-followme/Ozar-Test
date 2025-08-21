@@ -1,50 +1,53 @@
 'use client';
 
+import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
+import EstimationBox from '@/components/Templates/EstimationBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants/common';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
-import EstimationBox from '../../Templates/EstimationBox';
 
+// Types
 interface EstimationTemplateFormData {
   templateName: string;
   category: string;
 }
 
+interface SelectOption {
+  value: string;
+  label: string;
+}
+
 interface EstimationTemplateFormProps {
-  initialData?: Partial<EstimationTemplateFormData>;
-  templateId?: string; // Add template ID prop for existing templates
+  templateId?: string;
+  _initialData?: any; // Prefix with underscore to indicate unused
 }
 
 // Validation schema
-const templateFormSchema = yup.object({
+const estimationTemplateSchema = yup.object({
   templateName: yup.string().required('Template name is required'),
   category: yup.string().required('Category is required'),
 });
 
-export function EstimationTemplateForm({
-  initialData,
+export default function EstimationTemplateForm({
   templateId,
 }: EstimationTemplateFormProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Category dropdown state
-  const [categoryOptions, setCategoryOptions] = useState<
-    Array<{ value: string; label: string }>
-  >([]);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState<SelectOption[]>([]);
 
+  // Form setup
   const {
     register,
     handleSubmit,
@@ -52,10 +55,10 @@ export function EstimationTemplateForm({
     setValue,
     watch,
   } = useForm<EstimationTemplateFormData>({
-    resolver: yupResolver(templateFormSchema),
+    resolver: yupResolver(estimationTemplateSchema),
     defaultValues: {
-      templateName: initialData?.templateName || '',
-      category: initialData?.category || '',
+      templateName: '',
+      category: '',
     },
   });
 
@@ -136,27 +139,42 @@ export function EstimationTemplateForm({
     return roomsData;
   };
 
-  // Handle form submission
+  // Helper functions for toast messages
+  const showSuccessToast = (message: string) => {
+    toast({
+      title: 'Success',
+      description: message,
+      variant: 'default',
+    });
+  };
+
+  const showErrorToast = (message: string) => {
+    toast({
+      title: 'Error',
+      description: message,
+      variant: 'destructive',
+    });
+  };
+
   const onSubmitForm = async (data: EstimationTemplateFormData) => {
-    if (isSubmitting) return;
+    const { templateName, category } = data;
 
     setIsSubmitting(true);
     try {
+      // Get selected company ID using global utility function
+      const companyId = getCompanyId();
+
       // Get template rooms data from localStorage
       const templateRoomsData = getTemplateRoomsData();
       const transformedRooms = transformTemplateRoomsData(templateRoomsData);
 
       // Prepare API payload
       const payload: any = {
-        name: data.templateName,
-        category_id: data.category,
-        template_type: 'ESTIMATE_TEMPLATES',
-        service_id: '', // This will be set from the first service if available
-        disclaimer: 'This is a standard disclaimer for the template',
-        warranty: '1 year warranty',
-        warranty_duration: '12 months',
-        tool_ids: [], // This will be populated from the template data
+        name: templateName,
+        category_id: category,
+        template_type: TEMPLATE_TYPES.ESTIMATE_TEMPLATES,
         template_rooms: transformedRooms,
+        ...(companyId && { company_id: companyId }),
       };
 
       // Extract service_id and tool_ids from template data
@@ -186,40 +204,48 @@ export function EstimationTemplateForm({
       });
       payload.tool_ids = Array.from(allToolIds);
 
-      // Make API call
+      // Call API to create template
       const response = await apiService.makeGenericRequest('/templates', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
-      // Show success message
-      const successMessage = extractApiSuccessMessage(
-        response,
-        'Template created successfully!'
-      );
-      toast({
-        title: 'Success',
-        description: successMessage,
-        variant: 'default',
-      });
+      const { statusCode, message } = response;
 
-      // Redirect to templates listing page
-      router.push('/templates');
-    } catch (error) {
-      console.error('Error creating template:', error);
-      const errorMessage = extractApiErrorMessage(
-        error,
-        'Failed to create template. Please try again.'
-      );
-      toast({
-        title: 'Error',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      if (statusCode === 200 || statusCode === 201) {
+        // Show API success message (not fallback)
+        showSuccessToast(message || 'Template created successfully.');
+
+        // Set redirecting state and delay redirect to show toast
+        setIsRedirecting(true);
+        setTimeout(() => {
+          router.push('/templates');
+        }, 1500);
+      } else {
+        showErrorToast(message || 'Failed to create template.');
+      }
+    } catch (error: any) {
+      const { status, message: errorMessage } = error;
+      if (status === 401) {
+        // Handle auth error (will redirect to login)
+        console.error('Authentication error:', error);
+      } else {
+        showErrorToast(errorMessage || 'Failed to create template.');
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading component during redirect
+  if (isRedirecting) {
+    return (
+      <LoadingComponent
+        variant='fullscreen'
+        text='Redirecting to templates...'
+      />
+    );
+  }
 
   return (
     <>
@@ -249,7 +275,7 @@ export function EstimationTemplateForm({
             <SelectField
               label=''
               value={watchedCategory}
-              onValueChange={value => setValue('category', value)}
+              onValueChange={(value: string) => setValue('category', value)}
               options={categoryOptions}
               placeholder={
                 isLoadingCategories
@@ -279,7 +305,7 @@ export function EstimationTemplateForm({
         <Button
           onClick={handleSubmit(onSubmitForm)}
           className='btn-primary'
-          disabled={isSubmitting || isLoadingCategories}
+          disabled={isSubmitting || isLoadingCategories || isRedirecting}
         >
           {isSubmitting ? 'Creating Template...' : 'Save Template'}
         </Button>

@@ -476,6 +476,16 @@ export const PROFILE_BUTTON_LABELS = {
 // } as const;
 
 // Local Storage Keys
+// Template Type Constants
+export const TEMPLATE_TYPES = {
+  ESTIMATE_TEMPLATES: 'ESTIMATE_TEMPLATES',
+  OPTION_BID_TEMPLATES: 'OPTION_BID_TEMPLATES',
+  TOOL_TEMPLATES: 'TOOL_TEMPLATES',
+  DISCLAIMER_TEMPLATES: 'DISCLAIMER_TEMPLATES',
+} as const;
+
+export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
+
 export const STORAGE_KEYS = {
   SELECTED_COMPANY: 'selected_company',
   IS_AUTHENTICATED: 'isAuthenticated',
