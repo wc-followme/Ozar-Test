@@ -223,10 +223,6 @@ export default function CreateTemplatePage({
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <EstimationTemplateForm
-                onSubmit={data => {
-                  console.log('Estimate form submitted:', data);
-                  // Handle form submission here
-                }}
                 initialData={{
                   templateName: formData.templateName,
                   category: formData.category,
