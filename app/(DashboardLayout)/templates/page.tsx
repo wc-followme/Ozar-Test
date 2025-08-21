@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { TEMPLATE_TYPES } from '@/constants/common';
+import { PAGINATION, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
 import {
@@ -16,7 +16,7 @@ import {
   TaskSquare,
 } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { OptionBidIcon } from '../../../components/icons/OptionBidIcon';
 import { Tool } from '../../../components/icons/Tool';
 import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
@@ -27,50 +27,101 @@ export default function TemplatesPage() {
   const { showErrorToast } = useToast();
   const [selectedTab, setSelectedTab] = useState('estimate');
   const [templates, setTemplates] = useState<TemplateApiData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [hasMore, setHasMore] = useState<boolean>(true);
 
   // Fetch templates from API
-  const fetchTemplates = async (pageNum = 1, append = false) => {
-    try {
-      setLoading(true);
-      const companyId = getCompanyId();
+  const fetchTemplates = useCallback(
+    async (pageNum = 1, append = false) => {
+      try {
+        // Only show loading for initial load, not for infinite scroll
+        if (!append) {
+          setInitialLoading(true);
+        }
 
-      if (!companyId) {
-        showErrorToast('Company ID not found. Please select a company.');
-        return;
-      }
+        const companyId = getCompanyId();
 
-      const response = await apiService.fetchTemplates({
-        page: pageNum,
-        limit: 50, // Fetch more templates per page
-        company_id: companyId,
-        status: 'ACTIVE',
-      });
+        if (!companyId) {
+          showErrorToast('Company ID not found. Please select a company.');
+          return;
+        }
 
-      if (response.statusCode === 200 && response.data) {
-        const { data: templatesData } = response.data;
+        const response = await apiService.fetchTemplates({
+          page: pageNum,
+          limit: PAGINATION.TEMPLATES_LIMIT,
+          company_id: companyId,
+          status: 'ACTIVE',
+        });
 
-        setTemplates(prev =>
-          append ? [...prev, ...templatesData] : templatesData
-        );
-      } else {
+        if (response.statusCode === 200 && response.data) {
+          const { data: templatesData, totalPages } = response.data;
+
+          setTemplates(prev => {
+            if (append) {
+              // Filter out duplicates when appending to prevent duplicate keys
+              const existingUuids = new Set(
+                prev.map(template => template.uuid)
+              );
+              const uniqueNewTemplates = templatesData.filter(
+                (template: TemplateApiData) => !existingUuids.has(template.uuid)
+              );
+              return [...prev, ...uniqueNewTemplates];
+            } else {
+              return templatesData;
+            }
+          });
+
+          // Page is managed internally by the infinite scroll logic
+          setHasMore(pageNum < totalPages);
+        } else {
+          showErrorToast(
+            extractApiErrorMessage(response, 'Failed to fetch templates.')
+          );
+          if (!append) setTemplates([]);
+          setHasMore(false);
+        }
+      } catch (error: any) {
         showErrorToast(
-          extractApiErrorMessage(response, 'Failed to fetch templates.')
+          extractApiErrorMessage(error, 'Failed to fetch templates.')
         );
+        if (!append) setTemplates([]);
+        setHasMore(false);
+      } finally {
+        if (!append) {
+          setInitialLoading(false);
+        }
       }
-    } catch (error: any) {
-      showErrorToast(
-        extractApiErrorMessage(error, 'Failed to fetch templates.')
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+    [showErrorToast]
+  );
 
   // Fetch templates on component mount
   useEffect(() => {
     fetchTemplates();
-  }, []);
+  }, [fetchTemplates]);
+
+  // Infinite scroll
+  useEffect(() => {
+    let currentPage = 1;
+    let isLoadingMore = false;
+
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+          document.body.offsetHeight - 200 &&
+        !isLoadingMore &&
+        hasMore
+      ) {
+        isLoadingMore = true;
+        currentPage += 1;
+        fetchTemplates(currentPage, true).finally(() => {
+          isLoadingMore = false;
+        });
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [hasMore, fetchTemplates]);
 
   // Filter templates by type
   const getTemplatesByType = (type: string) => {
@@ -324,7 +375,7 @@ export default function TemplatesPage() {
 
           {/* Estimate Tab Content */}
           <TabsContent value='estimate' className='mt-6'>
-            {loading ? (
+            {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
@@ -333,24 +384,28 @@ export default function TemplatesPage() {
                 No estimate templates found.
               </div>
             ) : (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {estimateTemplates.map(template => (
-                  <TemplateListCard
-                    key={template.uuid}
-                    template={transformTemplateData(template, 'estimate')}
-                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() =>
-                      console.log(`Delete template ${template.uuid}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                  {estimateTemplates.map(template => (
+                    <TemplateListCard
+                      key={template.uuid}
+                      template={transformTemplateData(template, 'estimate')}
+                      onEdit={() =>
+                        console.log(`Edit template ${template.uuid}`)
+                      }
+                      onDelete={() =>
+                        console.log(`Delete template ${template.uuid}`)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
 
           {/* Option Bid Tab Content */}
           <TabsContent value='option-bid' className='mt-6'>
-            {loading ? (
+            {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
@@ -359,24 +414,28 @@ export default function TemplatesPage() {
                 No option bid templates found.
               </div>
             ) : (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {optionBidTemplates.map(template => (
-                  <TemplateListCard
-                    key={template.uuid}
-                    template={transformTemplateData(template, 'option-bid')}
-                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() =>
-                      console.log(`Delete template ${template.uuid}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                  {optionBidTemplates.map(template => (
+                    <TemplateListCard
+                      key={template.uuid}
+                      template={transformTemplateData(template, 'option-bid')}
+                      onEdit={() =>
+                        console.log(`Edit template ${template.uuid}`)
+                      }
+                      onDelete={() =>
+                        console.log(`Delete template ${template.uuid}`)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
 
           {/* Tools Tab Content */}
           <TabsContent value='tools' className='mt-6'>
-            {loading ? (
+            {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
@@ -385,24 +444,28 @@ export default function TemplatesPage() {
                 No tools templates found.
               </div>
             ) : (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {toolsTemplates.map(template => (
-                  <TemplateListCard
-                    key={template.uuid}
-                    template={transformTemplateData(template, 'tools')}
-                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() =>
-                      console.log(`Delete template ${template.uuid}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                  {toolsTemplates.map(template => (
+                    <TemplateListCard
+                      key={template.uuid}
+                      template={transformTemplateData(template, 'tools')}
+                      onEdit={() =>
+                        console.log(`Edit template ${template.uuid}`)
+                      }
+                      onDelete={() =>
+                        console.log(`Delete template ${template.uuid}`)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
 
           {/* Disclaimers Tab Content */}
           <TabsContent value='disclaimers' className='mt-6'>
-            {loading ? (
+            {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
@@ -411,24 +474,28 @@ export default function TemplatesPage() {
                 No disclaimer templates found.
               </div>
             ) : (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {disclaimersTemplates.map(template => (
-                  <TemplateListCard
-                    key={template.uuid}
-                    template={transformTemplateData(template, 'disclaimer')}
-                    onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() =>
-                      console.log(`Delete template ${template.uuid}`)
-                    }
-                  />
-                ))}
-              </div>
+              <>
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                  {disclaimersTemplates.map(template => (
+                    <TemplateListCard
+                      key={template.uuid}
+                      template={transformTemplateData(template, 'disclaimer')}
+                      onEdit={() =>
+                        console.log(`Edit template ${template.uuid}`)
+                      }
+                      onDelete={() =>
+                        console.log(`Delete template ${template.uuid}`)
+                      }
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            {loading ? (
+            {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>

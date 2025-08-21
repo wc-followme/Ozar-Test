@@ -12,6 +12,7 @@ export const PAGINATION = {
   COMPANY_LIMIT: 8, // Limit for company management
   JOBS_LIMIT: 8, // Limit for job management
   TRADES_LIMIT: 32, // Limit for trade management
+  TEMPLATES_LIMIT: 16, // Limit for templates management with infinite scroll
 } as const;
 
 // Role IDs for role-based access control

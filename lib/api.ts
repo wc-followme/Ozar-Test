@@ -2484,12 +2484,7 @@ class ApiService {
 
     return this.makeRequest(`/templates?${params.toString()}`, {
       method: 'GET',
-      headers: {
-        accept: 'application/json',
-        'app-type': 'mobile',
-        'Accept-Language': 'en',
-        'Content-Type': 'application/json',
-      },
+      headers: this.getRoleHeaders(),
     });
   }
 }
