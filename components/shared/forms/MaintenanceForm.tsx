@@ -248,10 +248,17 @@ export const MaintenanceForm: React.FC<MaintenanceFormProps> = ({
       </div>
 
       <div className='flex gap-3 items-center pt-2'>
-        <Button variant='outline' onClick={onCancel} className='btn-secondary'>
+        <Button
+          variant='outline'
+          onClick={onCancel}
+          className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+        >
           Cancel
         </Button>
-        <Button onClick={() => onSubmit(values)} className='btn-primary'>
+        <Button
+          onClick={() => onSubmit(values)}
+          className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+        >
           Submit
         </Button>
       </div>

@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   environment {
-    EC2_USER_HOST = 'ubuntu@13.232.74.144'
-    SITE_URL = 'https://envision.webcluesstaging.com/'
+    EC2_USER_HOST = 'ubuntu@54.162.24.149'
+    SITE_URL = 'https://virtualhomes.webcluesstaging.com/'
   }
 
   stages {
