@@ -20,9 +20,15 @@ const RATING_FILTERS = {
 
 interface ReviewTabProps {
   companyId?: string;
+  isCompanyOrUserProfile?: boolean;
+  userId?: string | undefined;
 }
 
-export const ReviewTab = ({ companyId }: ReviewTabProps) => {
+export const ReviewTab = ({
+  companyId,
+  isCompanyOrUserProfile = false,
+  userId,
+}: ReviewTabProps) => {
   // Destructure APP_CONFIG
   const { CDN_URL } = APP_CONFIG;
 
@@ -64,10 +70,17 @@ export const ReviewTab = ({ companyId }: ReviewTabProps) => {
         }
         setError(null);
 
-        const currentCompanyId = companyId || getCompanyId();
+        // Use userId for user profiles, otherwise use companyId
+        const currentCompanyId = isCompanyOrUserProfile
+          ? userId
+          : companyId || getCompanyId();
 
         if (!currentCompanyId) {
-          setError('No company ID available');
+          setError(
+            isCompanyOrUserProfile
+              ? 'No user ID available'
+              : 'No company ID available'
+          );
           setLoading(false);
           return;
         }
@@ -112,14 +125,24 @@ export const ReviewTab = ({ companyId }: ReviewTabProps) => {
           }
         }
 
-        const response = await apiService.fetchCompanyReviews({
-          page: targetPage,
-          limit: 10,
-          company_id: currentCompanyId,
-          ...(ratingFilter && { rating: ratingFilter }),
-          sortBy,
-          sortOrder,
-        });
+        // Use different API endpoints based on profile type
+        const response = isCompanyOrUserProfile
+          ? await apiService.fetchUserReviews({
+              page: targetPage,
+              limit: 10,
+              user_id: currentCompanyId, // For user profiles, use user_id
+              ...(ratingFilter && { rating: ratingFilter }),
+              sortBy,
+              sortOrder,
+            })
+          : await apiService.fetchCompanyReviews({
+              page: targetPage,
+              limit: 10,
+              company_id: currentCompanyId, // For company profiles, use company_id
+              ...(ratingFilter && { rating: ratingFilter }),
+              sortBy,
+              sortOrder,
+            });
 
         if (response.statusCode === 200 && response.data) {
           const { data: responseData } = response;
@@ -168,7 +191,7 @@ export const ReviewTab = ({ companyId }: ReviewTabProps) => {
         setIsLoadingMore(false);
       }
     },
-    [companyId, filterType, sortType]
+    [companyId, filterType, sortType, isCompanyOrUserProfile, userId]
   );
 
   // Initial fetch and refetch when filters change

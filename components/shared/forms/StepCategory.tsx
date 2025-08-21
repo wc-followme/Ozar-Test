@@ -152,7 +152,7 @@ export function StepCategory({
   // Loading state
   if (isLoading) {
     return (
-      <div className='w-full max-w-[846px] bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
+      <div className='w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
         <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
           {STEP_MESSAGES.PROJECT_TYPE_TITLE}
         </h2>
@@ -171,7 +171,7 @@ export function StepCategory({
   // Error state
   if (error) {
     return (
-      <div className='w-full max-w-[846px] bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
+      <div className='w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
         <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
           {STEP_MESSAGES.PROJECT_TYPE_TITLE}
         </h2>
@@ -188,7 +188,7 @@ export function StepCategory({
   const categoryItems = transformCategoriesToCategoryItems(categories);
 
   return (
-    <div className='w-full max-w-[846px] bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
+    <div className='w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className='w-full'>
           <FormField
@@ -197,7 +197,7 @@ export function StepCategory({
             render={({}) => (
               <FormItem>
                 <FormControl>
-                  <div className='h-auto md:h-[calc(100vh_-_550px)] md:-mx-4 md:px-4 overflow-y-auto'>
+                  <div className='h-auto md:h-[calc(100vh_-_300px)] md:-mx-4 md:px-4 overflow-y-auto'>
                     <CategoryComponent
                       categoryData={categoryItems}
                       selectedCategory={selectedType}

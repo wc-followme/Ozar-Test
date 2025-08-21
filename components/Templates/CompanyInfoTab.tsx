@@ -12,6 +12,7 @@ interface CompanyInfoTabProps {
         image: string;
         about: string;
         phone: string;
+        phone_number: string;
         email: string;
         website: string;
         communication: string;
@@ -20,6 +21,7 @@ interface CompanyInfoTabProps {
         preferred_communication_method: string;
         projects: string;
         uuid: string;
+        country_code: string;
       }
     | undefined;
   showViewCompanyProfileButton?: boolean;

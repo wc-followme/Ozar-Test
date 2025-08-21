@@ -184,7 +184,7 @@ export function StepPropertyInfo({
   const formConfig = getFormConfig(FIVE_BOX_SLUGS.PROPERTY_INFORMATION);
 
   return (
-    <div className='w-full max-w-[1200px] bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
+    <div className='w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center'>
       <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
         {formConfig?.title || 'Property Information'}
       </h2>
@@ -200,7 +200,7 @@ export function StepPropertyInfo({
           <div className='flex flex-col lg:flex-row lg:items-stretch gap-4 lg:gap-6 items-start'>
             {/* Left Column - Form Fields */}
             <div className='flex-1 w-full'>
-              <div className='h-auto md:h-[calc(100vh_-_550px)] md:-mx-4 md:px-4 overflow-y-auto'>
+              <div className='h-auto md:h-[calc(100vh_-_440px)] md:-mx-4 md:px-4 overflow-y-auto'>
                 <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
                   {/* Property */}
                   {isFieldEnabled(PROPERTY_INFORMATION_FIELDS.PROPERTY) && (
@@ -391,7 +391,7 @@ export function StepPropertyInfo({
 
             {/* Right Column - Questions */}
             {questions && questions.length > 0 && (
-              <div className='w-full lg:w-[280px] xl:w-[420px] lg:shrink-0 h-auto lg:pl-4 lg:border-l lg:border-[var(--border-dark)] lg:max-h-[calc(100dvh_-_280px)] overflow-y-auto mt-6 lg:mt-0 pt-6 lg:pt-0 border-t lg:border-t-0 border-[var(--border-dark)]'>
+              <div className='w-full lg:w-[280px] xl:w-[420px] lg:shrink-0 h-auto lg:pl-4 lg:border-l lg:border-[var(--border-dark)] md:h-[calc(100vh_-_440px)] overflow-y-auto mt-6 lg:mt-0 pt-6 lg:pt-0 border-t lg:border-t-0 border-[var(--border-dark)]'>
                 <div className='space-y-3'>
                   {questions.map((question: any) => {
                     // Safety check to ensure question has required properties
