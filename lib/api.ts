@@ -2487,6 +2487,14 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Archive template
+  async archiveTemplate(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

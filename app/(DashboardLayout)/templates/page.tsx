@@ -24,7 +24,7 @@ import { TemplateApiData, TemplateData } from './template-types';
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const { showErrorToast } = useToast();
+  const { showErrorToast, showSuccessToast } = useToast();
   const [selectedTab, setSelectedTab] = useState('estimate');
   const [templates, setTemplates] = useState<TemplateApiData[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -93,6 +93,32 @@ export default function TemplatesPage() {
       }
     },
     [showErrorToast]
+  );
+
+  // Archive template handler
+  const handleArchiveTemplate = useCallback(
+    async (templateUuid: string) => {
+      try {
+        const response = await apiService.archiveTemplate(templateUuid);
+
+        if (response.statusCode === 200) {
+          showSuccessToast('Template archived successfully.');
+          // Remove the archived template from the list
+          setTemplates(prev =>
+            prev.filter(template => template.uuid !== templateUuid)
+          );
+        } else {
+          showErrorToast(
+            extractApiErrorMessage(response, 'Failed to archive template.')
+          );
+        }
+      } catch (error: any) {
+        showErrorToast(
+          extractApiErrorMessage(error, 'Failed to archive template.')
+        );
+      }
+    },
+    [showSuccessToast, showErrorToast]
   );
 
   // Fetch templates on component mount
@@ -393,9 +419,7 @@ export default function TemplatesPage() {
                       onEdit={() =>
                         console.log(`Edit template ${template.uuid}`)
                       }
-                      onDelete={() =>
-                        console.log(`Delete template ${template.uuid}`)
-                      }
+                      onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
                 </div>
@@ -423,9 +447,7 @@ export default function TemplatesPage() {
                       onEdit={() =>
                         console.log(`Edit template ${template.uuid}`)
                       }
-                      onDelete={() =>
-                        console.log(`Delete template ${template.uuid}`)
-                      }
+                      onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
                 </div>
@@ -453,9 +475,7 @@ export default function TemplatesPage() {
                       onEdit={() =>
                         console.log(`Edit template ${template.uuid}`)
                       }
-                      onDelete={() =>
-                        console.log(`Delete template ${template.uuid}`)
-                      }
+                      onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
                 </div>
@@ -483,9 +503,7 @@ export default function TemplatesPage() {
                       onEdit={() =>
                         console.log(`Edit template ${template.uuid}`)
                       }
-                      onDelete={() =>
-                        console.log(`Delete template ${template.uuid}`)
-                      }
+                      onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
                 </div>
