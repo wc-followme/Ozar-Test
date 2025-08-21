@@ -20,7 +20,7 @@ import { useEffect, useState } from 'react';
 import { OptionBidIcon } from '../../../components/icons/OptionBidIcon';
 import { Tool } from '../../../components/icons/Tool';
 import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
-import { TemplateApiData } from './template-types';
+import { TemplateApiData, TemplateData } from './template-types';
 
 export default function TemplatesPage() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function TemplatesPage() {
     try {
       setLoading(true);
       const companyId = getCompanyId();
-      
+
       if (!companyId) {
         showErrorToast('Company ID not found. Please select a company.');
         return;
@@ -49,13 +49,19 @@ export default function TemplatesPage() {
 
       if (response.statusCode === 200 && response.data) {
         const { data: templatesData } = response.data;
-        
-        setTemplates(prev => append ? [...prev, ...templatesData] : templatesData);
+
+        setTemplates(prev =>
+          append ? [...prev, ...templatesData] : templatesData
+        );
       } else {
-        showErrorToast(extractApiErrorMessage(response, 'Failed to fetch templates.'));
+        showErrorToast(
+          extractApiErrorMessage(response, 'Failed to fetch templates.')
+        );
       }
     } catch (error: any) {
-      showErrorToast(extractApiErrorMessage(error, 'Failed to fetch templates.'));
+      showErrorToast(
+        extractApiErrorMessage(error, 'Failed to fetch templates.')
+      );
     } finally {
       setLoading(false);
     }
@@ -72,25 +78,70 @@ export default function TemplatesPage() {
   };
 
   // Get templates for each tab
-  const estimateTemplates = getTemplatesByType(TEMPLATE_TYPES.ESTIMATE_TEMPLATES);
-  const optionBidTemplates = getTemplatesByType(TEMPLATE_TYPES.OPTION_BID_TEMPLATES);
+  const estimateTemplates = getTemplatesByType(
+    TEMPLATE_TYPES.ESTIMATE_TEMPLATES
+  );
+  const optionBidTemplates = getTemplatesByType(
+    TEMPLATE_TYPES.OPTION_BID_TEMPLATES
+  );
   const toolsTemplates = getTemplatesByType(TEMPLATE_TYPES.TOOL_TEMPLATES);
-  const disclaimersTemplates = getTemplatesByType(TEMPLATE_TYPES.DISCLAIMER_TEMPLATES);
-  const archiveTemplates = templates.filter(template => template.status === 'INACTIVE');
+  const disclaimersTemplates = getTemplatesByType(
+    TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
+  );
+  const archiveTemplates = templates.filter(
+    template => template.status === 'INACTIVE'
+  );
 
-  // Transform API data to match TemplateListCard props
-  const transformTemplateData = (template: TemplateApiData) => {
-    const templateType = template.template_type.toLowerCase().replace('_templates', '') as 'estimate' | 'option-bid' | 'tools' | 'disclaimer';
-    
-    return {
+  // Transform API data to match TemplateListCard props based on template type
+  const transformTemplateData = (
+    template: TemplateApiData,
+    targetType: string
+  ): TemplateData => {
+    const baseData = {
       id: template.uuid,
-      type: templateType,
       templateName: template.name,
-      propertyType: 'Residential', // Default value since API doesn't provide this
-      category: template.category?.name || 'Unknown',
-      categoryColor: '#8B5CF6', // Default color
       createdDate: new Date(template.created_at).toLocaleDateString('en-GB'),
     };
+
+    switch (targetType) {
+      case 'estimate':
+        return {
+          ...baseData,
+          type: 'estimate' as const,
+          propertyType: 'Residential', // Default value since API doesn't provide this
+          category: template.category?.name || 'Unknown',
+          categoryColor: '#8B5CF6', // Default color
+        };
+      case 'option-bid':
+        return {
+          ...baseData,
+          type: 'option-bid' as const,
+          service: template.service?.name || 'Unknown Service',
+          material: 'Default Material', // Default value since API doesn't provide this
+        };
+      case 'tools':
+        return {
+          ...baseData,
+          type: 'tools' as const,
+          service: template.service?.name || 'Unknown Service',
+          material: 'Default Material', // Default value since API doesn't provide this
+        };
+      case 'disclaimer':
+        return {
+          ...baseData,
+          type: 'disclaimer' as const,
+          service: template.service?.name || 'Unknown Service',
+          material: 'Default Material', // Default value since API doesn't provide this
+        };
+      default:
+        return {
+          ...baseData,
+          type: 'estimate' as const,
+          propertyType: 'Residential',
+          category: template.category?.name || 'Unknown',
+          categoryColor: '#8B5CF6',
+        };
+    }
   };
 
   return (
@@ -283,12 +334,14 @@ export default function TemplatesPage() {
               </div>
             ) : (
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {estimateTemplates.map((template) => (
+                {estimateTemplates.map(template => (
                   <TemplateListCard
                     key={template.uuid}
-                    template={transformTemplateData(template)}
+                    template={transformTemplateData(template, 'estimate')}
                     onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                    onDelete={() =>
+                      console.log(`Delete template ${template.uuid}`)
+                    }
                   />
                 ))}
               </div>
@@ -307,12 +360,14 @@ export default function TemplatesPage() {
               </div>
             ) : (
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {optionBidTemplates.map((template) => (
+                {optionBidTemplates.map(template => (
                   <TemplateListCard
                     key={template.uuid}
-                    template={transformTemplateData(template)}
+                    template={transformTemplateData(template, 'option-bid')}
                     onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                    onDelete={() =>
+                      console.log(`Delete template ${template.uuid}`)
+                    }
                   />
                 ))}
               </div>
@@ -331,12 +386,14 @@ export default function TemplatesPage() {
               </div>
             ) : (
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {toolsTemplates.map((template) => (
+                {toolsTemplates.map(template => (
                   <TemplateListCard
                     key={template.uuid}
-                    template={transformTemplateData(template)}
+                    template={transformTemplateData(template, 'tools')}
                     onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                    onDelete={() =>
+                      console.log(`Delete template ${template.uuid}`)
+                    }
                   />
                 ))}
               </div>
@@ -355,12 +412,14 @@ export default function TemplatesPage() {
               </div>
             ) : (
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {disclaimersTemplates.map((template) => (
+                {disclaimersTemplates.map(template => (
                   <TemplateListCard
                     key={template.uuid}
-                    template={transformTemplateData(template)}
+                    template={transformTemplateData(template, 'disclaimer')}
                     onEdit={() => console.log(`Edit template ${template.uuid}`)}
-                    onDelete={() => console.log(`Delete template ${template.uuid}`)}
+                    onDelete={() =>
+                      console.log(`Delete template ${template.uuid}`)
+                    }
                   />
                 ))}
               </div>
@@ -386,11 +445,15 @@ export default function TemplatesPage() {
                   </h3>
                   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                     {archiveTemplates
-                      .filter((template) => template.template_type === TEMPLATE_TYPES.ESTIMATE_TEMPLATES)
-                      .map((template) => (
+                      .filter(
+                        template =>
+                          template.template_type ===
+                          TEMPLATE_TYPES.ESTIMATE_TEMPLATES
+                      )
+                      .map(template => (
                         <TemplateListCard
                           key={template.uuid}
-                          template={transformTemplateData(template)}
+                          template={transformTemplateData(template, 'estimate')}
                           isArchived={true}
                           onRetrieve={() =>
                             console.log(`Retrieve template ${template.uuid}`)
@@ -407,11 +470,18 @@ export default function TemplatesPage() {
                   </h3>
                   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                     {archiveTemplates
-                      .filter((template) => template.template_type === TEMPLATE_TYPES.OPTION_BID_TEMPLATES)
-                      .map((template) => (
+                      .filter(
+                        template =>
+                          template.template_type ===
+                          TEMPLATE_TYPES.OPTION_BID_TEMPLATES
+                      )
+                      .map(template => (
                         <TemplateListCard
                           key={template.uuid}
-                          template={transformTemplateData(template)}
+                          template={transformTemplateData(
+                            template,
+                            'option-bid'
+                          )}
                           isArchived={true}
                           onRetrieve={() =>
                             console.log(`Retrieve template ${template.uuid}`)
@@ -428,11 +498,15 @@ export default function TemplatesPage() {
                   </h3>
                   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                     {archiveTemplates
-                      .filter((template) => template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES)
-                      .map((template) => (
+                      .filter(
+                        template =>
+                          template.template_type ===
+                          TEMPLATE_TYPES.TOOL_TEMPLATES
+                      )
+                      .map(template => (
                         <TemplateListCard
                           key={template.uuid}
-                          template={transformTemplateData(template)}
+                          template={transformTemplateData(template, 'tools')}
                           isArchived={true}
                           onRetrieve={() =>
                             console.log(`Retrieve template ${template.uuid}`)
@@ -449,11 +523,18 @@ export default function TemplatesPage() {
                   </h3>
                   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                     {archiveTemplates
-                      .filter((template) => template.template_type === TEMPLATE_TYPES.DISCLAIMER_TEMPLATES)
-                      .map((template) => (
+                      .filter(
+                        template =>
+                          template.template_type ===
+                          TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
+                      )
+                      .map(template => (
                         <TemplateListCard
                           key={template.uuid}
-                          template={transformTemplateData(template)}
+                          template={transformTemplateData(
+                            template,
+                            'disclaimer'
+                          )}
                           isArchived={true}
                           onRetrieve={() =>
                             console.log(`Retrieve template ${template.uuid}`)
