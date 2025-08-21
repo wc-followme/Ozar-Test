@@ -441,7 +441,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_82px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -457,7 +457,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -473,7 +473,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -489,7 +489,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
           </Tabs>
