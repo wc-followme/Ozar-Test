@@ -24,14 +24,48 @@ export interface AvatarProps {
   className?: string;
   avatarColor?: { bg: string; color: string } | undefined;
   style?: React.CSSProperties;
+  swapColors?: boolean;
+  autoTextColor?: boolean;
+}
+
+// Function to calculate relative luminance of a color
+function getLuminance(hex: string): number {
+  // Remove # if present
+  const cleanHex = hex.replace('#', '');
+
+  // Convert to RGB
+  const r = parseInt(cleanHex.substr(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.substr(2, 2), 16) / 255;
+  const b = parseInt(cleanHex.substr(4, 2), 16) / 255;
+
+  // Calculate relative luminance
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance;
+}
+
+// Function to get contrasting text color
+function getContrastingTextColor(bgColor: string): string {
+  const luminance = getLuminance(bgColor);
+  return luminance > 0.5 ? '#000000' : '#FFFFFF';
 }
 
 export function getRandomAvatarColor(
   name: string,
-  avatarColor?: { bg: string; color: string }
+  avatarColor?: { bg: string; color: string },
+  swapColors: boolean = false,
+  autoTextColor: boolean = false
 ) {
   const colorArray = AVATAR_COLORS ?? [];
-  if (avatarColor) return avatarColor;
+  if (avatarColor) {
+    let result = avatarColor;
+    if (swapColors) {
+      result = { bg: avatarColor.color, color: avatarColor.bg };
+    }
+    if (autoTextColor) {
+      result = { bg: result.bg, color: getContrastingTextColor(result.bg) };
+    }
+    return result;
+  }
   if (
     colorArray.length > 0 &&
     typeof name === 'string' &&
@@ -42,7 +76,16 @@ export function getRandomAvatarColor(
     if (!firstChar) return { bg: '#ccc', color: '#222' };
     const charCode = firstChar.charCodeAt(0);
     const idx = charCode % colorArray.length;
-    return colorArray[idx] ?? { bg: '#ccc', color: '#222' };
+    const selectedColor = colorArray[idx] ?? { bg: '#ccc', color: '#222' };
+
+    let result = selectedColor;
+    if (swapColors) {
+      result = { bg: selectedColor.color, color: selectedColor.bg };
+    }
+    if (autoTextColor) {
+      result = { bg: result.bg, color: getContrastingTextColor(result.bg) };
+    }
+    return result;
   }
   return { bg: '#ccc', color: '#222' };
 }
@@ -56,12 +99,14 @@ export const Avatar: React.FC<AvatarProps> = ({
   className = '',
   avatarColor,
   style = {},
+  swapColors = false,
+  autoTextColor = false,
 }) => {
   const [imgError, setImgError] = useState(false);
   const [placeholderError, setPlaceholderError] = useState(false);
   const color = useMemo(
-    () => getRandomAvatarColor(name, avatarColor),
-    [name, avatarColor]
+    () => getRandomAvatarColor(name, avatarColor, swapColors, autoTextColor),
+    [name, avatarColor, swapColors, autoTextColor]
   );
 
   const getInitials = (name: string) => {

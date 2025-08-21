@@ -281,7 +281,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
         )} */}
 
         {/* Photo Upload */}
-        <div className='flex items-start gap-4 shrink-0'>
+        <div className='flex sm:flex-row flex-col items-start gap-4 shrink-0'>
           <PhotoUploadField
             photo={photo}
             onPhotoChange={handlePhotoChange}
@@ -293,7 +293,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
             cardHeight='h-[120px] py-3'
             className='min-w-[120px]'
           />
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 w-full'>
             <div className='space-y-1 md:space-y-2'>
               <Label htmlFor='tool-name' className='field-label'>
                 {TOOL_MESSAGES.TOOL_NAME_LABEL}
@@ -341,7 +341,7 @@ const ToolForm: React.FC<ToolFormProps> = ({
               />
               <FormErrorMessage message={errors.brandName?.message || ''} />
             </div>
-            <div className='col-span-full'>
+            <div className='sm:col-span-full'>
               <Controller
                 name='services'
                 control={control}

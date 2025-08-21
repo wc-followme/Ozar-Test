@@ -38,6 +38,7 @@ export const APP_CONFIG = {
     LOGO: '/images/logo.svg',
     PROFILE_BLOCK_BG: '/images/profile-block-bg.png',
     PROJECT_PLACEHOLDER: '/images/project-placeholder.png',
+    USER_PLACEHOLDER: '/images/user-img-placeholder.png',
   },
 } as const;
 
@@ -53,6 +54,7 @@ export const ROUTES = {
   TOOLS_MANAGEMENT: '/tools-management',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
+  USER_PROFILE: '/user-management/profile',
   PORTAL_USERS: '/portal-users',
   ROLE_MANAGEMENT: '/role-management',
   CREATE_ROLE: '/role-management/create-role',
@@ -63,6 +65,7 @@ export const ROUTES = {
   TRADE_MANAGEMENT: '/trade-management',
   COMPANY_PROFILE: '/company-profile',
   PUBLIC_COMPANY_PROFILE: '/public-company-profile',
+  PUBLIC_USER_PROFILE: '/public-user-profile',
   EDIT_COMPANY_PROFILE: '/company-profile/edit-profile',
   FIVE_BOX_SYSTEM: '/company-profile/five-box-system',
   FIVE_BOX_GENERAL_INFO: '/company-profile/five-box-system/general-information',
@@ -434,6 +437,37 @@ export const JOB_MESSAGES = {
 export const JOB_PRIVACY = {
   PRIVATE: 'PRIVATE',
   PUBLIC: 'PUBLIC',
+} as const;
+
+// Profile Top Block Constants
+export const PROFILE_DEFAULTS = {
+  COMPANY_NAME: 'Envision Construction',
+  TAGLINE: 'Construction Company',
+  RATING: 0,
+  REVIEW_COUNT: 0,
+  IS_REVIEWED: false,
+  IS_USER_PROFILE: false,
+  SHOW_REVIEW_BUTTON: true,
+  SHOW_EDIT_BUTTON: true,
+  SHOW_REQUEST_QUOTE_BUTTON: true,
+  SHOW_SHARE_BUTTON: true,
+  SHOW_CHANGE_COVER_BUTTON: true,
+  SHOW_FIVE_BOX_SYSTEM_BUTTON: true,
+  // Links - Using route constants
+  EDIT_PROFILE_LINK: ROUTES.EDIT_COMPANY_PROFILE,
+  FIVE_BOX_SYSTEM_LINK: ROUTES.FIVE_BOX_SYSTEM,
+  COMPANY_PROFILE_LINK: ROUTES.COMPANY_PROFILE,
+} as const;
+
+// Profile Button Labels
+export const PROFILE_BUTTON_LABELS = {
+  WRITE_REVIEW: 'Write a Review',
+  FIVE_BOX_SYSTEM: '5-box system',
+  SHARE: 'Share',
+  EDIT_PROFILE: 'Edit Profile',
+  REQUEST_QUOTE: 'Request Quote',
+  ADD_TO_NETWORK: 'Add to Network',
+  CHANGE_COVER: 'Change Cover',
 } as const;
 
 // Future constants can be added here

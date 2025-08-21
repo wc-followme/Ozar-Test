@@ -87,6 +87,11 @@ export default function AddCompanyPage() {
     }
   };
 
+  const handleDeletePhoto = () => {
+    setPhotoFile(null);
+    setFileKey('');
+  };
+
   const handleCreateCompany = async (data: CompanyCreateFormData) => {
     setFormLoading(true);
     try {
@@ -186,6 +191,7 @@ export default function AddCompanyPage() {
               <PhotoUploadField
                 photo={photoFile}
                 onPhotoChange={handlePhotoChange}
+                onDeletePhoto={handleDeletePhoto}
                 label={COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
                 text={COMPANY_MESSAGES.UPLOAD_PHOTO_TEXT}
                 cardHeight='h-[265px]'

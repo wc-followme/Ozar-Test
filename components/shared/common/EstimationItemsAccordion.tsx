@@ -44,7 +44,7 @@ export default function EstimationItemsAccordion({
   };
 
   return (
-    <Card className='p-4 rounded-[10px] bg-[var(--card-background)] border-none'>
+    <Card className='p-4 rounded-[10px] bg-[var(--card-background)] border-none w-full min-w-max'>
       <Accordion
         type='single'
         collapsible

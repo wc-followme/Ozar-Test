@@ -17,6 +17,31 @@ interface TemplateCardProps {
   onToggle: () => void;
 }
 
+// Color array from Avatar component for consistent color scheme
+const CATEGORY_COLORS = [
+  { bg: '#1A57BF1A', color: '#1A57BF' }, // Blue
+  { bg: '#34AD4426', color: '#34AD44' }, // Green
+  { bg: '#00A8BF26', color: '#00A8BF' }, // Teal
+  { bg: '#90C91D26', color: '#90C91D' }, // Lime
+  { bg: '#EBB40226', color: '#EBB402' }, // Yellow
+  { bg: '#D4323226', color: '#D43232' }, // Red
+  { bg: '#FF6B3526', color: '#FF6B35' }, // Orange
+];
+
+// Function to get background color based on category text
+const getCategoryBackgroundColor = (category: string): string => {
+  const categoryLower = category.toLowerCase();
+
+  // Get the first character of the category
+  const firstChar = categoryLower.length > 0 ? categoryLower[0] : '';
+  if (!firstChar || CATEGORY_COLORS.length === 0) return '#1A57BF1A';
+
+  // Use the same logic as Avatar component
+  const charCode = firstChar.charCodeAt(0);
+  const idx = charCode % CATEGORY_COLORS.length;
+  return CATEGORY_COLORS[idx]?.bg || '#1A57BF1A';
+};
+
 export function TemplateCard({
   template,
   isSelected,
@@ -66,10 +91,7 @@ export function TemplateCard({
         <div
           className='inline-block px-3 py-2 rounded-full text-sm text-[var(--text-dark)] font-medium w-full text-center'
           style={{
-            backgroundColor:
-              template.category === 'Interior'
-                ? 'bg-blueicon-100'
-                : 'bg-greenbrand-100',
+            backgroundColor: getCategoryBackgroundColor(template.category),
           }}
         >
           {template.category}
