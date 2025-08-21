@@ -441,7 +441,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_82px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -457,7 +457,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -473,7 +473,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
 
@@ -489,7 +489,7 @@ export default function ToolDetailPage() {
                   borderColor: 'border-[var(--border-dark)]',
                   hoverColor: 'hover:bg-[var(--background-light)]',
                 }}
-                className='lg:max-w-[calc(100vw_-_192px)] max-w-[calc(100vw_-_114px)]'
+                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
               />
             </TabsContent>
           </Tabs>
@@ -525,7 +525,7 @@ export default function ToolDetailPage() {
                 <Button
                   variant='outline'
                   onClick={() => setSideSheetOpen(false)}
-                  className='btn-secondary'
+                  className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                 >
                   Cancel
                 </Button>
@@ -534,7 +534,7 @@ export default function ToolDetailPage() {
                     console.log('Add more tools:', qrToolIds);
                     setSideSheetOpen(false);
                   }}
-                  className='btn-primary'
+                  className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
                 >
                   Add
                 </Button>
