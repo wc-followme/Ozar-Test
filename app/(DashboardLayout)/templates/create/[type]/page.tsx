@@ -7,11 +7,9 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import { DisclaimerForm } from '@/components/shared/forms/DisclaimerForm';
 import { EstimationTemplateForm } from '@/components/shared/forms/EstimationTemplateForm';
 import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
+import ServiceOptionsBox from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-
 import { use, useState } from 'react';
 import { TemplateData } from '../../template-types';
 
@@ -127,20 +125,20 @@ export default function CreateTemplatePage({
             material: 'N/A',
           },
         ];
-      case 'option-bid':
+      case 'service-option':
         return [
           {
             id: '1',
-            type: 'option-bid',
-            templateName: 'Basic Option Bid',
+            type: 'service-option',
+            templateName: 'Basic Service Options',
             createdDate: '30/12/2024',
             service: 'General',
             material: 'Standard',
           },
           {
             id: '2',
-            type: 'option-bid',
-            templateName: 'Premium Option Bid',
+            type: 'service-option',
+            templateName: 'Premium Service Options',
             createdDate: '29/12/2024',
             service: 'Premium',
             material: 'High-end',
@@ -178,8 +176,8 @@ export default function CreateTemplatePage({
     switch (type) {
       case 'estimate':
         return 'Estimate Template';
-      case 'option-bid':
-        return 'Option Bid Template';
+      case 'service-option':
+        return 'Service Options Template';
       case 'tools':
         return 'Tools Template';
       case 'disclaimers':
@@ -236,67 +234,88 @@ export default function CreateTemplatePage({
           </div>
         );
 
-      case 'option-bid':
+      case 'service-option':
         return (
-          <>
-            <div className='space-y-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='templateName' className='field-label'>
-                  Template Name
-                </Label>
-                <Input
-                  id='templateName'
-                  value={formData.templateName}
-                  onChange={e =>
-                    handleInputChange('templateName', e.target.value)
-                  }
-                  placeholder='Enter template name'
-                  className='input-field'
-                />
-              </div>
-              <div className='space-y-2'>
-                <SelectField
-                  label='Service'
-                  value={formData.service}
-                  onValueChange={value => handleInputChange('service', value)}
-                  options={[
-                    { value: 'painting', label: 'Painting' },
-                    { value: 'plumbing', label: 'Plumbing' },
-                    { value: 'electrical', label: 'Electrical' },
-                    { value: 'carpentry', label: 'Carpentry' },
-                  ]}
-                  placeholder='Select service'
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='material' className='field-label'>
-                  Material
-                </Label>
-                <Input
-                  id='material'
-                  value={formData.material}
-                  onChange={e => handleInputChange('material', e.target.value)}
-                  placeholder='Enter material details'
-                  className='input-field'
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='description' className='field-label'>
-                  Description
-                </Label>
-                <Textarea
-                  id='description'
-                  value={formData.description}
-                  onChange={e =>
-                    handleInputChange('description', e.target.value)
-                  }
-                  placeholder='Enter template description'
-                  rows={4}
-                  className='input-field'
-                />
-              </div>
+          <div className='w-full'>
+            {/* Header with Breadcrumb and Add From Templates Button */}
+            <div className='flex items-end sm:items-center justify-between mb-6 sm:flex-row flex-col gap-3'>
+              <Breadcrumb
+                items={[
+                  { name: 'Templates', href: '/templates' },
+                  { name: 'Service Options Template' },
+                ]}
+              />
+              <Button
+                className='btn-primary'
+                onClick={() => setIsTemplateSheetOpen(true)}
+              >
+                Add From Templates
+              </Button>
             </div>
-          </>
+
+            {/* Template Meta Fields */}
+
+            {/* Template Details Section */}
+            <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
+              <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+                <div className='space-y-2 col-span-2'>
+                  <label className='field-label'>Template Name</label>
+                  <Input
+                    placeholder='Enter name'
+                    value={formData.templateName}
+                    onChange={e =>
+                      handleInputChange('templateName', e.target.value)
+                    }
+                    className='input-field'
+                  />
+                </div>
+
+                <div className='space-y-2'>
+                  <label className='field-label'>Category</label>
+                  <SelectField
+                    value={formData.category}
+                    onValueChange={val => handleInputChange('category', val)}
+                    options={[
+                      { value: 'Interior', label: 'Interior' },
+                      { value: 'Exterior', label: 'Exterior' },
+                      { value: 'Plumbing', label: 'Plumbing' },
+                      { value: 'Electrical', label: 'Electrical' },
+                    ]}
+                    placeholder='Select Category'
+                  />
+                </div>
+
+                <div className='space-y-2'>
+                  <label className='field-label'>Property Type</label>
+                  <SelectField
+                    value={formData.propertyType}
+                    onValueChange={val =>
+                      handleInputChange('propertyType', val)
+                    }
+                    options={[
+                      { value: 'Residential', label: 'Residential' },
+                      { value: 'Commercial', label: 'Commercial' },
+                      { value: 'Industrial', label: 'Industrial' },
+                    ]}
+                    placeholder='Select Type'
+                  />
+                </div>
+              </div>
+              <ServiceOptionsBox
+                _onClose={() => {}}
+                templateId='new-service-option-template'
+                onSaveSuccess={() => {
+                  console.log('Service options template saved successfully');
+                }}
+                onSaveError={(error: any) => {
+                  console.error(
+                    'Failed to save service options template:',
+                    error
+                  );
+                }}
+              />
+            </div>
+          </div>
         );
 
       case 'tools':

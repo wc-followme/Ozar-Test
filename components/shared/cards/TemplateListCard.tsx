@@ -136,7 +136,7 @@ export function TemplateListCard({
   const renderContent = () => {
     switch (template.type) {
       case 'disclaimer':
-      case 'option-bid':
+      case 'service-option':
         return (
           <>
             <div className='flex justify-between items-start'>
