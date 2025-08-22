@@ -108,7 +108,9 @@ export const BoxCard: React.FC<BoxCardProps> = ({
 
   return (
     <div
-      className='bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover p-6 transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+      className={`bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover p-6 transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 ${
+        onClick ? 'cursor-pointer' : 'cursor-default'
+      }`}
       onClick={handleCardClick}
     >
       {/* Header with Digit Circle and Menu */}

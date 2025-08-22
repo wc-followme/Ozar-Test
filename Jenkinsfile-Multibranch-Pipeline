@@ -12,7 +12,7 @@ pipeline {
     stage('QA Branch Deploy') {
       when {
         expression {
-          return env.BRANCH_NAME == 'qa' || env.GIT_BRANCH == 'origin/qa'
+          return env.BRANCH_NAME == 'qa' || env.GIT_BRANCH == 'origin/qa' || env.CHANGE_TARGET == 'qa'
         }
       }
       stages {
@@ -47,7 +47,7 @@ pipeline {
     stage('Master Branch Deploy') {
       when {
         expression {
-          return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'origin/master'
+          return env.BRANCH_NAME == 'master' || env.GIT_BRANCH == 'origin/master' || env.CHANGE_TARGET == 'master'
         }
       }
       stages {

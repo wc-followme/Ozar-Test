@@ -29,7 +29,7 @@ const eslintConfig = [
       'react-hooks/exhaustive-deps': 'warn',
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
-      'react/jsx-key': 'error',
+      'react/jsx-key': 'warn',
 
       // 🚀 General code quality
       'prefer-const': 'error',

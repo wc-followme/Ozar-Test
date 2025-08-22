@@ -1,11 +1,8 @@
 'use client';
 
 import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
-import EstimationItemsAccordion from '@/components/shared/common/EstimationItemsAccordion';
 import SelectField from '@/components/shared/common/SelectField';
-import ServiceOptionListCard from '@/components/shared/common/ServiceOptionListCard';
-import SideSheet from '@/components/shared/common/SideSheet';
-import ToolsAccordion from '@/components/shared/common/ToolsAccordion';
+import ServiceOptionAccordion from '@/components/shared/common/ServiceOptionAccordion';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,9 +16,8 @@ import {
 } from '@/lib/estimation-calculations';
 import { useEffect, useState } from 'react';
 import { EstimationItem, Service, Tool } from './estimation-types';
-import ServiceOptionForm from './ServiceOptionForm';
 
-interface EstimationServiceFormProps {
+interface ServiceOptionServiceFormProps {
   service: Service;
   onServiceUpdate?: (updatedService: Service) => void;
   onAddMaterial?: () => void;
@@ -45,47 +41,86 @@ interface EstimationServiceFormProps {
   tradeId?: string | undefined; // Add trade ID prop
 }
 
-export default function EstimationServiceForm({
+export default function ServiceOptionServiceForm({
   service,
   onServiceUpdate,
-  onAddMaterial,
-  onAddFinish,
-  onMaterialUpdate,
-  onMaterialDelete,
-  onFinishUpdate,
-  onFinishDelete,
+  onAddMaterial: _onAddMaterial,
+  onAddFinish: _onAddFinish,
+  onMaterialUpdate: _onMaterialUpdate,
+  onMaterialDelete: _onMaterialDelete,
+  onFinishUpdate: _onFinishUpdate,
+  onFinishDelete: _onFinishDelete,
   onServiceNameChange,
   onMaterialAdd,
   onFinishAdd,
-  tools = [],
-  onAddTool,
-  onRemoveTool,
-  onReplaceTools,
-  roomName = 'Room',
-  tradeName = 'Trade',
+  tools: _tools = [],
+  onAddTool: _onAddTool,
+  onRemoveTool: _onRemoveTool,
+  onReplaceTools: _onReplaceTools,
+  roomName: _roomName = 'Room',
+  tradeName: _tradeName = 'Trade',
   tradeId, // Add trade ID prop
-}: EstimationServiceFormProps) {
+}: ServiceOptionServiceFormProps) {
   const [serviceOptions, setServiceOptions] = useState<
     Array<{ value: string; label: string }>
   >([]);
   const [loading, setLoading] = useState(false);
-  const [isServiceOptionSheetOpen, setIsServiceOptionSheetOpen] =
-    useState(false);
-  const [selectedServiceOption, setSelectedServiceOption] = useState<any>(null);
 
-  // Sample service options data
-  const sampleServiceOptions = [
-    {
-      id: '1',
-      name: 'Basic Service Package',
-      tradeTotal: 1500.0,
-    },
-    {
-      id: '2',
-      name: 'Premium Service Package',
-      tradeTotal: 2500.0,
-    },
-  ];
+  // Local materials/finishes state for Service Options template
+  const [materials, setMaterials] = useState<EstimationItem[]>(
+    service.materials || []
+  );
+  const [finishes, setFinishes] = useState<EstimationItem[]>(
+    service.finishes || []
+  );
+
+  // Seed defaults (as per screenshot) if empty
+  useEffect(() => {
+    if (materials.length === 0) {
+      const seed = (
+        name: string,
+        description: string,
+        qty: number,
+        unit: string,
+        rate: number
+      ): EstimationItem => ({
+        id: `mat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        name,
+        variant: 'Standard',
+        qty,
+        unit,
+        description,
+        rate,
+        markup: 0,
+        lineTotal: qty * rate,
+      });
+
+      setMaterials([
+        seed(
+          'Shut off valve',
+          'Inline shut-off valve for isolation',
+          4,
+          'Sq. Feet',
+          25
+        ),
+        seed('Supply line', 'Reinforced water supply line', 4, 'Sq. Feet', 20),
+        seed(
+          'Drain pipe',
+          'Durable PVC or ABS pipe used for drainage',
+          2,
+          'Sq. Feet',
+          25
+        ),
+        seed(
+          'Exhaust',
+          'High-efficiency ceiling or wall exhaust',
+          1,
+          'Sq. Feet',
+          45
+        ),
+      ]);
+    }
+  }, [materials.length]);
 
   // Calculate current service values using backend logic
   const calculateCurrentServiceValues = () => {
@@ -183,9 +218,9 @@ export default function EstimationServiceForm({
     <div className='space-y-6 w-full min-w-fit'>
       {/* Service Details Card */}
       <Card className='p-6 rounded-[10px] bg-[var(--card-background)] border-none min-w-max'>
-        <div className='flex gap-4 items-start flex-wrap min-w-fit'>
+        <div className='flex gap-6 items-start flex-wrap min-w-fit'>
           <div className='flex-1 flex items-center gap-4 min-w-0 gap-y-4'>
-            <div className='flex-1 space-y-2 min-w-[160px] overflow-hidden'>
+            <div className='flex-1 space-y-2 min-w-[280px] overflow-hidden'>
               <Label className='field-label'>Service</Label>
               <SelectField
                 value={(() => {
@@ -235,7 +270,7 @@ export default function EstimationServiceForm({
                 disabled={loading}
               />
             </div>
-            <div className='space-y-2 w-[80px] min-w-[80px] overflow-hidden'>
+            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
               <Label className='field-label'>Qty</Label>
               <Input
                 type='text'
@@ -278,7 +313,7 @@ export default function EstimationServiceForm({
                 className='input-field'
               />
             </div>
-            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
+            <div className='space-y-2 w-[160px] min-w-[160px] overflow-hidden'>
               <Label className='field-label'>Rate</Label>
               <Input
                 type='text'
@@ -299,7 +334,7 @@ export default function EstimationServiceForm({
           </div>
           <div className='pt-7 ml-auto flex-shrink-0 min-w-fit'>
             <div className='grid grid-cols-3 min-w-fit'>
-              <div className='px-4 min-w-[100px]'>
+              <div className='px-4 min-w-[160px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Line Total
                 </Label>
@@ -307,7 +342,7 @@ export default function EstimationServiceForm({
                   {formatCurrency(currentValues.lineTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-4 min-w-[100px]'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Service Total
                 </Label>
@@ -315,7 +350,7 @@ export default function EstimationServiceForm({
                   {formatCurrency(currentValues.serviceTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] pl-4 min-w-[100px]'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Trade Total
                 </Label>
@@ -342,7 +377,7 @@ export default function EstimationServiceForm({
             className='input-field'
           />
         </div>
-        <div className='mt-4'>
+        {/* <div className='mt-4'>
           <div className='flex items-center justify-between mb-4 pb-4 border-b border-[var(--border-dark)]'>
             <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
               Service Options{' '}
@@ -352,45 +387,61 @@ export default function EstimationServiceForm({
             </h3>
           </div>
           <div className='space-y-2'>
-            <ServiceOptionListCard
-              serviceOptions={sampleServiceOptions}
-              onServiceOptionSelect={option => {
-                setSelectedServiceOption(option);
-                setIsServiceOptionSheetOpen(true);
-              }}
-              formatCurrency={formatCurrency}
-            />
+            {service.serviceOptions.map(option => (
+              <div
+                key={option.id}
+                className='flex items-center justify-between p-4 border border-[var(--border-dark)] rounded-[10px] hover:bg-[var(--white-background)] cursor-pointer transition-colors'
+              >
+                <span className='font-normal text-[var(--text-dark)] text-base'>
+                  {option.name}
+                </span>
+                <div className='flex items-center space-x-2'>
+                  <span className='text-sm font-semibold text-[var(--text-dark)]'>
+                    Trade Total{' '}
+                    <span className='text-[var(--primary)]'>
+                      {formatCurrency(option.tradeTotal)}
+                    </span>
+                  </span>
+                  <span className='text-[var(--text-secondary)]'>
+                    <ArrowRight2 size={16} color='var(--text-dark)' />
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        </div> */}
       </Card>
 
       {/* Service Options */}
 
       {/* Materials Accordion */}
-      <EstimationItemsAccordion
+      <ServiceOptionAccordion
         title='Material'
-        items={service.materials}
+        items={materials}
         addButtonText='Material'
         onAddItem={() => {
-          if (onMaterialAdd) {
-            const newMaterial: EstimationItem = {
-              id: `material-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              name: 'New Material',
-              variant: 'Standard',
-              qty: 1,
-              unit: 'INCH',
-              description: 'New material description',
-              rate: 0.0,
-              markup: 0.0,
-              lineTotal: 0.0,
-            };
-            onMaterialAdd(newMaterial);
-          } else if (onAddMaterial) {
-            onAddMaterial();
-          }
+          const newMaterial: EstimationItem = {
+            id: `material-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            name: 'New Material',
+            variant: 'Standard',
+            qty: 1,
+            unit: 'UNIT',
+            description: 'New material description',
+            rate: 0.0,
+            markup: 0.0,
+            lineTotal: 0.0,
+          };
+          setMaterials(prev => [...prev, newMaterial]);
+          onMaterialAdd?.(newMaterial);
         }}
-        onItemUpdate={onMaterialUpdate || (() => {})}
-        onItemDelete={onMaterialDelete || (() => {})}
+        onItemUpdate={(id, updated) => {
+          setMaterials(prev => prev.map(m => (m.id === id ? updated : m)));
+          _onMaterialUpdate?.(id, updated);
+        }}
+        onItemDelete={id => {
+          setMaterials(prev => prev.filter(m => m.id !== id));
+          _onMaterialDelete?.(id);
+        }}
         defaultExpanded={true}
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
@@ -398,72 +449,38 @@ export default function EstimationServiceForm({
       />
 
       {/* Finishes Accordion */}
-      <EstimationItemsAccordion
+      <ServiceOptionAccordion
         title='Finishes'
-        items={service.finishes}
+        items={finishes}
         addButtonText='Finishes'
         onAddItem={() => {
-          if (onFinishAdd) {
-            const newFinish: EstimationItem = {
-              id: `finish-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-              name: 'New Finish',
-              variant: 'Standard',
-              qty: 1,
-              unit: 'INCH',
-              description: 'New finish description',
-              rate: 0.0,
-              markup: 0.0,
-              lineTotal: 0.0,
-            };
-            onFinishAdd(newFinish);
-          } else if (onAddFinish) {
-            onAddFinish();
-          }
+          const newFinish: EstimationItem = {
+            id: `finish-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            name: 'New Finish',
+            variant: 'Standard',
+            qty: 1,
+            unit: 'UNIT',
+            description: 'New finish description',
+            rate: 0.0,
+            markup: 0.0,
+            lineTotal: 0.0,
+          };
+          setFinishes(prev => [...prev, newFinish]);
+          onFinishAdd?.(newFinish);
         }}
-        onItemUpdate={onFinishUpdate || (() => {})}
-        onItemDelete={onFinishDelete || (() => {})}
+        onItemUpdate={(id, updated) => {
+          setFinishes(prev => prev.map(f => (f.id === id ? updated : f)));
+          _onFinishUpdate?.(id, updated);
+        }}
+        onItemDelete={id => {
+          setFinishes(prev => prev.filter(f => f.id !== id));
+          _onFinishDelete?.(id);
+        }}
         defaultExpanded={true}
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
       />
-
-      {/* Tools Accordion */}
-      <ToolsAccordion
-        title='Tools'
-        tools={tools}
-        onAddTool={onAddTool || (() => {})}
-        onRemoveTool={onRemoveTool || (() => {})}
-        onReplaceTools={onReplaceTools || (() => {})}
-        defaultExpanded={true}
-        roomName={roomName}
-        tradeName={tradeName}
-        serviceName={service.name}
-        serviceId={
-          service.name ? service.uuid || service.id || undefined : undefined
-        }
-      />
-
-      {/* Service Options SideSheet */}
-      <SideSheet
-        open={isServiceOptionSheetOpen}
-        onOpenChange={setIsServiceOptionSheetOpen}
-        title='Service Option'
-        size='1200px'
-      >
-        <ServiceOptionForm
-          serviceOption={selectedServiceOption}
-          onClose={() => setIsServiceOptionSheetOpen(false)}
-          onApprove={() => {
-            console.log('Service option approved:', selectedServiceOption);
-            setIsServiceOptionSheetOpen(false);
-          }}
-          onDecline={() => {
-            console.log('Service option declined:', selectedServiceOption);
-            setIsServiceOptionSheetOpen(false);
-          }}
-        />
-      </SideSheet>
     </div>
   );
 }
