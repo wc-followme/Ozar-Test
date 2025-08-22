@@ -133,7 +133,7 @@ export const ReturnForm: React.FC<ReturnFormProps> = ({
             placeholder='Select'
           />
         </div>
-        <div className='space-y-2 col-span-2'>
+        <div className='space-y-2 md:-span-2'>
           <label className='field-label'>Returned Date</label>
           <Popover open={returnedDateOpen} onOpenChange={setReturnedDateOpen}>
             <PopoverTrigger asChild>
@@ -237,10 +237,17 @@ export const ReturnForm: React.FC<ReturnFormProps> = ({
       </div>
 
       <div className='flex gap-3 items-center pt-2'>
-        <Button variant='outline' onClick={onCancel} className='btn-secondary'>
+        <Button
+          variant='outline'
+          onClick={onCancel}
+          className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+        >
           Cancel
         </Button>
-        <Button onClick={() => onSubmit(values)} className='btn-primary'>
+        <Button
+          onClick={() => onSubmit(values)}
+          className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+        >
           Return
         </Button>
       </div>
