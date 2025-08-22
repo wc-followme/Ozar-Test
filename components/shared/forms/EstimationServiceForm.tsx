@@ -449,7 +449,7 @@ export default function EstimationServiceForm({
         open={isServiceOptionSheetOpen}
         onOpenChange={setIsServiceOptionSheetOpen}
         title='Service Option'
-        size='800px'
+        size='1200px'
       >
         <ServiceOptionForm
           serviceOption={selectedServiceOption}

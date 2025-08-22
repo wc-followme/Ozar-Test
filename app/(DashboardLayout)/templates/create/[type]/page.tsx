@@ -314,6 +314,22 @@ export default function CreateTemplatePage({
                   );
                 }}
               />
+              <div className='mt-6'>
+                <div className='flex justify-between items-center'>
+                  <div className='flex items-center gap-4'>
+                    <h3 className='text-base font-semibold text-[var(--text-dark)]'>
+                      Project Total:
+                    </h3>
+                    <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
+                    <span className='text-xl font-bold text-[var(--primary)]'>
+                      $2000
+                    </span>
+                  </div>
+                  <div className='flex gap-3'>
+                    <Button className='btn-primary'>Save Template</Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );

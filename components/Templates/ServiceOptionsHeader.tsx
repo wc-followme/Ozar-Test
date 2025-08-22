@@ -1,7 +1,8 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { ShieldTick, Trash } from 'iconsax-react';
+import { Trash } from 'iconsax-react';
+import ShieldPlusIcon from '../icons/ShieldPlusIcon';
 import { ServiceCategory, ServiceOption } from './service-options-types';
 
 interface ServiceOptionsHeaderProps {
@@ -57,11 +58,7 @@ export default function ServiceOptionsHeader({
               console.log('Shield action clicked');
             }}
           >
-            <ShieldTick
-              className='!h-5 !w-5'
-              size={24}
-              color='var(--text-dark)'
-            />
+            <ShieldPlusIcon className='!h-5 !w-5' />
           </Button>
           <Button
             variant='ghost'
