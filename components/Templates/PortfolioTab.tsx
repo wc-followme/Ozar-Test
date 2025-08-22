@@ -2,6 +2,7 @@
 
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import MediaPreviewModal from '@/components/shared/common/MediaPreviewModal';
 import { PortfolioBox } from '@/components/shared/common/PortfolioBox';
 import SideSheet from '@/components/shared/common/SideSheet';
 import {
@@ -21,6 +22,71 @@ import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import { extractApiErrorMessage } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+
+// Default media items for portfolio projects - using auth images and various video examples
+// This data is passed to MediaPreviewModal as props when no project images are available
+const DEFAULT_PORTFOLIO_MEDIA_ITEMS = [
+  {
+    id: '1',
+    type: 'image',
+    src: '/images/auth/login-slider-01.webp',
+    thumbnail: '/images/auth/login-slider-01.webp',
+  },
+  {
+    id: '2',
+    type: 'image',
+    src: '/images/auth/slider-02.webp',
+    thumbnail: '/images/auth/slider-02.webp',
+  },
+  {
+    id: '3',
+    type: 'video',
+    src: '/videos/sample-video.mp4',
+    thumbnail: '/images/auth/slider-03.webp',
+  },
+  {
+    id: '4',
+    type: 'image',
+    src: '/images/auth/slider-04.webp',
+    thumbnail: '/images/auth/slider-04.webp',
+  },
+  {
+    id: '5',
+    type: 'video',
+    src: '/videos/sample-video.webm',
+    thumbnail: '/images/auth/slider-05.webp',
+  },
+  {
+    id: '6',
+    type: 'image',
+    src: '/images/auth/login-slider-01.webp',
+    thumbnail: '/images/auth/login-slider-01.webp',
+  },
+  {
+    id: '7',
+    type: 'image',
+    src: '/images/auth/slider-02.webp',
+    thumbnail: '/images/auth/slider-02.webp',
+  },
+  {
+    id: '8',
+    type: 'video',
+    src: '/videos/sample-video.mov',
+    thumbnail: '/images/auth/slider-03.webp',
+  },
+  {
+    id: '9',
+    type: 'image',
+    src: '/images/auth/slider-04.webp',
+    thumbnail: '/images/auth/slider-04.webp',
+  },
+  {
+    id: '10',
+    type: 'video',
+    src: '/images/recording.webm',
+    thumbnail: '/images/auth/slider-05.webp',
+  },
+];
 
 export const PortfolioTab = ({
   companyId,
@@ -44,6 +110,10 @@ export const PortfolioTab = ({
     PortfolioProject[]
   >([]);
   const [loading, setLoading] = useState(true);
+  const [previewProject, setPreviewProject] = useState<PortfolioProject | null>(
+    null
+  );
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -336,6 +406,19 @@ export const PortfolioTab = ({
     setEditingProject(null);
   };
 
+  const handleProjectPreview = (id: string) => {
+    const project = portfolioProjects.find(p => p.uuid === id);
+    if (project) {
+      setPreviewProject(project);
+      setIsPreviewModalOpen(true);
+    }
+  };
+
+  const handleClosePreview = () => {
+    setIsPreviewModalOpen(false);
+    setPreviewProject(null);
+  };
+
   return (
     <div className='space-y-6 w-full'>
       {canEditCompany && (
@@ -403,6 +486,7 @@ export const PortfolioTab = ({
                       onEdit={canEditCompany ? handleEdit : undefined}
                       onDelete={canEditCompany ? handleDelete : undefined}
                       showEditMenu={canEditCompany}
+                      onClick={handleProjectPreview}
                     />
                   );
                 })}
@@ -447,6 +531,16 @@ export const PortfolioTab = ({
           initialData={editingProject}
         />
       </SideSheet>
+
+      {/* Media Preview Modal */}
+      <MediaPreviewModal
+        open={isPreviewModalOpen}
+        onOpenChange={setIsPreviewModalOpen}
+        projectName={
+          previewProject?.name || previewProject?.title || 'Project Name'
+        }
+        mediaItems={DEFAULT_PORTFOLIO_MEDIA_ITEMS}
+      />
     </div>
   );
 };

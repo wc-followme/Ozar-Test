@@ -15,6 +15,7 @@ interface PortfolioBoxProps {
   onEdit?: ((id: string) => void) | undefined;
   onDelete?: ((id: string) => void) | undefined;
   showEditMenu?: boolean;
+  onClick?: (id: string) => void;
 }
 
 export const PortfolioBox = ({
@@ -26,6 +27,7 @@ export const PortfolioBox = ({
   onEdit,
   onDelete,
   showEditMenu = true,
+  onClick,
 }: PortfolioBoxProps) => {
   const handleMenuAction = (action: string) => {
     switch (action) {
@@ -52,7 +54,10 @@ export const PortfolioBox = ({
   ];
 
   return (
-    <div className='bg-[var(--bg-dark)] rounded-2xl border-2 border-[var(--border-dark)] overflow-hidden hover:shadow-md transition-shadow'>
+    <div
+      className={`bg-[var(--bg-dark)] rounded-2xl border-2 border-[var(--border-dark)] overflow-hidden hover:shadow-md transition-shadow ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={() => onClick?.(id)}
+    >
       {/* Image Section */}
       <div className='aspect-[298/296] flex items-center justify-center relative group bg-[var(--background)]'>
         {image ? (
