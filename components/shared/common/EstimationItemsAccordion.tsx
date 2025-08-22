@@ -21,6 +21,11 @@ interface EstimationItemsAccordionProps {
   onItemDelete: (itemId: string) => void;
   defaultExpanded?: boolean;
   serviceId?: string | undefined; // Add service ID prop for fetching materials
+  useFixedWidths?: boolean; // New prop to control fixed widths in EstimationItemForm
+  containerWidthClass?: string; // New prop to control container width class
+  cardWidthClass?: string; // New prop to control card width class
+  borderClass?: string; // New prop to control border styling
+  showAddButton?: boolean; // New prop to control add button visibility
 }
 
 export default function EstimationItemsAccordion({
@@ -32,6 +37,11 @@ export default function EstimationItemsAccordion({
   onItemDelete,
   defaultExpanded = true,
   serviceId, // Add service ID prop
+  useFixedWidths = true, // Default to true to maintain current behavior
+  containerWidthClass = 'min-w-fit', // Default to just min-w-fit
+  cardWidthClass = 'w-full min-w-max', // Default to w-full min-w-max
+  borderClass = 'border-none', // Default to border-none
+  showAddButton = true, // Default to true to maintain current behavior
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -44,7 +54,9 @@ export default function EstimationItemsAccordion({
   };
 
   return (
-    <Card className='p-4 rounded-[10px] bg-[var(--card-background)] border-none w-full min-w-max'>
+    <Card
+      className={`p-4 rounded-[10px] bg-[var(--card-background)] ${borderClass} ${cardWidthClass}`}
+    >
       <Accordion
         type='single'
         collapsible
@@ -66,16 +78,22 @@ export default function EstimationItemsAccordion({
                   {title} - {items.length}
                 </h3>
               </div>
-              <div
-                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
-                onClick={e => {
-                  e.stopPropagation();
-                  onAddItem();
-                }}
-              >
-                <Add size='20' color='var(--secondary)' className='!h-5 !w-5' />
-                {addButtonText}
-              </div>
+              {showAddButton && (
+                <div
+                  className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                  onClick={e => {
+                    e.stopPropagation();
+                    onAddItem();
+                  }}
+                >
+                  <Add
+                    size='20'
+                    color='var(--secondary)'
+                    className='!h-5 !w-5'
+                  />
+                  {addButtonText}
+                </div>
+              )}
             </div>
           </AccordionTrigger>
           <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
@@ -89,6 +107,8 @@ export default function EstimationItemsAccordion({
                   }
                   onDelete={() => handleItemDelete(item.id)}
                   serviceId={serviceId}
+                  useFixedWidths={useFixedWidths}
+                  containerWidthClass={containerWidthClass}
                 />
               ))}
             </div>

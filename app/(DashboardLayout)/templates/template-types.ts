@@ -162,9 +162,9 @@ export interface ToolsTemplate extends BaseTemplate {
   material: string;
 }
 
-// Option bid template interface
-export interface OptionBidTemplate extends BaseTemplate {
-  type: 'option-bid';
+// Service option template interface
+export interface ServiceOptionTemplate extends BaseTemplate {
+  type: 'service-option';
   service: string;
   material: string;
 }
@@ -181,11 +181,15 @@ export interface EstimateTemplate extends BaseTemplate {
 export type TemplateData =
   | DisclaimerTemplate
   | ToolsTemplate
-  | OptionBidTemplate
+  | ServiceOptionTemplate
   | EstimateTemplate;
 
 // Template types
-export type TemplateType = 'disclaimer' | 'tools' | 'option-bid' | 'estimate';
+export type TemplateType =
+  | 'disclaimer'
+  | 'tools'
+  | 'service-option'
+  | 'estimate';
 
 // Tool interface for tools templates
 export interface Tool {

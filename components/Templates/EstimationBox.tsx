@@ -1381,7 +1381,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     // Check if all accordions are currently expanded
     const allRoomIds = rooms.map(room => room.id);
     const allTradeIds = rooms.flatMap(room =>
-      room.trades.map(trade => trade.id)
+      room.trades.map(trade => trade.uniqueKey)
     );
 
     const allRoomsExpanded = allRoomIds.every(id => expandedRooms.includes(id));

@@ -166,9 +166,7 @@ export default function TemplatesPage() {
   const estimateTemplates = getTemplatesByType(
     TEMPLATE_TYPES.ESTIMATE_TEMPLATES
   );
-  const optionBidTemplates = getTemplatesByType(
-    TEMPLATE_TYPES.OPTION_BID_TEMPLATES
-  );
+  // Deprecated alias kept for backward compat (unused)
   const toolsTemplates = getTemplatesByType(TEMPLATE_TYPES.TOOL_TEMPLATES);
   const disclaimersTemplates = getTemplatesByType(
     TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
@@ -197,10 +195,10 @@ export default function TemplatesPage() {
           category: template.category?.name || 'Unknown',
           categoryColor: '#8B5CF6', // Default color
         };
-      case 'option-bid':
+      case 'service-option':
         return {
           ...baseData,
-          type: 'option-bid' as const,
+          type: 'service-option' as const,
           service: template.service?.name || 'Unknown Service',
           material: 'Default Material', // Default value since API doesn't provide this
         };
@@ -229,6 +227,11 @@ export default function TemplatesPage() {
     }
   };
 
+  // Service Options (Option Bid) list
+  const serviceOptionTemplates = getTemplatesByType(
+    TEMPLATE_TYPES.OPTION_BID_TEMPLATES
+  );
+
   return (
     <div className='w-full'>
       {/* Header */}
@@ -256,8 +259,8 @@ export default function TemplatesPage() {
                     icon: TaskSquare,
                   },
                   {
-                    label: 'Option Bid Template',
-                    action: 'option-bid',
+                    label: 'Service Options Template',
+                    action: 'service-option',
                     icon: OptionBidIcon,
                   },
                   {
@@ -272,7 +275,6 @@ export default function TemplatesPage() {
                   },
                 ]}
                 onAction={action => {
-                  console.log(`Creating ${action} template`);
                   router.push(`/templates/create/${action}`);
                 }}
               />
@@ -293,8 +295,8 @@ export default function TemplatesPage() {
                     icon: TaskSquare,
                   },
                   {
-                    label: 'Option Bid Template',
-                    action: 'option-bid',
+                    label: 'Service Options Template',
+                    action: 'service-option',
                     icon: OptionBidIcon,
                   },
                   {
@@ -309,7 +311,6 @@ export default function TemplatesPage() {
                   },
                 ]}
                 onAction={action => {
-                  console.log(`Creating ${action} template`);
                   router.push(`/templates/create/${action}`);
                 }}
               />
@@ -344,17 +345,17 @@ export default function TemplatesPage() {
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
-                  value='option-bid'
+                  value='service-option'
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
                 >
                   <span className='flex items-center gap-2'>
                     <span className='text-sm sm:text-sm xl:text-base'>
-                      Option Bid
+                      Service Options
                     </span>
                     <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'option-bid' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'service-option' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
                     >
-                      {optionBidTemplates.length}
+                      {serviceOptionTemplates.length}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -433,23 +434,26 @@ export default function TemplatesPage() {
             )}
           </TabsContent>
 
-          {/* Option Bid Tab Content */}
-          <TabsContent value='option-bid' className='mt-6'>
+          {/* Service Options (Option Bid) Tab Content */}
+          <TabsContent value='service-option' className='mt-6'>
             {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
-            ) : optionBidTemplates.length === 0 ? (
+            ) : serviceOptionTemplates.length === 0 ? (
               <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No option bid templates found.
+                No service option templates found.
               </div>
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {optionBidTemplates.map(template => (
+                  {serviceOptionTemplates.map(template => (
                     <TemplateListCard
                       key={template.uuid}
-                      template={transformTemplateData(template, 'option-bid')}
+                      template={transformTemplateData(
+                        template,
+                        'service-option'
+                      )}
                       onEdit={() => handleEditTemplate(template.uuid)}
                       onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
@@ -548,10 +552,10 @@ export default function TemplatesPage() {
                   </div>
                 </div>
 
-                {/* Option Bid Section */}
+                {/* Service Options Section */}
                 <div>
                   <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                    Option Bid
+                    Service Options
                   </h3>
                   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                     {archiveTemplates
@@ -565,12 +569,10 @@ export default function TemplatesPage() {
                           key={template.uuid}
                           template={transformTemplateData(
                             template,
-                            'option-bid'
+                            'service-option'
                           )}
                           isArchived={true}
-                          onRetrieve={() =>
-                            console.log(`Retrieve template ${template.uuid}`)
-                          }
+                          onRetrieve={() => {}}
                         />
                       ))}
                   </div>

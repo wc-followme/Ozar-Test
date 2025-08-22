@@ -335,7 +335,7 @@ export default function EstimationTradeForm({
             </div>
             <div className='flex-1 space-y-2'>
               <Label className='field-label'>Total Markup</Label>
-              <div className='flex'>
+              <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
                 <div className='w-[60px]'>
                   <SelectField
                     value={selectedCurrency}
@@ -344,14 +344,14 @@ export default function EstimationTradeForm({
                     placeholder='$'
                     className='mb-0'
                     disabled={true}
-                    triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
+                    triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-11 border-none bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)]'
                   />
                 </div>
                 <Input
                   type='text'
                   value={formatCurrency(trade.markup || 0)}
                   disabled={true}
-                  className='flex-1 rounded-l-none text-right !border-l-0 h-12 border-2 border-[var(--border-dark)] bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] opacity-75 cursor-not-allowed'
+                  className='flex-1 rounded-l-none text-right !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] opacity-75 cursor-not-allowed'
                 />
               </div>
             </div>
