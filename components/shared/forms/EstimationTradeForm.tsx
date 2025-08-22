@@ -74,14 +74,20 @@ export default function EstimationTradeForm({
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
 
   // Use trade-specific data instead of local state
-  const startDate = trade.startDate || new Date();
-  const endDate =
-    trade.endDate ||
-    (() => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return tomorrow;
-    })();
+  const startDate = trade.startDate
+    ? typeof trade.startDate === 'string'
+      ? new Date(trade.startDate)
+      : trade.startDate
+    : new Date();
+  const endDate = trade.endDate
+    ? typeof trade.endDate === 'string'
+      ? new Date(trade.endDate)
+      : trade.endDate
+    : (() => {
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        return tomorrow;
+      })();
 
   // Use provided tradeOptions or show nothing if no trades available
   const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
@@ -107,11 +113,19 @@ export default function EstimationTradeForm({
   useEffect(() => {
     if (selectedTrade) {
       const updates: any = {};
-      if (startDate) updates.start_date = startDate.toISOString();
-      if (endDate) updates.end_date = endDate.toISOString();
-      onLocalStorageUpdate?.();
+      if (
+        startDate &&
+        startDate instanceof Date &&
+        !isNaN(startDate.getTime())
+      ) {
+        updates.start_date = startDate.toISOString();
+      }
+      if (endDate && endDate instanceof Date && !isNaN(endDate.getTime())) {
+        updates.end_date = endDate.toISOString();
+      }
+      // onLocalStorageUpdate?.();
     }
-  }, [selectedTrade, startDate, endDate, onLocalStorageUpdate]);
+  }, [selectedTrade, startDate, endDate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -161,9 +175,21 @@ export default function EstimationTradeForm({
 
                   // Save data after trade selection
                   const updates: any = {};
-                  if (startDate) updates.start_date = startDate.toISOString();
-                  if (endDate) updates.end_date = endDate.toISOString();
-                  onLocalStorageUpdate?.();
+                  if (
+                    startDate &&
+                    startDate instanceof Date &&
+                    !isNaN(startDate.getTime())
+                  ) {
+                    updates.start_date = startDate.toISOString();
+                  }
+                  if (
+                    endDate &&
+                    endDate instanceof Date &&
+                    !isNaN(endDate.getTime())
+                  ) {
+                    updates.end_date = endDate.toISOString();
+                  }
+                  // onLocalStorageUpdate?.();
                 }}
                 options={finalTradeOptions}
                 placeholder='Select a trade'
@@ -235,7 +261,7 @@ export default function EstimationTradeForm({
                           startDate: date,
                         });
                         setStartDatePickerOpen(false);
-                        onLocalStorageUpdate?.();
+                        // onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => date < new Date()}
@@ -284,7 +310,7 @@ export default function EstimationTradeForm({
                           endDate: date,
                         });
                         setEndDatePickerOpen(false);
-                        onLocalStorageUpdate?.();
+                        // onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => {

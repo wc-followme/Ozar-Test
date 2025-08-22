@@ -2495,6 +2495,14 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Get template by UUID
+  async getTemplateById(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

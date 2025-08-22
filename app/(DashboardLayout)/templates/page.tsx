@@ -121,6 +121,14 @@ export default function TemplatesPage() {
     [showSuccessToast, showErrorToast]
   );
 
+  // Edit template handler
+  const handleEditTemplate = useCallback(
+    (templateUuid: string) => {
+      router.push(`/templates/edit/${templateUuid}`);
+    },
+    [router]
+  );
+
   // Fetch templates on component mount
   useEffect(() => {
     fetchTemplates();
@@ -416,9 +424,7 @@ export default function TemplatesPage() {
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(template, 'estimate')}
-                      onEdit={() =>
-                        console.log(`Edit template ${template.uuid}`)
-                      }
+                      onEdit={() => handleEditTemplate(template.uuid)}
                       onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
@@ -444,9 +450,7 @@ export default function TemplatesPage() {
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(template, 'option-bid')}
-                      onEdit={() =>
-                        console.log(`Edit template ${template.uuid}`)
-                      }
+                      onEdit={() => handleEditTemplate(template.uuid)}
                       onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
@@ -472,9 +476,7 @@ export default function TemplatesPage() {
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(template, 'tools')}
-                      onEdit={() =>
-                        console.log(`Edit template ${template.uuid}`)
-                      }
+                      onEdit={() => handleEditTemplate(template.uuid)}
                       onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}
@@ -500,9 +502,7 @@ export default function TemplatesPage() {
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(template, 'disclaimer')}
-                      onEdit={() =>
-                        console.log(`Edit template ${template.uuid}`)
-                      }
+                      onEdit={() => handleEditTemplate(template.uuid)}
                       onDelete={() => handleArchiveTemplate(template.uuid)}
                     />
                   ))}

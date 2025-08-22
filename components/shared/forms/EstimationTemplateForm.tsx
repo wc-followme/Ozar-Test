@@ -3,6 +3,7 @@
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
 import EstimationBox from '@/components/Templates/EstimationBox';
+import EstimationBoxEdit from '@/components/Templates/EstimationBoxEdit';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,7 +29,10 @@ interface SelectOption {
 
 interface EstimationTemplateFormProps {
   templateId?: string;
-  _initialData?: any; // Prefix with underscore to indicate unused
+  initialData?: {
+    templateName?: string;
+    category?: string;
+  };
 }
 
 // Validation schema
@@ -39,6 +43,7 @@ const estimationTemplateSchema = yup.object({
 
 export default function EstimationTemplateForm({
   templateId,
+  initialData,
 }: EstimationTemplateFormProps) {
   const { toast } = useToast();
   const router = useRouter();
@@ -57,8 +62,8 @@ export default function EstimationTemplateForm({
   } = useForm<EstimationTemplateFormData>({
     resolver: yupResolver(estimationTemplateSchema),
     defaultValues: {
-      templateName: '',
-      category: '',
+      templateName: initialData?.templateName || '',
+      category: initialData?.category || '',
     },
   });
 
@@ -118,6 +123,35 @@ export default function EstimationTemplateForm({
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Set form values when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.templateName) {
+        setValue('templateName', initialData.templateName);
+      }
+      if (initialData.category) {
+        setValue('category', initialData.category);
+      }
+    }
+  }, [initialData, setValue]);
+
+  // Load initial template rooms data when component mounts (for edit mode)
+  useEffect(() => {
+    if (templateId) {
+      const storageKey = `template_rooms_${templateId}`;
+      const existingData = localStorage.getItem(storageKey);
+      if (existingData) {
+        try {
+          const roomsData = JSON.parse(existingData);
+          // The EstimationBox component will automatically load this data
+          // when it mounts and finds the data in localStorage
+        } catch (error) {
+          console.error('Error parsing template rooms data:', error);
+        }
+      }
+    }
+  }, [templateId]);
 
   // Get template rooms data from localStorage
   const getTemplateRoomsData = () => {
@@ -292,11 +326,19 @@ export default function EstimationTemplateForm({
 
       {/* EstimationBox Component - Outside Form */}
       <div className='mt-6'>
-        <EstimationBox
-          _onClose={() => {}}
-          categoryId={watchedCategory}
-          templateId={templateId}
-        />
+        {templateId ? (
+          <EstimationBoxEdit
+            _onClose={() => {}}
+            templateId={templateId}
+            categoryId={watchedCategory}
+          />
+        ) : (
+          <EstimationBox
+            _onClose={() => {}}
+            categoryId={watchedCategory}
+            templateId={templateId}
+          />
+        )}
       </div>
 
       {/* Save Template Button - At the end of page */}
