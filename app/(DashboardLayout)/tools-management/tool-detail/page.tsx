@@ -43,9 +43,7 @@ export default function ToolDetailPage() {
   const [activeSheet, setActiveSheet] = useState<
     null | 'assign' | 'return' | 'maintenance' | 'lost' | 'addMore'
   >(null);
-  const [qrToolIds, setQrToolIds] = useState<
-    Array<{ id: string; toolId: string; barcode: string }>
-  >([]);
+  const [barcodes, setBarcodes] = useState<string[]>([]);
   const [assignDefaults, setAssignDefaults] = useState({
     toolName: 'Drill Machine',
     toolId: '',
@@ -518,8 +516,8 @@ export default function ToolDetailPage() {
           {activeSheet === 'addMore' && (
             <>
               <QRCodeSection
-                toolIds={qrToolIds}
-                onToolIdsChange={setQrToolIds}
+                barcodes={barcodes}
+                onBarcodesChange={setBarcodes}
               />
               <div className='flex gap-3 items-center pt-4'>
                 <Button
@@ -531,7 +529,7 @@ export default function ToolDetailPage() {
                 </Button>
                 <Button
                   onClick={() => {
-                    console.log('Add more tools:', qrToolIds);
+                    console.log('Add more tools with barcodes:', barcodes);
                     setSideSheetOpen(false);
                   }}
                   className='btn-primary'

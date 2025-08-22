@@ -404,6 +404,10 @@ export const MOCK_JOBS = [
 export const UPLOAD_PURPOSES = {
   COMPANY_COVER_IMAGE: 'company-cover-image',
   COMPANY_PROJECT: 'company-project',
+  USER_COVER_IMAGE: 'user-cover-image',
+  USER_PROJECT: 'user-project',
+  TOOL: 'tool',
+  TOOL_TUTORIAL: 'tool-tutorial',
 } as const;
 
 // Project Management Messages

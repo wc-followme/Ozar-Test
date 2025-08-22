@@ -18,17 +18,18 @@ import { apiService, GetCompanyResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { FIVE_BOX_DATA } from '../five-box-system/five-box-constants';
 
 interface CompanyProfileProps {
-  params: {
+  params: Promise<{
     companyId: string;
-  };
+  }>;
 }
 
 const CompanyProfile = ({ params }: CompanyProfileProps) => {
+  const { companyId } = use(params);
   const { CDN_URL, IMAGES, BASE_URL } = APP_CONFIG;
   const {
     PUBLIC_COMPANY_PROFILE,
@@ -40,7 +41,6 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
   const { QUOTE_CREATE_SUCCESS, QUOTE_CREATE_ERROR } = JOB_MESSAGES;
   const { PRIVATE } = JOB_PRIVACY;
   const router = useRouter();
-  const { companyId } = params;
   const { handleAuthError, user, isAuthenticated } = useAuth();
   const { showSuccessToast, showErrorToast } = useToast();
 
@@ -206,13 +206,26 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
         boxSettings || {};
 
       // Create job_boxes_step array based on enabled boxes
-      const enabledBoxes = (default_selected_json || [])
-        .filter((box: any) => box.enabled)
-        .map((box: any) => {
-          const fiveBoxItem = FIVE_BOX_DATA.find(item => item.id === box.id);
-          return fiveBoxItem ? fiveBoxItem.step : null;
-        })
-        .filter(Boolean); // Remove null values
+      // If boxSettings is empty or not in response, enable all boxes
+      let enabledBoxes: string[] = [];
+
+      if (
+        boxSettings &&
+        default_selected_json &&
+        default_selected_json.length > 0
+      ) {
+        // Use the box settings from the response
+        enabledBoxes = (default_selected_json || [])
+          .filter((box: any) => box.enabled)
+          .map((box: any) => {
+            const fiveBoxItem = FIVE_BOX_DATA.find(item => item.id === box.id);
+            return fiveBoxItem ? fiveBoxItem.step : null;
+          })
+          .filter(Boolean); // Remove null values
+      } else {
+        // If no box settings, enable all boxes by default
+        enabledBoxes = FIVE_BOX_DATA.map(item => item.step);
+      }
 
       // Create job payload
       const jobPayload = {

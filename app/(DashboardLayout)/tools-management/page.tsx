@@ -1,26 +1,30 @@
 'use client';
 
-import ToolCard from '@/components/shared/cards/ToolCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { ACTIONS, PAGINATION } from '@/constants/common';
+import { ACTIONS, APP_CONFIG, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
-import { apiService, CreateToolRequest, Tool } from '@/lib/api';
+import {
+  apiService,
+  CreateToolRequest,
+  Tool,
+  UpdateToolRequest,
+} from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ToolCardSkeleton from '../../../components/shared/skeleton/ToolCardSkeleton';
+import ArchiveTab from './components/ArchiveTab';
+import ToolsTab from './components/ToolsTab';
 import { TOOL_MESSAGES } from './tool-messages';
 
 export default function ToolsManagement() {
@@ -29,7 +33,7 @@ export default function ToolsManagement() {
 
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [photo, setPhoto] = useState<File | null>(null);
-  const [fileKey, setFileKey] = useState<string>('');
+
   const [uploading, setUploading] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [editToolUuid, setEditToolUuid] = useState<string | null>(null);
@@ -40,8 +44,6 @@ export default function ToolsManagement() {
 
   // Track if the existing image has been deleted
   const [imageDeleted, setImageDeleted] = useState(false);
-  // Track the original tool assets from the API to preserve them
-  const [originalToolAssets, setOriginalToolAssets] = useState<string>('');
   const [selectedTab, setSelectedTab] = useState('tools');
 
   const { showSuccessToast, showErrorToast } = useToast();
@@ -52,28 +54,38 @@ export default function ToolsManagement() {
   const canEdit = userPermissions?.tools?.edit;
   const canViewTools = userPermissions?.tools?.view;
 
-  // Memoize menu options to prevent unnecessary re-renders
+  // Memoize menu options based on selected tab
   const menuOptions = useMemo(
-    () => [
-      {
-        label: TOOL_MESSAGES.EDIT_MENU,
-        action: ACTIONS.EDIT,
-        icon: Edit2,
-        variant: 'default' as const,
-      },
-      {
-        label: TOOL_MESSAGES.DELETE_MENU,
-        action: ACTIONS.DELETE,
-        icon: Trash,
-        variant: 'destructive' as const,
-      },
-    ],
-    []
+    () =>
+      selectedTab === 'archive'
+        ? [
+            {
+              label: 'Retrieve Tool',
+              action: ACTIONS.RETRIEVE,
+              icon: Refresh,
+              variant: 'default' as const,
+            },
+          ]
+        : [
+            {
+              label: TOOL_MESSAGES.EDIT_MENU,
+              action: ACTIONS.EDIT,
+              icon: Edit2,
+              variant: 'default' as const,
+            },
+            {
+              label: TOOL_MESSAGES.DELETE_MENU,
+              action: ACTIONS.DELETE,
+              icon: Trash,
+              variant: 'destructive' as const,
+            },
+          ],
+    [selectedTab]
   );
 
-  const cdnPrefix = process.env['NEXT_PUBLIC_CDN_URL'] || '';
+  // No local CDN variable; use APP_CONFIG.CDN_URL directly where needed
 
-  // Load tools from API
+  // Load tools from API based on current tab
   const loadTools = useCallback(
     async (targetPage = 1, append = false) => {
       if (!user) {
@@ -91,41 +103,48 @@ export default function ToolsManagement() {
         const response = await apiService.fetchTools({
           page: targetPage,
           limit: PAGINATION.TOOLS_LIMIT,
+          status: selectedTab === 'archive' ? 'INACTIVE' : 'ACTIVE',
           ...(companyId ? { company_id: companyId } : {}),
         });
 
         const { statusCode, data, message } = response;
 
         if (statusCode === 200) {
-          // Handle both possible response structures
-          let toolsData = data;
+          // Handle possible response structures
+          // Legacy: data: Tool[]
+          // Old nested: data: { data: Tool[], total }
+          // New: data: { tools: Tool[], total, page, limit, totalPages }
+          let toolsData: unknown = [];
           let total = 0;
 
-          if (
-            data &&
-            typeof data === 'object' &&
-            !Array.isArray(data) &&
-            'data' in data
-          ) {
-            const { data: nestedData, total: responseTotal } = data as any;
-            toolsData = nestedData;
-            total = responseTotal || nestedData.length;
-          } else if (Array.isArray(data)) {
+          if (Array.isArray(data)) {
             toolsData = data;
             total = data.length;
+          } else if (data && typeof data === 'object') {
+            const obj = data as unknown as Record<string, unknown>;
+            if (Array.isArray(obj['tools'])) {
+              toolsData = obj['tools'];
+              total =
+                (obj['total'] as number) || (obj['tools'] as unknown[]).length;
+            } else if (
+              obj['data'] &&
+              Array.isArray((obj['data'] as any).data)
+            ) {
+              const nested = obj['data'] as { data: unknown[]; total?: number };
+              toolsData = nested.data;
+              total = nested.total ?? nested.data.length;
+            }
           }
 
           setTools(prev => {
             if (append) {
-              // Filter out duplicates when appending to prevent duplicate keys
               const existingUuids = new Set(prev.map(tool => tool.uuid));
-              const uniqueNewTools = toolsData.filter(
+              const uniqueNewTools = (toolsData as Tool[]).filter(
                 (tool: Tool) => !existingUuids.has(tool.uuid)
               );
               return [...prev, ...uniqueNewTools];
-            } else {
-              return Array.isArray(toolsData) ? toolsData : [];
             }
+            return Array.isArray(toolsData) ? (toolsData as Tool[]) : [];
           });
 
           setPage(targetPage);
@@ -150,7 +169,7 @@ export default function ToolsManagement() {
         setLoading(false);
       }
     },
-    [user, showErrorToast, handleAuthError]
+    [user, showErrorToast, handleAuthError, selectedTab]
   );
 
   // Handle company changes
@@ -163,32 +182,15 @@ export default function ToolsManagement() {
 
   useCompanyChange(refetchTools);
 
-  // Load initial tools when component mounts
+  // Load tools when component mounts or tab changes
   useEffect(() => {
     if (user) {
+      setTools([]);
+      setPage(1);
+      setHasMore(true);
       loadTools(1, false);
     }
-  }, [user, loadTools]);
-
-  // Infinite scroll
-  useEffect(() => {
-    const handleScroll = () => {
-      if (
-        window.innerHeight + window.scrollY >=
-          document.body.offsetHeight - 200 &&
-        !loading &&
-        hasMore
-      ) {
-        setPage(prevPage => {
-          const nextPage = prevPage + 1;
-          loadTools(nextPage, true);
-          return nextPage;
-        });
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [loading, hasMore, loadTools]);
+  }, [selectedTab, user, loadTools]);
 
   const handleDelete = async (uuid: string) => {
     try {
@@ -197,7 +199,7 @@ export default function ToolsManagement() {
 
       if (statusCode === 200) {
         showSuccessToast(message || TOOL_MESSAGES.DELETE_SUCCESS);
-        setTools(tools.filter(tool => tool.uuid !== uuid));
+        setTools(prev => prev.filter(tool => tool.uuid !== uuid));
       } else {
         showErrorToast(
           extractApiErrorMessage(message) || TOOL_MESSAGES.DELETE_ERROR
@@ -217,64 +219,74 @@ export default function ToolsManagement() {
 
   const handleDeletePhoto = () => {
     setPhoto(null);
-    setFileKey('');
     setImageDeleted(true);
   };
 
-  const handleEdit = async (uuid: string) => {
-    setEditToolUuid(uuid);
-    setEditLoading(true);
-    setSideSheetOpen(true);
-    setImageDeleted(false);
-    setOriginalToolAssets('');
+  // Retrieve tool handler (for archived tools)
+  const handleRetrieveTool = async (uuid: string) => {
     try {
-      const response = await apiService.getToolDetails(uuid);
-      const { statusCode, data, message } = response;
+      const response = await apiService.updateTool(uuid, { status: 'ACTIVE' });
+      const { statusCode, message } = response;
 
-      if (statusCode === 200 && data) {
-        const { tool_assets, assets } = data;
-        setEditToolData(data);
-
-        // Check if tool_assets exists in the response
-        const toolAssetsValue = tool_assets;
-
-        // Check if we need to extract tool_assets from assets array
-        let finalToolAssets = toolAssetsValue;
-        if (
-          !toolAssetsValue &&
-          assets &&
-          assets.length > 0 &&
-          assets[0]?.media_url
-        ) {
-          // If tool_assets is empty but assets array has items, use the first asset's media_url
-          finalToolAssets = assets[0].media_url;
-        }
-
-        setOriginalToolAssets(finalToolAssets ?? '');
+      if (statusCode === 200) {
+        showSuccessToast(message || 'Tool retrieved successfully');
+        // Update local state - remove tool from current list (archive tab)
+        setTools(prev => prev.filter(tool => tool.uuid !== uuid));
       } else {
         showErrorToast(
-          extractApiErrorMessage(message) || TOOL_MESSAGES.FETCH_ERROR
+          extractApiErrorMessage(message) || 'Failed to retrieve tool'
         );
       }
-    } catch (_) {
-      showErrorToast(TOOL_MESSAGES.FETCH_ERROR);
-    } finally {
-      setEditLoading(false);
+    } catch (error: any) {
+      const { status } = error;
+      if (status === 401) {
+        handleAuthError(error);
+      } else {
+        showErrorToast(extractApiErrorMessage(error));
+      }
     }
+  };
+
+  const handleEdit = async (uuid: string) => {
+    // Find tool data from current state instead of API call
+    const toolData = tools.find(tool => tool.uuid === uuid);
+
+    if (!toolData) {
+      showErrorToast('Tool not found');
+      return;
+    }
+
+    setEditToolUuid(uuid);
+    setEditLoading(false); // No loading needed since we have data
+    setSideSheetOpen(true);
+    setImageDeleted(false);
+    setEditToolData(toolData);
   };
 
   const handleCreateTool = async (data: {
     name: string;
-    available_quantity: number;
-    manufacturer: string;
     brandName: string;
-    tool_assets: string;
+    image_url: string;
     service_ids: string;
-    videos?: File[];
-    videoLinks?: string[];
-    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
+    video_tutorial_urls?: string[];
+    video_tutorial_links?: string[];
+    barcodes?: string[];
   }) => {
-    const { name, available_quantity, manufacturer, service_ids } = data;
+    const {
+      name,
+      brandName,
+      service_ids,
+      image_url,
+      video_tutorial_urls,
+      video_tutorial_links,
+      barcodes,
+    } = data;
+
+    console.log('=== CREATE TOOL PAYLOAD DATA ===');
+    console.log('Form data:', data);
+    console.log('Video tutorial URLs:', video_tutorial_urls);
+    console.log('Video tutorial links:', video_tutorial_links);
+    console.log('Barcodes:', barcodes);
 
     setFormLoading(true);
     try {
@@ -282,13 +294,18 @@ export default function ToolsManagement() {
       const companyId = getCompanyId();
 
       const payload: CreateToolRequest = {
-        name,
-        available_quantity,
-        manufacturer,
-        tool_assets: fileKey,
+        name: name.trim(),
+        brand_name: brandName.trim(),
         service_ids,
         ...(companyId ? { company_id: companyId } : {}),
+        image_url: image_url || '',
+        video_tutorial_urls: video_tutorial_urls || [],
+        video_tutorial_link: video_tutorial_links || [],
+        barcodes: barcodes || [],
       };
+
+      console.log('Final create payload:', payload);
+      console.log('================================');
 
       const response = await apiService.createTool(payload);
       const { statusCode, message } = response;
@@ -297,7 +314,6 @@ export default function ToolsManagement() {
         showSuccessToast(message || TOOL_MESSAGES.CREATE_SUCCESS);
         setSideSheetOpen(false);
         setPhoto(null);
-        setFileKey('');
         // Refresh tools list using existing loadTools function
         await loadTools(1, false);
       } else {
@@ -317,51 +333,71 @@ export default function ToolsManagement() {
 
   const handleUpdateTool = async (data: {
     name: string;
-    available_quantity: number;
-    manufacturer: string;
-    tool_assets: string;
+    brandName: string;
+    image_url: string;
     service_ids: string;
+    video_tutorial_urls?: string[];
+    video_tutorial_links?: string[];
+    barcodes?: string[];
   }) => {
-    const { name, available_quantity, manufacturer, service_ids } = data;
+    const {
+      name,
+      brandName,
+      service_ids,
+      image_url,
+      video_tutorial_urls,
+      video_tutorial_links,
+      barcodes,
+    } = data;
 
-    // Prevent submission if originalToolAssets is not loaded yet
-    if (
-      !originalToolAssets &&
-      editToolData?.assets &&
-      editToolData.assets.length > 0
-    ) {
-      return;
-    }
+    console.log('=== UPDATE TOOL PAYLOAD DATA ===');
+    console.log('Form data:', data);
+    console.log('Video tutorial URLs:', video_tutorial_urls);
+    console.log('Video tutorial links:', video_tutorial_links);
+    console.log('Barcodes:', barcodes);
+
+    // No guard needed based on legacy assets shape
 
     setFormLoading(true);
     try {
-      // Send tool_assets as it is if not changed, otherwise use new file or empty if deleted
-      const toolAssets =
-        fileKey || (imageDeleted ? '' : (originalToolAssets ?? ''));
-
-      const payload: CreateToolRequest = {
-        name,
-        available_quantity,
-        manufacturer,
-        tool_assets: toolAssets,
+      const payload: UpdateToolRequest = {
+        name: name.trim(),
+        brand_name: brandName.trim(),
         service_ids,
+        image_url: image_url || '',
+        video_tutorial_urls: video_tutorial_urls || [],
+        video_tutorial_link: video_tutorial_links || [],
+        barcodes: barcodes || [],
       };
+
+      console.log('Final update payload:', payload);
+      console.log('================================');
 
       const response = await apiService.updateTool(editToolUuid!, payload);
 
       const { statusCode, message } = response;
 
-      if (statusCode === 200) {
-        showSuccessToast(TOOL_MESSAGES.UPDATE_SUCCESS);
+      if (statusCode === 200 && response.data) {
+        showSuccessToast(message || TOOL_MESSAGES.UPDATE_SUCCESS);
+
+        // Update local state using the actual API response data
+        const updatedToolData = response.data;
+        setTools(prev =>
+          prev.map(tool =>
+            tool.uuid === editToolUuid
+              ? ({
+                  ...tool,
+                  ...updatedToolData,
+                } as Tool)
+              : tool
+          )
+        );
+
         setSideSheetOpen(false);
         setPhoto(null);
-        setFileKey('');
         setEditToolUuid(null);
         setEditToolData(null);
         setImageDeleted(false);
-        setOriginalToolAssets('');
-        // Refresh tools list using existing loadTools function
-        await loadTools(1, false);
       } else {
         showErrorToast(
           extractApiErrorMessage(message) || TOOL_MESSAGES.UPDATE_ERROR
@@ -382,21 +418,17 @@ export default function ToolsManagement() {
   const handleCancel = () => {
     setSideSheetOpen(false);
     setPhoto(null);
-    setFileKey('');
     setEditToolUuid(null);
     setEditToolData(null);
     setImageDeleted(false);
-    setOriginalToolAssets('');
   };
 
   const handleOpenCreateForm = () => {
     // Reset all state for create mode
     setPhoto(null);
-    setFileKey('');
     setEditToolUuid(null);
     setEditToolData(null);
     setImageDeleted(false);
-    setOriginalToolAssets('');
     setSideSheetOpen(true);
   };
 
@@ -477,77 +509,37 @@ export default function ToolsManagement() {
 
           {/* Tools Tab Content */}
           <TabsContent value='tools' className='mt-6'>
-            {/* Initial Loading State */}
-            {tools.length === 0 && loading ? (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {[...Array(8)].map((_, i) => (
-                  <ToolCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* Tools Grid */}
-                {tools.length === 0 && !loading ? (
-                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-                    <NoDataFound
-                      title='No Tools Found'
-                      description="You haven't created any tools yet. Start by adding your first one to organize your tools."
-                      buttonText='Add Tool'
-                      onButtonClick={handleOpenCreateForm}
-                      showButton={canEdit ?? false}
-                    />
-                  </div>
-                ) : (
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {tools.map((tool, index) => {
-                      const {
-                        id,
-                        name,
-                        manufacturer,
-                        available_quantity,
-                        assets,
-                        uuid,
-                      } = tool;
-                      const imageUrl =
-                        assets && assets[0]?.media_url
-                          ? cdnPrefix + assets[0].media_url
-                          : '/images/img-placeholder-sm.png';
-                      return (
-                        <ToolCard
-                          key={id ?? `${name}-${manufacturer}-${index}`}
-                          image={imageUrl}
-                          name={name}
-                          brand={manufacturer}
-                          quantity={available_quantity}
-                          videoCount={0} // Static 0 for now as requested
-                          menuOptions={menuOptions}
-                          onDelete={() => handleDelete(uuid)}
-                          onEdit={() => handleEdit(uuid)}
-                          uuid={uuid}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-            {loading && tools.length > 0 && (
-              <div className='text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <ToolsTab
+              tools={tools}
+              loading={loading}
+              hasMore={hasMore}
+              selectedTab={selectedTab}
+              menuOptions={menuOptions}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onOpenCreateForm={handleOpenCreateForm}
+              canEdit={canEdit ?? false}
+              loadTools={loadTools}
+              setPage={setPage}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Tools'
-                description='No archived tools found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveTab
+              archivedTools={tools}
+              archivedLoading={loading}
+              archiveHasMore={hasMore}
+              selectedTab={selectedTab}
+              menuOptions={menuOptions}
+              onDelete={handleDelete}
+              onEdit={handleEdit}
+              onRetrieve={handleRetrieveTool}
+              onOpenCreateForm={handleOpenCreateForm}
+              canEdit={canEdit ?? false}
+              loadTools={loadTools}
+              setArchivePage={setPage}
+            />
           </TabsContent>
         </Tabs>
       </div>
@@ -581,29 +573,47 @@ export default function ToolsManagement() {
             loading={formLoading}
             onCancel={handleCancel}
             setUploading={setUploading}
-            setFileKey={setFileKey}
             existingImageUrl={
               imageDeleted
                 ? undefined
-                : editToolData?.assets?.[0]?.media_url
-                  ? cdnPrefix + editToolData.assets[0].media_url
+                : (editToolData as any)?.image_url
+                  ? APP_CONFIG.CDN_URL + (editToolData as any).image_url
                   : undefined
             }
-            existingToolAssets={imageDeleted ? '' : originalToolAssets}
             initialValues={
               editToolData
                 ? (() => {
-                    const { name, available_quantity, manufacturer, services } =
-                      editToolData;
-                    return {
+                    const {
                       name,
-                      available_quantity,
-                      manufacturer,
-                      brandName: manufacturer, // Use manufacturer as brand name for now
-                      services: services?.map(s => s.id) || [],
-                      videos: [],
-                      videoLinks: [],
-                      toolIds: [],
+                      brand_name,
+                      services,
+                      video_tutorial_urls,
+                      video_tutorial_link,
+                      tool_items,
+                    } = editToolData as any;
+
+                    // Keep video tutorial URLs and links separate
+                    const existingVideoUrls = (video_tutorial_urls || []).map(
+                      (url: string) => APP_CONFIG.CDN_URL + url
+                    ); // Prefix S3 paths for display
+                    const existingVideoLinks = video_tutorial_link || [];
+
+                    // Extract existing barcodes with toolId information
+                    const existingToolIds =
+                      tool_items?.map((item: any) => ({
+                        id: item.uuid,
+                        toolId: item.id?.toString() || '-',
+                        barcode: item.barcode || '',
+                      })) || [];
+
+                    return {
+                      name: name ?? '',
+                      brandName: brand_name ?? '',
+                      services: services?.map((s: any) => s.id) || [],
+                      videos: existingVideoUrls, // Existing S3 video URLs with CDN prefix
+                      videoLinks: existingVideoLinks, // Existing external links
+                      toolIds: existingToolIds, // Existing barcodes with toolId
+                      image_url: (editToolData as any)?.image_url || '', // Existing image URL
                     };
                   })()
                 : {}

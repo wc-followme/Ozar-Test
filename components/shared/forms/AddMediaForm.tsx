@@ -20,6 +20,7 @@ export interface AddMediaFormData {
   projectName: string;
   media: File[];
   existingImages?: string[];
+  existingVideos?: string[];
 }
 
 export const AddMediaForm = ({
@@ -35,10 +36,14 @@ export const AddMediaForm = ({
   const [existingImages, setExistingImages] = useState<string[]>(
     initialData?.images || []
   );
+  const [existingVideos, setExistingVideos] = useState<string[]>(
+    initialData?.videos || []
+  );
   const [errors, setErrors] = useState<{
     projectName?: string;
     media?: string;
     existingImages?: string;
+    existingVideos?: string;
   }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -53,10 +58,11 @@ export const AddMediaForm = ({
     if (!formData.projectName.trim()) {
       newErrors.projectName = 'Project name is required';
     }
-    // Allow existing images or new media files
+    // Allow existing images/videos or new media files
     if (
       (!formData.media || formData.media.length === 0) &&
-      existingImages.length === 0
+      existingImages.length === 0 &&
+      existingVideos.length === 0
     ) {
       newErrors.media = 'At least one media file is required';
     }
@@ -70,10 +76,11 @@ export const AddMediaForm = ({
     setIsSubmitted(true);
 
     if (validateForm()) {
-      // Pass both new media files and existing images
+      // Pass both new media files and existing images/videos
       onSubmit({
         ...formData,
         existingImages,
+        existingVideos,
       });
     }
   };
@@ -126,6 +133,10 @@ export const AddMediaForm = ({
     setExistingImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleRemoveExistingVideo = (index: number) => {
+    setExistingVideos(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <form onSubmit={handleSubmit} className='space-y-6'>
       {/* Media Upload */}
@@ -169,6 +180,39 @@ export const AddMediaForm = ({
                   <button
                     type='button'
                     onClick={() => handleRemoveExistingImage(index)}
+                    className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600'
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Existing Videos Preview */}
+        {existingVideos.length > 0 && (
+          <div className='space-y-2'>
+            <Label className='text-sm font-medium text-gray-600'>
+              Existing Videos
+            </Label>
+            <div className='flex flex-wrap gap-2'>
+              {existingVideos.map((videoUrl, index) => (
+                <div key={index} className='relative'>
+                  <video
+                    src={
+                      videoUrl.startsWith('http') || videoUrl.startsWith('/')
+                        ? videoUrl
+                        : `${process.env['NEXT_PUBLIC_CDN_URL'] || ''}${videoUrl}`
+                    }
+                    width={80}
+                    height={80}
+                    className='aspect-square h-[80px] w-[80px] object-cover rounded-lg border'
+                    controls
+                  />
+                  <button
+                    type='button'
+                    onClick={() => handleRemoveExistingVideo(index)}
                     className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600'
                   >
                     ×

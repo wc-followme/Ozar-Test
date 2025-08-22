@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchNormal1 } from 'iconsax-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { use, useState } from 'react';
 import {
   toolBorrowedHistoryData,
   toolMaintenanceHistoryData,
@@ -21,8 +21,9 @@ import {
 export default function ToolDetailSlugPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
+  const { slug } = use(params);
   const [selectedTab, setSelectedTab] = useState('borrowed');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -60,7 +61,7 @@ export default function ToolDetailSlugPage({
   const breadcrumbData: BreadcrumbItem[] = [
     { name: 'Tools', href: '/tools-management' },
     { name: 'Drill Machine', href: '/tools-management/tool-detail' },
-    { name: params.slug },
+    { name: slug },
   ];
 
   return (

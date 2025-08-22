@@ -28,6 +28,7 @@ interface ToolCardProps {
   }[];
   onDelete: () => void;
   onEdit?: () => void;
+  onRetrieve?: () => void;
   uuid?: string; // Add uuid prop for navigation
 }
 
@@ -40,6 +41,7 @@ export default function ToolCard({
   menuOptions,
   onDelete,
   onEdit,
+  onRetrieve,
   uuid,
 }: ToolCardProps) {
   const [showDelete, setShowDelete] = useState(false);
@@ -131,6 +133,9 @@ export default function ToolCard({
                 }
                 if (action === ACTIONS.DELETE || action === ACTIONS.ARCHIVE)
                   setShowDelete(true);
+                if (action === ACTIONS.RETRIEVE) {
+                  if (onRetrieve) onRetrieve();
+                }
               }}
               trigger={
                 <button className='h-8 w-8 p-0 flex items-center justify-center rounded-full'>

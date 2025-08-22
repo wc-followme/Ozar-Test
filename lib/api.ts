@@ -310,6 +310,7 @@ export interface PortfolioProject {
   uuid: string;
   name: string;
   images?: string[];
+  videos?: string[];
   company_uuid: string;
   company_name: string;
   created_at: string;
@@ -338,9 +339,10 @@ export interface FetchPortfolioResponse {
 }
 
 export interface CreateProjectRequest {
-  // DTO: name and images[]
+  // DTO: name, images[], and videos[]
   name: string;
   images?: string[];
+  videos?: string[];
   // Optional: if not provided, server may take from auth context
   company_id?: string;
 }
@@ -354,6 +356,7 @@ export interface CreatePortfolioResponse {
 export interface UpdateProjectRequest {
   name?: string;
   images?: string[];
+  videos?: string[];
   company_id?: string;
 }
 
@@ -547,44 +550,89 @@ export interface ToolAsset {
   updated_by: string;
 }
 
-export interface Tool {
+// Services associated with a tool (new response shape)
+export interface ToolServiceItem {
+  id: number | string;
+  uuid?: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+}
+
+// Individual tool item (barcode) in the new response
+export interface ToolItem {
   id: number;
   uuid: string;
-  name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  barcode: string;
+  status: string;
+  condition: string;
   created_at: string;
   updated_at: string;
-  company_id?: string;
-  services: Array<{
-    id: number | string;
-    name: string;
-    status: string;
-  }>;
-  assets?: ToolAsset[];
 }
+
+// Unified Tool interface that supports both legacy and new API shapes
+export interface Tool {
+  // Common/new fields
+  id?: number;
+  uuid: string;
+  name: string;
+  brand_name?: string;
+  image_url?: string;
+  total_quantity?: number;
+  available_quantity?: number;
+  maintenance_quantity?: number;
+  lost_quantity?: number;
+  assigned_quantity?: number;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
+  company?: { uuid: string; name: string };
+  services?: ToolServiceItem[];
+  tool_items?: ToolItem[];
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+}
+
+// New tools response shape
+export interface FetchToolsEnvelopeNew {
+  tools: Tool[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Old nested response shape
+export interface FetchToolsEnvelopeOld {
+  data: Tool[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export type FetchToolsResponseData =
+  | Tool[]
+  | FetchToolsEnvelopeNew
+  | FetchToolsEnvelopeOld;
 
 export interface FetchToolsResponse {
   statusCode: number;
   message: string;
-  data: Tool[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  data: FetchToolsResponseData;
 }
 
 export interface CreateToolRequest {
   name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
+  service_ids?: string;
+  barcodes?: string[];
   company_id?: string | number;
 }
 
@@ -596,10 +644,12 @@ export interface CreateToolResponse {
 
 export interface UpdateToolRequest {
   name?: string;
-  available_quantity?: number;
-  manufacturer?: string;
-  tool_assets?: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
   service_ids?: string;
+  barcodes?: string[];
   status?: 'ACTIVE' | 'INACTIVE';
   company_id?: string | number;
 }
