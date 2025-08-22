@@ -114,7 +114,7 @@ export default function EstimationHeader({
               />
             ) : (
               <div className='flex items-center gap-2'>
-                <h1 className='text-xl font-semibold truncate w-7/12'>
+                <h1 className='text-xl font-semibold truncate'>
                   {selectedRoom?.name}
                 </h1>
                 <Edit2
