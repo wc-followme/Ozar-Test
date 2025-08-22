@@ -116,6 +116,16 @@ export default function EstimationServiceForm({
       return;
     }
 
+    // Ensure we only call the API with a real UUID; newly added default trades
+    // in the editor use generated ids like "default-trade-<timestamp>".
+    // Backend expects a UUID v4 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tradeUuid)) {
+      setServiceOptions([]);
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await apiService.fetchServicesPublic({
@@ -189,11 +199,19 @@ export default function EstimationServiceForm({
               <Label className='field-label'>Service</Label>
               <SelectField
                 value={(() => {
-                  // Find the option that matches the current service name
-                  const matchingOption = serviceOptions.find(
+                  // Prefer UUID-based matching (edit mode)
+                  if (service.uuid) {
+                    const byUuid = serviceOptions.find(
+                      option => option.value === service.uuid
+                    );
+                    if (byUuid) return byUuid.value;
+                  }
+                  // Fallback to name-based matching (create mode or legacy)
+                  const byName = serviceOptions.find(
                     option => option.label === service.name
                   );
-                  return matchingOption ? matchingOption.value : service.name;
+                  // If still no match, return empty string so placeholder shows and options list is usable
+                  return byName ? byName.value : '';
                 })()}
                 onValueChange={newValue => {
                   // Find the selected option to get the display name and UUID

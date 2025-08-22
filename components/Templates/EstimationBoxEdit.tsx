@@ -1067,6 +1067,10 @@ export default function EstimationBoxEdit({
     setShowDeleteModal(true);
   };
 
+  // Derive header UI state like create mode
+  const showAddService = !!selectedTradeUniqueKey;
+  const showServiceForm = !!selectedService;
+
   if (!selectedRoom || rooms.length === 0) {
     return (
       <div className='flex items-center justify-center h-64'>
@@ -1107,7 +1111,7 @@ export default function EstimationBoxEdit({
       <div className='flex-1 flex flex-col'>
         {/* Header */}
         <EstimationHeader
-          showAddService={false}
+          showAddService={showAddService}
           isEditing={isEditing}
           editingRoomName={editingRoomName}
           setEditingRoomName={setEditingRoomName}
@@ -1115,9 +1119,9 @@ export default function EstimationBoxEdit({
           handleRoomNameKeyDown={handleRoomNameKeyDown}
           handleEditClick={handleEditClick}
           selectedRoom={selectedRoom}
-          showServiceForm={false}
-          selectedServiceData={undefined}
-          selectedTradeData={undefined}
+          showServiceForm={showServiceForm}
+          selectedServiceData={selectedServiceData}
+          selectedTradeData={selectedTradeData}
           handleAddTrade={addTrade}
           handleAddService={handleAddService}
           onDeleteClick={onDeleteClick}
@@ -1142,6 +1146,7 @@ export default function EstimationBoxEdit({
                   </button>
                 </div>
                 <EstimationServiceForm
+                  key={`${selectedTradeData?.id || 'no-trade'}_${selectedService || 'no-service'}`}
                   service={selectedServiceData}
                   onServiceUpdate={updatedService => {
                     // Update the service in the rooms state
@@ -1172,39 +1177,34 @@ export default function EstimationBoxEdit({
                   onReplaceTools={handleToolReplace}
                   roomName={selectedRoom?.name || 'Room'}
                   tradeName={selectedTradeData?.name || 'Trade'}
+                  // Pass the DB UUID of the trade to drive the services API
                   tradeId={selectedTradeData?.id || undefined}
                 />
               </div>
             ) : null
-          ) : (
-            // Trade view - show trade details and services
+          ) : // Trade view - show ONLY the selected trade (like create mode)
+          selectedTradeData ? (
             <div className='space-y-4'>
-              {selectedRoom.trades.map(trade => {
-                console.log(`Rendering trade ${trade.uniqueKey}:`, trade);
-                console.log(
-                  `Trade ${trade.uniqueKey} serviceList:`,
-                  trade.serviceList
-                );
-                console.log(
-                  `Trade ${trade.uniqueKey} serviceList length:`,
-                  trade.serviceList?.length
-                );
-                return (
-                  <EstimationTradeForm
-                    key={trade.uniqueKey}
-                    trade={trade}
-                    roomUniqueKey={selectedRoom.uniqueKey}
-                    tradeUniqueKey={trade.uniqueKey}
-                    onTradeNameChange={handleTradeNameChange}
-                    onTradeReplacement={handleTradeReplacement}
-                    onServiceSelect={handleServiceSelect}
-                    _onAddService={handleAddService}
-                    onServiceReorder={handleServiceReorder}
-                    tradeOptions={tradeOptions}
-                    onLocalStorageUpdate={handleLocalStorageUpdate}
-                  />
-                );
-              })}
+              <EstimationTradeForm
+                key={selectedTradeData.uniqueKey}
+                trade={selectedTradeData}
+                roomUniqueKey={selectedRoom.uniqueKey}
+                tradeUniqueKey={selectedTradeData.uniqueKey}
+                onTradeNameChange={handleTradeNameChange}
+                onTradeReplacement={handleTradeReplacement}
+                onServiceSelect={handleServiceSelect}
+                _onAddService={handleAddService}
+                onServiceReorder={handleServiceReorder}
+                tradeOptions={tradeOptions}
+                onLocalStorageUpdate={handleLocalStorageUpdate}
+              />
+            </div>
+          ) : (
+            <div className='text-center py-12'>
+              <NoDataFound
+                title='No trade selected.'
+                description='Please select a trade from the left sidebar.'
+              />
             </div>
           )}
         </div>
