@@ -25,7 +25,8 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange: string;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -261,7 +262,7 @@ export default function EstimationTradeForm({
                           startDate: date,
                         });
                         setStartDatePickerOpen(false);
-                        // onLocalStorageUpdate?.();
+                        onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => date < new Date()}
@@ -310,7 +311,7 @@ export default function EstimationTradeForm({
                           endDate: date,
                         });
                         setEndDatePickerOpen(false);
-                        // onLocalStorageUpdate?.();
+                        onLocalStorageUpdate?.();
                       }
                     }}
                     disabled={date => {
@@ -359,31 +360,60 @@ export default function EstimationTradeForm({
       </Card>
 
       {/* Services List */}
-      {trade.serviceList.length > 0 && (
+      {(() => {
+        console.log(
+          `EstimationTradeForm: Trade ${tradeUniqueKey} serviceList:`,
+          trade.serviceList
+        );
+        console.log(
+          `EstimationTradeForm: Trade ${tradeUniqueKey} serviceList length:`,
+          trade.serviceList?.length
+        );
+        console.log(
+          `EstimationTradeForm: Trade ${tradeUniqueKey} serviceList type:`,
+          typeof trade.serviceList
+        );
+        return null;
+      })()}
+
+      {trade.serviceList && trade.serviceList.length > 0 ? (
         <Sortable
           items={trade.serviceList}
           onReorder={onServiceReorder || (() => {})}
           idField='id'
         >
           <div className='space-y-4'>
-            {trade.serviceList.map(service => (
-              <SortableItem
-                key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
-                id={service.id}
-              >
-                {dragHandleProps => (
-                  <TradeListCardComponent
-                    service={service}
-                    variant='service'
-                    onClick={() => onServiceSelect?.(service.id)}
-                    className='mb-4'
-                    dragHandleProps={dragHandleProps}
-                  />
-                )}
-              </SortableItem>
-            ))}
+            {trade.serviceList.map(service => {
+              console.log(
+                `EstimationTradeForm: Rendering service ${service.id}:`,
+                service
+              );
+              return (
+                <SortableItem
+                  key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
+                  id={service.id}
+                >
+                  {dragHandleProps => (
+                    <TradeListCardComponent
+                      service={service}
+                      variant='service'
+                      onClick={() => onServiceSelect?.(service.id)}
+                      className='mb-4'
+                      dragHandleProps={dragHandleProps}
+                    />
+                  )}
+                </SortableItem>
+              );
+            })}
           </div>
         </Sortable>
+      ) : (
+        <div className='text-center text-gray-500 py-4'>
+          <p>No services found for this trade.</p>
+          <p className='text-sm'>
+            Service list: {JSON.stringify(trade.serviceList)}
+          </p>
+        </div>
       )}
     </div>
   );

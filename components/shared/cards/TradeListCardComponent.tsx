@@ -13,7 +13,8 @@ interface Trade {
   id: string;
   name: string;
   services: number;
-  dateRange: string;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -97,7 +98,10 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
                 <div className='flex items-center space-x-1 text-sm text-[var(--text-dark)]'>
                   <Calendar size={20} color='var(--text-secondary)' />
                   <span>
-                    {trade!.dateRange || 'No date set'} ({trade!.type})
+                    {trade!.start_date && trade!.end_date
+                      ? `${new Date(trade!.start_date).toLocaleDateString()} - ${new Date(trade!.end_date).toLocaleDateString()}`
+                      : 'No date set'}{' '}
+                    ({trade!.type})
                   </span>
                 </div>
               ) : (

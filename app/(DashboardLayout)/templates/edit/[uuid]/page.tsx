@@ -11,10 +11,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { apiService } from '@/lib/api';
 import { extractApiErrorMessage } from '@/lib/utils';
-import { ArrowLeft, Save2 } from 'iconsax-react';
+import { ArrowLeft } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { TemplateApiData } from '../../template-types';
+
+// Utility function to generate unique keys (same as EstimationBox)
+const generateUniqueKey = (
+  prefix: string,
+  tradeUuid?: string,
+  roomId?: string,
+  tradeSequenceNumber?: number
+): string => {
+  if (
+    prefix === 'trade' &&
+    roomId !== undefined &&
+    tradeSequenceNumber !== undefined
+  ) {
+    return `trade_${roomId}_${tradeSequenceNumber}`;
+  }
+  // Fallback for other cases (rooms, etc.)
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `${prefix}_${timestamp}_${random}`;
+};
 
 interface EditTemplatePageProps {
   params: Promise<{
@@ -98,19 +118,88 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               'First room trades details:',
               JSON.stringify(transformedRooms[0]?.trades, null, 2)
             );
+            // Store in both template-specific and regular template_rooms keys for consistency
             localStorage.setItem(storageKey, JSON.stringify(transformedRooms));
+            localStorage.setItem(
+              'template_rooms',
+              JSON.stringify(transformedRooms)
+            );
             console.log('Data stored in localStorage with key:', storageKey);
+            console.log(
+              'Data also stored in regular template_rooms key for consistency'
+            );
 
-            // Verify the data was stored correctly
+            // Verify the data was stored correctly in both keys
             const storedData = localStorage.getItem(storageKey);
+            const regularStoredData = localStorage.getItem('template_rooms');
             const parsedStoredData = storedData ? JSON.parse(storedData) : null;
-            console.log('Verified stored data:', parsedStoredData);
+            const parsedRegularData = regularStoredData
+              ? JSON.parse(regularStoredData)
+              : null;
+
+            console.log(
+              'Verified stored data in template-specific key:',
+              parsedStoredData
+            );
+            console.log(
+              'Verified stored data in regular template_rooms key:',
+              parsedRegularData
+            );
+
+            // Verify both keys have the same structure
+            if (parsedStoredData && parsedRegularData) {
+              console.log(
+                'Both keys have same structure:',
+                JSON.stringify(parsedStoredData) ===
+                  JSON.stringify(parsedRegularData)
+              );
+            }
             console.log(
               'Verified stored data structure:',
               parsedStoredData
                 ? Object.keys(parsedStoredData[0] || {})
                 : 'no data'
             );
+
+            // Check the first room's trades and services in detail
+            if (parsedStoredData && parsedStoredData[0]) {
+              console.log(
+                'First room trades count:',
+                parsedStoredData[0].trades?.length
+              );
+              if (parsedStoredData[0].trades && parsedStoredData[0].trades[0]) {
+                console.log(
+                  'First trade serviceList count:',
+                  parsedStoredData[0].trades[0].serviceList?.length
+                );
+                console.log(
+                  'First trade serviceList:',
+                  parsedStoredData[0].trades[0].serviceList
+                );
+
+                // Check the first service's materials and finishes
+                if (
+                  parsedStoredData[0].trades[0].serviceList &&
+                  parsedStoredData[0].trades[0].serviceList[0]
+                ) {
+                  const firstService =
+                    parsedStoredData[0].trades[0].serviceList[0];
+                  console.log(
+                    'First service materials:',
+                    firstService.materials
+                  );
+                  console.log('First service finishes:', firstService.finishes);
+                  console.log(
+                    'First service materials type:',
+                    typeof firstService.materials
+                  );
+                  console.log(
+                    'First service finishes type:',
+                    typeof firstService.finishes
+                  );
+                }
+              }
+            }
           }
         } else {
           showErrorToast(
@@ -157,41 +246,123 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     router.push('/templates');
   };
 
-  // Transform API rooms data to EstimationBox expected format
+  // Transform API rooms data to EstimationBox format (exactly like EstimationBox expects)
   const transformApiRoomsToEstimationBox = (apiRooms: any[]) => {
     return apiRooms.map((apiRoom, roomIndex) => {
       // Transform trades
       const transformedTrades =
         apiRoom.templateRoomTrades?.map((apiTrade: any, tradeIndex: number) => {
-          // Transform services (we'll create a default service since API doesn't have services)
-          const defaultService = {
-            id: String(apiTrade.id || `service_${apiTrade.uuid}_${tradeIndex}`),
-            uuid: apiTrade.uuid,
-            name: apiTrade.trade?.name || 'Default Service',
-            description: apiTrade.trade_notes || '',
-            qty: 1,
-            rate: 0,
-            lineTotal: 0,
-            serviceTotal: 0,
-            tradeTotal: 0,
-            serviceOptions: [],
-            materials: [],
-            finishes: [],
-            tools: [],
-            is_hidden: false,
-          };
+          // Transform actual services from templateRoomTradeServices
+          const transformedServices =
+            apiTrade.templateRoomTradeServices?.map(
+              (apiService: any, serviceIndex: number) => {
+                return {
+                  service_id:
+                    apiService.service?.uuid ||
+                    apiService.uuid ||
+                    apiService.id,
+                  service_order_no: serviceIndex + 1,
+                  description: apiService.name || `Service ${serviceIndex + 1}`,
+                  qty: parseFloat(apiService.qty) || 1,
+                  rate: parseFloat(apiService.rate) || 0,
+                  materials: Array.isArray(apiService.materials)
+                    ? apiService.materials.map((material: any) => ({
+                        material_id:
+                          material.material?.uuid ||
+                          material.uuid ||
+                          material.id,
+                        description:
+                          material.name || material.description || '',
+                        disclaimer: material.disclaimer || '',
+                        qty: parseFloat(material.qty) || 1,
+                        unit: material.unit || 'INCH',
+                        rate: parseFloat(material.rate) || 0,
+                        markup: parseFloat(material.markup) || 0,
+                      }))
+                    : [],
+                  finishes: Array.isArray(apiService.finishes)
+                    ? apiService.finishes.map((finish: any) => ({
+                        material_id:
+                          finish.material?.uuid || finish.uuid || finish.id,
+                        description: finish.name || finish.description || '',
+                        disclaimer: finish.disclaimer || '',
+                        qty: parseFloat(finish.qty) || 1,
+                        unit: finish.unit || 'INCH',
+                        rate: parseFloat(finish.rate) || 0,
+                        markup: parseFloat(finish.markup) || 0,
+                      }))
+                    : [],
+                  tools: Array.isArray(apiService.tools)
+                    ? apiService.tools.map((tool: any) => ({
+                        tool_id: tool.tool?.uuid || tool.uuid || tool.id,
+                      }))
+                    : [],
+                  // Extra fields for component functionality
+                  id:
+                    apiService.service?.uuid ||
+                    apiService.uuid ||
+                    apiService.id,
+                  uuid:
+                    apiService.service?.uuid ||
+                    apiService.uuid ||
+                    apiService.id,
+                  name: apiService.name || `Service ${serviceIndex + 1}`,
+                  lineTotal:
+                    parseFloat(apiService.lineTotal || apiService.line_total) ||
+                    0,
+                  serviceTotal:
+                    parseFloat(
+                      apiService.serviceTotal || apiService.service_total
+                    ) || 0,
+                  tradeTotal:
+                    parseFloat(
+                      apiService.tradeTotal || apiService.trade_total
+                    ) || 0,
+                  serviceOptions: Array.isArray(apiService.serviceOptions)
+                    ? apiService.serviceOptions
+                    : [],
+                  is_hidden: apiService.is_hidden || false,
+                };
+              }
+            ) || [];
+
+          // If no services exist, create a default service based on trade info
+          if (transformedServices.length === 0) {
+            const defaultService = {
+              service_id: `service_${apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id || tradeIndex}_${Date.now()}`,
+              service_order_no: 1,
+              description: `Service ${tradeIndex + 1}`,
+              qty: 1,
+              rate: 0,
+              materials: [],
+              finishes: [],
+              tools: [],
+            };
+            transformedServices.push(defaultService);
+          }
 
           return {
-            id: String(apiTrade.id || apiTrade.uuid || `trade_${tradeIndex}`),
-            uniqueKey: `trade_${apiRoom.uuid || roomIndex}_${tradeIndex}`,
-            name: apiTrade.trade?.name || 'Trade',
-            services: 1,
-            dateRange: `${apiTrade.start_date ? new Date(apiTrade.start_date).toLocaleDateString() : ''} - ${apiTrade.end_date ? new Date(apiTrade.end_date).toLocaleDateString() : ''}`,
+            // Your desired format
+            trade_id: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+            start_date: apiTrade.start_date || null,
+            end_date: apiTrade.end_date || null,
+            markup: parseFloat(apiTrade.markup) || 0,
+            services: transformedServices,
+            // Extra fields for component functionality
+            id: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id, // Use UUID like EstimationBox
+            uuid: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+            uniqueKey: generateUniqueKey(
+              'trade',
+              apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+              String(roomIndex),
+              tradeIndex
+            ),
+            name: apiTrade.trade?.name || `Trade ${tradeIndex + 1}`,
             type: 'default',
             laborCost: parseFloat(apiTrade.labor_cost) || 0,
             materialCost: parseFloat(apiTrade.material_cost) || 0,
             tradeTotal: parseFloat(apiTrade.trade_total) || 0,
-            serviceList: [defaultService],
+            serviceList: transformedServices,
             isExpanded: true,
             startDate: apiTrade.start_date
               ? new Date(apiTrade.start_date)
@@ -199,17 +370,19 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             endDate: apiTrade.end_date
               ? new Date(apiTrade.end_date)
               : undefined,
-            markup: parseFloat(apiTrade.markup) || 0,
             markup_type: apiTrade.markup_type || 'FLAT_AMOUNT',
           };
         }) || [];
 
       return {
-        id: String(apiRoom.id || roomIndex),
-        uniqueKey: `room_${apiRoom.uuid || roomIndex}`,
-        name: apiRoom.room_name || `Room ${roomIndex + 1}`,
-        total: 0, // Will be calculated by EstimationBox
+        // Your desired format
+        room_name: apiRoom.room_name || `Room ${roomIndex + 1}`,
         trades: transformedTrades,
+        // Extra fields for component functionality
+        id: String(roomIndex), // Use sequence number like EstimationBox
+        uniqueKey: generateUniqueKey('room'),
+        name: apiRoom.room_name || `Room ${roomIndex + 1}`,
+        total: 0,
         isExpanded: true,
       };
     });
@@ -439,20 +612,5 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     );
   }
 
-  return (
-    <div className='w-full'>
-      {renderFormFields()}
-
-      {/* Action Buttons */}
-      <div className='flex items-center justify-end space-x-4 mt-6'>
-        <Button onClick={handleBack} variant='outline'>
-          Cancel
-        </Button>
-        <Button onClick={handleSave} disabled={saving}>
-          <Save2 size={16} className='mr-2' />
-          {saving ? 'Saving...' : 'Save Changes'}
-        </Button>
-      </div>
-    </div>
-  );
+  return <div className='w-full'>{renderFormFields()}</div>;
 }
