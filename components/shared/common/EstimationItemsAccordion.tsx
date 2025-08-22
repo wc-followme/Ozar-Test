@@ -45,6 +45,29 @@ export default function EstimationItemsAccordion({
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
+  // Build a stable, deterministic key for each item without using array index
+  const getStableItemKey = (
+    item: EstimationItem,
+    listTitle: string,
+    svcId?: string
+  ): string => {
+    const baseId =
+      item.uuid ||
+      (item as unknown as { material_id?: string }).material_id ||
+      item.id;
+    if (baseId) {
+      return `${svcId || 'service'}_${listTitle}_${baseId}`;
+    }
+    const payload = `${svcId || 'service'}_${listTitle}_${JSON.stringify(item)}`;
+    let hash = 0;
+    for (let i = 0; i < payload.length; i++) {
+      // simple deterministic hash
+      hash = (hash << 5) - hash + payload.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${svcId || 'service'}_${listTitle}_${Math.abs(hash)}`;
+  };
+
   const handleItemUpdate = (itemId: string, updatedItem: EstimationItem) => {
     onItemUpdate(itemId, updatedItem);
   };
@@ -100,7 +123,7 @@ export default function EstimationItemsAccordion({
             <div className='space-y-4 mt-4'>
               {items.map(item => (
                 <EstimationItemForm
-                  key={item.id}
+                  key={getStableItemKey(item, title, serviceId)}
                   item={item}
                   onItemUpdate={updatedItem =>
                     handleItemUpdate(item.id, updatedItem)

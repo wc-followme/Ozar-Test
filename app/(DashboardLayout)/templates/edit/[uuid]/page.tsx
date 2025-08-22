@@ -246,122 +246,95 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     router.push('/templates');
   };
 
-  // Transform API rooms data to EstimationBox format (exactly like EstimationBox expects)
+  // Transform API rooms data to EstimationBox format (new API structure)
   const transformApiRoomsToEstimationBox = (apiRooms: any[]) => {
     return apiRooms.map((apiRoom, roomIndex) => {
-      // Transform trades
-      const transformedTrades =
-        apiRoom.templateRoomTrades?.map((apiTrade: any, tradeIndex: number) => {
-          // Transform actual services from templateRoomTradeServices
-          const transformedServices =
-            apiTrade.templateRoomTradeServices?.map(
-              (apiService: any, serviceIndex: number) => {
-                return {
-                  service_id:
-                    apiService.service?.uuid ||
-                    apiService.uuid ||
-                    apiService.id,
-                  service_order_no: serviceIndex + 1,
-                  description: apiService.name || `Service ${serviceIndex + 1}`,
-                  qty: parseFloat(apiService.qty) || 1,
-                  rate: parseFloat(apiService.rate) || 0,
-                  materials: Array.isArray(apiService.materials)
-                    ? apiService.materials.map((material: any) => ({
-                        material_id:
-                          material.material?.uuid ||
-                          material.uuid ||
-                          material.id,
-                        description:
-                          material.name || material.description || '',
-                        disclaimer: material.disclaimer || '',
-                        qty: parseFloat(material.qty) || 1,
-                        unit: material.unit || 'INCH',
-                        rate: parseFloat(material.rate) || 0,
-                        markup: parseFloat(material.markup) || 0,
-                      }))
-                    : [],
-                  finishes: Array.isArray(apiService.finishes)
-                    ? apiService.finishes.map((finish: any) => ({
-                        material_id:
-                          finish.material?.uuid || finish.uuid || finish.id,
-                        description: finish.name || finish.description || '',
-                        disclaimer: finish.disclaimer || '',
-                        qty: parseFloat(finish.qty) || 1,
-                        unit: finish.unit || 'INCH',
-                        rate: parseFloat(finish.rate) || 0,
-                        markup: parseFloat(finish.markup) || 0,
-                      }))
-                    : [],
-                  tools: Array.isArray(apiService.tools)
-                    ? apiService.tools.map((tool: any) => ({
-                        tool_id: tool.tool?.uuid || tool.uuid || tool.id,
-                      }))
-                    : [],
-                  // Extra fields for component functionality
-                  id:
-                    apiService.service?.uuid ||
-                    apiService.uuid ||
-                    apiService.id,
-                  uuid:
-                    apiService.service?.uuid ||
-                    apiService.uuid ||
-                    apiService.id,
-                  name: apiService.name || `Service ${serviceIndex + 1}`,
-                  lineTotal:
-                    parseFloat(apiService.lineTotal || apiService.line_total) ||
-                    0,
-                  serviceTotal:
-                    parseFloat(
-                      apiService.serviceTotal || apiService.service_total
-                    ) || 0,
-                  tradeTotal:
-                    parseFloat(
-                      apiService.tradeTotal || apiService.trade_total
-                    ) || 0,
-                  serviceOptions: Array.isArray(apiService.serviceOptions)
-                    ? apiService.serviceOptions
-                    : [],
-                  is_hidden: apiService.is_hidden || false,
-                };
-              }
-            ) || [];
-
-          // If no services exist, create a default service based on trade info
-          if (transformedServices.length === 0) {
-            const defaultService = {
-              service_id: `service_${apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id || tradeIndex}_${Date.now()}`,
-              service_order_no: 1,
-              description: `Service ${tradeIndex + 1}`,
-              qty: 1,
-              rate: 0,
-              materials: [],
-              finishes: [],
-              tools: [],
-            };
-            transformedServices.push(defaultService);
-          }
+      const transformedTrades = (apiRoom.trades || []).map(
+        (apiTrade: any, tradeIndex: number) => {
+          const transformedServices = (apiTrade.services || []).map(
+            (apiService: any, serviceIndex: number) => {
+              return {
+                service_id: apiService.service_id,
+                service_order_no:
+                  apiService.service_order_no || serviceIndex + 1,
+                description:
+                  apiService.description || `Service ${serviceIndex + 1}`,
+                qty: Number(apiService.qty) || 1,
+                rate: Number(apiService.rate) || 0,
+                materials: Array.isArray(apiService.materials)
+                  ? apiService.materials.map((material: any) => ({
+                      id: material.material_id,
+                      uuid: material.material_id,
+                      name: material.name || material.description || '',
+                      variant: '',
+                      qty: Number(material.qty) || 1,
+                      unit: material.unit || 'INCH',
+                      description: material.description || '',
+                      rate: Number(material.rate) || 0,
+                      markup: Number(material.markup) || 0,
+                      markup_type: 'FLAT_AMOUNT',
+                      lineTotal: 0,
+                    }))
+                  : [],
+                finishes: Array.isArray(apiService.finishes)
+                  ? apiService.finishes.map((finish: any) => ({
+                      id: finish.material_id,
+                      uuid: finish.material_id,
+                      name: finish.name || finish.description || '',
+                      variant: '',
+                      qty: Number(finish.qty) || 1,
+                      unit: finish.unit || 'INCH',
+                      description: finish.description || '',
+                      rate: Number(finish.rate) || 0,
+                      markup: Number(finish.markup) || 0,
+                      markup_type: 'FLAT_AMOUNT',
+                      lineTotal: 0,
+                    }))
+                  : [],
+                tools: Array.isArray(apiService.tools)
+                  ? apiService.tools.map((tool: any) => ({
+                      id: tool.tool_id,
+                      uuid: tool.tool_id,
+                      name: tool.name || tool.tool_id || 'Tool',
+                      category: '',
+                      description: '',
+                      status: 'available',
+                    }))
+                  : [],
+                // Extra fields for component functionality
+                id: apiService.service_id,
+                uuid: apiService.service_id,
+                name: apiService.description || `Service ${serviceIndex + 1}`,
+                lineTotal: 0,
+                serviceTotal: 0,
+                tradeTotal: 0,
+                serviceOptions: [],
+                is_hidden: false,
+              };
+            }
+          );
 
           return {
             // Your desired format
-            trade_id: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+            trade_id: apiTrade.trade_id,
             start_date: apiTrade.start_date || null,
             end_date: apiTrade.end_date || null,
-            markup: parseFloat(apiTrade.markup) || 0,
+            markup: Number(apiTrade.markup) || 0,
             services: transformedServices,
             // Extra fields for component functionality
-            id: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id, // Use UUID like EstimationBox
-            uuid: apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+            id: apiTrade.trade_id,
+            uuid: apiTrade.trade_id,
             uniqueKey: generateUniqueKey(
               'trade',
-              apiTrade.trade?.uuid || apiTrade.uuid || apiTrade.id,
+              apiTrade.trade_id,
               String(roomIndex),
               tradeIndex
             ),
-            name: apiTrade.trade?.name || `Trade ${tradeIndex + 1}`,
+            name: apiTrade.name || `Trade ${tradeIndex + 1}`,
             type: 'default',
-            laborCost: parseFloat(apiTrade.labor_cost) || 0,
-            materialCost: parseFloat(apiTrade.material_cost) || 0,
-            tradeTotal: parseFloat(apiTrade.trade_total) || 0,
+            laborCost: 0,
+            materialCost: 0,
+            tradeTotal: 0,
             serviceList: transformedServices,
             isExpanded: true,
             startDate: apiTrade.start_date
@@ -370,16 +343,17 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             endDate: apiTrade.end_date
               ? new Date(apiTrade.end_date)
               : undefined,
-            markup_type: apiTrade.markup_type || 'FLAT_AMOUNT',
+            markup_type: 'FLAT_AMOUNT',
           };
-        }) || [];
+        }
+      );
 
       return {
         // Your desired format
         room_name: apiRoom.room_name || `Room ${roomIndex + 1}`,
         trades: transformedTrades,
         // Extra fields for component functionality
-        id: String(roomIndex), // Use sequence number like EstimationBox
+        id: String(roomIndex),
         uniqueKey: generateUniqueKey('room'),
         name: apiRoom.room_name || `Room ${roomIndex + 1}`,
         total: 0,

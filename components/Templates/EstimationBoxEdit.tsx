@@ -1040,6 +1040,33 @@ export default function EstimationBoxEdit({
     return calculateJobTotal(transformedRooms);
   }, [transformedRooms]);
 
+  // Header handlers to support inline room title edit like create mode
+  const handleEditClick = () => {
+    setEditingRoomName(selectedRoom?.name || '');
+    setIsEditing(true);
+  };
+
+  const handleNameSave = () => {
+    if (!selectedRoom) return;
+    setRooms(prev =>
+      prev.map(room =>
+        room.id === selectedRoom.id ? { ...room, name: editingRoomName } : room
+      )
+    );
+    setIsEditing(false);
+  };
+
+  const handleRoomNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleNameSave();
+    }
+  };
+
+  const onDeleteClick = () => {
+    setDeleteType('room');
+    setShowDeleteModal(true);
+  };
+
   if (!selectedRoom || rooms.length === 0) {
     return (
       <div className='flex items-center justify-center h-64'>
@@ -1080,9 +1107,20 @@ export default function EstimationBoxEdit({
       <div className='flex-1 flex flex-col'>
         {/* Header */}
         <EstimationHeader
-          roomName={selectedRoom?.name || 'Room'}
-          onBack={_onClose}
-          totalAmount={selectedRoom?.total || 0}
+          showAddService={false}
+          isEditing={isEditing}
+          editingRoomName={editingRoomName}
+          setEditingRoomName={setEditingRoomName}
+          handleNameSave={handleNameSave}
+          handleRoomNameKeyDown={handleRoomNameKeyDown}
+          handleEditClick={handleEditClick}
+          selectedRoom={selectedRoom}
+          showServiceForm={false}
+          selectedServiceData={undefined}
+          selectedTradeData={undefined}
+          handleAddTrade={addTrade}
+          handleAddService={handleAddService}
+          onDeleteClick={onDeleteClick}
         />
 
         {/* Trades Section */}

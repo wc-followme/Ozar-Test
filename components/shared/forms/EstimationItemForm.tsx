@@ -157,11 +157,18 @@ export default function EstimationItemForm({
           <Label className='field-label text-sm'>Material Name</Label>
           <SelectField
             value={(() => {
-              // Find the option that matches the current material name
-              const matchingOption = materialOptions.find(
+              // Prefer matching by UUID when available for pre-selection
+              if (item.uuid) {
+                const byUuid = materialOptions.find(
+                  option => option.value === item.uuid
+                );
+                if (byUuid) return byUuid.value;
+              }
+              // Fallback: match by label/name
+              const byName = materialOptions.find(
                 option => option.label === item.name
               );
-              return matchingOption ? matchingOption.value : item.name;
+              return byName ? byName.value : item.name;
             })()}
             onValueChange={newValue => {
               // Find the selected option to get the display name and UUID
@@ -201,7 +208,9 @@ export default function EstimationItemForm({
           <SelectField
             value={item.variant}
             onValueChange={value => handleInputChange('variant', value)}
-            options={[{ value: item.variant, label: item.variant }]}
+            options={
+              item.variant ? [{ value: item.variant, label: item.variant }] : []
+            }
             placeholder='Select variant'
             className='mb-0'
           />
@@ -251,7 +260,7 @@ export default function EstimationItemForm({
           <SelectField
             value={item.unit}
             onValueChange={value => handleInputChange('unit', value)}
-            options={[{ value: item.unit, label: item.unit }]}
+            options={item.unit ? [{ value: item.unit, label: item.unit }] : []}
             placeholder='Select unit'
             className='mb-0'
           />

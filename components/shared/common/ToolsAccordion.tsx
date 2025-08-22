@@ -7,8 +7,10 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Card } from '@/components/ui/card';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { Add, ArrowSquareDown, CloseCircle } from 'iconsax-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import AddToolListForm from '../forms/AddToolListForm';
 import SideSheet from './SideSheet';
 
@@ -53,6 +55,80 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
   } = props;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isSideSheetOpen, setIsSideSheetOpen] = useState(false);
+  const [toolNameById, setToolNameById] = useState<Record<string, string>>({});
+
+  // Fetch tool names so chips display names instead of UUIDs/IDs
+  useEffect(() => {
+    const fetchTools = async (serviceUuid: string | undefined | null) => {
+      try {
+        if (!serviceUuid) {
+          setToolNameById({});
+          return;
+        }
+        const selectedCompanyRaw =
+          typeof window !== 'undefined'
+            ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+            : null;
+        const companyUuid = selectedCompanyRaw
+          ? (() => {
+              try {
+                const parsed: { uuid?: string; id?: string | number } =
+                  JSON.parse(selectedCompanyRaw);
+                return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+              } catch {
+                return '';
+              }
+            })()
+          : '';
+        if (!companyUuid) {
+          setToolNameById({});
+          return;
+        }
+        const response = await apiService.fetchToolsPublic({
+          page: 1,
+          limit: 100,
+          company_id: companyUuid,
+          service_id: serviceUuid,
+        });
+        type ToolItem = { id?: string | number; uuid?: string; name?: string };
+        const payload = response as unknown as {
+          data?: ToolItem[] | { data?: ToolItem[] };
+        };
+        const list: ToolItem[] = Array.isArray(payload?.data)
+          ? (payload.data as ToolItem[])
+          : Array.isArray((payload?.data as { data?: ToolItem[] })?.data)
+            ? ((payload.data as { data?: ToolItem[] }).data as ToolItem[])
+            : [];
+        const map: Record<string, string> = {};
+        list.forEach(t => {
+          const key = String(t.uuid || t.id || '');
+          if (key) map[key] = String(t.name || '');
+        });
+        setToolNameById(map);
+      } catch {
+        setToolNameById({});
+      }
+    };
+    fetchTools(serviceId);
+  }, [serviceId]);
+
+  // Build a stable key per tool without relying on array index
+  const getStableToolKey = (tool: Tool): string => {
+    const rawId =
+      tool.uuid || tool.id || (tool as unknown as { tool_id?: string }).tool_id;
+    if (rawId) {
+      return `${serviceId || 'service'}_${title}_${rawId}`;
+    }
+    const payload = `${serviceId || 'service'}_${title}_${tool.name || ''}_$${
+      tool.category || ''
+    }_${JSON.stringify(tool)}`;
+    let hash = 0;
+    for (let i = 0; i < payload.length; i++) {
+      hash = (hash << 5) - hash + payload.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${serviceId || 'service'}_${title}_${Math.abs(hash)}`;
+  };
 
   const handleAddTools = (tools: Tool[]) => {
     // Replace all existing tools with the new selection to avoid duplicates
@@ -131,11 +207,13 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
                 {tools.length > 0 ? (
                   tools.map(tool => (
                     <div
-                      key={tool.id}
+                      key={getStableToolKey(tool)}
                       className='flex items-center gap-2 pl-4 pr-3 py-2 bg-cyanwave-light  rounded-full'
                     >
                       <span className='text-base font-medium text-[var(--text-dark)]'>
-                        {tool.name}
+                        {toolNameById[tool.uuid || tool.id] ||
+                          tool.name ||
+                          'Tool'}
                       </span>
                       <button
                         onClick={() => handleRemoveTool(tool.id)}
