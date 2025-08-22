@@ -410,9 +410,7 @@ export default function EstimationTradeForm({
       ) : (
         <div className='text-center text-gray-500 py-4'>
           <p>No services found for this trade.</p>
-          <p className='text-sm'>
-            Service list: {JSON.stringify(trade.serviceList)}
-          </p>
+          <p className='text-sm'></p>
         </div>
       )}
     </div>
