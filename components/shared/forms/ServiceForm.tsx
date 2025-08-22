@@ -1,257 +1,310 @@
-import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
-import {
-  ServiceFormProps,
-  Trade,
-} from '@/app/(DashboardLayout)/service-management/service-types';
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-
-import { apiService } from '@/lib/api';
-import { cn, getCompanyId } from '@/lib/utils';
-import { serviceFormSchema } from '@/lib/validations/service';
-import { yupResolver } from '@hookform/resolvers/yup';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { showErrorToast, showSuccessToast } from '../../ui/use-toast';
-import FormErrorMessage from '../common/FormErrorMessage';
-import MultiSelect from '../common/MultiSelect';
+import { ServiceOption } from '../../Templates/service-options-types';
 
-export default function ServiceForm({
+interface ServiceFormProps {
+  onSubmit: (data: {
+    serviceName: string;
+    trades: string;
+    serviceData?: any;
+  }) => Promise<void>;
+  loading: boolean;
+  onCancel: () => void;
+  initialServiceUuid?: string | undefined;
+}
+
+export function ServiceForm({
+  onSubmit,
   loading,
   onCancel,
   initialServiceUuid,
-  onSubmit,
 }: ServiceFormProps) {
-  const [tradesOption, setTradesOption] = useState<Trade[]>([]);
-  const [loadingTrades, setLoadingTrades] = useState(true);
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm({
-    resolver: yupResolver(serviceFormSchema),
-    defaultValues: {
-      serviceName: '',
-      trades: [],
-    },
+  const [formData, setFormData] = useState<ServiceOption>({
+    id: initialServiceUuid || 'new',
+    name: '',
+    description: '',
+    price: 0,
+    duration: '',
+    category: 'General',
+    is_hidden: false,
   });
+  const [isEditing, setIsEditing] = useState(true);
 
   useEffect(() => {
-    const fetchTrades = async () => {
-      try {
-        setLoadingTrades(true);
+    if (initialServiceUuid) {
+      // Load existing service data if editing
+      setFormData(prev => ({
+        ...prev,
+        id: initialServiceUuid,
+      }));
+    }
+  }, [initialServiceUuid]);
 
-        // Get selected company ID using global utility function
-        const companyId = getCompanyId();
+  const handleInputChange = (
+    field: keyof ServiceOption,
+    value: string | number | boolean
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
 
-        const response = await apiService.getTradesDropdown({
-          ...(companyId ? { company_id: companyId } : {}),
-        });
-        if (response.statusCode === 200 && Array.isArray(response.data)) {
-          setTradesOption(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch trades:', error);
-        setTradesOption([]);
-      } finally {
-        setLoadingTrades(false);
-      }
-    };
-    fetchTrades();
-  }, []);
-
-  useEffect(() => {
-    if (!initialServiceUuid || loadingTrades) return;
-
-    const fetchService = async () => {
-      try {
-        const response = await apiService.getServiceDetails(initialServiceUuid);
-        if (response.statusCode === 200 && response.data) {
-          const serviceData = response.data;
-
-          // Extract trade IDs from trades array
-          const tradeIds = Array.isArray(serviceData.trades)
-            ? serviceData.trades.map((trade: any) =>
-                trade?.id ? String(trade.id) : null
-              )
-            : [];
-
-          reset({
-            serviceName: serviceData.name || '',
-            trades: tradeIds,
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch service details:', error);
-        // Optionally show error toast
-      }
-    };
-    fetchService();
-  }, [initialServiceUuid, reset, loadingTrades, tradesOption]);
-
-  const onFormSubmit = async (data: any) => {
-    const { serviceName, trades = [] } = data;
+  const handleSave = async () => {
     try {
-      // Get selected company ID using global utility function
-      const companyId = getCompanyId();
-
-      const payload = {
-        name: serviceName,
-        description: '', // You can add a description field to the form if needed
-        is_default: false,
-        is_active: true,
-        status: 'ACTIVE',
-        trade_ids: trades.join(','),
-        ...(companyId ? { company_id: companyId } : {}),
-      };
-
-      if (initialServiceUuid) {
-        // Update existing service
-        const response = await apiService.updateService(
-          initialServiceUuid,
-          payload
-        );
-        const { message, data } = response;
-        showSuccessToast(message || SERVICE_MESSAGES.UPDATE_SUCCESS);
-
-        // Call onSubmit with updated service data
-        if (onSubmit && data) {
-          onSubmit({
-            serviceName: data.name || serviceName,
-            trades: trades.join(', '),
-            serviceData: data,
-          });
-        }
-      } else {
-        // Create new service
-        const response = await apiService.createService(payload);
-        const { message, data } = response;
-        showSuccessToast(message || SERVICE_MESSAGES.CREATE_SUCCESS);
-
-        // Call onSubmit with created service data
-        if (onSubmit && data) {
-          onSubmit({
-            serviceName: data.name || serviceName,
-            trades: trades.join(', '),
-            serviceData: data,
-          });
-        }
-      }
-
-      reset();
-      if (onCancel) {
-        onCancel();
-      }
-    } catch (error: unknown) {
-      const errorMessage = initialServiceUuid
-        ? SERVICE_MESSAGES.UPDATE_ERROR
-        : SERVICE_MESSAGES.CREATE_ERROR;
-
-      showErrorToast(
-        typeof error === 'object' &&
-          error &&
-          'message' in error &&
-          typeof (error as any).message === 'string'
-          ? (error as any).message
-          : errorMessage
-      );
+      await onSubmit({
+        serviceName: formData.name,
+        trades: formData.category,
+        serviceData: formData,
+      });
+    } catch (error) {
+      console.error('Error submitting service:', error);
     }
   };
 
+  const handleCancel = () => {
+    onCancel();
+  };
+
+  const durationOptions = [
+    '1 hour',
+    '2 hours',
+    '4 hours',
+    '8 hours',
+    '1 day',
+    '2 days',
+    '1 week',
+    '2 weeks',
+    '1 month',
+    'Custom',
+  ];
+
+  const categoryOptions = [
+    'General',
+    'Plumbing',
+    'Electrical',
+    'Carpentry',
+    'Painting',
+    'Cleaning',
+    'Maintenance',
+    'Installation',
+    'Repair',
+    'Custom',
+  ];
+
+  if (!isEditing) {
+    return (
+      <div className='bg-white rounded-lg border border-gray-200 p-6'>
+        <div className='flex justify-between items-start mb-6'>
+          <div>
+            <h2 className='text-2xl font-bold text-gray-900 mb-2'>
+              {formData.name}
+            </h2>
+            <p className='text-gray-600'>{formData.description}</p>
+          </div>
+          <div className='flex gap-2'>
+            <Button
+              onClick={() => setIsEditing(true)}
+              variant='outline'
+              className='text-blue-600 hover:text-blue-700'
+            >
+              Edit
+            </Button>
+            <Button
+              onClick={onCancel}
+              variant='outline'
+              className='text-red-600 hover:text-red-700'
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+
+        <div className='grid grid-cols-2 gap-6'>
+          <div>
+            <Label className='text-sm font-medium text-gray-700'>Price</Label>
+            <p className='text-lg font-semibold text-gray-900 mt-1'>
+              ${formData.price.toFixed(2)}
+            </p>
+          </div>
+          <div>
+            <Label className='text-sm font-medium text-gray-700'>
+              Duration
+            </Label>
+            <p className='text-lg text-gray-900 mt-1'>{formData.duration}</p>
+          </div>
+          <div>
+            <Label className='text-sm font-medium text-gray-700'>
+              Category
+            </Label>
+            <p className='text-lg text-gray-900 mt-1'>{formData.category}</p>
+          </div>
+          <div>
+            <Label className='text-sm font-medium text-gray-700'>Status</Label>
+            <p className='text-lg text-gray-900 mt-1'>
+              {formData.is_hidden ? 'Hidden' : 'Active'}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <form
-      onSubmit={handleSubmit(onFormSubmit)}
-      className='space-y-4 sm:space-y-6 w-full max-w-xl'
-    >
-      <div className='space-y-1 md:space-y-2'>
-        <Label htmlFor='trades' className='field-label text-sm sm:text-base'>
-          {SERVICE_MESSAGES.TRADE_LABEL}
-        </Label>
-        <Controller
-          name='trades'
-          control={control}
-          render={({ field }) => {
-            return loadingTrades ? (
-              <Input
-                disabled
-                placeholder={SERVICE_MESSAGES.LOADING_TRADES}
-                className='h-12 w-full border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
-              />
-            ) : (
-              <MultiSelect
-                options={tradesOption}
-                getOptionLabel={(option: Trade) => option?.name || ''}
-                getOptionValue={(option: Trade) => String(option?.id)}
-                value={
-                  Array.isArray(field.value)
-                    ? field.value.filter(
-                        (v): v is string => typeof v === 'string'
-                      )
-                    : []
-                }
-                onChange={field.onChange}
-                placeholder={SERVICE_MESSAGES.SELECT_TRADE}
-                error={errors.trades?.message as string}
-                name='trades'
-                maxHeight={200}
-                maxSelectedItems={1}
-              />
-            );
-          }}
-        />
+    <div className='bg-white rounded-lg border border-gray-200 p-6'>
+      <div className='flex justify-between items-center mb-6'>
+        <h2 className='text-2xl font-bold text-gray-900'>
+          Edit Service Option
+        </h2>
+        <div className='flex gap-2'>
+          <Button onClick={handleSave} className='btn-primary'>
+            Save
+          </Button>
+          <Button onClick={handleCancel} variant='outline'>
+            Cancel
+          </Button>
+        </div>
       </div>
-      <div className='space-y-1 md:space-y-2'>
-        <Label
-          htmlFor='serviceName'
-          className='field-label text-sm sm:text-base'
-        >
-          {SERVICE_MESSAGES.SERVICE_NAME_LABEL}
-        </Label>
-        <Controller
-          name='serviceName'
-          control={control}
-          render={({ field }) => (
+
+      <div className='space-y-6'>
+        <div>
+          <Label htmlFor='name' className='text-sm font-medium text-gray-700'>
+            Service Name
+          </Label>
+          <Input
+            id='name'
+            value={formData.name}
+            onChange={e => handleInputChange('name', e.target.value)}
+            className='mt-1'
+            placeholder='Enter service name'
+          />
+        </div>
+
+        <div>
+          <Label
+            htmlFor='description'
+            className='text-sm font-medium text-gray-700'
+          >
+            Description
+          </Label>
+          <Textarea
+            id='description'
+            value={formData.description}
+            onChange={e => handleInputChange('description', e.target.value)}
+            className='mt-1'
+            rows={3}
+            placeholder='Enter service description'
+          />
+        </div>
+
+        <div className='grid grid-cols-2 gap-6'>
+          <div>
+            <Label
+              htmlFor='price'
+              className='text-sm font-medium text-gray-700'
+            >
+              Price ($)
+            </Label>
             <Input
-              id='serviceName'
-              {...field}
-              placeholder={SERVICE_MESSAGES.ENTER_SERVICE_NAME}
-              className={cn(
-                'input-field !h-12',
-                errors.serviceName
-                  ? 'border-[var(--warning)]'
-                  : 'border-[var(--border-dark)]'
-              )}
+              id='price'
+              type='number'
+              step='0.01'
+              min='0'
+              value={formData.price}
+              onChange={e =>
+                handleInputChange('price', parseFloat(e.target.value) || 0)
+              }
+              className='mt-1'
+              placeholder='0.00'
             />
-          )}
-        />
-        <FormErrorMessage message={errors.serviceName?.message as string} />
+          </div>
+
+          <div>
+            <Label
+              htmlFor='duration'
+              className='text-sm font-medium text-gray-700'
+            >
+              Duration
+            </Label>
+            <Select
+              value={formData.duration}
+              onValueChange={value => handleInputChange('duration', value)}
+            >
+              <SelectTrigger className='mt-1'>
+                <SelectValue placeholder='Select duration' />
+              </SelectTrigger>
+              <SelectContent>
+                {durationOptions.map(option => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div>
+          <Label
+            htmlFor='category'
+            className='text-sm font-medium text-gray-700'
+          >
+            Category
+          </Label>
+          <Select
+            value={formData.category}
+            onValueChange={value => handleInputChange('category', value)}
+          >
+            <SelectTrigger className='mt-1'>
+              <SelectValue placeholder='Select category' />
+            </SelectTrigger>
+            <SelectContent>
+              {categoryOptions.map(option => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className='flex items-center gap-2'>
+          <input
+            id='is_hidden'
+            type='checkbox'
+            checked={formData.is_hidden}
+            onChange={e => handleInputChange('is_hidden', e.target.checked)}
+            className='rounded border-gray-300 text-blue-600 focus:ring-blue-500'
+          />
+          <Label
+            htmlFor='is_hidden'
+            className='text-sm font-medium text-gray-700'
+          >
+            Hide this service option
+          </Label>
+        </div>
       </div>
-      <div className='pt-2 flex items-center gap-3 sm:gap-4'>
-        <Button
-          type='button'
-          variant='outline'
-          className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
-          onClick={onCancel}
-          disabled={loading}
-        >
-          {SERVICE_MESSAGES.CANCEL_BUTTON}
+
+      <div className='flex items-center gap-4 pt-6'>
+        <Button onClick={handleSave} className='btn-primary' disabled={loading}>
+          {loading ? 'Saving...' : 'Save Service'}
         </Button>
-        <Button
-          type='submit'
-          className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
-          disabled={loading}
-        >
-          {loading
-            ? initialServiceUuid
-              ? SERVICE_MESSAGES.UPDATING_BUTTON
-              : SERVICE_MESSAGES.CREATING_BUTTON
-            : initialServiceUuid
-              ? SERVICE_MESSAGES.UPDATE_BUTTON
-              : SERVICE_MESSAGES.CREATE_BUTTON}
+        <Button onClick={handleCancel} variant='outline' disabled={loading}>
+          Cancel
         </Button>
       </div>
-    </form>
+    </div>
   );
 }

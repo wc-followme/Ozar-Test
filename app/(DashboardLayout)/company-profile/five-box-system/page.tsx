@@ -179,24 +179,38 @@ const FiveBoxSystem = () => {
       {/* 5-box System Grid */}
       <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
         {boxData.map(
-          ({ id, number, color, textColor, title, description, enabled }) => (
-            <BoxCard
-              key={id}
-              id={id}
-              number={number}
-              color={color}
-              textColor={textColor}
-              title={title}
-              description={description}
-              enabled={enabled}
-              menuOptions={getMenuOptions()}
-              onEdit={() => handleEdit(id)}
-              onDelete={() => handleDelete(id)}
-              onToggle={() => handleToggle(id)}
-              onClick={() => handleCardClick(id)}
-              showMenu={id !== '04' && id !== '05'} // Hide menu for Category (04) and Estimation (05)
-            />
-          )
+          ({ id, number, color, textColor, title, description, enabled }) => {
+            const isEstimationCard = id === '05';
+            const isCategoryCard = id === '04';
+
+            const baseProps = {
+              id,
+              number,
+              color,
+              textColor,
+              title,
+              description,
+              enabled,
+              menuOptions: getMenuOptions(),
+              onEdit: () => handleEdit(id),
+              onDelete: () => handleDelete(id),
+              onToggle: () => handleToggle(id),
+              showMenu: !isCategoryCard && !isEstimationCard,
+            };
+
+            // Add onClick only for non-estimation cards
+            if (isEstimationCard) {
+              return <BoxCard key={id} {...baseProps} />;
+            } else {
+              return (
+                <BoxCard
+                  key={id}
+                  {...baseProps}
+                  onClick={() => handleCardClick(id)}
+                />
+              );
+            }
+          }
         )}
       </div>
     </section>
