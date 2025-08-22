@@ -24,6 +24,7 @@ export const ROLE_MESSAGES = {
   // Menu options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RETRIEVE_MENU: 'Retrieve',
 
   // Loading and empty states
   LOADING: 'Loading...',
@@ -36,12 +37,14 @@ export const ROLE_MESSAGES = {
   // Success messages
   CREATE_SUCCESS: 'Role created successfully!',
   UPDATE_SUCCESS: 'Role updated successfully!',
-  DELETE_SUCCESS: 'Role deleted successfully!',
+  DELETE_SUCCESS: 'Role archived successfully!',
+  RETRIEVE_SUCCESS: 'Role retrieved successfully!',
 
   // Error messages
   CREATE_ERROR: 'Failed to create role. Please try again.',
   UPDATE_ERROR: 'Failed to update role. Please try again.',
-  DELETE_ERROR: 'Failed to Archive role. Please try again.',
+  DELETE_ERROR: 'Failed to archive role. Please try again.',
+  RETRIEVE_ERROR: 'Failed to retrieve role. Please try again.',
   LOAD_ERROR: 'Failed to load role details.',
   FETCH_ROLES_ERROR: 'Failed to fetch roles.',
   NETWORK_ERROR: 'Network error. Please check your connection.',
@@ -54,4 +57,8 @@ export const ROLE_MESSAGES = {
   // Confirmation dialogs
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
   DELETE_CONFIRM_SUBTITLE: 'This action cannot be undone.',
+  
+  // Archive related messages
+  ARCHIVED_ROLES_TITLE: 'Archived Roles',
+  NO_ARCHIVED_ROLES_FOUND: 'No archived roles found',
 };
