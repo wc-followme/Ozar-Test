@@ -18,20 +18,15 @@ interface ServiceOptionsSidebarProps {
 
 export function ServiceOptionsSidebar({
   isSidebarCollapsed,
-  toggleSidebar,
-  handleAddCategory,
+  toggleSidebar: _toggleSidebar,
+  handleAddCategory: _handleAddCategory,
   categories,
   handleCategorySelect,
-  selectedServiceOption,
+  selectedServiceOption: _selectedServiceOption,
   formatCurrency,
   selectedCategoryId,
-  toggleMainAccordion,
+  toggleMainAccordion: _toggleMainAccordion,
 }: ServiceOptionsSidebarProps) {
-  const totalAmount = categories.reduce(
-    (total, category) => total + category.total,
-    0
-  );
-
   return (
     <div
       className={`bg-[var(--card-background)] border-r border-[var(--border-dark)] transition-all duration-300 ${

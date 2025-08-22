@@ -265,18 +265,6 @@ export default function ServiceOptionsBox(
     }
   };
 
-  const handleCategoryNameChange = (newCategoryName: string) => {
-    if (selectedCategory && selectedCategoryUniqueKey) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
-            ? { ...category, name: newCategoryName }
-            : category
-        )
-      );
-    }
-  };
-
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
     if (
       selectedCategory &&
@@ -422,12 +410,6 @@ export default function ServiceOptionsBox(
     }).format(amount);
   };
 
-  const calculateProjectTotal = () => {
-    return categories.reduce((total, category) => total + category.total, 0);
-  };
-
-  const projectTotal = calculateProjectTotal();
-
   const handleSave = async () => {
     try {
       saveCurrentState();
@@ -478,60 +460,6 @@ export default function ServiceOptionsBox(
       setIsMainAccordionExpanded(true);
     }
   };
-
-  const handleCategoryReorder = (reorderedCategories: ServiceCategory[]) => {
-    setCategories(reorderedCategories);
-  };
-
-  const handleServiceOptionReorder = (
-    reorderedServiceOptions: ServiceOption[]
-  ) => {
-    if (selectedCategoryUniqueKey) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
-            ? {
-                ...category,
-                serviceOptions: reorderedServiceOptions,
-              }
-            : category
-        )
-      );
-    }
-  };
-
-  // DynamicTable columns for service options
-  const serviceOptionColumns = [
-    { key: 'name', label: 'Service Name', type: 'text' as const },
-    { key: 'description', label: 'Description', type: 'text' as const },
-    { key: 'price', label: 'Price', type: 'number' as const },
-    { key: 'duration', label: 'Duration', type: 'text' as const },
-    { key: 'category', label: 'Category', type: 'text' as const },
-    { key: 'actions', label: 'Actions', type: 'custom' as const },
-  ];
-
-  // DynamicTable actions for service options
-  const serviceOptionActions = [
-    {
-      key: 'edit',
-      label: 'Edit',
-      icon: 'Edit2',
-      onClick: (row: any) => {
-        setSelectedServiceOption(row.id);
-        setShowServiceForm(true);
-      },
-      variant: 'ghost' as const,
-      size: 'sm' as const,
-    },
-    {
-      key: 'delete',
-      label: 'Delete',
-      icon: 'Trash',
-      onClick: (row: any) => handleServiceOptionDelete(row.id),
-      variant: 'destructive' as const,
-      size: 'sm' as const,
-    },
-  ];
 
   return (
     <div className='flex bg-[var(--card-background)] rounded-[20px] w-full border border-[var(--border-dark)] overflow-hidden'>

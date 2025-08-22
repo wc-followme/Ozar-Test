@@ -15,22 +15,42 @@ import { useEffect, useState } from 'react';
 import { ServiceOption } from '../../Templates/service-options-types';
 
 interface ServiceFormProps {
-  service: ServiceOption;
-  onServiceUpdate: (updatedService: ServiceOption) => void;
-  onDelete: () => void;
+  onSubmit: (data: {
+    serviceName: string;
+    trades: string;
+    serviceData?: any;
+  }) => Promise<void>;
+  loading: boolean;
+  onCancel: () => void;
+  initialServiceUuid?: string | undefined;
 }
 
 export function ServiceForm({
-  service,
-  onServiceUpdate,
-  onDelete,
+  onSubmit,
+  loading,
+  onCancel,
+  initialServiceUuid,
 }: ServiceFormProps) {
-  const [formData, setFormData] = useState<ServiceOption>(service);
-  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<ServiceOption>({
+    id: initialServiceUuid || 'new',
+    name: '',
+    description: '',
+    price: 0,
+    duration: '',
+    category: 'General',
+    is_hidden: false,
+  });
+  const [isEditing, setIsEditing] = useState(true);
 
   useEffect(() => {
-    setFormData(service);
-  }, [service]);
+    if (initialServiceUuid) {
+      // Load existing service data if editing
+      setFormData(prev => ({
+        ...prev,
+        id: initialServiceUuid,
+      }));
+    }
+  }, [initialServiceUuid]);
 
   const handleInputChange = (
     field: keyof ServiceOption,
@@ -42,14 +62,20 @@ export function ServiceForm({
     }));
   };
 
-  const handleSave = () => {
-    onServiceUpdate(formData);
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      await onSubmit({
+        serviceName: formData.name,
+        trades: formData.category,
+        serviceData: formData,
+      });
+    } catch (error) {
+      console.error('Error submitting service:', error);
+    }
   };
 
   const handleCancel = () => {
-    setFormData(service);
-    setIsEditing(false);
+    onCancel();
   };
 
   const durationOptions = [
@@ -84,9 +110,9 @@ export function ServiceForm({
         <div className='flex justify-between items-start mb-6'>
           <div>
             <h2 className='text-2xl font-bold text-gray-900 mb-2'>
-              {service.name}
+              {formData.name}
             </h2>
-            <p className='text-gray-600'>{service.description}</p>
+            <p className='text-gray-600'>{formData.description}</p>
           </div>
           <div className='flex gap-2'>
             <Button
@@ -97,7 +123,7 @@ export function ServiceForm({
               Edit
             </Button>
             <Button
-              onClick={onDelete}
+              onClick={onCancel}
               variant='outline'
               className='text-red-600 hover:text-red-700'
             >
@@ -110,25 +136,25 @@ export function ServiceForm({
           <div>
             <Label className='text-sm font-medium text-gray-700'>Price</Label>
             <p className='text-lg font-semibold text-gray-900 mt-1'>
-              ${service.price.toFixed(2)}
+              ${formData.price.toFixed(2)}
             </p>
           </div>
           <div>
             <Label className='text-sm font-medium text-gray-700'>
               Duration
             </Label>
-            <p className='text-lg text-gray-900 mt-1'>{service.duration}</p>
+            <p className='text-lg text-gray-900 mt-1'>{formData.duration}</p>
           </div>
           <div>
             <Label className='text-sm font-medium text-gray-700'>
               Category
             </Label>
-            <p className='text-lg text-gray-900 mt-1'>{service.category}</p>
+            <p className='text-lg text-gray-900 mt-1'>{formData.category}</p>
           </div>
           <div>
             <Label className='text-sm font-medium text-gray-700'>Status</Label>
             <p className='text-lg text-gray-900 mt-1'>
-              {service.is_hidden ? 'Hidden' : 'Active'}
+              {formData.is_hidden ? 'Hidden' : 'Active'}
             </p>
           </div>
         </div>
@@ -269,6 +295,15 @@ export function ServiceForm({
             Hide this service option
           </Label>
         </div>
+      </div>
+
+      <div className='flex items-center gap-4 pt-6'>
+        <Button onClick={handleSave} className='btn-primary' disabled={loading}>
+          {loading ? 'Saving...' : 'Save Service'}
+        </Button>
+        <Button onClick={handleCancel} variant='outline' disabled={loading}>
+          Cancel
+        </Button>
       </div>
     </div>
   );

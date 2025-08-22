@@ -44,21 +44,21 @@ interface ServiceOptionServiceFormProps {
 export default function ServiceOptionServiceForm({
   service,
   onServiceUpdate,
-  onAddMaterial,
-  onAddFinish,
-  onMaterialUpdate,
-  onMaterialDelete,
-  onFinishUpdate,
-  onFinishDelete,
+  onAddMaterial: _onAddMaterial,
+  onAddFinish: _onAddFinish,
+  onMaterialUpdate: _onMaterialUpdate,
+  onMaterialDelete: _onMaterialDelete,
+  onFinishUpdate: _onFinishUpdate,
+  onFinishDelete: _onFinishDelete,
   onServiceNameChange,
   onMaterialAdd,
   onFinishAdd,
-  tools = [],
-  onAddTool,
-  onRemoveTool,
-  onReplaceTools,
-  roomName = 'Room',
-  tradeName = 'Trade',
+  tools: _tools = [],
+  onAddTool: _onAddTool,
+  onRemoveTool: _onRemoveTool,
+  onReplaceTools: _onReplaceTools,
+  roomName: _roomName = 'Room',
+  tradeName: _tradeName = 'Trade',
   tradeId, // Add trade ID prop
 }: ServiceOptionServiceFormProps) {
   const [serviceOptions, setServiceOptions] = useState<
@@ -436,11 +436,11 @@ export default function ServiceOptionServiceForm({
         }}
         onItemUpdate={(id, updated) => {
           setMaterials(prev => prev.map(m => (m.id === id ? updated : m)));
-          onMaterialUpdate?.(id, updated);
+          _onMaterialUpdate?.(id, updated);
         }}
         onItemDelete={id => {
           setMaterials(prev => prev.filter(m => m.id !== id));
-          onMaterialDelete?.(id);
+          _onMaterialDelete?.(id);
         }}
         defaultExpanded={true}
         serviceId={
@@ -470,11 +470,11 @@ export default function ServiceOptionServiceForm({
         }}
         onItemUpdate={(id, updated) => {
           setFinishes(prev => prev.map(f => (f.id === id ? updated : f)));
-          onFinishUpdate?.(id, updated);
+          _onFinishUpdate?.(id, updated);
         }}
         onItemDelete={id => {
           setFinishes(prev => prev.filter(f => f.id !== id));
-          onFinishDelete?.(id);
+          _onFinishDelete?.(id);
         }}
         defaultExpanded={true}
         serviceId={

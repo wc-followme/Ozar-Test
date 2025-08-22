@@ -58,16 +58,6 @@ export default function ServiceOptionItemForm({
     },
   ];
 
-  const actions = [
-    {
-      key: 'delete',
-      icon: 'Trash',
-      variant: 'ghost' as const,
-      size: 'sm' as const,
-      onClick: (row: any) => onItemDelete(row.id),
-    },
-  ];
-
   // Adapter to render inputs inside table
   const data = items.map(item => ({
     ...item,

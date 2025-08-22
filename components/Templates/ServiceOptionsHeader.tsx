@@ -22,18 +22,18 @@ interface ServiceOptionsHeaderProps {
 }
 
 export default function ServiceOptionsHeader({
-  showAddServiceOption,
-  isEditing,
-  editingCategoryName,
-  setEditingCategoryName,
-  handleNameSave,
-  handleRoomNameKeyDown,
-  handleEditClick,
-  selectedCategory,
-  showServiceForm,
-  selectedServiceOptionData,
-  handleAddCategory,
-  handleAddServiceOption,
+  showAddServiceOption: _showAddServiceOption,
+  isEditing: _isEditing,
+  editingCategoryName: _editingCategoryName,
+  setEditingCategoryName: _setEditingCategoryName,
+  handleNameSave: _handleNameSave,
+  handleRoomNameKeyDown: _handleRoomNameKeyDown,
+  handleEditClick: _handleEditClick,
+  selectedCategory: _selectedCategory,
+  showServiceForm: _showServiceForm,
+  selectedServiceOptionData: _selectedServiceOptionData,
+  handleAddCategory: _handleAddCategory,
+  handleAddServiceOption: _handleAddServiceOption,
   onDeleteClick,
 }: ServiceOptionsHeaderProps) {
   return (

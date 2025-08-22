@@ -184,7 +184,6 @@ const FiveBoxSystem = () => {
             const isCategoryCard = id === '04';
 
             const baseProps = {
-              key: id,
               id,
               number,
               color,
@@ -201,10 +200,14 @@ const FiveBoxSystem = () => {
 
             // Add onClick only for non-estimation cards
             if (isEstimationCard) {
-              return <BoxCard {...baseProps} />;
+              return <BoxCard key={id} {...baseProps} />;
             } else {
               return (
-                <BoxCard {...baseProps} onClick={() => handleCardClick(id)} />
+                <BoxCard
+                  key={id}
+                  {...baseProps}
+                  onClick={() => handleCardClick(id)}
+                />
               );
             }
           }

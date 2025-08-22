@@ -21,7 +21,7 @@ interface ServiceOptionFormProps {
 }
 
 export default function ServiceOptionForm({
-  onClose,
+  onClose: _onClose,
   onApprove,
   onDecline,
   serviceOption,
@@ -123,39 +123,8 @@ export default function ServiceOptionForm({
     setFinishes(prev => prev.filter(item => item.id !== finishId));
   };
 
-  const handleToolUpdate = (toolId: string, updatedTool: Tool) => {
-    setTools(prev =>
-      prev.map(item => (item.id === toolId ? updatedTool : item))
-    );
-  };
-
   const handleToolDelete = (toolId: string) => {
     setTools(prev => prev.filter(item => item.id !== toolId));
-  };
-
-  const calculateTotals = () => {
-    const lineTotal = formData.qty * formData.rate;
-    const serviceTotal = lineTotal;
-    const materialsTotal = materials.reduce(
-      (sum, material) => sum + material.lineTotal,
-      0
-    );
-    const finishesTotal = finishes.reduce(
-      (sum, finish) => sum + finish.lineTotal,
-      0
-    );
-    const tradeTotal = serviceTotal + materialsTotal + finishesTotal;
-
-    return { lineTotal, serviceTotal, tradeTotal };
-  };
-
-  const totals = calculateTotals();
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(amount);
   };
 
   return (
