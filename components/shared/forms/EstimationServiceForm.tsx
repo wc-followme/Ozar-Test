@@ -111,7 +111,19 @@ export default function EstimationServiceForm({
     tradeUuid: string | null,
     companyUuid: string | null
   ) => {
+    console.log(
+      'EstimationServiceForm: fetchServices called with tradeUuid:',
+      tradeUuid
+    );
+    console.log(
+      'EstimationServiceForm: fetchServices called with companyUuid:',
+      companyUuid
+    );
+
     if (!tradeUuid || !companyUuid) {
+      console.log(
+        'EstimationServiceForm: Missing tradeUuid or companyUuid, setting empty options'
+      );
       setServiceOptions([]);
       return;
     }
@@ -122,18 +134,33 @@ export default function EstimationServiceForm({
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(tradeUuid)) {
+      console.log(
+        'EstimationServiceForm: Invalid UUID format, setting empty options'
+      );
       setServiceOptions([]);
       return;
     }
 
     setLoading(true);
     try {
+      console.log(
+        'EstimationServiceForm: Making API call to fetchServicesPublic with:',
+        {
+          page: 1,
+          limit: 50,
+          company_id: companyUuid,
+          trade_id: tradeUuid,
+        }
+      );
+
       const response = await apiService.fetchServicesPublic({
         page: 1,
         limit: 50,
         company_id: companyUuid,
         trade_id: tradeUuid,
       });
+
+      console.log('EstimationServiceForm: API response received:', response);
 
       type ServiceItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
@@ -152,6 +179,7 @@ export default function EstimationServiceForm({
           label: String(s.name),
         }));
 
+      console.log('EstimationServiceForm: Processed service options:', options);
       setServiceOptions(options);
     } catch (_error) {
       // Gracefully degrade to empty options when API fails or returns no data
@@ -163,6 +191,17 @@ export default function EstimationServiceForm({
 
   // Load services when component mounts or when trade/company changes
   useEffect(() => {
+    console.log('EstimationServiceForm: tradeId received:', tradeId);
+    console.log('EstimationServiceForm: tradeId type:', typeof tradeId);
+    console.log(
+      'EstimationServiceForm: tradeId UUID validation:',
+      tradeId
+        ? /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            tradeId
+          )
+        : 'undefined'
+    );
+
     const selectedCompanyRaw =
       typeof window !== 'undefined'
         ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)

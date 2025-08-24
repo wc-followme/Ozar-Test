@@ -199,12 +199,19 @@ export default function EstimationBoxEdit({
 
   const fetchTrades = async (companyUuid: string | null) => {
     try {
+      console.log(
+        'EstimationBoxEdit: fetchTrades called with companyUuid:',
+        companyUuid
+      );
+
       const response = await apiService.fetchTradesPublic({
         page: 1,
         limit: 10,
         company_id: companyUuid || '',
         ...(categoryId && { category_id: categoryId }),
       });
+
+      console.log('EstimationBoxEdit: fetchTrades API response:', response);
 
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
@@ -222,6 +229,8 @@ export default function EstimationBoxEdit({
           value: String(t.uuid || t.id || t.name),
           label: String(t.name),
         }));
+
+      console.log('EstimationBoxEdit: Processed trade options:', options);
       setTradeOptions(options);
     } catch (_error) {
       // If fetching fails or returns unexpected data, show an empty dropdown silently
@@ -506,15 +515,56 @@ export default function EstimationBoxEdit({
   const addTrade = () => {
     if (!selectedRoom) return;
 
+    // Use the UUID from the first trade option in the dropdown (like create mode)
+    const defaultTradeOption = tradeOptions[0];
+    if (!defaultTradeOption) {
+      // Create a default trade if no options are available (silently)
+      const newTrade: Trade = {
+        id: 'default-trade',
+        uniqueKey: generateUniqueKey(
+          'trade',
+          'default-trade',
+          selectedRoom.id,
+          selectedRoom.trades.length
+        ),
+        name: 'New Trade',
+        services: 0,
+        start_date: new Date().toISOString(),
+        end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
+        type: 'default',
+        laborCost: 0,
+        materialCost: 0,
+        tradeTotal: 0,
+        serviceList: [],
+        isExpanded: true,
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 24 * 60 * 60 * 1000), // Tomorrow
+      };
+
+      const updatedRooms = rooms.map(room =>
+        room.id === selectedRoom.id
+          ? { ...room, trades: [...room.trades, newTrade] }
+          : room
+      );
+
+      setRooms(updatedRooms);
+      setExpandedTrades(prev => [...prev, newTrade.uniqueKey]);
+      setSelectedTradeUniqueKey(newTrade.uniqueKey);
+      return;
+    }
+
+    const tradeUuid = defaultTradeOption.value; // This is the UUID from database
+    const tradeName = defaultTradeOption.label; // This is the trade name
+
     const newTrade: Trade = {
-      id: `default-trade-${Date.now()}`, // Generate unique ID like EstimationBox
+      id: tradeUuid, // Use the UUID from database instead of generated ID
       uniqueKey: generateUniqueKey(
         'trade',
-        'default-trade',
+        tradeUuid,
         selectedRoom.id,
         selectedRoom.trades.length
       ),
-      name: 'New Trade',
+      name: tradeName,
       services: 0,
       start_date: new Date().toISOString(),
       end_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // Tomorrow
@@ -532,6 +582,14 @@ export default function EstimationBoxEdit({
       room.id === selectedRoom.id
         ? { ...room, trades: [...room.trades, newTrade] }
         : room
+    );
+
+    console.log('EstimationBoxEdit: New trade added with ID:', newTrade.id);
+    console.log(
+      'EstimationBoxEdit: New trade UUID validation:',
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        newTrade.id
+      )
     );
 
     setRooms(updatedRooms);
@@ -595,6 +653,57 @@ export default function EstimationBoxEdit({
     }));
 
     setRooms(updatedRooms);
+  };
+
+  // Handle trade updates (like date changes, markup changes, etc.)
+  const handleTradeUpdate = (updatedTrade: Trade) => {
+    if (selectedTrade && selectedTradeUniqueKey) {
+      setRooms(prev =>
+        prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? { ...trade, ...updatedTrade }
+                    : trade
+                ),
+              }
+            : room
+        )
+      );
+    }
+  };
+
+  // Handle service updates
+  const handleServiceUpdate = (updatedService: Service) => {
+    if (selectedTrade && selectedService && selectedTradeUniqueKey) {
+      setRooms(prev => {
+        const updatedRooms = prev.map(room =>
+          room.id === selectedRoomId
+            ? {
+                ...room,
+                trades: room.trades.map(trade =>
+                  trade.uniqueKey === selectedTradeUniqueKey
+                    ? {
+                        ...trade,
+                        serviceList: trade.serviceList.map(service =>
+                          service.id === selectedService
+                            ? updatedService
+                            : service
+                        ),
+                      }
+                    : trade
+                ),
+              }
+            : room
+        );
+        return updatedRooms;
+      });
+
+      // Clear selected service after update (like create mode)
+      setSelectedService(null);
+    }
   };
 
   // Material handlers
@@ -1105,6 +1214,7 @@ export default function EstimationBoxEdit({
         toggleMainAccordion={() =>
           setIsMainAccordionExpanded(!isMainAccordionExpanded)
         }
+        onDeleteClick={onDeleteClick} // Add missing delete handler
       />
 
       {/* Main Content */}
@@ -1148,22 +1258,9 @@ export default function EstimationBoxEdit({
                 <EstimationServiceForm
                   key={`${selectedTradeData?.id || 'no-trade'}_${selectedService || 'no-service'}`}
                   service={selectedServiceData}
-                  onServiceUpdate={updatedService => {
-                    // Update the service in the rooms state
-                    const updatedRooms = rooms.map(room => ({
-                      ...room,
-                      trades: room.trades.map(trade => ({
-                        ...trade,
-                        serviceList: trade.serviceList.map(service =>
-                          service.id === selectedService
-                            ? updatedService
-                            : service
-                        ),
-                      })),
-                    }));
-                    setRooms(updatedRooms);
-                    setSelectedService(null);
-                  }}
+                  onServiceUpdate={handleServiceUpdate}
+                  onAddMaterial={() => {}} // Add missing handler for material add button
+                  onAddFinish={() => {}} // Add missing handler for finish add button
                   onServiceNameChange={handleServiceNameChange}
                   onMaterialAdd={handleMaterialAdd}
                   onFinishAdd={handleFinishAdd}
@@ -1190,6 +1287,7 @@ export default function EstimationBoxEdit({
                 trade={selectedTradeData}
                 roomUniqueKey={selectedRoom.uniqueKey}
                 tradeUniqueKey={selectedTradeData.uniqueKey}
+                _onTradeUpdate={handleTradeUpdate}
                 onTradeNameChange={handleTradeNameChange}
                 onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={handleServiceSelect}
