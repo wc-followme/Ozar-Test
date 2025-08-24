@@ -168,9 +168,86 @@ export default function EstimationTemplateForm({
   };
 
   // Transform template rooms data to API format
+  // - Omit materials/finishes arrays when they contain no valid UUID-based selections
   const transformTemplateRoomsData = (roomsData: any[]) => {
-    // Return the data as-is from localStorage without transformation
-    return roomsData;
+    try {
+      if (!Array.isArray(roomsData)) return [];
+
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      const sanitizedRooms = roomsData.map(room => {
+        const trades = Array.isArray(room?.trades) ? room.trades : [];
+
+        const sanitizedTrades = trades.map((trade: any) => {
+          const services = Array.isArray(trade?.services) ? trade.services : [];
+
+          const sanitizedServices = services.map((service: any) => {
+            const rawMaterials = Array.isArray(service?.materials)
+              ? service.materials
+              : [];
+            const rawFinishes = Array.isArray(service?.finishes)
+              ? service.finishes
+              : [];
+
+            // Keep only items that have a valid UUID in uuid or material_id
+            const validMaterials = rawMaterials.filter((m: any) => {
+              const candidate = String(m?.uuid || m?.material_id || '');
+              return uuidRegex.test(candidate);
+            });
+            const validFinishes = rawFinishes.filter((f: any) => {
+              const candidate = String(f?.uuid || f?.material_id || '');
+              return uuidRegex.test(candidate);
+            });
+
+            // Map to API expected shape
+            const mappedMaterials = validMaterials.map((m: any) => ({
+              material_id: String(m?.uuid || m?.material_id),
+              description: m?.description ?? '',
+              qty: Number(m?.qty) || 0,
+              unit: m?.unit ?? 'INCH',
+              rate: Number(m?.rate) || 0,
+              markup: Number(m?.markup) || 0,
+              disclaimer: m?.disclaimer ?? '',
+            }));
+            const mappedFinishes = validFinishes.map((f: any) => ({
+              material_id: String(f?.uuid || f?.material_id),
+              description: f?.description ?? '',
+              qty: Number(f?.qty) || 0,
+              unit: f?.unit ?? 'INCH',
+              rate: Number(f?.rate) || 0,
+              markup: Number(f?.markup) || 0,
+              disclaimer: f?.disclaimer ?? '',
+            }));
+
+            const nextService: any = { ...service };
+
+            if (mappedMaterials.length > 0) {
+              nextService.materials = mappedMaterials;
+            } else {
+              delete nextService.materials;
+            }
+
+            if (mappedFinishes.length > 0) {
+              nextService.finishes = mappedFinishes;
+            } else {
+              delete nextService.finishes;
+            }
+
+            return nextService;
+          });
+
+          return { ...trade, services: sanitizedServices };
+        });
+
+        return { ...room, trades: sanitizedTrades };
+      });
+
+      return sanitizedRooms;
+    } catch (_e) {
+      // On any unexpected structure, fail gracefully and send as-is
+      return roomsData;
+    }
   };
 
   // Helper functions for toast messages
@@ -211,14 +288,20 @@ export default function EstimationTemplateForm({
         ...(companyId && { company_id: companyId }),
       };
 
-      // Extract service_id and tool_ids from template data
+      // Extract service_id and tool_ids from template data (UUID only)
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
       if (
         transformedRooms.length > 0 &&
         transformedRooms[0]?.trades?.length > 0 &&
         transformedRooms[0]?.trades[0]?.services?.length > 0
       ) {
         const firstService = transformedRooms[0].trades[0].services[0];
-        if (firstService?.service_id) {
+        if (
+          firstService?.service_id &&
+          uuidRegex.test(firstService.service_id)
+        ) {
           payload.service_id = firstService.service_id;
         }
       }
@@ -229,8 +312,9 @@ export default function EstimationTemplateForm({
         room.trades?.forEach((trade: any) => {
           trade.services?.forEach((service: any) => {
             service.tools?.forEach((tool: any) => {
-              if (tool.tool_id) {
-                allToolIds.add(tool.tool_id);
+              const toolId = tool?.tool_id;
+              if (toolId && uuidRegex.test(String(toolId))) {
+                allToolIds.add(String(toolId));
               }
             });
           });
