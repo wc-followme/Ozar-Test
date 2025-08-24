@@ -308,7 +308,8 @@ export default function EstimationBoxEdit({
           end_date: trade.end_date,
           markup: trade.markup || 0,
           services: trade.serviceList.map(service => ({
-            service_id: service.id,
+            // Persist UUID when available; fallback to id for legacy items
+            service_id: (service as any).uuid || service.id,
             service_order_no: 1,
             description: service.name,
             qty: service.qty,

@@ -182,65 +182,117 @@ export default function EstimationTemplateForm({
         const sanitizedTrades = trades.map((trade: any) => {
           const services = Array.isArray(trade?.services) ? trade.services : [];
 
-          const sanitizedServices = services.map((service: any) => {
-            const rawMaterials = Array.isArray(service?.materials)
-              ? service.materials
-              : [];
-            const rawFinishes = Array.isArray(service?.finishes)
-              ? service.finishes
-              : [];
+          const sanitizedServices = services
+            .map((service: any, serviceIndex: number) => {
+              const sUuid = String(service?.uuid || '');
+              const sIdField = String(service?.service_id || '');
+              const sId = String(service?.id || '');
 
-            // Keep only items that have a valid UUID in uuid or material_id
-            const validMaterials = rawMaterials.filter((m: any) => {
-              const candidate = String(m?.uuid || m?.material_id || '');
-              return uuidRegex.test(candidate);
-            });
-            const validFinishes = rawFinishes.filter((f: any) => {
-              const candidate = String(f?.uuid || f?.material_id || '');
-              return uuidRegex.test(candidate);
-            });
+              const finalServiceId = uuidRegex.test(sUuid)
+                ? sUuid
+                : uuidRegex.test(sIdField)
+                  ? sIdField
+                  : uuidRegex.test(sId)
+                    ? sId
+                    : '';
 
-            // Map to API expected shape
-            const mappedMaterials = validMaterials.map((m: any) => ({
-              material_id: String(m?.uuid || m?.material_id),
-              description: m?.description ?? '',
-              qty: Number(m?.qty) || 0,
-              unit: m?.unit ?? 'INCH',
-              rate: Number(m?.rate) || 0,
-              markup: Number(m?.markup) || 0,
-              disclaimer: m?.disclaimer ?? '',
-            }));
-            const mappedFinishes = validFinishes.map((f: any) => ({
-              material_id: String(f?.uuid || f?.material_id),
-              description: f?.description ?? '',
-              qty: Number(f?.qty) || 0,
-              unit: f?.unit ?? 'INCH',
-              rate: Number(f?.rate) || 0,
-              markup: Number(f?.markup) || 0,
-              disclaimer: f?.disclaimer ?? '',
-            }));
+              if (!finalServiceId) {
+                // Drop non-UUID service entries entirely
+                return null;
+              }
 
-            const nextService: any = { ...service };
+              const rawMaterials = Array.isArray(service?.materials)
+                ? service.materials
+                : [];
+              const rawFinishes = Array.isArray(service?.finishes)
+                ? service.finishes
+                : [];
 
-            if (mappedMaterials.length > 0) {
-              nextService.materials = mappedMaterials;
-            } else {
-              delete nextService.materials;
-            }
+              // Keep only items that have a valid UUID in uuid or material_id
+              const validMaterials = rawMaterials.filter((m: any) => {
+                const candidate = String(m?.uuid || m?.material_id || '');
+                return uuidRegex.test(candidate);
+              });
+              const validFinishes = rawFinishes.filter((f: any) => {
+                const candidate = String(f?.uuid || f?.material_id || '');
+                return uuidRegex.test(candidate);
+              });
 
-            if (mappedFinishes.length > 0) {
-              nextService.finishes = mappedFinishes;
-            } else {
-              delete nextService.finishes;
-            }
+              // Map to API expected shape
+              const mappedMaterials = validMaterials.map((m: any) => ({
+                material_id: String(m?.uuid || m?.material_id),
+                description: m?.description ?? '',
+                qty: Number(m?.qty) || 0,
+                unit: m?.unit ?? 'INCH',
+                rate: Number(m?.rate) || 0,
+                markup: Number(m?.markup) || 0,
+                disclaimer: m?.disclaimer ?? '',
+              }));
+              const mappedFinishes = validFinishes.map((f: any) => ({
+                material_id: String(f?.uuid || f?.material_id),
+                description: f?.description ?? '',
+                qty: Number(f?.qty) || 0,
+                unit: f?.unit ?? 'INCH',
+                rate: Number(f?.rate) || 0,
+                markup: Number(f?.markup) || 0,
+                disclaimer: f?.disclaimer ?? '',
+              }));
 
-            return nextService;
-          });
+              // Map tools to minimal shape { tool_id } and UUID filter
+              const mappedTools = Array.isArray(service?.tools)
+                ? service.tools
+                    .map((t: any) => {
+                      const toolId = String(
+                        t?.uuid || t?.tool_id || t?.id || ''
+                      );
+                      return uuidRegex.test(toolId)
+                        ? { tool_id: toolId }
+                        : null;
+                    })
+                    .filter(Boolean)
+                : [];
 
-          return { ...trade, services: sanitizedServices };
+              const nextService: any = {
+                service_id: finalServiceId,
+                service_order_no: service?.service_order_no ?? serviceIndex + 1,
+                description: service?.description || service?.name || '',
+                qty: Number(service?.qty) || 1,
+                rate: Number(service?.rate) || 0,
+              };
+
+              if (mappedMaterials.length > 0)
+                nextService.materials = mappedMaterials;
+              if (mappedFinishes.length > 0)
+                nextService.finishes = mappedFinishes;
+              if (mappedTools.length > 0) nextService.tools = mappedTools;
+
+              return nextService;
+            })
+            .filter(Boolean);
+
+          return {
+            trade_id: String(trade?.trade_id || trade?.id || ''),
+            start_date:
+              trade?.start_date ||
+              (trade?.startDate instanceof Date
+                ? trade.startDate.toISOString()
+                : undefined) ||
+              null,
+            end_date:
+              trade?.end_date ||
+              (trade?.endDate instanceof Date
+                ? trade.endDate.toISOString()
+                : undefined) ||
+              null,
+            markup: Number(trade?.markup) || 0,
+            services: sanitizedServices,
+          };
         });
 
-        return { ...room, trades: sanitizedTrades };
+        return {
+          room_name: String(room?.room_name || room?.name || 'Room'),
+          trades: sanitizedTrades,
+        };
       });
 
       return sanitizedRooms;
@@ -322,11 +374,14 @@ export default function EstimationTemplateForm({
       });
       payload.tool_ids = Array.from(allToolIds);
 
-      // Call API to create template
-      const response = await apiService.makeGenericRequest('/templates', {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      });
+      // Call API - POST for create, PATCH for edit
+      const response = await apiService.makeGenericRequest(
+        templateId ? `/templates/${templateId}` : '/templates',
+        {
+          method: templateId ? 'PATCH' : 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
 
       const { statusCode, message } = response;
 
