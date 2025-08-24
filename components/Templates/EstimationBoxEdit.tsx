@@ -1211,9 +1211,30 @@ export default function EstimationBoxEdit({
           }).format(amount)
         }
         selectedRoomId={selectedRoomId}
-        toggleMainAccordion={() =>
-          setIsMainAccordionExpanded(!isMainAccordionExpanded)
-        }
+        toggleMainAccordion={() => {
+          const allRoomIds = rooms.map(room => room.id);
+          const allTradeIds = rooms.flatMap(room =>
+            room.trades.map(trade => trade.uniqueKey)
+          );
+
+          const allRoomsExpanded = allRoomIds.every(id =>
+            expandedRooms.includes(id)
+          );
+          const allTradesExpanded = allTradeIds.every(id =>
+            expandedTrades.includes(id)
+          );
+          const allExpanded = allRoomsExpanded && allTradesExpanded;
+
+          if (allExpanded) {
+            setExpandedTrades([]);
+            setExpandedRooms([]);
+            setIsMainAccordionExpanded(false);
+          } else {
+            setExpandedTrades(allTradeIds);
+            setExpandedRooms(allRoomIds);
+            setIsMainAccordionExpanded(true);
+          }
+        }}
         onDeleteClick={onDeleteClick} // Add missing delete handler
       />
 
