@@ -174,6 +174,16 @@ export default function EstimationTradeForm({
                   // Also call the trade name change handler for backward compatibility
                   onTradeNameChange?.(newTradeName);
 
+                  // When trade changes, clear services of this trade so user reselects
+                  _onTradeUpdate?.({
+                    ...trade,
+                    id: newValue,
+                    name: newTradeName,
+                    serviceList: [],
+                  });
+                  // Also persist empty selection to storage if needed
+                  onLocalStorageUpdate?.();
+
                   // Save data after trade selection
                   const updates: any = {};
                   if (

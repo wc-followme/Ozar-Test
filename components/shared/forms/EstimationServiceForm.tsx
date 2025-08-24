@@ -268,15 +268,21 @@ export default function EstimationServiceForm({
                     onServiceNameChange(newName);
                   }
                   if (onServiceUpdate) {
-                    const updatedService = {
+                    const updatedService: Service = {
                       ...service,
                       name: newName,
+                      // Reset dependent selections when service changes
+                      materials: [],
+                      finishes: [],
+                      tools: [],
                     };
 
                     if (serviceUuid) {
-                      (updatedService as any).uuid = serviceUuid;
+                      updatedService.uuid = serviceUuid;
                     } else {
-                      delete (updatedService as any).uuid;
+                      // Ensure no stale uuid remains
+                      delete (updatedService as unknown as { uuid?: string })
+                        .uuid;
                     }
 
                     onServiceUpdate(updatedService);
