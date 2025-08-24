@@ -1266,12 +1266,10 @@ export default function EstimationBoxEdit({
 
         {/* Trades Section */}
         <div className='flex-1 p-6'>
-          
           {selectedService ? (
             // Service view - show service form inline
             selectedServiceData ? (
               <div className='space-y-4'>
-                
                 <EstimationServiceForm
                   key={`${selectedTradeData?.id || 'no-trade'}_${selectedService || 'no-service'}`}
                   service={selectedServiceData}
