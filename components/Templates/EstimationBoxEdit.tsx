@@ -1172,7 +1172,13 @@ export default function EstimationBoxEdit({
   };
 
   const onDeleteClick = () => {
-    setDeleteType('room');
+    if (selectedService) {
+      setDeleteType('service');
+    } else if (selectedTradeUniqueKey) {
+      setDeleteType('trade');
+    } else {
+      setDeleteType('room');
+    }
     setShowDeleteModal(true);
   };
 
@@ -1260,22 +1266,12 @@ export default function EstimationBoxEdit({
 
         {/* Trades Section */}
         <div className='flex-1 p-6'>
-          <div className='mb-6'>
-            <h2 className='text-xl font-semibold'>Trades</h2>
-          </div>
-
+          
           {selectedService ? (
             // Service view - show service form inline
             selectedServiceData ? (
               <div className='space-y-4'>
-                <div className='flex items-center justify-between'>
-                  <button
-                    onClick={() => setSelectedService(null)}
-                    className='text-gray-500 hover:text-gray-700 mb-4'
-                  >
-                    ← Back to Trades
-                  </button>
-                </div>
+                
                 <EstimationServiceForm
                   key={`${selectedTradeData?.id || 'no-trade'}_${selectedService || 'no-service'}`}
                   service={selectedServiceData}
@@ -1331,22 +1327,57 @@ export default function EstimationBoxEdit({
 
       {/* Delete Confirmation Modal */}
       <ConfirmDeleteModal
-        isOpen={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {
+        open={showDeleteModal}
+        onCancel={() => setShowDeleteModal(false)}
+        onDelete={() => {
           if (deleteType === 'room' && selectedRoomId) {
             deleteRoom(selectedRoomId);
           } else if (deleteType === 'trade' && selectedTradeUniqueKey) {
             deleteTrade(selectedTradeUniqueKey);
+          } else if (
+            deleteType === 'service' &&
+            selectedService &&
+            selectedTradeUniqueKey
+          ) {
+            setRooms(prev =>
+              prev.map(room =>
+                room.id === selectedRoomId
+                  ? {
+                      ...room,
+                      trades: room.trades.map(trade =>
+                        trade.uniqueKey === selectedTradeUniqueKey
+                          ? {
+                              ...trade,
+                              serviceList: trade.serviceList.filter(
+                                service => service.id !== selectedService
+                              ),
+                            }
+                          : trade
+                      ),
+                    }
+                  : room
+              )
+            );
+            setSelectedService(null);
           }
           setShowDeleteModal(false);
           setDeleteType(null);
         }}
         title={
           deleteType === 'room'
-            ? `Are you sure you want to delete "${selectedRoom?.name}"? This will also delete all trades and services within this room.`
-            : 'Are you sure you want to delete this trade? This will also delete all services within this trade.'
+            ? 'Delete Room'
+            : deleteType === 'trade'
+              ? 'Delete Trade'
+              : 'Delete Service'
         }
+        subtitle={
+          deleteType === 'room'
+            ? `Are you sure you want to delete "${selectedRoom?.name}"? This will also delete all trades and services within this room.`
+            : deleteType === 'trade'
+              ? 'Are you sure you want to delete this trade? This will also delete all services within this trade.'
+              : `Are you sure you want to delete "${selectedServiceData?.name || 'this service'}"? This action cannot be undone.`
+        }
+        archiveButtonText={'Delete'}
       />
     </div>
   );
