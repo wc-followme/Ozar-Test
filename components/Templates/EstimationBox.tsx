@@ -1602,7 +1602,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                     trade={selectedTradeData}
                     roomUniqueKey={selectedRoom?.uniqueKey || ''}
                     tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
-                    _onTradeUpdate={handleTradeUpdate}
+                    _onTradeUpdate={(u: unknown) =>
+                      handleTradeUpdate(u as Trade)
+                    }
                     onTradeNameChange={handleTradeNameChange}
                     onTradeReplacement={handleTradeReplacement}
                     onServiceSelect={serviceId => {

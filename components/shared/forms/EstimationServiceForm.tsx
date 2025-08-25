@@ -70,21 +70,21 @@ export default function EstimationServiceForm({
   const [loading, setLoading] = useState(false);
   const [isServiceOptionSheetOpen, setIsServiceOptionSheetOpen] =
     useState(false);
-  const [selectedServiceOption, setSelectedServiceOption] = useState<any>(null);
+  const [selectedServiceOption, _setSelectedServiceOption] =
+    useState<any>(null);
 
-  // Sample service options data
-  const sampleServiceOptions = [
-    {
-      id: '1',
-      name: 'Basic Service Package',
-      tradeTotal: 1500.0,
-    },
-    {
-      id: '2',
-      name: 'Premium Service Package',
-      tradeTotal: 2500.0,
-    },
-  ];
+  // const sampleServiceOptions = [
+  //   {
+  //     id: '1',
+  //     name: 'Basic Service Package',
+  //     tradeTotal: 1500.0,
+  //   },
+  //   {
+  //     id: '2',
+  //     name: 'Premium Service Package',
+  //     tradeTotal: 2500.0,
+  //   },
+  // ];
 
   // Calculate current service values using backend logic
   const calculateCurrentServiceValues = () => {

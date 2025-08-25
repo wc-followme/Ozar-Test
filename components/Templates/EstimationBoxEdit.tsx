@@ -6,10 +6,10 @@ import EstimationHeader from '@/components/shared/common/EstimationHeader';
 import { Tool } from '@/components/shared/forms/estimation-types';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
-import { useToast } from '@/components/ui/use-toast';
+// import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { calculateJobTotal } from '@/lib/estimation-calculations';
+// import { calculateJobTotal } from '@/lib/estimation-calculations';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 
@@ -55,8 +55,8 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  start_date: string | null;
-  end_date: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -117,17 +117,15 @@ const getStorageKey = (jobId?: string, templateId?: string) => {
 };
 
 export default function EstimationBoxEdit({
-  _onClose,
   templateId,
   categoryId,
-  onSaveSuccess,
 }: EstimationBoxEditProps) {
   console.log('EstimationBoxEdit props:', {
     templateId,
     categoryId,
   });
 
-  const { toast } = useToast();
+  // const { toast } = useToast();
 
   // State management
   const [isEditing, setIsEditing] = useState(false);
@@ -142,7 +140,7 @@ export default function EstimationBoxEdit({
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
+  // const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState<
     'room' | 'trade' | 'service' | null
@@ -455,12 +453,13 @@ export default function EstimationBoxEdit({
           );
 
           // Set the first room as selected
-          if (sanitizedRoomsData.length > 0) {
-            setSelectedRoomId(sanitizedRoomsData[0].id);
+          const firstRoom = sanitizedRoomsData[0];
+          if (firstRoom && firstRoom.id) {
+            setSelectedRoomId(firstRoom.id);
 
             // Auto-select the first trade if available
-            if (sanitizedRoomsData[0].trades.length > 0) {
-              const firstTrade = sanitizedRoomsData[0].trades[0];
+            const firstTrade = firstRoom.trades && firstRoom.trades[0];
+            if (firstTrade) {
               setSelectedTrade(firstTrade.id);
               setSelectedTradeUniqueKey(firstTrade.uniqueKey);
 
@@ -507,7 +506,10 @@ export default function EstimationBoxEdit({
     setExpandedRooms(prev => prev.filter(id => id !== roomId));
 
     if (selectedRoomId === roomId && updatedRooms.length > 0) {
-      setSelectedRoomId(updatedRooms[0].id);
+      const firstUpdatedRoom = updatedRooms[0];
+      if (firstUpdatedRoom && firstUpdatedRoom.id) {
+        setSelectedRoomId(firstUpdatedRoom.id);
+      }
     } else if (updatedRooms.length === 0) {
       setSelectedRoomId('');
     }
@@ -1128,27 +1130,27 @@ export default function EstimationBoxEdit({
     }));
   }, [rooms]);
 
-  const totalJobAmount = useMemo(() => {
+  // const totalJobAmount = useMemo(() => {
+  console.log(
+    'EstimationBoxEdit: Calling calculateJobTotal with:',
+    transformedRooms
+  );
+  console.log(
+    'EstimationBoxEdit: First room first trade services:',
+    transformedRooms[0]?.trades[0]?.services
+  );
+  if (transformedRooms[0]?.trades[0]?.services?.[0]) {
     console.log(
-      'EstimationBoxEdit: Calling calculateJobTotal with:',
-      transformedRooms
+      'EstimationBoxEdit: First service materials:',
+      transformedRooms[0].trades[0].services[0].materials
     );
     console.log(
-      'EstimationBoxEdit: First room first trade services:',
-      transformedRooms[0]?.trades[0]?.services
+      'EstimationBoxEdit: First service finishes:',
+      transformedRooms[0].trades[0].services[0].finishes
     );
-    if (transformedRooms[0]?.trades[0]?.services?.[0]) {
-      console.log(
-        'EstimationBoxEdit: First service materials:',
-        transformedRooms[0].trades[0].services[0].materials
-      );
-      console.log(
-        'EstimationBoxEdit: First service finishes:',
-        transformedRooms[0].trades[0].services[0].finishes
-      );
-    }
-    return calculateJobTotal(transformedRooms);
-  }, [transformedRooms]);
+  }
+  //   return calculateJobTotal(transformedRooms);
+  // }, [transformedRooms]);
 
   // Header handlers to support inline room title edit like create mode
   const handleEditClick = () => {
@@ -1166,7 +1168,7 @@ export default function EstimationBoxEdit({
     setIsEditing(false);
   };
 
-  const handleRoomNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleRoomNameKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleNameSave();
     }
@@ -1235,14 +1237,11 @@ export default function EstimationBoxEdit({
           if (allExpanded) {
             setExpandedTrades([]);
             setExpandedRooms([]);
-            setIsMainAccordionExpanded(false);
           } else {
             setExpandedTrades(allTradeIds);
             setExpandedRooms(allRoomIds);
-            setIsMainAccordionExpanded(true);
           }
         }}
-        onDeleteClick={onDeleteClick} // Add missing delete handler
       />
 
       {/* Main Content */}

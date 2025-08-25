@@ -58,7 +58,7 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange: string;
+  dateRange?: string;
   type: string;
   laborCost: number;
   materialCost: number;

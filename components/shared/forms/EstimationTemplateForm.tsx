@@ -143,7 +143,7 @@ export default function EstimationTemplateForm({
       const existingData = localStorage.getItem(storageKey);
       if (existingData) {
         try {
-          const roomsData = JSON.parse(existingData);
+          void JSON.parse(existingData);
           // The EstimationBox component will automatically load this data
           // when it mounts and finds the data in localStorage
         } catch (error) {

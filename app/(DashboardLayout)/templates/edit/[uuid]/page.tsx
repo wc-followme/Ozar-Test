@@ -19,7 +19,7 @@ import { TemplateApiData } from '../../template-types';
 // Utility function to generate unique keys (same as EstimationBox)
 const generateUniqueKey = (
   prefix: string,
-  tradeUuid?: string,
+  _tradeUuid?: string,
   roomId?: string,
   tradeSequenceNumber?: number
 ): string => {
@@ -45,9 +45,9 @@ interface EditTemplatePageProps {
 export default function EditTemplatePage({ params }: EditTemplatePageProps) {
   const { uuid } = use(params);
   const router = useRouter();
-  const { showErrorToast, showSuccessToast } = useToast();
+  const { showErrorToast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false);
   const [template, setTemplate] = useState<TemplateApiData | null>(null);
   const [formData, setFormData] = useState({
     templateName: '',
@@ -232,20 +232,20 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-      // TODO: Implement update API call
-      showSuccessToast('Template updated successfully.');
-      router.push('/templates');
-    } catch (error: any) {
-      showErrorToast(
-        extractApiErrorMessage(error, 'Failed to update template.')
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+  // const handleSave = async () => {
+  //   try {
+  //     setSaving(true);
+  //     // TODO: Implement update API call
+  //     showSuccessToast('Template updated successfully.');
+  //     router.push('/templates');
+  //   } catch (error: any) {
+  //     showErrorToast(
+  //       extractApiErrorMessage(error, 'Failed to update template.')
+  //     );
+  //   } finally {
+  //     setSaving(false);
+  //   }
+  // };
 
   const handleBack = () => {
     router.push('/templates');
@@ -367,21 +367,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     });
   };
 
-  // Get template type name for display
-  const getTemplateTypeName = (type: string) => {
-    switch (type) {
-      case 'ESTIMATE_TEMPLATES':
-        return 'Estimate Template';
-      case 'OPTION_BID_TEMPLATES':
-        return 'Option Bid Template';
-      case 'TOOL_TEMPLATES':
-        return 'Tool Template';
-      case 'DISCLAIMER_TEMPLATES':
-        return 'Disclaimer Template';
-      default:
-        return 'Template';
-    }
-  };
+  // Note: getTemplateTypeName helper removed as it was unused
 
   // Render form fields based on template type
   const renderFormFields = () => {
