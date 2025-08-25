@@ -3,11 +3,13 @@ import { Icon } from 'iconsax-react';
 // Company interface for UI and API responses
 export interface Company {
   id: number;
+  uuid: string;
   name: string;
-  createdOn: string;
-  subsEnd: string;
+  created_at: string;
+  expiry_date: string;
   image: string;
-  status: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+  is_default?: boolean;
 }
 
 // Company API response structure

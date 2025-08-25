@@ -1,10 +1,7 @@
 'use client';
 
-import { CompanyCard } from '@/components/shared/cards/CompanyCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
-import CompanyCardSkeleton from '@/components/shared/skeleton/CompanyCardSkeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
@@ -14,12 +11,13 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
-  formatDate,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import ArchiveList from './ArchiveList';
+import CompanyList from './CompanyList';
 import { COMPANY_MESSAGES } from './company-messages';
 
 export default function CompanyManagement() {
@@ -38,21 +36,35 @@ export default function CompanyManagement() {
   const { ACTIVE, INACTIVE } = CommonStatus;
   const { EDIT, DELETE } = ACTIONS;
 
-  // Memoize menu options to prevent unnecessary re-renders
-  const menuOptions = [
-    {
-      label: COMPANY_MESSAGES.EDIT_MENU,
-      action: EDIT,
-      icon: Edit2,
-      variant: 'default' as const,
-    },
-    {
-      label: COMPANY_MESSAGES.DELETE_MENU,
-      action: DELETE,
-      icon: Trash,
-      variant: 'destructive' as const,
-    },
-  ];
+  const getMenuOptions = (isArchive: boolean) => {
+    if (isArchive) {
+      // Archive tab - only show retrieve option
+      return [
+        {
+          label: COMPANY_MESSAGES.RETRIEVE_MENU,
+          action: ACTIONS.RETRIEVE,
+          icon: Refresh,
+          variant: 'default' as const,
+        },
+      ];
+    } else {
+      // Active companies tab - show edit and delete options
+      return [
+        {
+          label: COMPANY_MESSAGES.EDIT_MENU,
+          action: EDIT,
+          icon: Edit2,
+          variant: 'default' as const,
+        },
+        {
+          label: COMPANY_MESSAGES.DELETE_MENU,
+          action: DELETE,
+          icon: Trash,
+          variant: 'destructive' as const,
+        },
+      ];
+    }
+  };
 
   // Get user permissions for companies
   const userPermissions = getUserPermissionsFromStorage();
@@ -64,6 +76,11 @@ export default function CompanyManagement() {
     fetchCompanies(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchCompanies(1, false);
+  }, [selectedTab]);
 
   const isCompanyApiResponse = (
     obj: unknown
@@ -79,13 +96,15 @@ export default function CompanyManagement() {
     );
   };
 
-  const fetchCompanies = async (targetPage = 1, append = false) => {
+  const fetchCompanies = useCallback(async (targetPage = 1, append = false) => {
     setLoading(true);
     try {
+      const statusParam = selectedTab === 'archive' ? INACTIVE : ACTIVE;
+      
       const res: FetchCompaniesResponse = await apiService.fetchCompanies({
         page: targetPage,
         limit: COMPANY_LIMIT,
-        status: ACTIVE,
+        status: statusParam,
         sortOrder: 'ASC',
       });
 
@@ -118,7 +137,7 @@ export default function CompanyManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedTab]);
 
   // Handler for create company navigation with loading state
   const handleCreateCompany = () => {
@@ -158,6 +177,8 @@ export default function CompanyManagement() {
           COMPANY_MESSAGES.STATUS_UPDATE_SUCCESS
         )
       );
+      // Refresh list to reflect latest server state based on current tab
+      await fetchCompanies(1, false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -172,12 +193,12 @@ export default function CompanyManagement() {
     }
   };
 
-  // Delete handler
-  const handleDeleteCompany = async (uuid: string) => {
+  // Handler for archiving a company
+  const handleArchiveCompany = async (uuid: string) => {
     try {
       const company = companies.find(c => c.uuid === uuid);
 
-      // Prevent deletion of default companies
+      // Prevent archiving of default companies
       if (company?.is_default) {
         showErrorToast(COMPANY_MESSAGES.DEFAULT_COMPANY_DELETE_ERROR);
         return;
@@ -188,8 +209,8 @@ export default function CompanyManagement() {
       showSuccessToast(
         extractApiSuccessMessage(response, COMPANY_MESSAGES.DELETE_SUCCESS)
       );
-      // Redirect to company listing page after successful archive
-      router.push(ROUTES.COMPANY_MANAGEMENT);
+      // Refresh list to reflect latest server state based on current tab
+      fetchCompanies(1, false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -199,6 +220,29 @@ export default function CompanyManagement() {
       const message = extractApiErrorMessage(
         err,
         COMPANY_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
+    }
+  };
+
+  // Handler for retrieving a company
+  const handleRetrieveCompany = async (uuid: string) => {
+    try {
+      const response = await apiService.updateCompanyStatus(uuid, ACTIVE);
+      showSuccessToast(
+        extractApiSuccessMessage(response, COMPANY_MESSAGES.RETRIEVE_SUCCESS)
+      );
+      // Refresh list to reflect latest server state based on current tab
+      fetchCompanies(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(
+        err,
+        COMPANY_MESSAGES.RETRIEVE_ERROR
       );
       showErrorToast(message);
     }
@@ -271,81 +315,29 @@ export default function CompanyManagement() {
 
           {/* Companies Tab Content */}
           <TabsContent value='companies' className='mt-6'>
-            {/* Initial Loading State */}
-            {companies.length === 0 && loading ? (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {[...Array(8)].map((_, i) => (
-                  <CompanyCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* Company Grid */}
-                {companies.length === 0 && !loading ? (
-                  <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-                    <NoDataFound
-                      description={
-                        COMPANY_MESSAGES.NO_COMPANIES_FOUND_DESCRIPTION
-                      }
-                      buttonText={COMPANY_MESSAGES.ADD_COMPANY_BUTTON}
-                      onButtonClick={handleCreateCompany}
-                      showButton={canEdit ?? false}
-                    />
-                  </div>
-                ) : (
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {companies.map(
-                      ({
-                        name,
-                        created_at,
-                        expiry_date,
-                        image,
-                        status,
-                        is_default,
-                        uuid,
-                      }) => (
-                        <CompanyCard
-                          key={uuid}
-                          name={name}
-                          createdOn={formatDate(created_at)}
-                          subsEnd={formatDate(expiry_date)}
-                          image={
-                            image
-                              ? (process.env['NEXT_PUBLIC_CDN_URL'] || '') +
-                                image
-                              : ''
-                          }
-                          status={status === 'ACTIVE'}
-                          onToggle={() => handleToggleStatus(uuid, status)}
-                          menuOptions={menuOptions}
-                          isDefault={is_default}
-                          companyUuid={uuid}
-                          onDelete={() => handleDeleteCompany(uuid)}
-                        />
-                      )
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-
-            {loading && companies.length > 0 && (
-              <div className='text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <CompanyList
+              companies={companies}
+              loading={loading}
+              noDataDescription={COMPANY_MESSAGES.NO_COMPANIES_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false)}
+              onToggle={handleToggleStatus}
+              onDelete={handleArchiveCompany}
+              onCreateCompany={handleCreateCompany}
+              canEdit={canEdit ?? false}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Companies'
-                description='No archived companies found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              companies={companies}
+              loading={loading}
+              noDataTitle={COMPANY_MESSAGES.ARCHIVED_COMPANIES_TITLE}
+              noDataDescription={COMPANY_MESSAGES.NO_ARCHIVED_COMPANIES_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveCompany}
+              onToggle={handleToggleStatus}
+            />
           </TabsContent>
         </Tabs>
       </div>

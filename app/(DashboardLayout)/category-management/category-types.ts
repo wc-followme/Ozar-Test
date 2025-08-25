@@ -13,6 +13,14 @@ export interface Category {
   updated_at: string;
 }
 
+// Menu option interface for category actions
+export interface MenuOption {
+  label: string;
+  action: string;
+  icon: any;
+  variant: 'default' | 'destructive';
+}
+
 // Category API response structure
 export interface CategoryApiResponse {
   statusCode: number;

@@ -8,6 +8,7 @@ import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import React, { useState } from 'react';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { ConfirmRetrieveModal } from '../common/ConfirmRetrieveModal';
 import Dropdown from '../common/Dropdown';
 
 interface MenuOption {
@@ -31,6 +32,7 @@ export interface RoleCardProps {
   menuOptions: MenuOption[];
   onEdit?: () => void;
   onDelete?: () => void;
+  onRetrieve?: () => void;
 }
 
 export const RoleCard: React.FC<RoleCardProps> = ({
@@ -43,8 +45,10 @@ export const RoleCard: React.FC<RoleCardProps> = ({
   menuOptions,
   onEdit,
   onDelete,
+  onRetrieve,
 }) => {
   const [showDelete, setShowDelete] = useState(false);
+  const [showRetrieve, setShowRetrieve] = useState(false);
 
   // Get user permissions for roles
   const userPermissions = getUserPermissionsFromStorage();
@@ -59,6 +63,9 @@ export const RoleCard: React.FC<RoleCardProps> = ({
     if (option.action === ACTIONS.DELETE || option.action === ACTIONS.ARCHIVE) {
       return canArchive;
     }
+    if (option.action === ACTIONS.RETRIEVE) {
+      return canArchive; // Use archive permission for retrieve as well
+    }
     return true; // Show other actions by default
   });
 
@@ -68,6 +75,7 @@ export const RoleCard: React.FC<RoleCardProps> = ({
   const handleMenuAction = (action: string) => {
     if (action === ACTIONS.EDIT && onEdit) onEdit();
     if (action === ACTIONS.DELETE) setShowDelete(true);
+    if (action === ACTIONS.RETRIEVE) setShowRetrieve(true);
   };
 
   const handleConfirmDelete = () => {
@@ -141,12 +149,25 @@ export const RoleCard: React.FC<RoleCardProps> = ({
           </span>
         </div>
       </CardContent>
+
+
       <ConfirmDeleteModal
         open={showDelete}
         title={ROLE_MESSAGES.DELETE_CONFIRM_TITLE}
         subtitle={ROLE_MESSAGES.DELETE_CONFIRM_SUBTITLE}
         onCancel={() => setShowDelete(false)}
         onDelete={handleConfirmDelete}
+      />
+
+      <ConfirmRetrieveModal
+        open={showRetrieve}
+        title={`Are you sure you want to retrieve?`}
+        subtitle={`This will restore the role to active status.`}
+        onCancel={() => setShowRetrieve(false)}
+        onRetrieve={async () => {
+          setShowRetrieve(false);
+          if (onRetrieve) await onRetrieve();
+        }}
       />
     </Card>
   );
