@@ -1,0 +1,86 @@
+'use client';
+
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Card } from '@/components/ui/card';
+import { Add, ArrowSquareDown } from 'iconsax-react';
+import { useState } from 'react';
+import ServiceOptionItemForm from '../forms/ServiceOptionItemForm';
+import { EstimationItem } from '../forms/estimation-types';
+
+interface ServiceOptionAccordionProps {
+  title: string;
+  items: EstimationItem[];
+  addButtonText: string;
+  onAddItem: () => void;
+  onItemUpdate: (itemId: string, updatedItem: EstimationItem) => void;
+  onItemDelete: (itemId: string) => void;
+  defaultExpanded?: boolean;
+  serviceId?: string | undefined;
+}
+
+export default function ServiceOptionAccordion({
+  title,
+  items,
+  addButtonText,
+  onAddItem,
+  onItemUpdate,
+  onItemDelete,
+  defaultExpanded = true,
+  serviceId,
+}: ServiceOptionAccordionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <Card className='p-4 rounded-[10px] bg-[var(--card-background)] border-none w-full min-w-max'>
+      <Accordion
+        type='single'
+        collapsible
+        value={isExpanded ? 'items' : ''}
+        onValueChange={value => setIsExpanded(value === 'items')}
+      >
+        <AccordionItem value='items' className='border-none'>
+          <AccordionTrigger className='hover:no-underline py-0 [&>svg]:hidden'>
+            <div className='flex items-center justify-between w-full'>
+              <div className='flex items-center gap-2'>
+                <ArrowSquareDown
+                  size={20}
+                  className={`transition-transform duration-200 ${
+                    isExpanded ? 'rotate-180' : ''
+                  }`}
+                  color='var(--text-dark)'
+                />
+                <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
+                  {title} - {items.length}
+                </h3>
+              </div>
+              <div
+                className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                onClick={e => {
+                  e.stopPropagation();
+                  onAddItem();
+                }}
+              >
+                <Add size={20} color='var(--secondary)' className='!h-5 !w-5' />
+                {addButtonText}
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
+            <ServiceOptionItemForm
+              items={items}
+              onItemUpdate={onItemUpdate}
+              onItemDelete={onItemDelete}
+              onAddItem={onAddItem}
+              serviceId={serviceId}
+            />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    </Card>
+  );
+}

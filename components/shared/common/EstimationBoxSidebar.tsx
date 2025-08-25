@@ -159,16 +159,25 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                 <ExpandAllIcon />
               </div>
               {(() => {
+                // Check if there are any rooms
+                if (rooms.length === 0) return 'No Rooms';
+
                 const allRoomIds = rooms.map(room => room.id);
                 const allTradeIds = rooms.flatMap(room =>
-                  room.trades.map(trade => trade.id)
+                  room.trades.map(trade => trade.uniqueKey)
                 );
-                const allRoomsExpanded = allRoomIds.every(id =>
-                  expandedRooms.includes(id)
-                );
-                const allTradesExpanded = allTradeIds.every(id =>
-                  expandedTrades.includes(id)
-                );
+
+                // Check if all rooms are expanded
+                const allRoomsExpanded =
+                  allRoomIds.length > 0 &&
+                  allRoomIds.every(id => expandedRooms.includes(id));
+
+                // Check if all trades are expanded (only if there are trades)
+                const allTradesExpanded =
+                  allTradeIds.length === 0 ||
+                  allTradeIds.every(id => expandedTrades.includes(id));
+
+                // Both rooms and trades must be expanded to show "Collapse All"
                 const allExpanded = allRoomsExpanded && allTradesExpanded;
 
                 return allExpanded ? 'Collapse All' : 'Expand All';

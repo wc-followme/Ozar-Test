@@ -5,7 +5,7 @@ import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModa
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
-import ServiceForm from '@/components/shared/forms/ServiceForm';
+import { ServiceForm } from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';

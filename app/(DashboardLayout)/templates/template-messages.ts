@@ -75,7 +75,7 @@ export const TEMPLATE_MESSAGES = {
   ESTIMATE_TEMPLATE: 'Estimate Template',
   TOOLS_TEMPLATE: 'Tools Template',
   DISCLAIMERS_TEMPLATE: 'Disclaimers Template',
-  OPTION_BID_TEMPLATE: 'Option Bid Template',
+  OPTION_BID_TEMPLATE: 'Service Options Template',
 
   // Category options
   INTERIOR: 'Interior',
