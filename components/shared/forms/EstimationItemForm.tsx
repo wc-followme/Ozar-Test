@@ -324,16 +324,23 @@ export default function EstimationItemForm({
         </div>
         <div className={`space-y-2 ${useFixedWidths ? 'min-w-[150px]' : ''}`}>
           <Label className='field-label text-sm'>Rate</Label>
-          <Input
-            type='text'
-            value={formatCurrency(item.rate)}
-            onChange={e => {
-              const numericValue =
-                parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-              handleInputChange('rate', numericValue);
-            }}
-            className='input-field'
-          />
+          <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+            <div className='w-[60px] flex items-center justify-center font-bold text-[var(--text-dark)] select-none border-none bg-[var(--white-background)] rounded-l-[10px]'>
+              $
+            </div>
+            <Input
+              type='text'
+              value={item.rate.toString()}
+              onChange={e => {
+                const cleaned = e.target.value.replace(/[^0-9.]/g, '');
+                const numericValue =
+                  cleaned === '' ? 0 : parseFloat(cleaned) || 0;
+                handleInputChange('rate', numericValue);
+              }}
+              placeholder='0.00'
+              className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+            />
+          </div>
         </div>
         <div className={`space-y-2 ${useFixedWidths ? 'min-w-[200px]' : ''}`}>
           <Label className='field-label text-sm'>Markup </Label>

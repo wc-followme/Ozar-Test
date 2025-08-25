@@ -3,7 +3,6 @@
 import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
 import EstimationItemsAccordion from '@/components/shared/common/EstimationItemsAccordion';
 import SelectField from '@/components/shared/common/SelectField';
-import ServiceOptionListCard from '@/components/shared/common/ServiceOptionListCard';
 import SideSheet from '@/components/shared/common/SideSheet';
 import ToolsAccordion from '@/components/shared/common/ToolsAccordion';
 import { Card } from '@/components/ui/card';
@@ -341,23 +340,30 @@ export default function EstimationServiceForm({
                 className='input-field'
               />
             </div>
-            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
+            <div className='space-y-2 w-[120px] min-w-[120px] overflow-hidden'>
               <Label className='field-label'>Rate</Label>
-              <Input
-                type='text'
-                value={service.rate.toString()}
-                onChange={e => {
-                  const numericValue =
-                    parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                  if (onServiceUpdate) {
-                    onServiceUpdate({
-                      ...service,
-                      rate: numericValue,
-                    });
-                  }
-                }}
-                className='input-field'
-              />
+              <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+                <div className='w-[40px] flex items-center justify-center font-bold text-[var(--text-dark)] select-none border-none bg-[var(--white-background)] rounded-l-[10px]'>
+                  $
+                </div>
+                <Input
+                  type='text'
+                  value={service.rate.toString()}
+                  onChange={e => {
+                    const cleaned = e.target.value.replace(/[^0-9.]/g, '');
+                    const numericValue =
+                      cleaned === '' ? 0 : parseFloat(cleaned) || 0;
+                    if (onServiceUpdate) {
+                      onServiceUpdate({
+                        ...service,
+                        rate: numericValue,
+                      });
+                    }
+                  }}
+                  placeholder='0.00'
+                  className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+                />
+              </div>
             </div>
           </div>
           <div className='pt-7 ml-auto flex-shrink-0 min-w-fit'>
