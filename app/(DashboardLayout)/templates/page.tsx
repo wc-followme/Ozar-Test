@@ -2,6 +2,7 @@
 
 import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
 import { Dropdown } from '@/components/shared/common/Dropdown';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -415,9 +416,12 @@ export default function TemplatesPage() {
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
             ) : estimateTemplates.length === 0 ? (
-              <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No estimate templates found.
-              </div>
+              <NoDataFound
+                title='No estimate templates found'
+                description='Create your first estimate template to get started.'
+                showButton={false}
+                height='min-h-[30vh]'
+              />
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
@@ -441,9 +445,12 @@ export default function TemplatesPage() {
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
             ) : serviceOptionTemplates.length === 0 ? (
-              <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No service option templates found.
-              </div>
+              <NoDataFound
+                title='No service option templates found'
+                description='Create a service option template to manage options quickly.'
+                showButton={false}
+                height='min-h-[30vh]'
+              />
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
@@ -470,9 +477,12 @@ export default function TemplatesPage() {
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
             ) : toolsTemplates.length === 0 ? (
-              <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No tools templates found.
-              </div>
+              <NoDataFound
+                title='No tools templates found'
+                description='Create a tools template to reuse tool lists across templates.'
+                showButton={false}
+                height='min-h-[30vh]'
+              />
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
@@ -496,9 +506,12 @@ export default function TemplatesPage() {
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
             ) : disclaimersTemplates.length === 0 ? (
-              <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No disclaimer templates found.
-              </div>
+              <NoDataFound
+                title='No disclaimer templates found'
+                description='Create a disclaimer template to standardize your disclaimers.'
+                showButton={false}
+                height='min-h-[30vh]'
+              />
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
@@ -522,9 +535,12 @@ export default function TemplatesPage() {
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
             ) : archiveTemplates.length === 0 ? (
-              <div className='text-center py-8 text-[var(--text-secondary)]'>
-                No archived templates found.
-              </div>
+              <NoDataFound
+                title='No archived templates found'
+                description='Archived templates will appear here.'
+                showButton={false}
+                height='min-h-[30vh]'
+              />
             ) : (
               <div className='space-y-8'>
                 {/* Estimate Section */}

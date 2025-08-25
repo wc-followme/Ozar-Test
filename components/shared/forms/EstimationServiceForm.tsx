@@ -405,7 +405,8 @@ export default function EstimationServiceForm({
             className='input-field'
           />
         </div>
-        <div className='mt-4'>
+        {/* TODO: commented temporarily to remove service options from the service form */}
+        {/* <div className='mt-4'>
           <div className='flex items-center justify-between mb-4 pb-4 border-b border-[var(--border-dark)]'>
             <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
               Service Options{' '}
@@ -424,7 +425,7 @@ export default function EstimationServiceForm({
               formatCurrency={formatCurrency}
             />
           </div>
-        </div>
+        </div> */}
       </Card>
 
       {/* Service Options */}
