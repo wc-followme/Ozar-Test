@@ -13,6 +13,7 @@ import { cn, getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import React, { useState } from 'react';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { ConfirmRetrieveModal } from '../common/ConfirmRetrieveModal';
 
 interface MenuOption {
   label: string;
@@ -36,6 +37,7 @@ interface CategoryCardProps {
   categoryUuid: string;
   onDelete?: () => void;
   onEdit?: () => void;
+  onRetrieve?: (() => void) | undefined;
 }
 
 export function CategoryCard({
@@ -48,8 +50,10 @@ export function CategoryCard({
   categoryUuid: _categoryUuid,
   onDelete,
   onEdit,
+  onRetrieve,
 }: CategoryCardProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showRetrieve, setShowRetrieve] = useState(false);
 
   // Get user permissions for categories
   const userPermissions = getUserPermissionsFromStorage();
@@ -63,6 +67,9 @@ export function CategoryCard({
     }
     if (option.action === ACTIONS.DELETE || option.action === ACTIONS.ARCHIVE) {
       return canArchive;
+    }
+    if (option.action === ACTIONS.RETRIEVE) {
+      return canArchive; // Use archive permission for retrieve as well
     }
     return true; // Show other actions by default
   });
@@ -78,7 +85,11 @@ export function CategoryCard({
         }
         break;
       case ACTIONS.DELETE:
+      case ACTIONS.ARCHIVE:
         setShowDeleteModal(true);
+        break;
+      case ACTIONS.RETRIEVE:
+        setShowRetrieve(true);
         break;
       default:
         break;
@@ -181,6 +192,16 @@ export function CategoryCard({
         onDelete={handleDelete}
         title='Are you sure you want to archive?'
         subtitle='This action cannot be undone.'
+      />
+      <ConfirmRetrieveModal
+        open={showRetrieve}
+        title="Are you sure you want to retrieve?"
+        subtitle="This will restore the category to active status."
+        onCancel={() => setShowRetrieve(false)}
+        onRetrieve={async () => {
+          setShowRetrieve(false);
+          if (onRetrieve) await onRetrieve();
+        }}
       />
     </>
   );

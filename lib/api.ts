@@ -1680,6 +1680,18 @@ class ApiService {
     });
   }
 
+  // Update trade status
+  async updateTradeStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/trades/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Get trades dropdown
   async getTradesDropdown(params?: {
     company_id?: string | number;
@@ -1759,6 +1771,18 @@ class ApiService {
     return this.makeRequest(`/services/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update service status
+  async updateServiceStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/services/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -1889,6 +1913,18 @@ class ApiService {
     return this.makeRequest(`/materials/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update material status
+  async updateMaterialStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/materials/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -2468,3 +2504,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+

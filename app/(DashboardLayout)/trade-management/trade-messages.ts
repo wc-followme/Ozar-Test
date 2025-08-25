@@ -72,4 +72,11 @@ export const TRADE_MESSAGES = {
   DELETE_CONFIRM_TITLE: 'Archive Trade',
   DELETE_CONFIRM_SUBTITLE:
     'Are you sure you want to Archive "{name}"? This action cannot be undone.',
+
+  // Archive and Retrieve Messages
+  RETRIEVE_SUCCESS: 'Trade retrieved successfully.',
+  RETRIEVE_ERROR: 'Failed to retrieve trade.',
+  NO_ARCHIVED_TRADES_FOUND: 'No archived trades found.',
+  ARCHIVED_TRADES_TITLE: 'Archived Trades',
+  RETRIEVE_MENU: 'Retrieve',
 };

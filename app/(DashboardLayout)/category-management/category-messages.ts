@@ -5,6 +5,7 @@ export const CATEGORY_MESSAGES = {
   UPDATE_SUCCESS: 'Category updated successfully.',
   DELETE_SUCCESS: 'Category deleted successfully.',
   STATUS_UPDATE_SUCCESS: 'Category status updated successfully.',
+  RETRIEVE_SUCCESS: 'Category retrieved successfully.',
 
   // Error Messages
   CREATE_ERROR: 'Failed to create category.',
@@ -13,6 +14,7 @@ export const CATEGORY_MESSAGES = {
   FETCH_ERROR: 'Failed to fetch categories.',
   FETCH_DETAILS_ERROR: 'Failed to fetch category details.',
   STATUS_UPDATE_ERROR: 'Failed to update category status.',
+  RETRIEVE_ERROR: 'Failed to retrieve category.',
   CATEGORY_NOT_FOUND_ERROR: 'Category UUID not found',
   DEFAULT_CATEGORY_STATUS_ERROR: 'Default category status cannot be changed.',
   DEFAULT_CATEGORY_DELETE_ERROR: 'Default category cannot be deleted.',
@@ -32,11 +34,13 @@ export const CATEGORY_MESSAGES = {
   NO_CATEGORIES_FOUND_DESCRIPTION:
     "You haven't created any categories yet. Start by adding your first one to organize your categories.",
   NO_MORE_CATEGORIES: 'No more categories to load.',
+  NO_ARCHIVED_CATEGORIES_FOUND: 'No archived categories found.',
+  ARCHIVED_CATEGORIES_TITLE: 'Archived Categories',
 
   // Button Labels
   ADD_CATEGORY_BUTTON: 'Create Category',
   EDIT_CATEGORY_BUTTON: 'Edit Category',
-  DELETE_CATEGORY_BUTTON: 'Delete Category',
+  DELETE_CATEGORY_BUTTON: 'Archive Category',
   CREATE_BUTTON: 'Create',
   UPDATE_BUTTON: 'Update',
   CANCEL_BUTTON: 'Cancel',
@@ -67,6 +71,7 @@ export const CATEGORY_MESSAGES = {
   // Menu Options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RETRIEVE_MENU: 'Retrieve',
 
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
