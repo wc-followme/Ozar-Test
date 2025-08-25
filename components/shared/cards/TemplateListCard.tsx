@@ -181,14 +181,6 @@ export function TemplateListCard({
                 </p>
               </div>
             </div>
-            <div>
-              <p className='text-sm text-[var(--text-secondary)] mb-1'>
-                Material
-              </p>
-              <p className='text-sm text-[var(--text-dark)] font-medium'>
-                {template.material}
-              </p>
-            </div>
           </>
         );
 

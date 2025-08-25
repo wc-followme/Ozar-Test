@@ -73,7 +73,12 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
           setTemplate(templateData);
           setFormData({
             templateName: templateData.name || '',
-            service: templateData.service?.name || '',
+            // store UUID for selects
+            service:
+              templateData.service?.uuid ||
+              templateData.service?.id ||
+              templateData.service?.name ||
+              '',
             material: '',
             propertyType: '',
             category: templateData.category?.uuid || '', // Use UUID for category
@@ -508,8 +513,35 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 initialData={{
                   templateName: formData.templateName,
                   service: formData.service,
-                  tools: [],
+                  tools: (() => {
+                    // Prefer templateTools from API, fallback to tool_ids or tools
+                    if (Array.isArray((template as any)?.templateTools)) {
+                      return ((template as any).templateTools as any[])
+                        .map(tt =>
+                          String(
+                            tt?.tool?.uuid ||
+                              tt?.tool_uuid ||
+                              tt?.uuid ||
+                              tt?.tool_id ||
+                              ''
+                          )
+                        )
+                        .filter(Boolean);
+                    }
+                    if (Array.isArray((template as any)?.tool_ids)) {
+                      return ((template as any).tool_ids as any[])
+                        .map(id => String(id))
+                        .filter(Boolean);
+                    }
+                    if (Array.isArray((template as any)?.tools)) {
+                      return ((template as any).tools as any[])
+                        .map(t => String(t?.uuid || t?.id || ''))
+                        .filter(Boolean);
+                    }
+                    return [] as string[];
+                  })(),
                 }}
+                templateId={template.uuid}
               />
             </div>
           </div>
