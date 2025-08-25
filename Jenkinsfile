@@ -14,26 +14,6 @@ pipeline {
         }
       }
       stages {
-        stage('Debug Environment') {
-          steps {
-            script {
-              echo "=== All PR/Change Related Variables ==="
-              echo "CHANGE_ID: ${env.CHANGE_ID}"
-              echo "CHANGE_URL: ${env.CHANGE_URL}"
-              echo "CHANGE_TITLE: ${env.CHANGE_TITLE}"
-              echo "CHANGE_AUTHOR: ${env.CHANGE_AUTHOR}"
-              echo "CHANGE_TARGET: ${env.CHANGE_TARGET}"
-              echo "PULL_REQUEST: ${env.PULL_REQUEST}"
-              echo "ghprbPullId: ${env.ghprbPullId}"
-              echo "=== Git Variables ==="
-              echo "GIT_BRANCH: ${env.GIT_BRANCH}"
-              echo "BRANCH_NAME: ${env.BRANCH_NAME}"
-              echo "=== All Environment Variables ==="
-              sh 'printenv | grep -i -E "(change|pull|pr)" | sort || echo "No PR-related variables found"'
-            }
-          }
-        }
-
         stage('Checkout Code') {
           steps {
             checkout scm

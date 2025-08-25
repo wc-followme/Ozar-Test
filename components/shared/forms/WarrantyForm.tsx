@@ -188,14 +188,14 @@ export const WarrantyForm = ({
           type='button'
           variant='outline'
           onClick={onCancel}
-          className='btn-secondary !px-8'
+          className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={isLoading}
         >
           Cancel
         </Button>
         <Button
           type='submit'
-          className='btn-primary !px-12'
+          className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={isLoading}
         >
           Save

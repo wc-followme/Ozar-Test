@@ -20,13 +20,13 @@ import {
   archiveTemplates,
   disclaimersTemplates,
   estimateTemplates,
-  optionBidTemplates,
+  serviceOptionTemplates,
   toolsTemplates,
 } from './dummy-data';
 
 export default function TemplatesPage() {
   const router = useRouter();
-  const [selectedTab, setSelectedTab] = useState('estimate');
+  const [selectedTab, setSelectedTab] = useState('service-option');
 
   return (
     <div className='w-full'>
@@ -55,8 +55,8 @@ export default function TemplatesPage() {
                     icon: TaskSquare,
                   },
                   {
-                    label: 'Option Bid Template',
-                    action: 'option-bid',
+                    label: 'Service Options Template',
+                    action: 'service-option',
                     icon: OptionBidIcon,
                   },
                   {
@@ -92,8 +92,8 @@ export default function TemplatesPage() {
                     icon: TaskSquare,
                   },
                   {
-                    label: 'Option Bid Template',
-                    action: 'option-bid',
+                    label: 'Service Options Template',
+                    action: 'service-option',
                     icon: OptionBidIcon,
                   },
                   {
@@ -143,17 +143,17 @@ export default function TemplatesPage() {
                   </span>
                 </TabsTrigger>
                 <TabsTrigger
-                  value='option-bid'
+                  value='service-option'
                   className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
                 >
                   <span className='flex items-center gap-2'>
                     <span className='text-sm sm:text-sm xl:text-base'>
-                      Option Bid
+                      Service Options
                     </span>
                     <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'option-bid' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
+                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'service-option' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
                     >
-                      {optionBidTemplates.length}
+                      {serviceOptionTemplates.length}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -220,10 +220,10 @@ export default function TemplatesPage() {
             </div>
           </TabsContent>
 
-          {/* Option Bid Tab Content */}
-          <TabsContent value='option-bid' className='mt-6'>
+          {/* Service Options Tab Content */}
+          <TabsContent value='service-option' className='mt-6'>
             <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-              {optionBidTemplates.map(({ id, ...template }) => (
+              {serviceOptionTemplates.map(({ id, ...template }) => (
                 <TemplateListCard
                   key={id}
                   template={{ id, ...template }}
@@ -286,14 +286,14 @@ export default function TemplatesPage() {
                 </div>
               </div>
 
-              {/* Option Bid Section */}
+              {/* Service Options Section */}
               <div>
                 <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                  Option Bid
+                  Service Options
                 </h3>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                   {archiveTemplates
-                    .filter(({ type }) => type === 'option-bid')
+                    .filter(({ type }) => type === 'service-option')
                     .map(({ id, ...template }) => (
                       <TemplateListCard
                         key={id}

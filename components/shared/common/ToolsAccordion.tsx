@@ -32,6 +32,8 @@ interface ToolsAccordionProps {
   tradeName?: string;
   serviceName?: string;
   serviceId?: string | undefined; // Add service ID prop for fetching tools
+  borderClass?: string; // New prop to control border styling
+  showAddButton?: boolean; // New prop to control add button visibility
 }
 
 export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
@@ -46,6 +48,8 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
     tradeName = 'Trade',
     serviceName = 'Service',
     serviceId, // Add service ID prop
+    borderClass = 'border-none', // Default to border-none
+    showAddButton = true, // Default to true to maintain current behavior
   } = props;
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const [isSideSheetOpen, setIsSideSheetOpen] = useState(false);
@@ -70,7 +74,9 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
 
   return (
     <>
-      <Card className='p-4 rounded-[10px] bg-[var(--card-background)] border-none'>
+      <Card
+        className={`p-4 rounded-[10px] bg-[var(--card-background)] ${borderClass}`}
+      >
         <Accordion
           type='single'
           collapsible
@@ -92,30 +98,32 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
                     {title}
                   </h3>
                 </div>
-                <div
-                  role='button'
-                  tabIndex={0}
-                  aria-label='Add tools'
-                  className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
-                  onClick={e => {
-                    e.stopPropagation();
-                    setIsSideSheetOpen(true);
-                  }}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
+                {showAddButton && (
+                  <div
+                    role='button'
+                    tabIndex={0}
+                    aria-label='Add tools'
+                    className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                    onClick={e => {
                       e.stopPropagation();
                       setIsSideSheetOpen(true);
-                    }
-                  }}
-                >
-                  <Add
-                    size='24'
-                    color='var(--secondary)'
-                    className='!h-6 !w-6'
-                  />
-                  Tools
-                </div>
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsSideSheetOpen(true);
+                      }
+                    }}
+                  >
+                    <Add
+                      size='24'
+                      color='var(--secondary)'
+                      className='!h-6 !w-6'
+                    />
+                    Tools
+                  </div>
+                )}
               </div>
             </AccordionTrigger>
             <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>

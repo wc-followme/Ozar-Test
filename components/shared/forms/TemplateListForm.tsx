@@ -126,13 +126,16 @@ export function TemplateListForm({ onSave, onCancel }: TemplateListFormProps) {
 
       {/* Action Buttons */}
       <div className='flex gap-4 pt-6 border-t border-[var(--border-dark)]'>
-        <Button onClick={onCancel} className='!h-12 !px-8 btn-secondary'>
+        <Button
+          onClick={onCancel}
+          className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+        >
           Cancel
         </Button>
         <Button
           onClick={handleAddSelected}
           disabled={selectedTemplates.length === 0}
-          className='btn-primary !h-12 !px-8'
+          className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
         >
           Add Selected ({selectedTemplates.length})
         </Button>
