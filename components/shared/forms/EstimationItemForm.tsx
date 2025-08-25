@@ -22,6 +22,7 @@ interface EstimationItemFormProps {
   serviceId?: string | undefined; // Add service ID prop for fetching materials
   useFixedWidths?: boolean; // New prop to control fixed widths
   containerWidthClass?: string; // New prop to control container width
+  disableVariant?: boolean; // Disable the variant SelectField (e.g., for Materials)
 }
 
 export default function EstimationItemForm({
@@ -31,6 +32,7 @@ export default function EstimationItemForm({
   serviceId, // Add service ID prop
   useFixedWidths = true, // Default to true to maintain current behavior
   containerWidthClass = 'w-full min-w-fit', // Default to responsive width
+  disableVariant = false,
 }: EstimationItemFormProps) {
   const [selectedCurrency, setSelectedCurrency] = useState(
     item.markup_type === 'PERCENTAGE' ? '%' : '$'
@@ -213,6 +215,7 @@ export default function EstimationItemForm({
             }
             placeholder='Select variant'
             className='mb-0'
+            disabled={disableVariant}
           />
         </div>
         <div className={`space-y-2 w-[100px] min-w-[100px]`}>

@@ -157,7 +157,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     {
       id: '0', // Use sequence number as room ID
       uniqueKey: generateUniqueKey('room'),
-      name: 'Home 1',
+      name: 'Room 1',
       total: 0.0,
       trades: [],
       isExpanded: true,
@@ -360,12 +360,12 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleAddRoom = () => {
-    // If no rooms exist, create the default Home 1 room
+    // If no rooms exist, create the default Room 1 room
     if (rooms.length === 0) {
       const defaultRoom: Room = {
         id: '0', // Use sequence number as room ID
         uniqueKey: generateUniqueKey('room'),
-        name: 'Home 1',
+        name: 'Room 1',
         total: 0.0,
         isExpanded: true,
         trades: [],
@@ -1186,7 +1186,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           const defaultRoom: Room = {
             id: '0', // Use sequence number as room ID
             uniqueKey: generateUniqueKey('room'),
-            name: 'Home 1',
+            name: 'Room 1',
             total: 0.0,
             trades: [],
             isExpanded: true,

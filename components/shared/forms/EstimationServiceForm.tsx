@@ -465,6 +465,10 @@ export default function EstimationServiceForm({
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
       />
 
       {/* Finishes Accordion */}
@@ -496,6 +500,10 @@ export default function EstimationServiceForm({
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
       />
 
       {/* Tools Accordion */}

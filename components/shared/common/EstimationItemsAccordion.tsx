@@ -26,6 +26,7 @@ interface EstimationItemsAccordionProps {
   cardWidthClass?: string; // New prop to control card width class
   borderClass?: string; // New prop to control border styling
   showAddButton?: boolean; // New prop to control add button visibility
+  disableVariant?: boolean; // New prop to disable variant field in items
 }
 
 export default function EstimationItemsAccordion({
@@ -42,6 +43,7 @@ export default function EstimationItemsAccordion({
   cardWidthClass = 'w-full min-w-max', // Default to w-full min-w-max
   borderClass = 'border-none', // Default to border-none
   showAddButton = true, // Default to true to maintain current behavior
+  disableVariant = false,
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -133,6 +135,7 @@ export default function EstimationItemsAccordion({
                     serviceId={serviceId}
                     useFixedWidths={useFixedWidths}
                     containerWidthClass={containerWidthClass}
+                    disableVariant={disableVariant}
                   />
                 ))}
               </div>

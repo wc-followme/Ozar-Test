@@ -448,7 +448,9 @@ export default function EstimationTemplateForm({
             <SelectField
               label=''
               value={watchedCategory}
-              onValueChange={(value: string) => setValue('category', value)}
+              onValueChange={(value: string) => {
+                setValue('category', value, { shouldValidate: true });
+              }}
               options={categoryOptions}
               placeholder={
                 isLoadingCategories
