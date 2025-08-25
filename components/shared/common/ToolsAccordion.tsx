@@ -171,7 +171,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
                     color='var(--text-dark)'
                   />
                   <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-                    {title}
+                    {title} - {tools.length}
                   </h3>
                 </div>
                 {showAddButton && (

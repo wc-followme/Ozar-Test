@@ -120,21 +120,36 @@ export default function EstimationItemsAccordion({
             </div>
           </AccordionTrigger>
           <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
-            <div className='space-y-4 mt-4'>
-              {items.map(item => (
-                <EstimationItemForm
-                  key={getStableItemKey(item, title, serviceId)}
-                  item={item}
-                  onItemUpdate={updatedItem =>
-                    handleItemUpdate(item.id, updatedItem)
-                  }
-                  onDelete={() => handleItemDelete(item.id)}
-                  serviceId={serviceId}
-                  useFixedWidths={useFixedWidths}
-                  containerWidthClass={containerWidthClass}
-                />
-              ))}
-            </div>
+            {items.length > 0 ? (
+              <div className='space-y-4 mt-4'>
+                {items.map(item => (
+                  <EstimationItemForm
+                    key={getStableItemKey(item, title, serviceId)}
+                    item={item}
+                    onItemUpdate={updatedItem =>
+                      handleItemUpdate(item.id, updatedItem)
+                    }
+                    onDelete={() => handleItemDelete(item.id)}
+                    serviceId={serviceId}
+                    useFixedWidths={useFixedWidths}
+                    containerWidthClass={containerWidthClass}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className='text-gray-500 text-sm mt-4'>
+                {(() => {
+                  const lowered = title.trim().toLowerCase();
+                  const noun =
+                    lowered === 'material'
+                      ? 'materials'
+                      : lowered === 'finishes'
+                        ? 'finishes'
+                        : lowered;
+                  return `No ${noun} added yet. Click "+ ${addButtonText}" to add ${noun}.`;
+                })()}
+              </p>
+            )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>
