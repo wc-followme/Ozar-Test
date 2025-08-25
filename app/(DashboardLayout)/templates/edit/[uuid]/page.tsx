@@ -574,6 +574,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                   description: formData.description,
                   duration: formData.duration,
                 }}
+                templateId={template.uuid}
               />
             </div>
           </div>
