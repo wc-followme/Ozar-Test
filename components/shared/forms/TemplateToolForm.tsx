@@ -5,8 +5,10 @@ import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
 import { CloseCircle } from 'iconsax-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TemplateToolFormData {
   templateName: string;
@@ -19,24 +21,7 @@ interface TemplateToolFormProps {
   initialData?: Partial<TemplateToolFormData>;
 }
 
-// Available tools for selection
-const AVAILABLE_TOOLS = [
-  { value: 'tool-1', label: 'Nail Master 3000' },
-  { value: 'tool-2', label: 'Drill Wizard' },
-  { value: 'tool-3', label: 'Saw Xpert' },
-  { value: 'tool-4', label: 'Level Right' },
-  { value: 'tool-5', label: 'Hammer Pro' },
-  { value: 'tool-6', label: 'Safety Goggles' },
-  { value: 'tool-7', label: 'Measuring Tape' },
-  { value: 'tool-8', label: 'Screwdriver Set' },
-  { value: 'tool-9', label: 'Circular Saw' },
-  { value: 'tool-10', label: 'Impact Driver' },
-  { value: 'tool-11', label: 'Angle Grinder' },
-  { value: 'tool-12', label: 'Jigsaw' },
-  { value: 'tool-13', label: 'Router' },
-  { value: 'tool-14', label: 'Planer' },
-  { value: 'tool-15', label: 'Chisel Set' },
-];
+type Option = { value: string; label: string };
 
 export function TemplateToolForm({
   onSubmit,
@@ -47,6 +32,10 @@ export function TemplateToolForm({
     service: initialData?.service || '',
     tools: initialData?.tools || [],
   });
+
+  // Dynamic options state
+  const [serviceOptions, setServiceOptions] = useState<Option[]>([]);
+  const [toolOptions, setToolOptions] = useState<Option[]>([]);
 
   // Tool management state
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
@@ -79,11 +68,8 @@ export function TemplateToolForm({
     setSelectedToolIds(selectedIds);
     // Update selectedTools based on selected IDs
     const newSelectedTools = selectedIds.map(toolId => {
-      const toolData = AVAILABLE_TOOLS.find(tool => tool.value === toolId);
-      return {
-        id: toolId,
-        name: toolData?.label || 'Unknown Tool',
-      };
+      const toolData = toolOptions.find(tool => tool.value === toolId);
+      return { id: toolId, name: toolData?.label || 'Unknown Tool' };
     });
     setSelectedTools(newSelectedTools);
     handleInputChange('tools', selectedIds);
@@ -94,6 +80,81 @@ export function TemplateToolForm({
       onSubmit(formData);
     }
   };
+
+  // Helpers
+  const getCompanyUuid = (): string => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+      if (!raw) return '';
+      const parsed: { uuid?: string; id?: string | number } = JSON.parse(raw);
+      return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+    } catch {
+      return '';
+    }
+  };
+
+  // Fetch services by company
+  useEffect(() => {
+    const companyUuid = getCompanyUuid();
+    if (!companyUuid) {
+      setServiceOptions([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await apiService.fetchServicesPublic({
+          page: 1,
+          limit: 100,
+          company_id: companyUuid,
+        });
+        type Item = { id?: string | number; uuid?: string; name?: string };
+        const payload = res as unknown as { data?: Item[] | { data?: Item[] } };
+        const list: Item[] = Array.isArray(payload?.data)
+          ? (payload.data as Item[])
+          : Array.isArray((payload?.data as { data?: Item[] })?.data)
+            ? ((payload.data as { data?: Item[] }).data as Item[])
+            : [];
+        const opts: Option[] = list
+          .filter(i => !!i?.name)
+          .map(i => ({ value: String(i.uuid || i.id), label: String(i.name) }));
+        setServiceOptions(opts);
+      } catch {
+        setServiceOptions([]);
+      }
+    })();
+  }, []);
+
+  // Fetch tools by service and company
+  useEffect(() => {
+    const companyUuid = getCompanyUuid();
+    if (!companyUuid || !formData.service) {
+      setToolOptions([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await apiService.fetchToolsPublic({
+          page: 1,
+          limit: 200,
+          company_id: companyUuid,
+          service_id: formData.service,
+        });
+        type Item = { id?: string | number; uuid?: string; name?: string };
+        const payload = res as unknown as { data?: Item[] | { data?: Item[] } };
+        const list: Item[] = Array.isArray(payload?.data)
+          ? (payload.data as Item[])
+          : Array.isArray((payload?.data as { data?: Item[] })?.data)
+            ? ((payload.data as { data?: Item[] }).data as Item[])
+            : [];
+        const opts: Option[] = list
+          .filter(i => !!i?.name)
+          .map(i => ({ value: String(i.uuid || i.id), label: String(i.name) }));
+        setToolOptions(opts);
+      } catch {
+        setToolOptions([]);
+      }
+    })();
+  }, [formData.service]);
 
   return (
     <div className='space-y-6'>
@@ -115,20 +176,23 @@ export function TemplateToolForm({
           <SelectField
             label='Service'
             value={formData.service}
-            onValueChange={value => handleInputChange('service', value)}
-            options={[
-              { value: 'painting', label: 'Painting' },
-              { value: 'plumbing', label: 'Plumbing' },
-              { value: 'electrical', label: 'Electrical' },
-              { value: 'carpentry', label: 'Carpentry' },
-            ]}
+            onValueChange={value => {
+              // Update selected service
+              handleInputChange('service', value);
+              // Clear tools state when service changes to avoid stale UUID chips
+              setSelectedToolIds([]);
+              setSelectedTools([]);
+              setToolOptions([]);
+              handleInputChange('tools', []);
+            }}
+            options={serviceOptions}
             placeholder='Select Service'
           />
         </div>
         <div className='space-y-2'>
           <MultiSelect
             label='Tools'
-            options={AVAILABLE_TOOLS}
+            options={toolOptions}
             value={selectedToolIds}
             onChange={handleToolSelectionChange}
             placeholder='Select Tools'
