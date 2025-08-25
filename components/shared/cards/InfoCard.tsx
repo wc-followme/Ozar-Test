@@ -26,6 +26,8 @@ interface InfoCardProps {
   onMenuAction?: (action: string) => void;
   onRetrieve?: (() => Promise<void>) | undefined;
   onArchive?: (() => Promise<void>) | undefined;
+  onEdit?: () => void;
+  onDelete?: () => void;
   module?:
     | 'categories'
     | 'roles'
@@ -45,24 +47,40 @@ export const InfoCard: React.FC<InfoCardProps> = ({
   onMenuAction,
   onRetrieve,
   onArchive,
+  onEdit,
+  onDelete,
   module,
 }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRetrieve, setShowRetrieve] = useState(false);
 
   const handleMenuAction = (action: string) => {
-    if (action === ACTIONS.ARCHIVE || action === ACTIONS.DELETE) {
-      setShowDeleteModal(true);
-    } else if (action === ACTIONS.RETRIEVE) {
-      setShowRetrieve(true);
-    } else {
-      onMenuAction?.(action);
+    switch (action) {
+      case ACTIONS.EDIT:
+        if (onEdit) {
+          onEdit();
+        } else {
+          onMenuAction?.(action);
+        }
+        break;
+      case ACTIONS.DELETE:
+      case ACTIONS.ARCHIVE:
+        setShowDeleteModal(true);
+        break;
+      case ACTIONS.RETRIEVE:
+        setShowRetrieve(true);
+        break;
+      default:
+        onMenuAction?.(action);
+        break;
     }
   };
 
   const handleDelete = async () => {
     setShowDeleteModal(false);
-    if (onArchive) {
+    if (onDelete) {
+      onDelete();
+    } else if (onArchive) {
       await onArchive();
     }
   };

@@ -24,6 +24,7 @@ export default function TradeList({
   noDataDescription,
   menuOptions,
   onDelete,
+  onEdit,
   onCreateTrade,
   canEdit,
   onRetrieve,
@@ -58,7 +59,8 @@ export default function TradeList({
                     tradeName={name || ''}
                     category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
                     menuOptions={menuOptions}
-                    onArchive={async () => onDelete(uuid)}
+                    onEdit={() => onEdit(uuid)}
+                    onDelete={() => onDelete(uuid)}
                     onRetrieve={onRetrieve ? async () => onRetrieve(uuid) : undefined}
                     module='trades'
                   />
