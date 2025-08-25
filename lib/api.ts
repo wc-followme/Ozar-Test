@@ -1774,6 +1774,18 @@ class ApiService {
     });
   }
 
+  // Update service status
+  async updateServiceStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/services/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Update service
   async updateService(
     uuid: string,
