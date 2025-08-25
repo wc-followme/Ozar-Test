@@ -1916,6 +1916,18 @@ class ApiService {
     });
   }
 
+  // Update material status
+  async updateMaterialStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/materials/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Update material
   async updateMaterial(
     uuid: string,

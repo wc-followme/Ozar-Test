@@ -1,9 +1,5 @@
 'use client';
-import { InfoCard } from '@/components/shared/cards/InfoCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import MaterialForm from '@/components/shared/forms/MaterialForm';
 import { Button } from '@/components/ui/button';
@@ -20,36 +16,46 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
-import React, { useCallback, useEffect, useState } from 'react';
-import TradeCardSkeleton from '../../../components/shared/skeleton/TradeCardSkeleton';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
+import { useCallback, useEffect, useState } from 'react';
+import ArchiveList from './ArchiveList';
+import MaterialList from './MaterialList';
 import { MATERIAL_MESSAGES } from './material-messages';
 import { Material } from './material-types';
 
-const menuOptions: {
-  label: string;
-  action: string;
-  icon: React.ElementType;
-  variant?: 'default' | 'destructive';
-}[] = [
-  {
-    label: MATERIAL_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-    variant: 'default',
-  },
-  {
-    label: MATERIAL_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-    variant: 'destructive',
-  },
-];
+// Get menu options based on current tab
+const getMenuOptions = (isArchive: boolean) => {
+  if (isArchive) {
+    // Archive tab - only show retrieve option
+    return [
+      {
+        label: MATERIAL_MESSAGES.RETRIEVE_MENU,
+        action: ACTIONS.RETRIEVE,
+        icon: Refresh,
+        variant: 'default' as const,
+      },
+    ];
+  } else {
+    // Active materials tab - show edit and delete options
+    return [
+      {
+        label: MATERIAL_MESSAGES.EDIT_MENU,
+        action: ACTIONS.EDIT,
+        icon: Edit2,
+        variant: 'default' as const,
+      },
+      {
+        label: MATERIAL_MESSAGES.DELETE_MENU,
+        action: ACTIONS.DELETE,
+        icon: Trash,
+        variant: 'destructive' as const,
+      },
+    ];
+  }
+};
 
 export default function MaterialManagementPage() {
   // Destructure constants for better readability
-  const { EDIT, DELETE } = ACTIONS;
-  const { ACTIVE } = CommonStatus;
   const { MATERIALS_LIMIT } = PAGINATION;
 
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -58,9 +64,7 @@ export default function MaterialManagementPage() {
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
-  const [deleteMaterialName, setDeleteMaterialName] = useState<string>('');
-  const [modalOpen, setModalOpen] = useState(false);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [editingMaterialUuid, setEditingMaterialUuid] = useState<
     string | undefined
@@ -83,10 +87,14 @@ export default function MaterialManagementPage() {
         // Get selected company ID using common function
         const companyId = getCompanyId();
 
+        // Determine status based on selected tab
+        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+
         const response = await apiService.fetchMaterials({
           page: targetPage,
           limit,
           name: search,
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
 
@@ -144,7 +152,7 @@ export default function MaterialManagementPage() {
         setLoading(false);
       }
     },
-    [limit, search, handleAuthError, showErrorToast]
+    [limit, search, handleAuthError, showErrorToast, selectedTab]
   );
 
   // Handle company changes
@@ -156,6 +164,11 @@ export default function MaterialManagementPage() {
   }, [fetchMaterials]);
 
   useCompanyChange(refetchMaterials);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchMaterials(1, false);
+  }, [selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -175,50 +188,67 @@ export default function MaterialManagementPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, fetchMaterials, page]);
 
-  const handleMenuAction = (action: string, idx: number) => {
-    const material = materials[idx];
-    if (!material) return;
+  const handleEditMaterial = (uuid: string) => {
+    setEditingMaterialUuid(uuid);
+    setSideSheetOpen(true);
+  };
 
-    if (action === EDIT) {
-      setEditingMaterialUuid(material.uuid);
-      setSideSheetOpen(true);
-    }
-    if (action === DELETE) {
-      setDeleteIdx(idx);
-      setDeleteMaterialName(material.name || '');
-      setModalOpen(true);
+  // Archive handler (set material status to inactive)
+  const handleArchiveMaterial = async (uuid: string) => {
+    try {
+      const material = materials.find(m => m.uuid === uuid);
+
+      // Prevent archiving of default materials
+      if (material?.is_default) {
+        showErrorToast(MATERIAL_MESSAGES.DEFAULT_MATERIAL_DELETE_ERROR || 'Cannot archive default material');
+        return;
+      }
+
+      const response = await apiService.updateMaterialStatus(uuid, 'INACTIVE');
+      
+      showSuccessToast(
+        extractApiSuccessMessage(response, MATERIAL_MESSAGES.DELETE_SUCCESS)
+      );
+      fetchMaterials(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(
+        err,
+        MATERIAL_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
-  const handleDelete = async () => {
-    if (deleteIdx !== null) {
-      const material = materials[deleteIdx];
-      if (material) {
-        const { uuid } = material;
-        try {
-          const response = await apiService.deleteMaterial(uuid);
-          showSuccessToast(
-            extractApiSuccessMessage(response, MATERIAL_MESSAGES.DELETE_SUCCESS)
-          );
-          // Remove the material from local state instead of fetching again
-          setMaterials(prevMaterials =>
-            prevMaterials.filter((_, index) => index !== deleteIdx)
-          );
-        } catch (err: unknown) {
-          // Handle auth errors first (will redirect to login if 401)
-          if (handleAuthError(err)) {
-            return; // Don't show toast if it's an auth error
-          }
-
-          const message = extractApiErrorMessage(
-            err,
-            MATERIAL_MESSAGES.DELETE_ERROR
-          );
-          showErrorToast(message);
-        }
+  // Handler for retrieving a material
+  const handleRetrieveMaterial = async (uuid: string) => {
+    try {
+      const response = await apiService.updateMaterialStatus(uuid, 'ACTIVE');
+      
+      showSuccessToast(
+        extractApiSuccessMessage(response, MATERIAL_MESSAGES.RETRIEVE_SUCCESS)
+      );
+      
+      // Remove the retrieved material from the current list immediately
+      setMaterials(prev => prev.filter(m => m.uuid !== uuid));
+      
+      // Refresh list to reflect latest server state based on current tab
+      await fetchMaterials(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
-      setDeleteIdx(null);
-      setModalOpen(false);
+
+      const message = extractApiErrorMessage(
+        err,
+        MATERIAL_MESSAGES.RETRIEVE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -245,13 +275,13 @@ export default function MaterialManagementPage() {
         description: '',
         is_default: false,
         is_active: true,
-        status: ACTIVE,
+        status: CommonStatus.ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         services: services.split(', ').map(service => ({
           id: Date.now(),
           name: service.trim(),
-          status: ACTIVE,
+          status: CommonStatus.ACTIVE,
         })),
         ...(companyId ? { company_id: companyId } : {}),
       };
@@ -287,7 +317,7 @@ export default function MaterialManagementPage() {
                 services: services.split(', ').map(service => ({
                   id: Date.now(),
                   name: service.trim(),
-                  status: ACTIVE,
+                  status: CommonStatus.ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -359,70 +389,33 @@ export default function MaterialManagementPage() {
 
           {/* Material Tab Content */}
           <TabsContent value='material' className='mt-6'>
-            {/* Material Grid */}
-            <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {materials.length === 0 && loading ? (
-                // Initial loading state with skeleton cards
-                Array.from({ length: MATERIALS_LIMIT }).map((_, idx) => (
-                  <TradeCardSkeleton key={idx} />
-                ))
-              ) : materials.length === 0 && !loading ? (
-                <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
-                  <NoDataFound
-                    buttonText={MATERIAL_MESSAGES.ADD_MATERIAL_BUTTON}
-                    onButtonClick={() => setSideSheetOpen(true)}
-                    description={
-                      MATERIAL_MESSAGES.NO_MATERIALS_FOUND_DESCRIPTION
-                    }
-                    showButton={canEdit ?? false}
-                  />
-                </div>
-              ) : (
-                materials.map((material, idx) => (
-                  <InfoCard
-                    key={material.uuid}
-                    tradeName={material.name || ''}
-                    category={`${material.services?.length || 0} Service${(material.services?.length || 0) !== 1 ? 's' : ''}`}
-                    menuOptions={menuOptions}
-                    onMenuAction={action => handleMenuAction(action, idx)}
-                    module='materials'
-                  />
-                ))
-              )}
-            </div>
-
-            {/* Loading more materials */}
-            {loading && materials.length > 0 && (
-              <div className='w-full text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <MaterialList
+              materials={materials}
+              loading={loading}
+              noDataDescription={MATERIAL_MESSAGES.NO_MATERIALS_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false)}
+              onDelete={handleArchiveMaterial}
+              onEdit={handleEditMaterial}
+              onCreateMaterial={() => setSideSheetOpen(true)}
+              canEdit={canEdit ?? false}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Materials'
-                description='No archived materials found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              materials={materials}
+              loading={loading}
+              noDataTitle={MATERIAL_MESSAGES.ARCHIVED_MATERIALS_TITLE}
+              noDataDescription={MATERIAL_MESSAGES.NO_ARCHIVED_MATERIALS_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveMaterial}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      <ConfirmDeleteModal
-        open={modalOpen}
-        title={MATERIAL_MESSAGES.DELETE_CONFIRM_TITLE}
-        subtitle={MATERIAL_MESSAGES.DELETE_CONFIRM_SUBTITLE.replace(
-          '{name}',
-          deleteMaterialName || ''
-        )}
-        onCancel={() => setModalOpen(false)}
-        onDelete={handleDelete}
-      />
+
       <SideSheet
         title={
           editingMaterialUuid
