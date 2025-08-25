@@ -30,6 +30,14 @@ export default function TemplatesPage() {
   const [templates, setTemplates] = useState<TemplateApiData[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [counts, setCounts] = useState({
+    estimate: 0,
+    serviceOptions: 0,
+    tools: 0,
+    disclaimers: 0,
+    archive: 0,
+    total: 0,
+  });
 
   // Fetch templates from API
   const fetchTemplates = useCallback(
@@ -96,6 +104,34 @@ export default function TemplatesPage() {
     [showErrorToast, selectedTab]
   );
 
+  // Fetch counts for tabs
+  const fetchTemplateCounts = useCallback(async () => {
+    try {
+      const companyId = getCompanyId();
+      if (!companyId) {
+        showErrorToast('Company ID not found. Please select a company.');
+        return;
+      }
+
+      const response = await apiService.makeGenericRequest(
+        `/templates/counts?company_id=${companyId}`,
+        { method: 'GET' }
+      );
+
+      if (response?.statusCode === 200 && response?.data) {
+        setCounts(response.data);
+      } else {
+        showErrorToast(
+          extractApiErrorMessage(response, 'Failed to fetch template counts.')
+        );
+      }
+    } catch (error: any) {
+      showErrorToast(
+        extractApiErrorMessage(error, 'Failed to fetch template counts.')
+      );
+    }
+  }, [showErrorToast]);
+
   // Archive template handler
   const handleArchiveTemplate = useCallback(
     async (templateUuid: string) => {
@@ -108,6 +144,7 @@ export default function TemplatesPage() {
           setTemplates(prev =>
             prev.filter(template => template.uuid !== templateUuid)
           );
+          fetchTemplateCounts();
         } else {
           showErrorToast(
             extractApiErrorMessage(response, 'Failed to archive template.')
@@ -119,7 +156,35 @@ export default function TemplatesPage() {
         );
       }
     },
-    [showSuccessToast, showErrorToast]
+    [showSuccessToast, showErrorToast, fetchTemplateCounts]
+  );
+
+  // Retrieve (unarchive) template handler
+  const handleRetrieveTemplate = useCallback(
+    async (templateUuid: string) => {
+      try {
+        const response = await apiService.makeGenericRequest(
+          `/templates/${templateUuid}/retrieve`,
+          { method: 'PATCH' }
+        );
+        const { statusCode, message } = response || {};
+        if (statusCode === 200) {
+          showSuccessToast(message || 'Template retrieved successfully.');
+          // Remove the retrieved template from the archive list in UI immediately
+          setTemplates(prev => prev.filter(t => t.uuid !== templateUuid));
+          fetchTemplateCounts();
+        } else {
+          showErrorToast(
+            extractApiErrorMessage(response, 'Failed to retrieve template.')
+          );
+        }
+      } catch (error: any) {
+        showErrorToast(
+          extractApiErrorMessage(error, 'Failed to retrieve template.')
+        );
+      }
+    },
+    [showSuccessToast, showErrorToast, fetchTemplateCounts]
   );
 
   // Edit template handler
@@ -135,6 +200,7 @@ export default function TemplatesPage() {
     setTemplates([]);
     setHasMore(true);
     fetchTemplates(1, false);
+    fetchTemplateCounts();
   }, [fetchTemplates]);
 
   // Infinite scroll
@@ -176,6 +242,20 @@ export default function TemplatesPage() {
   );
   const archiveTemplates = templates.filter(
     template => template.status === 'INACTIVE'
+  );
+
+  // Archived templates by section for Archive tab
+  const archivedEstimates = archiveTemplates.filter(
+    template => template.template_type === TEMPLATE_TYPES.ESTIMATE_TEMPLATES
+  );
+  const archivedServiceOptions = archiveTemplates.filter(
+    template => template.template_type === TEMPLATE_TYPES.OPTION_BID_TEMPLATES
+  );
+  const archivedTools = archiveTemplates.filter(
+    template => template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
+  );
+  const archivedDisclaimers = archiveTemplates.filter(
+    template => template.template_type === TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
   );
 
   // Transform API data to match TemplateListCard props based on template type
@@ -343,7 +423,7 @@ export default function TemplatesPage() {
                     <Badge
                       className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'estimate' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-orangebrand'}`}
                     >
-                      {estimateTemplates.length}
+                      {counts.estimate}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -358,7 +438,7 @@ export default function TemplatesPage() {
                     <Badge
                       className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'service-option' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
                     >
-                      {serviceOptionTemplates.length}
+                      {counts.serviceOptions}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -373,7 +453,7 @@ export default function TemplatesPage() {
                     <Badge
                       className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'tools' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-yellowbrand'}`}
                     >
-                      {toolsTemplates.length}
+                      {counts.tools}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -388,7 +468,7 @@ export default function TemplatesPage() {
                     <Badge
                       className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'disclaimers' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-cyanwave-main'}`}
                     >
-                      {disclaimersTemplates.length}
+                      {counts.disclaimers}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -403,7 +483,7 @@ export default function TemplatesPage() {
                     <Badge
                       className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === 'archive' ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-[var(--text-secondary)]'}`}
                     >
-                      {archiveTemplates.length}
+                      {counts.archive}
                     </Badge>
                   </span>
                 </TabsTrigger>
@@ -550,24 +630,24 @@ export default function TemplatesPage() {
                   <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
                     Estimate
                   </h3>
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {archiveTemplates
-                      .filter(
-                        template =>
-                          template.template_type ===
-                          TEMPLATE_TYPES.ESTIMATE_TEMPLATES
-                      )
-                      .map(template => (
+                  {archivedEstimates.length === 0 ? (
+                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
+                      No estimate templates found
+                    </div>
+                  ) : (
+                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                      {archivedEstimates.map(template => (
                         <TemplateListCard
                           key={template.uuid}
                           template={transformTemplateData(template, 'estimate')}
                           isArchived={true}
                           onRetrieve={() =>
-                            console.log(`Retrieve template ${template.uuid}`)
+                            handleRetrieveTemplate(template.uuid)
                           }
                         />
                       ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Service Options Section */}
@@ -575,14 +655,13 @@ export default function TemplatesPage() {
                   <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
                     Service Options
                   </h3>
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {archiveTemplates
-                      .filter(
-                        template =>
-                          template.template_type ===
-                          TEMPLATE_TYPES.OPTION_BID_TEMPLATES
-                      )
-                      .map(template => (
+                  {archivedServiceOptions.length === 0 ? (
+                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
+                      No service option templates found
+                    </div>
+                  ) : (
+                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                      {archivedServiceOptions.map(template => (
                         <TemplateListCard
                           key={template.uuid}
                           template={transformTemplateData(
@@ -590,10 +669,13 @@ export default function TemplatesPage() {
                             'service-option'
                           )}
                           isArchived={true}
-                          onRetrieve={() => {}}
+                          onRetrieve={() =>
+                            handleRetrieveTemplate(template.uuid)
+                          }
                         />
                       ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Tools Section */}
@@ -601,24 +683,24 @@ export default function TemplatesPage() {
                   <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
                     Tools
                   </h3>
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {archiveTemplates
-                      .filter(
-                        template =>
-                          template.template_type ===
-                          TEMPLATE_TYPES.TOOL_TEMPLATES
-                      )
-                      .map(template => (
+                  {archivedTools.length === 0 ? (
+                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
+                      No tools templates found
+                    </div>
+                  ) : (
+                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                      {archivedTools.map(template => (
                         <TemplateListCard
                           key={template.uuid}
                           template={transformTemplateData(template, 'tools')}
                           isArchived={true}
                           onRetrieve={() =>
-                            console.log(`Retrieve template ${template.uuid}`)
+                            handleRetrieveTemplate(template.uuid)
                           }
                         />
                       ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Disclaimers Section */}
@@ -626,14 +708,13 @@ export default function TemplatesPage() {
                   <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
                     Disclaimers
                   </h3>
-                  <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                    {archiveTemplates
-                      .filter(
-                        template =>
-                          template.template_type ===
-                          TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
-                      )
-                      .map(template => (
+                  {archivedDisclaimers.length === 0 ? (
+                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
+                      No disclaimer templates found
+                    </div>
+                  ) : (
+                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                      {archivedDisclaimers.map(template => (
                         <TemplateListCard
                           key={template.uuid}
                           template={transformTemplateData(
@@ -642,11 +723,12 @@ export default function TemplatesPage() {
                           )}
                           isArchived={true}
                           onRetrieve={() =>
-                            console.log(`Retrieve template ${template.uuid}`)
+                            handleRetrieveTemplate(template.uuid)
                           }
                         />
                       ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
