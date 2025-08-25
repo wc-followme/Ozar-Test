@@ -51,7 +51,7 @@ export default function TemplatesPage() {
           page: pageNum,
           limit: PAGINATION.TEMPLATES_LIMIT,
           company_id: companyId,
-          status: 'ACTIVE',
+          status: selectedTab === 'archive' ? 'INACTIVE' : 'ACTIVE',
         });
 
         if (response.statusCode === 200 && response.data) {
@@ -93,7 +93,7 @@ export default function TemplatesPage() {
         }
       }
     },
-    [showErrorToast]
+    [showErrorToast, selectedTab]
   );
 
   // Archive template handler
@@ -132,7 +132,9 @@ export default function TemplatesPage() {
 
   // Fetch templates on component mount
   useEffect(() => {
-    fetchTemplates();
+    setTemplates([]);
+    setHasMore(true);
+    fetchTemplates(1, false);
   }, [fetchTemplates]);
 
   // Infinite scroll
