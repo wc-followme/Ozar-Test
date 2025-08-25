@@ -1513,7 +1513,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
               overflowY: 'auto',
             }}
           >
-            <div className='p-6 min-w-[800px] max-w-none w-full'>
+            <div className='p-6 min-w-fit max-w-none w-full'>
               {!showAddService ? (
                 // Room view - show trades list
                 selectedRoom && selectedRoom.trades.length > 0 ? (

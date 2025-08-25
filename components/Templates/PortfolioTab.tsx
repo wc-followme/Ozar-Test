@@ -2,6 +2,7 @@
 
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import { PortfolioBox } from '@/components/shared/common/PortfolioBox';
 import SideSheet from '@/components/shared/common/SideSheet';
 import {
@@ -372,9 +373,12 @@ export const PortfolioTab = ({
       {!loading && !error && (
         <div className='space-y-4'>
           {portfolioProjects.length === 0 ? (
-            <div className='text-center py-8'>
-              <p className='text-gray-600'>No projects found.</p>
-            </div>
+            <NoDataFound
+              title=''
+              description='No projects found'
+              buttonText=''
+              showButton={false}
+            />
           ) : (
             <>
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>

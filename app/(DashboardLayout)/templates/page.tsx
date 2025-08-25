@@ -33,7 +33,7 @@ export default function TemplatesPage() {
       {/* Header */}
       <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
         <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
-          <h2 className='page-title'>Templates</h2>
+          <h2 className='page-title'>Templates Management</h2>
           <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
             {/* Desktop Button */}
             <div className='hidden sm:block'>
