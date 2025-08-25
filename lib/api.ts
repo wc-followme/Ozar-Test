@@ -1680,6 +1680,18 @@ class ApiService {
     });
   }
 
+  // Update trade status
+  async updateTradeStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/trades/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Get trades dropdown
   async getTradesDropdown(params?: {
     company_id?: string | number;
@@ -2468,3 +2480,4 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+
