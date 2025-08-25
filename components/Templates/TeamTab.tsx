@@ -1,6 +1,7 @@
 'use client';
 
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import TeamTabSkeleton from '@/components/shared/skeleton/TeamTabSkeleton';
 import { APP_CONFIG } from '@/constants/common';
 import { apiService, FetchUsersResponse, User } from '@/lib/api';
 import { getCompanyId } from '@/lib/utils';
@@ -111,13 +112,7 @@ export const TeamTab = ({ companyId }: TeamTabProps) => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className='space-y-6'>
-        <div className='flex items-center justify-center min-h-[200px]'>
-          <LoadingComponent variant='inline' size='md' text='' />
-        </div>
-      </div>
-    );
+    return <TeamTabSkeleton />;
   }
 
   // Show error state

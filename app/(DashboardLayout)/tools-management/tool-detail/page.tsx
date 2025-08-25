@@ -4,13 +4,15 @@ import ToolsDetailTopBlock from '@/components/sections/ToolsDetailTopBlock';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { QRCodeSection } from '@/components/shared/common/QRCodeSection';
 import SideSheet from '@/components/shared/common/SideSheet';
+import TableSkeleton from '@/components/shared/skeleton/TableSkeleton';
+import ToolDetailSkeleton from '@/components/shared/skeleton/ToolDetailSkeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchNormal1 } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   TABLE_ACTION_TRIGGER_ICON,
   TOOL_ACTIONS,
@@ -46,6 +48,8 @@ export default function ToolDetailPage() {
   const [qrToolIds, setQrToolIds] = useState<
     Array<{ id: string; toolId: string; barcode: string }>
   >([]);
+  const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [assignDefaults, setAssignDefaults] = useState({
     toolName: 'Drill Machine',
     toolId: '',
@@ -88,6 +92,31 @@ export default function ToolDetailPage() {
     job: 'Job#456 Downtown Project',
     reason: '',
   });
+
+  // Simulate loading for demo purposes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle tab change with table loading simulation
+  const handleTabChange = (newTab: string) => {
+    if (newTab !== selectedTab) {
+      setTableLoading(true);
+      // Simulate table data loading on tab change
+      setTimeout(() => {
+        setTableLoading(false);
+      }, 3500); // 3.5 seconds timeout for table loading
+      setSelectedTab(newTab);
+    }
+  };
+
+  // Show loading state with full page skeleton
+  if (loading) {
+    return <ToolDetailSkeleton />;
+  }
 
   // Column configuration for the DynamicTable - moved to constants/tablecolumns
   const toolTableColumns = TOOL_DETAIL_AVAILABLE_COLUMNS;
@@ -350,7 +379,7 @@ export default function ToolDetailPage() {
           {/* Status Tabs */}
           <Tabs
             value={selectedTab}
-            onValueChange={setSelectedTab}
+            onValueChange={handleTabChange}
             className='w-full mb-4'
           >
             <div className='flex flex-col lg:flex-row gap-3 flex-wrap sm:gap-4 items-start lg:items-center justify-between w-full'>
@@ -430,67 +459,103 @@ export default function ToolDetailPage() {
 
             {/* Tab Content */}
             <TabsContent value='available' className='mt-6'>
-              <DynamicTable
-                columns={toolTableColumns}
-                data={filteredData}
-                actions={availableTableActions}
-                emptyMessage='No available tools found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={toolTableColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={true}
+                />
+              ) : (
+                <DynamicTable
+                  columns={toolTableColumns}
+                  data={filteredData}
+                  actions={availableTableActions}
+                  emptyMessage='No available tools found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
 
             <TabsContent value='assigned' className='mt-6'>
-              <DynamicTable
-                columns={assignedTableColumns}
-                data={filteredData}
-                actions={assignedTableActions}
-                emptyMessage='No assigned tools found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={assignedTableColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={true}
+                />
+              ) : (
+                <DynamicTable
+                  columns={assignedTableColumns}
+                  data={filteredData}
+                  actions={assignedTableActions}
+                  emptyMessage='No assigned tools found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
 
             <TabsContent value='maintenance' className='mt-6'>
-              <DynamicTable
-                columns={maintenanceTableColumns}
-                data={filteredData}
-                actions={maintenanceTableActions}
-                emptyMessage='No tools under maintenance found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={maintenanceTableColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={true}
+                />
+              ) : (
+                <DynamicTable
+                  columns={maintenanceTableColumns}
+                  data={filteredData}
+                  actions={maintenanceTableActions}
+                  emptyMessage='No tools under maintenance found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
 
             <TabsContent value='lost' className='mt-6'>
-              <DynamicTable
-                columns={lostTableColumns}
-                data={filteredData}
-                actions={lostTableActions}
-                emptyMessage='No lost tools found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={lostTableColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={true}
+                />
+              ) : (
+                <DynamicTable
+                  columns={lostTableColumns}
+                  data={filteredData}
+                  actions={lostTableActions}
+                  emptyMessage='No lost tools found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='lg:max-w-[calc(100vw_-_192px)] md:max-w-[calc(100vw_-_114px)] max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

@@ -8,6 +8,7 @@ import {
   WarrantyForm,
   WarrantyFormData,
 } from '@/components/shared/forms/WarrantyForm';
+import WarrantiesTabSkeleton from '@/components/shared/skeleton/WarrantiesTabSkeleton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,6 +25,7 @@ export const WarrantiesTab = () => {
   const [isAddWarrantyOpen, setIsAddWarrantyOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingWarranty, setEditingWarranty] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
 
   // Filter warranties based on search and filter
   const filteredWarranties = useMemo(() => {
@@ -114,6 +116,11 @@ export const WarrantiesTab = () => {
     setIsAddWarrantyOpen(false);
     setEditingWarranty(null);
   };
+
+  // Show loading state
+  if (loading) {
+    return <WarrantiesTabSkeleton />;
+  }
 
   return (
     <div className='space-y-6'>

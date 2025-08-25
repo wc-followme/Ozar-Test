@@ -42,7 +42,7 @@ export const CoverImageUploadDialog = ({
         </DialogHeader>
 
         <div className='space-y-6'>
-          <div className='w-full bg-[var(--white-background)] rounded-[16px] border-2 border-dashed border-[var(--border-light)] p-6 relative transition-all duration-300 hover:border-[var(--secondary)]'>
+          <div className='w-full bg-[var(--white-background)] rounded-[16px] relative transition-all duration-300 '>
             <PhotoUploadField
               photo={coverPhotoFile}
               onPhotoChange={onPhotoChange}
@@ -73,14 +73,14 @@ export const CoverImageUploadDialog = ({
           <div className='flex gap-3 pt-2'>
             <button
               onClick={() => onOpenChange(false)}
-              className='btn-secondary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95'
+              className='btn-secondary px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95'
             >
               Cancel
             </button>
             <button
               onClick={onSave}
               disabled={!coverFileKey || uploading}
-              className='btn-primary flex-1 px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
+              className='btn-primary px-6 py-3 rounded-full font-medium transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
             >
               {uploading ? 'Uploading...' : 'Save Cover'}
             </button>

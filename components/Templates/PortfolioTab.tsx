@@ -8,6 +8,7 @@ import {
   AddMediaForm,
   AddMediaFormData,
 } from '@/components/shared/forms/AddMediaForm';
+import PortfolioTabSkeleton from '@/components/shared/skeleton/PortfolioTabSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -338,23 +339,8 @@ export const PortfolioTab = ({
 
   return (
     <div className='space-y-6 w-full'>
-      {canEditCompany && (
-        <div className='flex justify-end'>
-          <Button onClick={handleAddProject} className='btn-primary'>
-            Add Project
-          </Button>
-        </div>
-      )}
-
       {/* Loading State */}
-      {loading && (
-        <div className='flex items-center justify-center min-h-[200px]'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-            <p className='text-gray-600'>Loading projects...</p>
-          </div>
-        </div>
-      )}
+      {loading && <PortfolioTabSkeleton />}
 
       {/* Error State */}
       {error && !loading && (
@@ -370,57 +356,67 @@ export const PortfolioTab = ({
 
       {/* Projects List */}
       {!loading && !error && (
-        <div className='space-y-4'>
-          {portfolioProjects.length === 0 ? (
-            <div className='text-center py-8'>
-              <p className='text-gray-600'>No projects found.</p>
+        <>
+          {canEditCompany && (
+            <div className='flex justify-end'>
+              <Button onClick={handleAddProject} className='btn-primary'>
+                Add Project
+              </Button>
             </div>
-          ) : (
-            <>
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                {portfolioProjects.map((project: PortfolioProject) => {
-                  const displayTitle = project.name || project.title || '';
-                  const rawImage =
-                    (project.images && project.images[0]) ||
-                    project.image ||
-                    APP_CONFIG.IMAGES.PROJECT_PLACEHOLDER;
-                  const displayImage =
-                    rawImage &&
-                    (rawImage.startsWith('http') || rawImage.startsWith('/'))
-                      ? rawImage
-                      : `${APP_CONFIG.CDN_URL}${rawImage}`;
-                  const imageCount =
-                    project.images?.length || project.imageCount || 0;
-                  const videoCount = project.videoCount || 0;
-                  return (
-                    <PortfolioBox
-                      key={project.uuid}
-                      id={project.uuid}
-                      title={displayTitle}
-                      {...(displayImage && { image: displayImage })}
-                      imageCount={imageCount}
-                      videoCount={videoCount}
-                      onEdit={canEditCompany ? handleEdit : undefined}
-                      onDelete={canEditCompany ? handleDelete : undefined}
-                      showEditMenu={canEditCompany}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Infinite scroll trigger element */}
-              {hasMore && (
-                <div ref={loadMoreRef} className='flex justify-center pt-4'>
-                  {isLoadingMore && (
-                    <div className='text-center py-4'>
-                      <LoadingComponent variant='inline' size='md' text='' />
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
           )}
-        </div>
+
+          <div className='space-y-4'>
+            {portfolioProjects.length === 0 ? (
+              <div className='text-center py-8'>
+                <p className='text-gray-600'>No projects found.</p>
+              </div>
+            ) : (
+              <>
+                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
+                  {portfolioProjects.map((project: PortfolioProject) => {
+                    const displayTitle = project.name || project.title || '';
+                    const rawImage =
+                      (project.images && project.images[0]) ||
+                      project.image ||
+                      APP_CONFIG.IMAGES.PROJECT_PLACEHOLDER;
+                    const displayImage =
+                      rawImage &&
+                      (rawImage.startsWith('http') || rawImage.startsWith('/'))
+                        ? rawImage
+                        : `${APP_CONFIG.CDN_URL}${rawImage}`;
+                    const imageCount =
+                      project.images?.length || project.imageCount || 0;
+                    const videoCount = project.videoCount || 0;
+                    return (
+                      <PortfolioBox
+                        key={project.uuid}
+                        id={project.uuid}
+                        title={displayTitle}
+                        {...(displayImage && { image: displayImage })}
+                        imageCount={imageCount}
+                        videoCount={videoCount}
+                        onEdit={canEditCompany ? handleEdit : undefined}
+                        onDelete={canEditCompany ? handleDelete : undefined}
+                        showEditMenu={canEditCompany}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* Infinite scroll trigger element */}
+                {hasMore && (
+                  <div ref={loadMoreRef} className='flex justify-center pt-4'>
+                    {isLoadingMore && (
+                      <div className='text-center py-4'>
+                        <LoadingComponent variant='inline' size='md' text='' />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </>
       )}
 
       {/* Confirm Delete Modal */}

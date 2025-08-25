@@ -3,12 +3,14 @@
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import { DynamicTable } from '@/components/shared/common/DynamicTable';
+import TableSkeleton from '@/components/shared/skeleton/TableSkeleton';
+import ToolDetailSkeleton from '@/components/shared/skeleton/ToolDetailSkeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SearchNormal1 } from 'iconsax-react';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   toolBorrowedHistoryData,
   toolMaintenanceHistoryData,
@@ -25,6 +27,33 @@ export default function ToolDetailSlugPage({
 }) {
   const [selectedTab, setSelectedTab] = useState('borrowed');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
+
+  // Simulate loading for demo purposes
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Handle tab change with table loading simulation
+  const handleTabChange = (newTab: string) => {
+    if (newTab !== selectedTab) {
+      setTableLoading(true);
+      // Simulate table data loading on tab change
+      setTimeout(() => {
+        setTableLoading(false);
+      }, 3500); // 3.5 seconds timeout for table loading
+      setSelectedTab(newTab);
+    }
+  };
+
+  // Show loading state with full page skeleton
+  if (loading) {
+    return <ToolDetailSkeleton showActionButtons={false} />;
+  }
 
   // Column configuration for borrowed history table - moved to constants/tablecolumns
   const borrowedHistoryColumns = TOOL_HISTORY_BORROWED_COLUMNS;
@@ -105,7 +134,7 @@ export default function ToolDetailSlugPage({
           {/* Status Tabs */}
           <Tabs
             value={selectedTab}
-            onValueChange={setSelectedTab}
+            onValueChange={handleTabChange}
             className='w-full mb-4'
           >
             <div className='flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center justify-between w-full'>
@@ -163,33 +192,51 @@ export default function ToolDetailSlugPage({
 
             {/* Tab Content */}
             <TabsContent value='borrowed' className='mt-6'>
-              <DynamicTable
-                columns={borrowedHistoryColumns}
-                data={filteredData}
-                emptyMessage='No borrowed history found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={borrowedHistoryColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={false}
+                />
+              ) : (
+                <DynamicTable
+                  columns={borrowedHistoryColumns}
+                  data={filteredData}
+                  emptyMessage='No borrowed history found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
 
             <TabsContent value='maintenance' className='mt-6'>
-              <DynamicTable
-                columns={maintenanceHistoryColumns}
-                data={filteredData}
-                emptyMessage='No maintenance history found'
-                showRowNumbers={false}
-                tableConfig={{
-                  headerBgColor: 'bg-[var(--background)]',
-                  borderColor: 'border-[var(--border-dark)]',
-                  hoverColor: 'hover:bg-[var(--background-light)]',
-                }}
-                className='max-w-[calc(100vw_-_80px)]'
-              />
+              {tableLoading ? (
+                <TableSkeleton
+                  columns={maintenanceHistoryColumns.length}
+                  rows={5}
+                  showRowNumbers={false}
+                  showActions={false}
+                />
+              ) : (
+                <DynamicTable
+                  columns={maintenanceHistoryColumns}
+                  data={filteredData}
+                  emptyMessage='No maintenance history found'
+                  showRowNumbers={false}
+                  tableConfig={{
+                    headerBgColor: 'bg-[var(--background)]',
+                    borderColor: 'border-[var(--border-dark)]',
+                    hoverColor: 'hover:bg-[var(--background-light)]',
+                  }}
+                  className='max-w-[calc(100vw_-_80px)]'
+                />
+              )}
             </TabsContent>
           </Tabs>
         </div>

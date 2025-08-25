@@ -4,6 +4,7 @@ import { CustomerReviewBox } from '@/components/shared/common/CustomerReviewBox'
 import Dropdown from '@/components/shared/common/Dropdown';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import SelectField from '@/components/shared/common/SelectField';
+import ReviewTabSkeleton from '@/components/shared/skeleton/ReviewTabSkeleton';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -267,45 +268,8 @@ export const ReviewTab = ({
 
   return (
     <div className='space-y-6'>
-      {/* Filter and Sort Controls */}
-      <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
-        <div className='flex gap-3 w-full justify-end'>
-          {/* Filter Dropdown */}
-          <SelectField
-            value={filterType}
-            onValueChange={setFilterType}
-            options={filterOptions}
-            placeholder='Select filter'
-            triggerClassName='!h-10 !px-6 !py-2 !text-sm !min-w-[120px] !rounded-full font-semibold'
-          />
-
-          {/* Sort Dropdown */}
-          <Dropdown
-            menuOptions={sortOptions}
-            onAction={handleSortAction}
-            trigger={
-              <Button
-                variant='outline'
-                className='!h-10 !px-6 !py-2 !text-sm !rounded-full btn-secondary'
-              >
-                <Sort size={16} className='' color='currentcolor' />
-                Sort
-              </Button>
-            }
-            className='!min-w-[160px]'
-          />
-        </div>
-      </div>
-
       {/* Loading State */}
-      {loading && (
-        <div className='flex items-center justify-center min-h-[200px]'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4'></div>
-            <p className='text-gray-600'>Loading reviews...</p>
-          </div>
-        </div>
-      )}
+      {loading && <ReviewTabSkeleton />}
 
       {/* Error State */}
       {error && !loading && (
@@ -321,50 +285,82 @@ export const ReviewTab = ({
 
       {/* Reviews List */}
       {!loading && !error && (
-        <div className='space-y-4'>
-          {localReviews.length === 0 ? (
-            <div className='text-center py-8'>
-              <p className='text-gray-600'>No reviews found.</p>
+        <>
+          {/* Filter and Sort Controls */}
+          <div className='flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center'>
+            <div className='flex gap-3 w-full justify-end'>
+              {/* Filter Dropdown */}
+              <SelectField
+                value={filterType}
+                onValueChange={setFilterType}
+                options={filterOptions}
+                placeholder='Select filter'
+                triggerClassName='!h-10 !px-6 !py-2 !text-sm !min-w-[120px] !rounded-full font-semibold'
+              />
+
+              {/* Sort Dropdown */}
+              <Dropdown
+                menuOptions={sortOptions}
+                onAction={handleSortAction}
+                trigger={
+                  <Button
+                    variant='outline'
+                    className='!h-10 !px-6 !py-2 !text-sm !rounded-full btn-secondary'
+                  >
+                    <Sort size={16} className='' color='currentcolor' />
+                    Sort
+                  </Button>
+                }
+                className='!min-w-[160px]'
+              />
             </div>
-          ) : (
-            <>
-              {localReviews.map((review: any, index: number) => {
-                const {
-                  id,
-                  profileImage,
-                  reviewTitle,
-                  rating,
-                  reviewText,
-                  reviewerName,
-                } = review;
+          </div>
 
-                return (
-                  <CustomerReviewBox
-                    key={id}
-                    profileImage={profileImage}
-                    reviewTitle={reviewTitle}
-                    rating={rating}
-                    reviewText={reviewText}
-                    reviewerName={reviewerName}
-                    isLast={index === localReviews.length - 1}
-                    isCurrentUser={false}
-                  />
-                );
-              })}
+          <div className='space-y-4'>
+            {localReviews.length === 0 ? (
+              <div className='text-center py-8'>
+                <p className='text-gray-600'>No reviews found.</p>
+              </div>
+            ) : (
+              <>
+                {localReviews.map((review: any, index: number) => {
+                  const {
+                    id,
+                    profileImage,
+                    reviewTitle,
+                    rating,
+                    reviewText,
+                    reviewerName,
+                  } = review;
 
-              {/* Infinite scroll trigger element (same as TeamTab) */}
-              {hasMore && (
-                <div ref={loadMoreRef} className='flex justify-center pt-4'>
-                  {isLoadingMore && (
-                    <div className='text-center py-4'>
-                      <LoadingComponent variant='inline' size='md' text='' />
-                    </div>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </div>
+                  return (
+                    <CustomerReviewBox
+                      key={id}
+                      profileImage={profileImage}
+                      reviewTitle={reviewTitle}
+                      rating={rating}
+                      reviewText={reviewText}
+                      reviewerName={reviewerName}
+                      isLast={index === localReviews.length - 1}
+                      isCurrentUser={false}
+                    />
+                  );
+                })}
+
+                {/* Infinite scroll trigger element (same as TeamTab) */}
+                {hasMore && (
+                  <div ref={loadMoreRef} className='flex justify-center pt-4'>
+                    {isLoadingMore && (
+                      <div className='text-center py-4'>
+                        <LoadingComponent variant='inline' size='md' text='' />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

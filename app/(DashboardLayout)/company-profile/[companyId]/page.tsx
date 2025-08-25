@@ -2,8 +2,8 @@
 
 import { CompanyBottomBlock } from '@/components/Templates/CompanyBottomBlock';
 import { CoverImageUploadDialog } from '@/components/shared/common/CoverImageUploadDialog';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ProfileTopBlock } from '@/components/shared/common/ProfileTopBlock';
+import CompanyProfileSkeleton from '@/components/shared/skeleton/CompanyProfileSkeleton';
 import { useToast } from '@/components/ui/use-toast';
 import {
   APP_CONFIG,
@@ -336,11 +336,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <LoadingComponent />
-      </div>
-    );
+    return <CompanyProfileSkeleton />;
   }
 
   // Show error state

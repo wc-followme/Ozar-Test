@@ -2,6 +2,7 @@
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { BoxCard } from '@/components/shared/cards/BoxCard';
+import FiveBoxSystemSkeleton from '@/components/shared/skeleton/FiveBoxSystemSkeleton';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, ROUTES } from '@/constants/common';
 import { useCompanyChange } from '@/hooks/use-company-change';
@@ -155,19 +156,7 @@ const FiveBoxSystem = () => {
   };
 
   if (loading) {
-    return (
-      <section className=''>
-        <div className='mb-6'>
-          <Breadcrumb items={breadcrumbData} />
-        </div>
-        <div className='flex items-center justify-center min-h-[400px]'>
-          <div className='text-center'>
-            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-            <p className='text-muted-foreground'>{FIVE_BOX_MESSAGES.LOADING}</p>
-          </div>
-        </div>
-      </section>
-    );
+    return <FiveBoxSystemSkeleton />;
   }
 
   return (
