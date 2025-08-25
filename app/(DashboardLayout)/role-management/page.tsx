@@ -1,14 +1,11 @@
 'use client';
 
-import { HelmetIcon } from '@/components/icons/HelmetIcon';
-import { RoleCard } from '@/components/shared/cards/RoleCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACTIONS, CommonStatus, PAGINATION, ROUTES } from '@/constants/common';
-import { roleIconOptions } from '@/constants/icon-options';
+
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
@@ -19,10 +16,11 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import RoleCardSkeleton from '../../../components/shared/skeleton/RoleCardSkeleton';
+import ArchiveList from './ArchiveList';
+import RoleList from './RoleList';
 import { ROLE_MESSAGES } from './role-messages';
 import type { FetchRolesParams, Role, RoleApiResponse } from './types';
 
@@ -36,36 +34,38 @@ interface MenuOption {
   }>;
 }
 
-const getMenuOptions = (isDefault: boolean): MenuOption[] => {
+const getMenuOptions = (isDefault: boolean, isArchive: boolean): MenuOption[] => {
   const options: MenuOption[] = [];
 
-  // Only show delete option if role is not default
-  if (!isDefault) {
-    options.push(
-      {
-        label: ROLE_MESSAGES.DELETE_MENU,
-        action: ACTIONS.DELETE,
-        icon: Trash,
-      },
-      {
-        label: ROLE_MESSAGES.EDIT_MENU,
-        action: ACTIONS.EDIT,
-        icon: Edit2,
-      }
-    );
+  if (isArchive) {
+    // Archive tab - only show retrieve option
+    options.push({
+      label: ROLE_MESSAGES.RETRIEVE_MENU,
+      action: ACTIONS.RETRIEVE,
+      icon: Refresh,
+    });
+  } else {
+    // Active roles tab - show edit and delete options if not default
+    if (!isDefault) {
+      options.push(
+        {
+          label: ROLE_MESSAGES.DELETE_MENU,
+          action: ACTIONS.DELETE,
+          icon: Trash,
+        },
+        {
+          label: ROLE_MESSAGES.EDIT_MENU,
+          action: ACTIONS.EDIT,
+          icon: Edit2,
+        }
+      );
+    }
   }
 
   return options;
 };
 
-// Adapter for icons that expect className instead of size/color
-const IconAdapter = (IconComp: any) => {
-  const WrappedIcon = ({ color = '#00a8bf' }) => (
-    <IconComp className='w-8 h-8' style={{ color }} />
-  );
-  WrappedIcon.displayName = `IconAdapter(${IconComp.displayName || IconComp.name || 'Component'})`;
-  return WrappedIcon;
-};
+
 
 const RoleManagement = () => {
   // Destructure constants for better readability
@@ -100,12 +100,14 @@ const RoleManagement = () => {
         // Get selected company ID using global utility function
         const company_id = getCompanyId();
 
+        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : ACTIVE;
+
         const params: FetchRolesParams = {
           page: targetPage,
           limit,
           search,
           name,
-          status: ACTIVE, // Only fetch active roles
+          status: statusParam,
           ...(company_id ? { company_id } : {}),
         };
         const res = (await apiService.fetchRoles(params)) as RoleApiResponse;
@@ -145,7 +147,7 @@ const RoleManagement = () => {
         setLoading(false);
       }
     },
-    [limit, search, name]
+    [limit, search, name, selectedTab]
   );
 
   // Handle company changes
@@ -154,7 +156,15 @@ const RoleManagement = () => {
     setHasMore(true);
     setRoles([]);
     fetchRoles(1, false);
-  }, []);
+  }, [fetchRoles]);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    setRoles([]);
+    fetchRoles(1, false);
+  }, [selectedTab]);
 
   useCompanyChange(refetchRoles);
 
@@ -176,20 +186,41 @@ const RoleManagement = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, page]);
 
-  // Handler for deleting a role
-  const handleDeleteRole = async (uuid: string) => {
+  // Handler for archiving a role
+  const handleArchiveRole = async (uuid: string) => {
     try {
-      const response = await apiService.deleteRole(uuid);
+      const response = await apiService.updateRoleDetails(uuid, { status: CommonStatus.INACTIVE });
       setRoles(prev => prev.filter(role => role.uuid !== uuid));
       showSuccessToast(
         extractApiSuccessMessage(response, ROLE_MESSAGES.DELETE_SUCCESS)
       );
+      // Refresh list to reflect latest server state based on current tab
+      refetchRoles();
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
         return; // Don't show toast if it's an auth error
       }
       const message = extractApiErrorMessage(err, ROLE_MESSAGES.DELETE_ERROR);
+      showErrorToast(message);
+    }
+  };
+
+  // Handler for retrieving a role
+  const handleRetrieveRole = async (uuid: string) => {
+    try {
+      const response = await apiService.updateRoleDetails(uuid, { status: CommonStatus.ACTIVE });
+      showSuccessToast(
+        extractApiSuccessMessage(response, ROLE_MESSAGES.RETRIEVE_SUCCESS)
+      );
+      // Refresh list to reflect latest server state based on current tab
+      refetchRoles();
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+      const message = extractApiErrorMessage(err, ROLE_MESSAGES.RETRIEVE_ERROR);
       showErrorToast(message);
     }
   };
@@ -214,8 +245,7 @@ const RoleManagement = () => {
     return <LoadingComponent variant='fullscreen' text='Loading form...' />;
   }
 
-  // Ensure icon options is always an array and has label property
-  const safeIconOptions = Array.isArray(roleIconOptions) ? roleIconOptions : [];
+
 
   // Check if user has permission to view roles
   if (userPermissions && !canViewRoles) {
@@ -278,87 +308,28 @@ const RoleManagement = () => {
 
           {/* Roles Tab Content */}
           <TabsContent value='roles' className='mt-6'>
-            {/* Initial Loading State */}
-            {roles.length === 0 && loading ? (
-              <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-                {[...Array(8)].map((_, i) => (
-                  <RoleCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : (
-              <>
-                {/* Roles Grid */}
-                <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
-                  {roles.length === 0 && !loading ? (
-                    <div className='w-full col-span-full h-full md:h-[calc(100vh_-_220px)]'>
-                      <NoDataFound
-                        buttonText={ROLE_MESSAGES.CREATE_ROLE_BUTTON}
-                        onButtonClick={handleCreateRole}
-                        description={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
-                        showButton={canEdit ?? false}
-                      />
-                    </div>
-                  ) : (
-                    roles?.map(
-                      ({
-                        uuid,
-                        icon,
-                        name,
-                        description,
-                        total_permissions,
-                        is_default,
-                      }) => {
-                        // Use the icon component directly if it matches the expected signature
-                        const iconOptionRaw = safeIconOptions.find(
-                          (opt: any) => opt.value === icon
-                        );
-                        const iconOption = iconOptionRaw
-                          ? {
-                              ...iconOptionRaw,
-                              icon: IconAdapter(iconOptionRaw.icon),
-                            }
-                          : {
-                              icon: IconAdapter(HelmetIcon),
-                              color: '#00a8bf',
-                            };
-                        return (
-                          <div key={uuid}>
-                            <RoleCard
-                              menuOptions={getMenuOptions(is_default ?? false)}
-                              iconSrc={iconOption.icon}
-                              iconBgColor={iconOption.color + '26'}
-                              title={name}
-                              description={description}
-                              permissionCount={total_permissions || 0}
-                              iconColor={iconOption.color}
-                              onEdit={() => handleEditRole(uuid)}
-                              onDelete={() => handleDeleteRole(uuid)}
-                            />
-                          </div>
-                        );
-                      }
-                    )
-                  )}
-                </div>
-              </>
-            )}
-            {loading && roles.length > 0 && (
-              <div className='w-full text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <RoleList
+              roles={roles}
+              loading={loading}
+              noDataDescription={ROLE_MESSAGES.NO_ROLES_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false, false)}
+              onEdit={handleEditRole}
+              onDelete={handleArchiveRole}
+              onCreateRole={handleCreateRole}
+              canEdit={canEdit ?? false}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Roles'
-                description='No archived roles found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              roles={roles}
+              loading={loading}
+              noDataTitle={ROLE_MESSAGES.ARCHIVED_ROLES_TITLE}
+              noDataDescription={ROLE_MESSAGES.NO_ARCHIVED_ROLES_FOUND}
+              menuOptions={getMenuOptions(false, true)}
+              onRetrieve={handleRetrieveRole}
+            />
           </TabsContent>
         </Tabs>
       </div>
