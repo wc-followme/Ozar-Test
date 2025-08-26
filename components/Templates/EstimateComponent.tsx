@@ -11,7 +11,7 @@ import { TemplateIcon } from '../icons/TemplateIcon';
 import EstimationBox from './EstimationBox';
 
 interface EstimateComponentProps {
-  breadcrumbData: BreadcrumbItem[];
+  breadcrumbData?: BreadcrumbItem[];
   onAddRoom: () => void;
   jobId?: string; // Add job ID prop for API calls
   categoryId?: string | undefined; // Add category ID prop for filtering trades
@@ -265,9 +265,11 @@ export default function EstimateComponent({
   return (
     <section className=''>
       {/* Breadcrumb */}
-      <div className='mb-6'>
-        <Breadcrumb items={breadcrumbData} />
-      </div>
+      {breadcrumbData && breadcrumbData.length > 0 && (
+        <div className='mb-6'>
+          <Breadcrumb items={breadcrumbData} />
+        </div>
+      )}
 
       {/* Estimate Empty State */}
       <div className='p-4 lg:p-10 rounded-[20px] bg-[var(--card-background)]'>
