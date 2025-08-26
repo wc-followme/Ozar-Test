@@ -55,7 +55,6 @@ export default function ServiceOptionsHeader({
             className='border-2 border-[var(--border-dark)] h-[42px] w-[42px] rounded-[10px]'
             onClick={() => {
               // Handle shield/plus action
-              console.log('Shield action clicked');
             }}
           >
             <ShieldPlusIcon className='!h-5 !w-5' />

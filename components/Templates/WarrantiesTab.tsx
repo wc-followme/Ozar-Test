@@ -70,7 +70,6 @@ export const WarrantiesTab = () => {
 
   const confirmDelete = () => {
     if (warrantyToDelete) {
-      console.log('Deleting warranty:', warrantyToDelete);
       // Add your delete logic here
     }
     setIsDeleteModalOpen(false);
@@ -90,10 +89,8 @@ export const WarrantiesTab = () => {
     setIsSubmitting(true);
     try {
       if (editingWarranty) {
-        console.log('Updating warranty:', editingWarranty.id, data);
         // Add your API call here to update the warranty
       } else {
-        console.log('Adding new warranty:', data);
         // Add your API call here to save the warranty
       }
 

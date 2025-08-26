@@ -126,11 +126,6 @@ export default function EstimationBoxEdit({
   templateId,
   categoryId,
 }: EstimationBoxEditProps) {
-  console.log('EstimationBoxEdit props:', {
-    templateId,
-    categoryId,
-  });
-
   // const { toast } = useToast();
 
   // State management
@@ -166,14 +161,6 @@ export default function EstimationBoxEdit({
   }, [rooms, selectedRoomId]);
 
   // Debug logging for rooms state
-  console.log('EstimationBoxEdit: Current rooms state:', rooms);
-  console.log('EstimationBoxEdit: Selected room ID:', selectedRoomId);
-  console.log('EstimationBoxEdit: Selected room:', selectedRoom);
-  console.log('EstimationBoxEdit: Selected room trades:', selectedRoom?.trades);
-  console.log(
-    'EstimationBoxEdit: Selected room trades length:',
-    selectedRoom?.trades?.length
-  );
 
   // Find the trade data using uniqueKey to ensure room-specific selection
   const selectedTradeData = useMemo(() => {
@@ -193,10 +180,6 @@ export default function EstimationBoxEdit({
             service => service.id === selectedService
           )
         : undefined;
-
-    console.log('EstimationBoxEdit: selectedService:', selectedService);
-    console.log('EstimationBoxEdit: selectedTradeData:', selectedTradeData);
-    console.log('EstimationBoxEdit: selectedServiceData:', serviceData);
 
     return serviceData;
   }, [selectedService, selectedTradeData]);
@@ -246,19 +229,12 @@ export default function EstimationBoxEdit({
 
   const fetchTrades = async (companyUuid: string | null) => {
     try {
-      console.log(
-        'EstimationBoxEdit: fetchTrades called with companyUuid:',
-        companyUuid
-      );
-
       const response = await apiService.fetchTradesPublic({
         page: 1,
         limit: 10,
         company_id: companyUuid || '',
         ...(categoryId && { category_id: categoryId }),
       });
-
-      console.log('EstimationBoxEdit: fetchTrades API response:', response);
 
       type TradeItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
@@ -277,7 +253,6 @@ export default function EstimationBoxEdit({
           label: String(t.name),
         }));
 
-      console.log('EstimationBoxEdit: Processed trade options:', options);
       setTradeOptions(options);
     } catch (_error) {
       // If fetching fails or returns unexpected data, show an empty dropdown silently
@@ -381,9 +356,6 @@ export default function EstimationBoxEdit({
         localStorage.setItem(storageKey, newData);
         // Also save to regular template_rooms key for consistency
         localStorage.setItem('template_rooms', newData);
-        console.log(
-          'EstimationBoxEdit: Data saved to both keys for consistency'
-        );
       }
     }
   }, [rooms, templateId, isLoadingFromStorage]);
@@ -418,10 +390,7 @@ export default function EstimationBoxEdit({
   // Load initial data from localStorage on mount
   useEffect(() => {
     const storageKey = getStorageKey(undefined, templateId);
-    console.log(
-      'EstimationBoxEdit: Loading data with storage key:',
-      storageKey
-    );
+
     setIsLoadingFromStorage(true);
 
     let existingData = localStorage.getItem(storageKey);
@@ -430,24 +399,14 @@ export default function EstimationBoxEdit({
     if (!existingData) {
       const regularData = localStorage.getItem('template_rooms');
       if (regularData) {
-        console.log(
-          'EstimationBoxEdit: No data in template-specific key, using regular template_rooms key as fallback'
-        );
         existingData = regularData;
       }
     }
-
-    console.log(
-      'EstimationBoxEdit: Found data in localStorage:',
-      existingData ? 'yes' : 'no'
-    );
 
     if (existingData) {
       try {
         const roomsData = JSON.parse(existingData);
         if (Array.isArray(roomsData) && roomsData.length > 0) {
-          console.log('EstimationBoxEdit: Setting rooms data:', roomsData);
-
           // Convert from hybrid format to EstimationBox format
           const sanitizedRoomsData = roomsData.map(
             (room: any, roomIndex: number) => ({
@@ -504,19 +463,6 @@ export default function EstimationBoxEdit({
               ),
               isExpanded: true,
             })
-          );
-
-          console.log(
-            'EstimationBoxEdit: Sanitized rooms data:',
-            sanitizedRoomsData
-          );
-          console.log(
-            'EstimationBoxEdit: First room trades:',
-            sanitizedRoomsData[0]?.trades
-          );
-          console.log(
-            'EstimationBoxEdit: First trade services:',
-            sanitizedRoomsData[0]?.trades[0]?.serviceList
           );
 
           // Recalculate totals for loaded data before setting state
@@ -664,14 +610,6 @@ export default function EstimationBoxEdit({
       room.id === selectedRoom.id
         ? { ...room, trades: [...room.trades, newTrade] }
         : room
-    );
-
-    console.log('EstimationBoxEdit: New trade added with ID:', newTrade.id);
-    console.log(
-      'EstimationBoxEdit: New trade UUID validation:',
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        newTrade.id
-      )
     );
 
     setRooms(updatedRooms);
@@ -1037,11 +975,6 @@ export default function EstimationBoxEdit({
   };
 
   const handleTradeSelect = (tradeUniqueKey: string) => {
-    console.log(
-      'EstimationBoxEdit: handleTradeSelect called with tradeUniqueKey:',
-      tradeUniqueKey
-    );
-
     // Find which room contains this trade using uniqueKey
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
@@ -1077,11 +1010,6 @@ export default function EstimationBoxEdit({
   };
 
   const handleRoomSelect = (roomId: string) => {
-    console.log(
-      'EstimationBoxEdit: handleRoomSelect called with roomId:',
-      roomId
-    );
-
     setSelectedRoomId(roomId);
 
     // Clear trade and service selection when room is clicked
@@ -1096,11 +1024,6 @@ export default function EstimationBoxEdit({
   };
 
   const handleServiceSelect = (serviceId: string) => {
-    console.log(
-      'EstimationBoxEdit: handleServiceSelect called with serviceId:',
-      serviceId
-    );
-
     // Find which room and trade contains this service across ALL rooms
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
