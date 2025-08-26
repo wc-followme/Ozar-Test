@@ -160,7 +160,6 @@ export default function CreateTemplatePage({
   };
 
   const handleAddSelectedTemplates = () => {
-    console.log('Adding selected templates:', selectedTemplates);
     // TODO: Implement logic to add selected templates to the form
     setIsTemplateSheetOpen(false);
     setSelectedTemplates([]);
@@ -168,7 +167,6 @@ export default function CreateTemplatePage({
 
   const handleTemplateSelect = (template: TemplateData) => {
     // TODO: Implement logic to populate form with template data
-    console.log('Template selected:', template);
   };
 
   // Get template type display name
@@ -353,7 +351,6 @@ export default function CreateTemplatePage({
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <TemplateToolForm
                 onSubmit={data => {
-                  console.log('Tools form submitted:', data);
                   // Handle form submission here
                 }}
                 initialData={{
@@ -389,7 +386,6 @@ export default function CreateTemplatePage({
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <DisclaimerForm
                 onSubmit={data => {
-                  console.log('Disclaimer form submitted:', data);
                   // Handle form submission here
                 }}
                 initialData={{

@@ -86,6 +86,7 @@ export const WarrantiesTab = () => {
   };
 
   const handleWarrantySubmit = async (data: WarrantyFormData) => {
+    void data;
     setIsSubmitting(true);
     try {
       if (editingWarranty) {

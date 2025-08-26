@@ -96,42 +96,16 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             const storageKey = `template_rooms_${templateData.uuid}`;
 
             // Transform API data to EstimationBox expected format
-            console.log('Raw API templateRooms:', templateData.templateRooms);
+
             const transformedRooms = transformApiRoomsToEstimationBox(
               templateData.templateRooms
             );
 
-            console.log('Transformed rooms data:', transformedRooms);
-            console.log(
-              'First room structure:',
-              Object.keys(transformedRooms[0] || {})
-            );
-            console.log('First room trades:', transformedRooms[0]?.trades);
-            console.log(
-              'First room trades count:',
-              transformedRooms[0]?.trades?.length
-            );
-            console.log(
-              'Second room trades count:',
-              transformedRooms[1]?.trades?.length
-            );
-            console.log(
-              'Third room trades count:',
-              transformedRooms[2]?.trades?.length
-            );
-            console.log(
-              'First room trades details:',
-              JSON.stringify(transformedRooms[0]?.trades, null, 2)
-            );
             // Store in both template-specific and regular template_rooms keys for consistency
             localStorage.setItem(storageKey, JSON.stringify(transformedRooms));
             localStorage.setItem(
               'template_rooms',
               JSON.stringify(transformedRooms)
-            );
-            console.log('Data stored in localStorage with key:', storageKey);
-            console.log(
-              'Data also stored in regular template_rooms key for consistency'
             );
 
             // Verify the data was stored correctly in both keys
@@ -142,46 +116,13 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               ? JSON.parse(regularStoredData)
               : null;
 
-            console.log(
-              'Verified stored data in template-specific key:',
-              parsedStoredData
-            );
-            console.log(
-              'Verified stored data in regular template_rooms key:',
-              parsedRegularData
-            );
-
             // Verify both keys have the same structure
             if (parsedStoredData && parsedRegularData) {
-              console.log(
-                'Both keys have same structure:',
-                JSON.stringify(parsedStoredData) ===
-                  JSON.stringify(parsedRegularData)
-              );
             }
-            console.log(
-              'Verified stored data structure:',
-              parsedStoredData
-                ? Object.keys(parsedStoredData[0] || {})
-                : 'no data'
-            );
 
             // Check the first room's trades and services in detail
             if (parsedStoredData && parsedStoredData[0]) {
-              console.log(
-                'First room trades count:',
-                parsedStoredData[0].trades?.length
-              );
               if (parsedStoredData[0].trades && parsedStoredData[0].trades[0]) {
-                console.log(
-                  'First trade serviceList count:',
-                  parsedStoredData[0].trades[0].serviceList?.length
-                );
-                console.log(
-                  'First trade serviceList:',
-                  parsedStoredData[0].trades[0].serviceList
-                );
-
                 // Check the first service's materials and finishes
                 if (
                   parsedStoredData[0].trades[0].serviceList &&
@@ -189,19 +130,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 ) {
                   const firstService =
                     parsedStoredData[0].trades[0].serviceList[0];
-                  console.log(
-                    'First service materials:',
-                    firstService.materials
-                  );
-                  console.log('First service finishes:', firstService.finishes);
-                  console.log(
-                    'First service materials type:',
-                    typeof firstService.materials
-                  );
-                  console.log(
-                    'First service finishes type:',
-                    typeof firstService.finishes
-                  );
                 }
               }
             }
@@ -493,7 +421,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <TemplateToolForm
                 onSubmit={data => {
-                  console.log('Tool form submitted:', data);
                   // Handle form submission here
                 }}
                 initialData={{
@@ -550,7 +477,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <DisclaimerForm
                 onSubmit={data => {
-                  console.log('Disclaimer form submitted:', data);
                   // Handle form submission here
                 }}
                 initialData={{
