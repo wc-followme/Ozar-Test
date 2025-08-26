@@ -1,7 +1,5 @@
 'use client';
 
-import CompanyInfoSkeleton from '@/components/shared/skeleton/CompanyInfoSkeleton';
-import { useState } from 'react';
 import { ProfileCategoryTabComponent } from '../shared/common/ProfileCategoryTabComponent';
 import { ProfileDetailsComponent } from '../shared/common/ProfileDetailsComponent';
 import { ProfileOtherDetailsComponent } from '../shared/common/ProfileOtherDetailsComponent';
@@ -35,13 +33,6 @@ export const CompanyInfoTab = ({
   showViewCompanyProfileButton = true,
   companyId,
 }: CompanyInfoTabProps) => {
-  const [loading, setLoading] = useState(false);
-
-  // Show loading state
-  if (loading) {
-    return <CompanyInfoSkeleton />;
-  }
-
   return (
     <div className='space-y-6 w-full'>
       {/* About Section */}

@@ -2,7 +2,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import React from 'react';
 import CompanyInfoSkeleton from './CompanyInfoSkeleton';
 
-const CompanyProfileSkeleton: React.FC = () => {
+interface CompanyProfileSkeletonProps {
+  isUserProfile?: boolean;
+}
+
+const CompanyProfileSkeleton: React.FC<CompanyProfileSkeletonProps> = ({
+  isUserProfile = false,
+}) => {
   return (
     <div className='w-full'>
       {/* Profile Top Block Skeleton - matches ProfileTopBlock exactly */}
@@ -16,7 +22,7 @@ const CompanyProfileSkeleton: React.FC = () => {
 
           {/* Change Cover Button Skeleton */}
           <div className='absolute top-4 right-4'>
-            <Skeleton className='h-9 w-24 bg-[var(--bg-skeleton)] rounded' />
+            <Skeleton className='h-9 w-24 bg-[var(--bg-skeleton)] rounded-full' />
           </div>
         </div>
 
@@ -42,27 +48,72 @@ const CompanyProfileSkeleton: React.FC = () => {
                         <Skeleton className='h-3 w-80 mb-3 bg-[var(--bg-skeleton)]' />
 
                         {/* Rating and Review Count Skeleton */}
-                        <div className='flex items-center gap-2'>
-                          <Skeleton className='h-3 w-16 bg-[var(--bg-skeleton)]' />
-                          <div className='flex items-center gap-1'>
-                            {[...Array(5)].map((_, index) => (
-                              <Skeleton
-                                key={index}
-                                className='w-4 h-4 rounded bg-[var(--bg-skeleton)]'
-                              />
-                            ))}
+                        {isUserProfile ? (
+                          // User Profile Rating Layout
+                          <div className='flex items-center gap-4'>
+                            <div className='flex flex-wrap items-center gap-4'>
+                              {/* Company Link Skeleton */}
+                              <div className='flex items-center gap-2'>
+                                <Skeleton className='w-6 h-6 rounded-full bg-[var(--bg-skeleton)]' />
+                                <Skeleton className='h-3 w-24 bg-[var(--bg-skeleton)]' />
+                              </div>
+                              <div className='w-px h-6 bg-[var(--border-dark)]'></div>
+                              {/* Rating Skeleton */}
+                              <div className='flex items-center gap-2'>
+                                <Skeleton className='h-3 w-8 bg-[var(--bg-skeleton)]' />
+                                <div className='flex items-center gap-1'>
+                                  {[...Array(5)].map((_, index) => (
+                                    <Skeleton
+                                      key={index}
+                                      className='w-4 h-4 rounded-full bg-[var(--bg-skeleton)]'
+                                    />
+                                  ))}
+                                </div>
+                                <Skeleton className='h-3 w-20 bg-[var(--bg-skeleton)]' />
+                              </div>
+                            </div>
                           </div>
-                          <Skeleton className='h-3 w-24 bg-[var(--bg-skeleton)]' />
-                        </div>
+                        ) : (
+                          // Company Profile Rating Layout (Original)
+                          <div className='flex items-center gap-2'>
+                            <Skeleton className='h-3 w-16 bg-[var(--bg-skeleton)]' />
+                            <div className='flex items-center gap-1'>
+                              {[...Array(5)].map((_, index) => (
+                                <Skeleton
+                                  key={index}
+                                  className='w-4 h-3 rounded bg-[var(--bg-skeleton)]'
+                                />
+                              ))}
+                            </div>
+                            <Skeleton className='h-3 w-24 bg-[var(--bg-skeleton)]' />
+                          </div>
+                        )}
                       </div>
 
                       {/* Action Buttons Skeleton */}
                       <div className='flex flex-wrap gap-3 w-full md:w-auto ml-auto justify-end mt-4 lg:mt-0'>
-                        <Skeleton className='h-9 w-28 rounded-full bg-[var(--bg-skeleton)]' />
-                        <Skeleton className='h-9 w-32 rounded-full bg-[var(--bg-skeleton)]' />
-                        <Skeleton className='h-9 w-24 rounded-full bg-[var(--bg-skeleton)]' />
-                        <Skeleton className='h-9 w-28 rounded-full bg-[var(--bg-skeleton)]' />
-                        <Skeleton className='h-9 w-32 rounded-full bg-[var(--bg-skeleton)]' />
+                        {isUserProfile ? (
+                          // User Profile Buttons
+                          <>
+                            {/* Review Button */}
+                            <Skeleton className='h-9 w-9 sm:w-28 rounded-full bg-[var(--bg-skeleton)]' />
+                            {/* Share Button */}
+                            <Skeleton className='h-9 w-9 sm:w-24 rounded-full bg-[var(--bg-skeleton)]' />
+                            {/* Edit Profile Button */}
+                            <Skeleton className='h-9 w-9 sm:w-28 rounded-full bg-[var(--bg-skeleton)]' />
+                            {/* Add to Network Button (User Profile Specific) */}
+                            <Skeleton className='h-9 w-9 sm:w-32 rounded-full bg-[var(--bg-skeleton)]' />
+                          </>
+                        ) : (
+                          // Company Profile Buttons (Original)
+                          <>
+                            <Skeleton className='h-9 w-28 rounded-full bg-[var(--bg-skeleton)]' />
+                            <Skeleton className='h-9 w-32 rounded-full bg-[var(--bg-skeleton)]' />
+                            <Skeleton className='h-9 w-24 rounded-full bg-[var(--bg-skeleton)]' />
+                            <Skeleton className='h-9 w-28 rounded-full bg-[var(--bg-skeleton)]' />
+                            <Skeleton className='h-9 w-32 rounded-full bg-[var(--bg-skeleton)]' />
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -78,33 +129,19 @@ const CompanyProfileSkeleton: React.FC = () => {
         <div className='p-4 lg:p-6 w-full'>
           {/* Tabs Skeleton */}
           <div className='mb-6'>
-            {/* Mobile Tabs Skeleton */}
-            <div className='md:hidden max-w-[calc(100vw_-_64px)] xl:max-w-full rounded-[32px] overflow-auto'>
-              <div className='flex w-fit bg-[var(--dark-background-other)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start shadow-lg sm:shadow-none border-none'>
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    className='px-6 sm:px-8 py-3 sm:py-2 h-10 md:h-12 w-24 md:w-28 rounded-[28px] sm:rounded-[30px] bg-[var(--bg-skeleton)]'
-                  />
-                ))}
-              </div>
+            {/* Mobile Tabs Skeleton (single bar) */}
+            <div className='md:hidden max-w-[calc(100vw_-_64px)] xl:max-w-full rounded-[32px] overflow-hidden'>
+              <Skeleton className='h-12 w-full bg-[var(--bg-skeleton)] rounded-[32px]' />
             </div>
 
-            {/* Desktop Tabs Skeleton */}
+            {/* Desktop Tabs Skeleton (single bar) */}
             <div className='hidden md:block'>
-              <div className='flex w-full bg-[var(--dark-background)] p-1 rounded-[32px] h-auto font-normal justify-stretch border border-[var(--border-dark)]'>
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton
-                    key={i}
-                    className='px-6 py-[10px] flex-1 h-12 rounded-[28px] bg-[var(--bg-skeleton)]'
-                  />
-                ))}
-              </div>
+              <Skeleton className='h-14 w-full bg-[var(--bg-skeleton)] rounded-[32px] border border-[var(--border-dark)]' />
             </div>
           </div>
 
           {/* Tab Content Skeleton */}
-          <CompanyInfoSkeleton />
+          <CompanyInfoSkeleton isUserProfile={isUserProfile} />
         </div>
       </div>
     </div>

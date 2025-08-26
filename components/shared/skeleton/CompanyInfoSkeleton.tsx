@@ -1,7 +1,13 @@
 import { Skeleton } from '@/components/ui/skeleton';
 import React from 'react';
 
-const CompanyInfoSkeleton: React.FC = () => {
+interface CompanyInfoSkeletonProps {
+  isUserProfile?: boolean;
+}
+
+const CompanyInfoSkeleton: React.FC<CompanyInfoSkeletonProps> = ({
+  isUserProfile = false,
+}) => {
   return (
     <div className='space-y-6 w-full'>
       {/* About Section Skeleton - matches ProfileDetailsComponent */}
@@ -9,19 +15,52 @@ const CompanyInfoSkeleton: React.FC = () => {
         <div className='bg-[var(--card-background)] rounded-lg p-6 border border-[var(--border-dark)] w-full'>
           <div className='flex gap-6 lg:flex-row flex-col'>
             {/* Left Section - Text Content */}
-            <div className='flex-1 max-w-full'>
-              <Skeleton className='h-3 w-16 mb-4 bg-[var(--bg-skeleton)]' />
-              <div className='space-y-3'>
-                <Skeleton className='h-3 w-full bg-[var(--bg-skeleton)]' />
-                <Skeleton className='h-3 w-3/4 bg-[var(--bg-skeleton)]' />
-                <Skeleton className='h-3 w-5/6 bg-[var(--bg-skeleton)]' />
-              </div>
-            </div>
+            <div className='w-full'>
+              {isUserProfile ? (
+                // User profile: text-focused intro without media thumbnail
+                <div className='flex lg:flex-row flex-col gap-6'>
+                  {/* Full Name */}
+                  <div className='lg:min-w-[200px] min-w-full max-w-full flex-col gap-2 flex flex-1'>
+                    <Skeleton className='h-3 w-24 mb-2 bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='h-4 w-48 bg-[var(--bg-skeleton)]' />
+                  </div>
+                  <div className='lg:min-w-[200px] min-w-full max-w-full flex-col gap-2 flex flex-1'>
+                    <Skeleton className='h-3 w-24 mb-2 bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='h-4 w-48 bg-[var(--bg-skeleton)]' />
+                  </div>
+                  <div className='lg:min-w-[200px] min-w-full max-w-full flex-col gap-2 flex flex-1'>
+                    <Skeleton className='h-3 w-24 mb-2 bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='h-4 w-48 bg-[var(--bg-skeleton)]' />
+                  </div>
+                  <div className='lg:min-w-[200px] min-w-full max-w-full flex-col gap-2 flex flex-1'>
+                    <Skeleton className='h-3 w-24 mb-2 bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='h-4 w-48 bg-[var(--bg-skeleton)]' />
+                  </div>
+                  <div className='lg:min-w-[200px] min-w-full max-w-full flex-col gap-2 flex flex-1'>
+                    <Skeleton className='h-3 w-24 mb-2 bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='h-4 w-48 bg-[var(--bg-skeleton)]' />
+                  </div>
+                </div>
+              ) : (
+                // Company profile: text + video thumbnail
+                <div className='flex gap-6 lg:flex-row flex-col'>
+                  {/* Left Section - Text Content */}
+                  <div className='flex-1 max-w-full'>
+                    <Skeleton className='h-3 w-16 mb-4 bg-[var(--bg-skeleton)]' />
+                    <div className='space-y-3'>
+                      <Skeleton className='h-3 w-full bg-[var(--bg-skeleton)]' />
+                      <Skeleton className='h-3 w-3/4 bg-[var(--bg-skeleton)]' />
+                      <Skeleton className='h-3 w-5/6 bg-[var(--bg-skeleton)]' />
+                    </div>
+                  </div>
 
-            {/* Right Section - Video Thumbnail */}
-            <div className='min-w-[232px] h-[156px] relative rounded-2xl bg-[var(--border-dark)] flex items-center justify-center'>
-              <Skeleton className='w-full h-full rounded-2xl bg-[var(--bg-skeleton)]' />
-              <Skeleton className='absolute h-8 w-8 rounded-full bg-[var(--bg-skeleton)]' />
+                  {/* Right Section - Video Thumbnail */}
+                  <div className='min-w-[232px] h-[156px] relative rounded-2xl bg-[var(--border-dark)] flex items-center justify-center'>
+                    <Skeleton className='w-full h-full rounded-2xl bg-[var(--bg-skeleton)]' />
+                    <Skeleton className='absolute h-8 w-8 rounded-full bg-[var(--bg-skeleton)]' />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

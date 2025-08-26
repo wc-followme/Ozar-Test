@@ -39,6 +39,7 @@ import {
 import { ToolDetailData } from './types';
 
 export default function ToolDetailPage() {
+  const router = useRouter();
   const [selectedTab, setSelectedTab] = useState('available');
   const [searchQuery, setSearchQuery] = useState('');
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
@@ -349,8 +350,6 @@ export default function ToolDetailPage() {
     { name: 'Tools', href: '/tools-management' },
     { name: 'Drill Machine' },
   ];
-
-  const router = useRouter();
 
   return (
     <div className='w-full space-y-6'>

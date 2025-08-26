@@ -1,8 +1,8 @@
 'use client';
 
 import { CoverImageUploadDialog } from '@/components/shared/common/CoverImageUploadDialog';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ProfileTopBlock } from '@/components/shared/common/ProfileTopBlock';
+import CompanyProfileSkeleton from '@/components/shared/skeleton/CompanyProfileSkeleton';
 import { ProfileBottomBlock } from '@/components/Templates/ProfileBottomBlock';
 import { useToast } from '@/components/ui/use-toast';
 import {
@@ -293,11 +293,7 @@ const Profile = ({ params }: ProfilePageProps) => {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className='flex items-center justify-center min-h-screen'>
-        <LoadingComponent />
-      </div>
-    );
+    return <CompanyProfileSkeleton isUserProfile={true} />;
   }
 
   // Show error state
