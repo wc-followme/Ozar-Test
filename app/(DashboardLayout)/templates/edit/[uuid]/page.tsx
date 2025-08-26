@@ -419,7 +419,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <TemplateToolForm
-                onSubmit={data => {
+                onSubmit={() => {
                   // Handle form submission here
                 }}
                 initialData={{
@@ -475,7 +475,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <DisclaimerForm
-                onSubmit={data => {
+                onSubmit={() => {
                   // Handle form submission here
                 }}
                 initialData={{
