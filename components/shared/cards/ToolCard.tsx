@@ -70,7 +70,7 @@ export default function ToolCard({
   // Handle card click to navigate to tool detail
   const handleCardClick = () => {
     if (uuid) {
-      router.push(`${ROUTES.TOOLS_MANAGEMENT}/tool-detail`);
+      router.push(`${ROUTES.TOOL_DETAIL}/${uuid}`);
     }
   };
 

@@ -282,12 +282,6 @@ export default function ToolsManagement() {
       barcodes,
     } = data;
 
-    console.log('=== CREATE TOOL PAYLOAD DATA ===');
-    console.log('Form data:', data);
-    console.log('Video tutorial URLs:', video_tutorial_urls);
-    console.log('Video tutorial links:', video_tutorial_links);
-    console.log('Barcodes:', barcodes);
-
     setFormLoading(true);
     try {
       // Get selected company ID using common function
@@ -303,9 +297,6 @@ export default function ToolsManagement() {
         video_tutorial_link: video_tutorial_links || [],
         barcodes: barcodes || [],
       };
-
-      console.log('Final create payload:', payload);
-      console.log('================================');
 
       const response = await apiService.createTool(payload);
       const { statusCode, message } = response;
@@ -350,12 +341,6 @@ export default function ToolsManagement() {
       barcodes,
     } = data;
 
-    console.log('=== UPDATE TOOL PAYLOAD DATA ===');
-    console.log('Form data:', data);
-    console.log('Video tutorial URLs:', video_tutorial_urls);
-    console.log('Video tutorial links:', video_tutorial_links);
-    console.log('Barcodes:', barcodes);
-
     // No guard needed based on legacy assets shape
 
     setFormLoading(true);
@@ -369,9 +354,6 @@ export default function ToolsManagement() {
         video_tutorial_link: video_tutorial_links || [],
         barcodes: barcodes || [],
       };
-
-      console.log('Final update payload:', payload);
-      console.log('================================');
 
       const response = await apiService.updateTool(editToolUuid!, payload);
 

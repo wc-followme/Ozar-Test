@@ -52,6 +52,8 @@ export const ROUTES = {
   COMPANY_DETAILS: '/company-management/company-details',
   ADD_USER: '/company-management/add-user',
   TOOLS_MANAGEMENT: '/tools-management',
+  TOOL_DETAIL: '/tools-management/tool-detail',
+  TOOL_VIDEOS_TUTORIAL: '/tools-management/tool-detail/videos-tutorial',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
   USER_PROFILE: '/user-management/profile',

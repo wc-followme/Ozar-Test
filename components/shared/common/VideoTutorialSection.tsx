@@ -33,8 +33,8 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
   const [videoLinkInputs, setVideoLinkInputs] = useState<
     { id: string; value: string; showDelete: boolean }[]
   >([]);
-  console.log('videoLinkInputs', { videoLinkInputs, videoLinks });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const prevVideoLinksRef = useRef<string[]>([]);
 
   // Initialize input fields with existing video links (external URLs)
   useEffect(() => {
@@ -59,10 +59,16 @@ export const VideoTutorialSection: React.FC<VideoTutorialSectionProps> = ({
       .map(input => input.value.trim());
 
     // Only update if the links have actually changed to avoid infinite loops
-    if (JSON.stringify(validLinks) !== JSON.stringify(videoLinks)) {
+    const prevLinks = prevVideoLinksRef.current;
+    const hasChanged =
+      validLinks.length !== prevLinks.length ||
+      validLinks.some((link, index) => link !== prevLinks[index]);
+
+    if (hasChanged) {
+      prevVideoLinksRef.current = validLinks;
       onVideoLinksChange(validLinks);
     }
-  }, [videoLinkInputs, onVideoLinksChange, videoLinks]);
+  }, [videoLinkInputs, onVideoLinksChange]);
 
   const handleAddVideo = () => {
     fileInputRef.current?.click();

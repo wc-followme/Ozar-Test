@@ -32,24 +32,23 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   const [activeTab, setActiveTab] = useState('qr-doc');
   const [newBarcode, setNewBarcode] = useState('');
 
-  // Convert barcodes array to table data format for new barcodes
-  const newBarcodesTableData = barcodes.map((barcode, index) => ({
-    id: `new-${index}`,
-    no: String(index + 1).padStart(2, '0'),
-    toolIdBarcode: `- / ${barcode}`,
-    type: 'new' as const,
-  }));
-
-  // Convert existing barcodes to table data format
-  const existingBarcodesTableData = existingBarcodes.map((item, index) => ({
-    id: item.id,
-    no: String(index + 1).padStart(2, '0'),
-    toolIdBarcode: `${item.toolId} / ${item.barcode}`,
-    type: 'existing' as const,
-  }));
-
-  // Combine both tables for display
-  const allTableData = [...existingBarcodesTableData, ...newBarcodesTableData];
+  // Create a single array with proper sequential numbering
+  const allTableData = [
+    // First add existing barcodes with sequential numbering
+    ...existingBarcodes.map((item, index) => ({
+      id: item.id,
+      no: String(index + 1).padStart(2, '0'),
+      toolIdBarcode: `${item.toolId} / ${item.barcode}`,
+      type: 'existing' as const,
+    })),
+    // Then add new barcodes continuing the numbering
+    ...barcodes.map((barcode, index) => ({
+      id: `new-${index}`,
+      no: String(existingBarcodes.length + index + 1).padStart(2, '0'),
+      toolIdBarcode: `- / ${barcode}`,
+      type: 'new' as const,
+    })),
+  ];
 
   // Column configuration for the DynamicTable
   const toolTableColumns = [
@@ -105,7 +104,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
         itemToDelete.toolIdBarcode;
       const itemType = itemToDelete.type;
       const itemId = itemToDelete.id;
-      console.log('Deleting barcode:', barcodeToDelete, 'Type:', itemType);
 
       if (itemType === 'new') {
         // Remove barcode from new barcodes array
@@ -136,25 +134,15 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           if (updatedFileBarcodes.length === 0) {
             // If file has no barcodes left, mark it for removal
             filesToRemove.push(fileName);
-            console.log(
-              'File has no barcodes left, will be removed:',
-              fileName
-            );
           } else {
             // Update file's barcode list
             updatedFileBarcodeMap[fileName] = updatedFileBarcodes;
-            console.log(
-              'Updated file barcodes for:',
-              fileName,
-              updatedFileBarcodes
-            );
           }
         }
       });
 
       // Remove files that have no barcodes left
       if (filesToRemove.length > 0) {
-        console.log('Removing files with no barcodes:', filesToRemove);
         setUploadedFileNames(prev =>
           prev.filter(fileName => !filesToRemove.includes(fileName))
         );
@@ -189,9 +177,7 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       if (!allExistingBarcodes.has(trimmedBarcode)) {
         onBarcodesChange([...barcodes, trimmedBarcode]);
         setNewBarcode('');
-        console.log('Added new barcode:', trimmedBarcode);
       } else {
-        console.log('Barcode already exists:', trimmedBarcode);
         // You could add a toast notification here to inform the user
       }
     }
@@ -228,23 +214,19 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       const isFileAlreadyUploaded = uploadedFileNames.includes(file.name);
 
       if (isFileAlreadyUploaded) {
-        console.log('File already uploaded, skipping:', file.name);
         return; // Skip processing if file already exists
       }
 
       // Add file to uploaded files list
       setUploadedFileNames(prev => [...prev, file.name]);
-      console.log('Added new file to upload list:', file.name);
 
       // Handle CSV/XLSX file upload
       const reader = new FileReader();
       reader.onload = event => {
-        console.log('File uploaded:', file.name);
         const newBarcodes: string[] = [];
 
         if (file.name.endsWith('.csv')) {
           const text = event.target?.result as string;
-          console.log('CSV content:', text);
           // Handle CSV files
           const lines = text.split(/\r?\n/); // Handle different line endings
           // Skip header row and process data
@@ -289,34 +271,19 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           }
         }
 
-        console.log('Parsed barcodes:', newBarcodes);
-
         // Get all existing barcodes from current state and all uploaded files
         const allExistingBarcodes = new Set([
           ...barcodes,
           ...Object.values(fileBarcodeMap).flat(),
         ]);
 
-        // Filter out duplicates from new barcodes with detailed logging
-        const duplicatesInFile: string[] = [];
+        // Filter out duplicates from new barcodes
         const uniqueNewBarcodes = newBarcodes.filter(barcode => {
           if (allExistingBarcodes.has(barcode)) {
-            duplicatesInFile.push(barcode);
-            console.log(
-              `❌ Duplicate barcode skipped: ${barcode} (already exists)`
-            );
             return false;
           }
           return true;
         });
-
-        console.log('Unique new barcodes (no duplicates):', uniqueNewBarcodes);
-        if (duplicatesInFile.length > 0) {
-          console.log(
-            `⚠️ Found ${duplicatesInFile.length} duplicates in file ${file.name}:`,
-            duplicatesInFile
-          );
-        }
 
         // Store mapping of file to its barcodes (only unique ones)
         setFileBarcodeMap(prev => ({
@@ -327,8 +294,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
         // Add new barcodes to existing ones (don't overwrite)
         if (uniqueNewBarcodes.length > 0) {
           onBarcodesChange([...barcodes, ...uniqueNewBarcodes]);
-        } else {
-          console.log('No new unique barcodes to add from file:', file.name);
         }
       };
 
@@ -343,10 +308,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
 
   const handleBulkUploads = (files: File[]) => {
     if (!files || files.length === 0) return;
-    console.log(
-      'Processing multiple files:',
-      files.map(f => f.name)
-    );
 
     // Process all files and collect all barcodes first
     const allNewBarcodes: { fileName: string; barcodes: string[] }[] = [];
@@ -369,7 +330,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       const reader = new FileReader();
 
       reader.onload = event => {
-        console.log('Processing file:', file.name);
         const newBarcodes: string[] = [];
 
         if (file.name.endsWith('.csv')) {
@@ -412,7 +372,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           }
         }
 
-        console.log('Parsed barcodes from', file.name, ':', newBarcodes);
         allNewBarcodes.push({ fileName: file.name, barcodes: newBarcodes });
         processedFiles++;
 
@@ -435,18 +394,14 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   const updateStateWithAllFiles = (
     fileBarcodes: { fileName: string; barcodes: string[] }[]
   ) => {
-    console.log('Updating state with all files:', fileBarcodes);
-
     // Collect all barcodes from all files
     const allBarcodesFromFiles = fileBarcodes.flatMap(fb => fb.barcodes);
-    console.log('All barcodes from files:', allBarcodesFromFiles);
 
     // Get all existing barcodes from current state and uploaded files
     const allExistingBarcodes = new Set([
       ...barcodes,
       ...Object.values(fileBarcodeMap).flat(),
     ]);
-    console.log('Existing barcodes:', Array.from(allExistingBarcodes));
 
     // Remove duplicates within the new files themselves AND with existing barcodes
     const uniqueBarcodesAcrossAllFiles = new Set<string>();
@@ -477,38 +432,18 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
           reason: 'Already exists in current data',
           files: filesWithThisBarcode,
         });
-        console.log(
-          `Duplicate found - already exists: ${barcode} (in files: ${filesWithThisBarcode.join(', ')})`
-        );
       } else if (uniqueBarcodesAcrossAllFiles.has(barcode)) {
         duplicatesFound.push({
           barcode,
           reason: 'Appears in multiple uploaded files',
           files: filesWithThisBarcode,
         });
-        console.log(
-          `Duplicate found - across uploaded files: ${barcode} (in files: ${filesWithThisBarcode.join(', ')})`
-        );
       } else {
         uniqueBarcodesAcrossAllFiles.add(barcode);
       }
     });
 
     const uniqueNewBarcodes = Array.from(uniqueBarcodesAcrossAllFiles);
-    console.log('Unique new barcodes (no duplicates):', uniqueNewBarcodes);
-
-    if (duplicatesFound.length > 0) {
-      console.log('=== DUPLICATE DETECTION SUMMARY ===');
-      duplicatesFound.forEach(dup => {
-        console.log(
-          `❌ ${dup.barcode}: ${dup.reason} (Files: ${dup.files.join(', ')})`
-        );
-      });
-      console.log(
-        `Total duplicates found and skipped: ${duplicatesFound.length}`
-      );
-      console.log('=================================');
-    }
 
     // Update file names (only for files that have unique barcodes)
     const validFileNames: string[] = [];
@@ -518,14 +453,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       );
       if (uniqueBarcodesForFile.length > 0) {
         validFileNames.push(fb.fileName);
-        console.log(
-          `✅ File ${fb.fileName} contributes ${uniqueBarcodesForFile.length} unique barcodes:`,
-          uniqueBarcodesForFile
-        );
-      } else {
-        console.log(
-          `⚠️ File ${fb.fileName} has no unique barcodes, will not be added to file list`
-        );
       }
     });
 
@@ -534,7 +461,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
       const additionalNames = validFileNames.filter(
         name => !existingNames.has(name)
       );
-      console.log('Adding new file names:', additionalNames);
       return [...prev, ...additionalNames];
     });
 
@@ -557,20 +483,12 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     // Update main barcodes array
     if (uniqueNewBarcodes.length > 0) {
       onBarcodesChange([...barcodes, ...uniqueNewBarcodes]);
-      console.log(
-        `✅ Added ${uniqueNewBarcodes.length} unique barcodes to main array`
-      );
-    } else {
-      console.log('⚠️ No new unique barcodes to add');
     }
   };
 
   const handleFileRemove = (fileName: string) => {
-    console.log('Removing file:', fileName);
-
     // Get barcodes associated with this file
     const fileBarcodesToRemove = fileBarcodeMap[fileName] || [];
-    console.log('Barcodes to remove:', fileBarcodesToRemove);
 
     // Remove file from uploaded files list
     setUploadedFileNames(prev => prev.filter(name => name !== fileName));
@@ -586,7 +504,6 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     const updatedBarcodes = barcodes.filter(
       barcode => !fileBarcodesToRemove.includes(barcode)
     );
-    console.log('Updated barcodes after removal:', updatedBarcodes);
 
     onBarcodesChange(updatedBarcodes);
   };
