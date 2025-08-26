@@ -435,9 +435,14 @@ export const JOB_MESSAGES = {
 
 // Job Privacy Constants
 export const JOB_PRIVACY = {
-  PRIVATE: 'PRIVATE',
+  //PRIVATE: 'PRIVATE',
   PUBLIC: 'PUBLIC',
 } as const;
+
+export const JOB_PRIVACY_OPTIONS = [
+  { label: 'Public Job', value: 'PUBLIC' },
+  { label: 'Private Job', value: 'PRIVATE' },
+];
 
 // Profile Top Block Constants
 export const PROFILE_DEFAULTS = {
