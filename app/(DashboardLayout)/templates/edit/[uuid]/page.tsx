@@ -128,8 +128,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                   parsedStoredData[0].trades[0].serviceList &&
                   parsedStoredData[0].trades[0].serviceList[0]
                 ) {
-                  const firstService =
-                    parsedStoredData[0].trades[0].serviceList[0];
+                  // First service exists; no-op in production build
                 }
               }
             }
