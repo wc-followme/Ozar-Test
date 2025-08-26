@@ -126,12 +126,17 @@ export default function AddToolListForm({
 
   // Pre-select existing tools when tool options are loaded
   useEffect(() => {
-    if (toolOptions.length > 0 && existingTools.length > 0) {
+    if (existingTools.length > 0) {
       const existingToolIds = existingTools.map(tool => tool.uuid || tool.id);
-      const preSelectedIds = toolOptions
-        .filter(tool => existingToolIds.includes(tool.value))
-        .map(tool => tool.value);
-      setSelectedToolIds(preSelectedIds);
+      // If options are loaded, match strictly; otherwise, fall back to ids
+      if (toolOptions.length > 0) {
+        const preSelectedIds = toolOptions
+          .filter(tool => existingToolIds.includes(tool.value))
+          .map(tool => tool.value);
+        setSelectedToolIds(preSelectedIds);
+      } else {
+        setSelectedToolIds(existingToolIds);
+      }
     }
   }, [toolOptions, existingTools]);
 

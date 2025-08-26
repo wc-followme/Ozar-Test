@@ -51,24 +51,36 @@ export const calculateMaterialCost = (material: {
 };
 
 export const calculateServiceMaterialCost = (
-  materials: Array<{
-    rate: number;
-    qty: number;
-    is_hidden?: boolean;
-  }>
+  materials:
+    | Array<{
+        rate: number;
+        qty: number;
+        is_hidden?: boolean;
+      }>
+    | undefined
+    | null
 ): number => {
+  if (!Array.isArray(materials)) {
+    return 0;
+  }
   return materials.reduce((total, material) => {
     return total + calculateMaterialCost(material);
   }, 0);
 };
 
 export const calculateServiceFinishCost = (
-  finishes: Array<{
-    rate: number;
-    qty: number;
-    is_hidden?: boolean;
-  }>
+  finishes:
+    | Array<{
+        rate: number;
+        qty: number;
+        is_hidden?: boolean;
+      }>
+    | undefined
+    | null
 ): number => {
+  if (!Array.isArray(finishes)) {
+    return 0;
+  }
   return finishes.reduce((total, finish) => {
     return total + calculateMaterialCost(finish);
   }, 0);
@@ -92,22 +104,28 @@ export const calculateServiceTotalMaterialCost = (
 };
 
 export const calculateTradeMaterialCost = (
-  services: Array<{
-    rate: number;
-    qty: number;
-    is_hidden?: boolean;
-    materials?: Array<{
-      rate: number;
-      qty: number;
-      is_hidden?: boolean;
-    }>;
-    finishes?: Array<{
-      rate: number;
-      qty: number;
-      is_hidden?: boolean;
-    }>;
-  }>
+  services:
+    | Array<{
+        rate: number;
+        qty: number;
+        is_hidden?: boolean;
+        materials?: Array<{
+          rate: number;
+          qty: number;
+          is_hidden?: boolean;
+        }>;
+        finishes?: Array<{
+          rate: number;
+          qty: number;
+          is_hidden?: boolean;
+        }>;
+      }>
+    | undefined
+    | null
 ): number => {
+  if (!Array.isArray(services)) {
+    return 0;
+  }
   return services.reduce((tradeTotal, service) => {
     if (!shouldIncludeInCalculation(service)) {
       return tradeTotal;
@@ -133,12 +151,18 @@ export const calculateServiceLaborCost = (service: {
 };
 
 export const calculateTradeLaborCost = (
-  services: Array<{
-    rate: number;
-    qty: number;
-    is_hidden?: boolean;
-  }>
+  services:
+    | Array<{
+        rate: number;
+        qty: number;
+        is_hidden?: boolean;
+      }>
+    | undefined
+    | null
 ): number => {
+  if (!Array.isArray(services)) {
+    return 0;
+  }
   return services.reduce((total, service) => {
     return total + calculateServiceLaborCost(service);
   }, 0);

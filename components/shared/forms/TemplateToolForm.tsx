@@ -5,8 +5,16 @@ import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { extractApiErrorMessage } from '@/lib/utils';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { CloseCircle } from 'iconsax-react';
-import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
 
 interface TemplateToolFormData {
   templateName: string;
@@ -17,41 +25,58 @@ interface TemplateToolFormData {
 interface TemplateToolFormProps {
   onSubmit?: (data: TemplateToolFormData) => void;
   initialData?: Partial<TemplateToolFormData>;
+  templateId?: string; // when provided, use PATCH /templates/:id
 }
 
-// Available tools for selection
-const AVAILABLE_TOOLS = [
-  { value: 'tool-1', label: 'Nail Master 3000' },
-  { value: 'tool-2', label: 'Drill Wizard' },
-  { value: 'tool-3', label: 'Saw Xpert' },
-  { value: 'tool-4', label: 'Level Right' },
-  { value: 'tool-5', label: 'Hammer Pro' },
-  { value: 'tool-6', label: 'Safety Goggles' },
-  { value: 'tool-7', label: 'Measuring Tape' },
-  { value: 'tool-8', label: 'Screwdriver Set' },
-  { value: 'tool-9', label: 'Circular Saw' },
-  { value: 'tool-10', label: 'Impact Driver' },
-  { value: 'tool-11', label: 'Angle Grinder' },
-  { value: 'tool-12', label: 'Jigsaw' },
-  { value: 'tool-13', label: 'Router' },
-  { value: 'tool-14', label: 'Planer' },
-  { value: 'tool-15', label: 'Chisel Set' },
-];
+type Option = { value: string; label: string };
 
 export function TemplateToolForm({
   onSubmit,
   initialData,
+  templateId,
 }: TemplateToolFormProps) {
-  const [formData, setFormData] = useState<TemplateToolFormData>({
-    templateName: initialData?.templateName || '',
-    service: initialData?.service || '',
-    tools: initialData?.tools || [],
+  // Validation schema (match estimate form style)
+  const toolTemplateSchema = yup.object({
+    templateName: yup.string().required('Template name is required'),
+    service: yup
+      .string()
+      .uuid('Service is required')
+      .required('Service is required'),
+    tools: yup
+      .array()
+      .of(yup.string().uuid('Invalid tool id').required())
+      .min(1, 'Select at least one tool')
+      .required('Select at least one tool'),
   });
 
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    clearErrors,
+    trigger,
+    watch,
+    formState: { isSubmitting, errors },
+  } = useForm<TemplateToolFormData>({
+    resolver: yupResolver(toolTemplateSchema) as any,
+    defaultValues: {
+      templateName: initialData?.templateName || '',
+      service: initialData?.service || '',
+      tools: initialData?.tools || [],
+    },
+  });
+
+  const serviceValue = watch('service');
+  const toolsValue = watch('tools');
+  const { toast } = useToast();
+  const router = useRouter();
+
+  // Dynamic options state
+  const [serviceOptions, setServiceOptions] = useState<Option[]>([]);
+  const [toolOptions, setToolOptions] = useState<Option[]>([]);
+
   // Tool management state
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(
-    formData.tools
-  );
+  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(toolsValue);
   const [selectedTools, setSelectedTools] = useState<
     Array<{ id: string; name: string }>
   >([]);
@@ -60,10 +85,10 @@ export function TemplateToolForm({
     field: keyof TemplateToolFormData,
     value: string | string[]
   ) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setValue(field, value as any, { shouldDirty: true, shouldValidate: true });
+    clearErrors(field);
+    // Extra safeguard to re-run validation for dependent behaviors
+    trigger(field);
   };
 
   const handleRemoveTool = (toolId: string) => {
@@ -79,21 +104,179 @@ export function TemplateToolForm({
     setSelectedToolIds(selectedIds);
     // Update selectedTools based on selected IDs
     const newSelectedTools = selectedIds.map(toolId => {
-      const toolData = AVAILABLE_TOOLS.find(tool => tool.value === toolId);
-      return {
-        id: toolId,
-        name: toolData?.label || 'Unknown Tool',
-      };
+      const toolData = toolOptions.find(tool => tool.value === toolId);
+      return { id: toolId, name: toolData?.label || 'Unknown Tool' };
     });
     setSelectedTools(newSelectedTools);
     handleInputChange('tools', selectedIds);
   };
 
-  const handleSubmit = () => {
-    if (onSubmit) {
-      onSubmit(formData);
+  const onSave = async (data: TemplateToolFormData) => {
+    try {
+      const companyUuid = getCompanyUuid();
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      const toolIds = Array.isArray(data.tools)
+        ? data.tools.filter(id => uuidRegex.test(String(id)))
+        : [];
+      const serviceId = uuidRegex.test(String(data.service))
+        ? String(data.service)
+        : undefined;
+
+      const payload: any = {
+        name: data.templateName,
+        template_type: TEMPLATE_TYPES.TOOL_TEMPLATES,
+        ...(companyUuid && { company_id: companyUuid }),
+        ...(serviceId && { service_id: serviceId }),
+        tool_ids: toolIds,
+      };
+
+      const endpoint = templateId ? `/templates/${templateId}` : '/templates';
+      const method = templateId ? 'PATCH' : 'POST';
+      const response = await apiService.makeGenericRequest(endpoint, {
+        method,
+        body: JSON.stringify(payload),
+      });
+
+      const { statusCode, message } = (response || {}) as {
+        statusCode?: number;
+        message?: string;
+      };
+
+      if (statusCode === 200 || statusCode === 201) {
+        toast({
+          title: 'Success',
+          description: message || 'Template saved successfully.',
+        });
+        if (onSubmit) onSubmit(data);
+        // Redirect to listing
+        router.push('/templates');
+      } else {
+        toast({
+          title: 'Error',
+          description: extractApiErrorMessage(
+            response,
+            'Failed to save template.'
+          ),
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: extractApiErrorMessage(
+          error,
+          'Failed to create template.'
+        ),
+        variant: 'destructive',
+      });
     }
   };
+
+  // Helpers
+  const getCompanyUuid = (): string => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
+      if (!raw) return '';
+      const parsed: { uuid?: string; id?: string | number } = JSON.parse(raw);
+      return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+    } catch {
+      return '';
+    }
+  };
+
+  // Fetch services by company
+  useEffect(() => {
+    const companyUuid = getCompanyUuid();
+    if (!companyUuid) {
+      setServiceOptions([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await apiService.fetchServicesPublic({
+          page: 1,
+          limit: 100,
+          company_id: companyUuid,
+        });
+        type Item = { id?: string | number; uuid?: string; name?: string };
+        const payload = res as unknown as { data?: Item[] | { data?: Item[] } };
+        const list: Item[] = Array.isArray(payload?.data)
+          ? (payload.data as Item[])
+          : Array.isArray((payload?.data as { data?: Item[] })?.data)
+            ? ((payload.data as { data?: Item[] }).data as Item[])
+            : [];
+        const opts: Option[] = list
+          .filter(i => !!i?.name)
+          .map(i => ({ value: String(i.uuid || i.id), label: String(i.name) }));
+        setServiceOptions(opts);
+      } catch {
+        setServiceOptions([]);
+      }
+    })();
+  }, []);
+
+  // Fetch tools by service and company
+  useEffect(() => {
+    const companyUuid = getCompanyUuid();
+    if (!companyUuid || !serviceValue) {
+      setToolOptions([]);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await apiService.fetchToolsPublic({
+          page: 1,
+          limit: 200,
+          company_id: companyUuid,
+          service_id: serviceValue,
+        });
+        type Item = { id?: string | number; uuid?: string; name?: string };
+        const payload = res as unknown as { data?: Item[] | { data?: Item[] } };
+        const list: Item[] = Array.isArray(payload?.data)
+          ? (payload.data as Item[])
+          : Array.isArray((payload?.data as { data?: Item[] })?.data)
+            ? ((payload.data as { data?: Item[] }).data as Item[])
+            : [];
+        const opts: Option[] = list
+          .filter(i => !!i?.name)
+          .map(i => ({ value: String(i.uuid || i.id), label: String(i.name) }));
+        setToolOptions(opts);
+        // If we have initial tool ids (from edit), make sure state reflects them and chips show labels
+        if (
+          Array.isArray(toolsValue) &&
+          toolsValue.length > 0 &&
+          selectedToolIds.length === 0
+        ) {
+          setSelectedToolIds(toolsValue as string[]);
+        }
+        // Build selectedTools from options whenever options or selected ids change
+        const mapped = (
+          selectedToolIds.length > 0
+            ? selectedToolIds
+            : (toolsValue as string[] | undefined) || []
+        ).map(id => {
+          const match = opts.find(o => o.value === id);
+          return { id, name: match?.label || id };
+        });
+        setSelectedTools(mapped);
+      } catch {
+        setToolOptions([]);
+      }
+    })();
+  }, [serviceValue]);
+
+  // Keep selectedToolIds in sync with default form tools when provided
+  useEffect(() => {
+    if (
+      Array.isArray(toolsValue) &&
+      toolsValue.length > 0 &&
+      selectedToolIds.length === 0
+    ) {
+      setSelectedToolIds(toolsValue as string[]);
+    }
+  }, [toolsValue, selectedToolIds.length]);
 
   return (
     <div className='space-y-6'>
@@ -105,34 +288,53 @@ export function TemplateToolForm({
           </Label>
           <Input
             id='templateName'
-            value={formData.templateName}
-            onChange={e => handleInputChange('templateName', e.target.value)}
             placeholder='Enter name'
             className='input-field'
+            {...register('templateName')}
           />
+          {errors.templateName && (
+            <p className='text-red-500 text-sm'>
+              {errors.templateName.message}
+            </p>
+          )}
         </div>
         <div className='space-y-2'>
           <SelectField
             label='Service'
-            value={formData.service}
-            onValueChange={value => handleInputChange('service', value)}
-            options={[
-              { value: 'painting', label: 'Painting' },
-              { value: 'plumbing', label: 'Plumbing' },
-              { value: 'electrical', label: 'Electrical' },
-              { value: 'carpentry', label: 'Carpentry' },
-            ]}
+            value={serviceValue}
+            onValueChange={value => {
+              // Update selected service
+              handleInputChange('service', value);
+              // Clear tools state when service changes to avoid stale UUID chips
+              setSelectedToolIds([]);
+              setSelectedTools([]);
+              setToolOptions([]);
+              handleInputChange('tools', []);
+            }}
+            options={serviceOptions}
             placeholder='Select Service'
+            triggerClassName={errors.service ? 'border-red-500' : ''}
           />
+          {errors.service && (
+            <p className='text-red-500 text-sm'>{errors.service.message}</p>
+          )}
         </div>
         <div className='space-y-2'>
           <MultiSelect
             label='Tools'
-            options={AVAILABLE_TOOLS}
+            options={toolOptions}
             value={selectedToolIds}
             onChange={handleToolSelectionChange}
             placeholder='Select Tools'
           />
+          {errors.tools && (
+            <p className='text-red-500 text-sm'>
+              {Array.isArray(errors.tools)
+                ? 'Select at least one tool'
+                : (errors.tools as unknown as { message?: string }).message ||
+                  'Select at least one tool'}
+            </p>
+          )}
         </div>
       </div>
 
@@ -160,8 +362,12 @@ export function TemplateToolForm({
 
       {/* Footer */}
       <div className='flex justify-end mt-6'>
-        <Button onClick={handleSubmit} className='btn-primary'>
-          Save Template
+        <Button
+          onClick={handleSubmit(onSave)}
+          className='btn-primary'
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Saving...' : 'Save Template'}
         </Button>
       </div>
     </div>
