@@ -9,7 +9,13 @@ import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
 // import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-// import { calculateJobTotal } from '@/lib/estimation-calculations';
+import {
+  calculateJobTotal,
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+  calculateTradeTotal,
+  MARKUP_TYPES,
+} from '@/lib/estimation-calculations';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 
@@ -195,6 +201,49 @@ export default function EstimationBoxEdit({
     return serviceData;
   }, [selectedService, selectedTradeData]);
 
+  // ===== Calculation helpers (mirrors create mode) =====
+  const updateServiceCalculations = (service: Service): Service => {
+    const serviceTotal = calculateServiceTotal(service.rate, service.qty);
+    const materialCost = calculateServiceTotalMaterialCost(
+      service.materials || [],
+      service.finishes || []
+    );
+    return {
+      ...service,
+      lineTotal: serviceTotal,
+      serviceTotal: serviceTotal,
+      tradeTotal: serviceTotal + materialCost,
+    };
+  };
+
+  const updateTradeCalculations = (trade: Trade): Trade => {
+    const updatedServices = (trade.serviceList || []).map(
+      updateServiceCalculations
+    );
+    const totals = calculateTradeTotal({
+      markup_type: trade.markup_type || MARKUP_TYPES.FLAT_AMOUNT,
+      markup: trade.markup || 0,
+      services: updatedServices,
+    });
+    return {
+      ...trade,
+      serviceList: updatedServices,
+      laborCost: totals.labor_cost,
+      materialCost: totals.material_cost,
+      tradeTotal: totals.trade_total,
+    };
+  };
+
+  const updateRoomCalculations = (room: Room): Room => {
+    const updatedTrades = (room.trades || []).map(updateTradeCalculations);
+    const roomTotal = updatedTrades.reduce((sum, t) => sum + t.tradeTotal, 0);
+    return { ...room, trades: updatedTrades, total: roomTotal };
+  };
+
+  const updateAllCalculations = (inputRooms: Room[]): Room[] => {
+    return inputRooms.map(updateRoomCalculations);
+  };
+
   const fetchTrades = async (companyUuid: string | null) => {
     try {
       console.log(
@@ -339,6 +388,33 @@ export default function EstimationBoxEdit({
     }
   }, [rooms, templateId, isLoadingFromStorage]);
 
+  // Normalize trade names once trade options are available so UI shows correct names on load
+  useEffect(() => {
+    if (isLoadingFromStorage) return;
+    if (tradeOptions.length === 0) return;
+    if (rooms.length === 0) return;
+
+    setRooms(prevRooms => {
+      let hasAnyChange = false;
+      const updatedRooms = prevRooms.map(room => {
+        let roomChanged = false;
+        const updatedTrades = room.trades.map(trade => {
+          const matchedOption = tradeOptions.find(
+            opt => opt.value === trade.id
+          );
+          if (matchedOption && trade.name !== matchedOption.label) {
+            hasAnyChange = true;
+            roomChanged = true;
+            return { ...trade, name: matchedOption.label };
+          }
+          return trade;
+        });
+        return roomChanged ? { ...room, trades: updatedTrades } : room;
+      });
+      return hasAnyChange ? updatedRooms : prevRooms;
+    });
+  }, [tradeOptions, rooms.length, isLoadingFromStorage]);
+
   // Load initial data from localStorage on mount
   useEffect(() => {
     const storageKey = getStorageKey(undefined, templateId);
@@ -443,12 +519,15 @@ export default function EstimationBoxEdit({
             sanitizedRoomsData[0]?.trades[0]?.serviceList
           );
 
+          // Recalculate totals for loaded data before setting state
+          const calculatedRooms = updateAllCalculations(sanitizedRoomsData);
+
           // Batch all state updates together to prevent cascading re-renders
-          setRooms(sanitizedRoomsData);
+          setRooms(calculatedRooms);
           setExpandedRooms(sanitizedRoomsData.map(room => room.id));
           setExpandedTrades(
             sanitizedRoomsData.flatMap(room =>
-              room.trades.map((trade: any) => trade.uniqueKey)
+              room.trades.map((trade: Trade) => trade.uniqueKey)
             )
           );
 
@@ -684,28 +763,25 @@ export default function EstimationBoxEdit({
       setRooms(prev => {
         const updatedRooms = prev.map(room =>
           room.id === selectedRoomId
-            ? {
+            ? updateRoomCalculations({
                 ...room,
                 trades: room.trades.map(trade =>
                   trade.uniqueKey === selectedTradeUniqueKey
-                    ? {
+                    ? updateTradeCalculations({
                         ...trade,
                         serviceList: trade.serviceList.map(service =>
                           service.id === selectedService
                             ? updatedService
                             : service
                         ),
-                      }
+                      })
                     : trade
                 ),
-              }
+              })
             : room
         );
         return updatedRooms;
       });
-
-      // Clear selected service after update (like create mode)
-      setSelectedService(null);
     }
   };
 
@@ -1064,9 +1140,13 @@ export default function EstimationBoxEdit({
   const handleAddService = () => {
     // For now, just add a default service to the selected trade
     if (selectedTradeUniqueKey && selectedRoomId) {
+      const newUuid =
+        globalThis.crypto && 'randomUUID' in globalThis.crypto
+          ? globalThis.crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
       const newService = {
-        id: `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-        uuid: `service-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        id: newUuid,
+        uuid: newUuid,
         name: 'New Service',
         description: '',
         qty: 1,
@@ -1130,27 +1210,12 @@ export default function EstimationBoxEdit({
     }));
   }, [rooms]);
 
-  // const totalJobAmount = useMemo(() => {
-  console.log(
-    'EstimationBoxEdit: Calling calculateJobTotal with:',
-    transformedRooms
+  // Calculate project total to show at bottom like create mode
+  const projectTotals = useMemo(
+    () => calculateJobTotal(transformedRooms),
+    [transformedRooms]
   );
-  console.log(
-    'EstimationBoxEdit: First room first trade services:',
-    transformedRooms[0]?.trades[0]?.services
-  );
-  if (transformedRooms[0]?.trades[0]?.services?.[0]) {
-    console.log(
-      'EstimationBoxEdit: First service materials:',
-      transformedRooms[0].trades[0].services[0].materials
-    );
-    console.log(
-      'EstimationBoxEdit: First service finishes:',
-      transformedRooms[0].trades[0].services[0].finishes
-    );
-  }
-  //   return calculateJobTotal(transformedRooms);
-  // }, [transformedRooms]);
+  const projectTotal = projectTotals.trade_total;
 
   // Header handlers to support inline room title edit like create mode
   const handleEditClick = () => {
@@ -1306,7 +1371,6 @@ export default function EstimationBoxEdit({
                 onTradeNameChange={handleTradeNameChange}
                 onTradeReplacement={handleTradeReplacement}
                 onServiceSelect={handleServiceSelect}
-                _onAddService={handleAddService}
                 onServiceReorder={handleServiceReorder}
                 tradeOptions={tradeOptions}
                 onLocalStorageUpdate={handleLocalStorageUpdate}
@@ -1320,6 +1384,24 @@ export default function EstimationBoxEdit({
               />
             </div>
           )}
+        </div>
+        {/* Project Total (edit mode) */}
+        <div className='p-6 py-3 bg-[var(--card-background)] border-t border-[var(--border-dark)] shadow-sm'>
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center gap-4'>
+              <h3 className='text-base font-semibold text-[var(--text-dark)]'>
+                Project Total:
+              </h3>
+              <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
+              <span className='text-xl font-bold text-[var(--primary)]'>
+                {new Intl.NumberFormat('en-US', {
+                  style: 'currency',
+                  currency: 'USD',
+                }).format(projectTotal)}
+              </span>
+            </div>
+            <div className='flex gap-3'></div>
+          </div>
         </div>
       </div>
 
