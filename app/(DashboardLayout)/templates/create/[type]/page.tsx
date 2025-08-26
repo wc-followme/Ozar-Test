@@ -167,6 +167,7 @@ export default function CreateTemplatePage({
 
   const handleTemplateSelect = (template: TemplateData) => {
     // TODO: Implement logic to populate form with template data
+    void template;
   };
 
   // Get template type display name
