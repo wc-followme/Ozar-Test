@@ -14,9 +14,6 @@ const TableSkeleton: React.FC<TableSkeletonProps> = ({
   showRowNumbers = false,
   showActions = false,
 }) => {
-  const totalColumns = showRowNumbers ? columns + 1 : columns;
-  const finalColumns = showActions ? totalColumns + 1 : totalColumns;
-
   return (
     <div className='relative block w-full overflow-x-auto overflow-y-hidden overscroll-x-auto'>
       <div className='w-full'>
