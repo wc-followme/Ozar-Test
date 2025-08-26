@@ -1,11 +1,7 @@
 'use client';
-import { InfoCard } from '@/components/shared/cards/InfoCard';
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
+
 import SideSheet from '@/components/shared/common/SideSheet';
 import TradeForm from '@/components/shared/forms/TradeForm';
-import TradeCardSkeleton from '@/components/shared/skeleton/TradeCardSkeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -18,44 +14,55 @@ import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
+  extractApiSuccessMessage,
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
+import { useCallback, useEffect, useState } from 'react';
+import ArchiveList from './ArchiveList';
+import TradeList from './TradeList';
 import { TRADE_MESSAGES } from './trade-messages';
-import { Trade } from './trade-types';
-
-const menuOptions: {
-  label: string;
-  action: string;
-  icon: React.ElementType;
-  variant?: 'default' | 'destructive';
-}[] = [
-  {
-    label: TRADE_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-    variant: 'default',
-  },
-  {
-    label: TRADE_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-    variant: 'destructive',
-  },
-];
+import { MenuOption, Trade } from './trade-types';
 
 export default function TradeManagementPage() {
+  // Get menu options based on current tab
+  const getMenuOptions = (isArchive: boolean): MenuOption[] => {
+    if (isArchive) {
+      // Archive tab - only show retrieve option
+      return [
+        {
+          label: TRADE_MESSAGES.RETRIEVE_MENU,
+          action: ACTIONS.RETRIEVE,
+          icon: Refresh,
+          variant: 'default' as const,
+        },
+      ];
+    } else {
+      // Active trades tab - show edit and delete options
+      return [
+        {
+          label: TRADE_MESSAGES.EDIT_MENU,
+          action: ACTIONS.EDIT,
+          icon: Edit2,
+          variant: 'default' as const,
+        },
+        {
+          label: TRADE_MESSAGES.DELETE_MENU,
+          action: ACTIONS.DELETE,
+          icon: Trash,
+          variant: 'destructive' as const,
+        },
+      ];
+    }
+  };
   const [trades, setTrades] = useState<Trade[]>([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(PAGINATION.TRADES_LIMIT);
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
-  const [deleteTradeName, setDeleteTradeName] = useState<string>('');
-  const [modalOpen, setModalOpen] = useState(false);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [editingTradeUuid, setEditingTradeUuid] = useState<string | undefined>(
     undefined
@@ -71,15 +78,21 @@ export default function TradeManagementPage() {
 
   const fetchTrades = useCallback(
     async (targetPage = 1, append = false) => {
-      setLoading(true);
+      if (targetPage === 1) {
+        setLoading(true);
+      }
       try {
         // Get selected company ID using common function
         const companyId = getCompanyId();
+
+        // Determine status based on selected tab
+        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
 
         const response = await apiService.fetchTrades({
           page: targetPage,
           limit,
           name: search,
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
 
@@ -136,7 +149,7 @@ export default function TradeManagementPage() {
         setLoading(false);
       }
     },
-    [limit, search, handleAuthError, showErrorToast]
+    [limit, search, handleAuthError, showErrorToast, selectedTab]
   );
 
   // Handle company changes
@@ -148,6 +161,11 @@ export default function TradeManagementPage() {
   }, [fetchTrades]);
 
   useCompanyChange(refetchTrades);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchTrades(1, false);
+  }, [selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -167,48 +185,69 @@ export default function TradeManagementPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, fetchTrades, page]);
 
-  const handleMenuAction = (action: string, idx: number) => {
-    const trade = trades[idx];
-    if (!trade) return;
+  const handleEditTrade = (uuid: string) => {
+    setEditingTradeUuid(uuid);
+    setSideSheetOpen(true);
+  };
 
-    if (action === ACTIONS.EDIT) {
-      setEditingTradeUuid(trade.uuid);
-      setSideSheetOpen(true);
-    }
-    if (action === ACTIONS.DELETE) {
-      setDeleteIdx(idx);
-      setDeleteTradeName(trade.name || '');
-      setModalOpen(true);
+  // Archive handler (delete trade)
+  const handleArchiveTrade = async (uuid: string) => {
+    try {
+      const trade = trades.find(t => t.uuid === uuid);
+
+      // Prevent archiving of default trades
+      if (trade?.is_default) {
+        showErrorToast(TRADE_MESSAGES.DEFAULT_TRADE_DELETE_ERROR);
+        return;
+      }
+
+      const response = await apiService.deleteTrade(uuid);
+      showSuccessToast(
+        extractApiSuccessMessage(response, TRADE_MESSAGES.DELETE_SUCCESS)
+      );
+      fetchTrades(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(
+        err,
+        TRADE_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
-  const handleDelete = async () => {
-    if (deleteIdx !== null) {
-      const trade = trades[deleteIdx];
-      if (trade) {
-        try {
-          const response = await apiService.deleteTrade(trade.uuid);
-          const { message } = response;
-          showSuccessToast(message || TRADE_MESSAGES.DELETE_SUCCESS);
-          // Remove the trade from local state instead of fetching again
-          setTrades(prevTrades =>
-            prevTrades.filter((_, index) => index !== deleteIdx)
-          );
-        } catch (err: unknown) {
-          // Handle auth errors first (will redirect to login if 401)
-          if (handleAuthError(err)) {
-            return; // Don't show toast if it's an auth error
-          }
 
-          const message = extractApiErrorMessage(
-            err,
-            TRADE_MESSAGES.DELETE_ERROR
-          );
-          showErrorToast(message);
-        }
+  // Handler for retrieving a trade
+  const handleRetrieveTrade = async (uuid: string) => {
+    try {
+  
+      const response = await apiService.updateTradeStatus(uuid, 'ACTIVE');
+      
+      showSuccessToast(
+        extractApiSuccessMessage(response, TRADE_MESSAGES.RETRIEVE_SUCCESS)
+      );
+      
+      // Remove the retrieved trade from the current list immediately
+      setTrades(prev => prev.filter(t => t.uuid !== uuid));
+      
+      // Refresh list to reflect latest server state based on current tab
+      await fetchTrades(1, false);
+    } catch (err: unknown) {
+      console.error('Retrieve error:', err); // Debug log
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
-      setDeleteIdx(null);
-      setModalOpen(false);
+
+      const message = extractApiErrorMessage(
+        err,
+        TRADE_MESSAGES.RETRIEVE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -349,71 +388,33 @@ export default function TradeManagementPage() {
 
           {/* Trade Tab Content */}
           <TabsContent value='trade' className='mt-6'>
-            {/* Trade Grid */}
-            <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {trades.length === 0 && loading ? (
-                // Initial loading state with skeleton cards
-                Array.from({ length: 10 }).map((_, idx) => (
-                  <TradeCardSkeleton key={idx} />
-                ))
-              ) : trades.length === 0 && !loading ? (
-                <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
-                  <NoDataFound
-                    buttonText={TRADE_MESSAGES.ADD_TRADE_BUTTON}
-                    onButtonClick={() => setSideSheetOpen(true)}
-                    description={TRADE_MESSAGES.NO_TRADES_FOUND_DESCRIPTION}
-                    showButton={canEdit ?? false}
-                  />
-                </div>
-              ) : (
-                trades.map((trade, idx) => {
-                  const { uuid, name, categories } = trade;
-                  return (
-                    <InfoCard
-                      key={uuid}
-                      tradeName={name || ''}
-                      category={`${categories?.length || 0} Category${(categories?.length || 0) !== 1 ? 's' : ''}`}
-                      menuOptions={menuOptions}
-                      onMenuAction={action => handleMenuAction(action, idx)}
-                      module='trades'
-                    />
-                  );
-                })
-              )}
-            </div>
-
-            {/* Loading more trades */}
-            {loading && trades.length > 0 && (
-              <div className='w-full text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <TradeList
+              trades={trades}
+              loading={loading}
+              noDataDescription={TRADE_MESSAGES.NO_TRADES_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false)}
+              onDelete={handleArchiveTrade}
+              onEdit={handleEditTrade}
+              onCreateTrade={() => setSideSheetOpen(true)}
+              canEdit={canEdit ?? false}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Trades'
-                description='No archived trades found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              trades={trades}
+              loading={loading}
+              noDataTitle={TRADE_MESSAGES.ARCHIVED_TRADES_TITLE}
+              noDataDescription={TRADE_MESSAGES.NO_ARCHIVED_TRADES_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveTrade}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      <ConfirmDeleteModal
-        open={modalOpen}
-        title={TRADE_MESSAGES.DELETE_CONFIRM_TITLE}
-        subtitle={TRADE_MESSAGES.DELETE_CONFIRM_SUBTITLE.replace(
-          '{name}',
-          deleteTradeName || ''
-        )}
-        onCancel={() => setModalOpen(false)}
-        onDelete={handleDelete}
-      />
+
       <SideSheet
         title={
           editingTradeUuid
