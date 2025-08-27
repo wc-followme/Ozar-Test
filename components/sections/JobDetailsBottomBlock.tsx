@@ -1,6 +1,7 @@
 'use client';
 
 import ComingSoon from '@/components/shared/common/ComingSoon';
+import TradeComponent from '@/components/shared/common/TradeComponent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ReactNode, useState } from 'react';
 import EstimateComponent from '../Templates/EstimateComponent';
@@ -127,7 +128,7 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
             <EstimateComponent onAddRoom={handleAddRoom} />
           </TabsContent>
           <TabsContent value='trade' className='m-0'>
-            <ComingSoon />
+            <TradeComponent />
           </TabsContent>
           <TabsContent value='finishes' className='m-0'>
             <ComingSoon />

@@ -4,14 +4,16 @@ import { MoveBoxIcon } from '@/components/icons/MoveBoxIcon';
 import JobDetailsBottomBlock from '@/components/sections/JobDetailsBottomBlock';
 import JobDetailsTopBlock from '@/components/sections/JobDetailsTopBlock';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { NoteListCard } from '@/components/shared/cards/NoteListCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import Dropdown from '@/components/shared/common/Dropdown';
 import SideSheet from '@/components/shared/common/SideSheet';
 import UserDropdownField from '@/components/shared/common/UserDropdownField';
-import JobDetailsSkeleton from '@/components/shared/skeleton/JobDetailsSkeleton';
-import { NoteListCard } from '@/components/shared/cards/NoteListCard';
+import { AddEmployeeToJobForm } from '@/components/shared/forms/AddEmployeeToJobForm';
+import { EditJobDetailsForm } from '@/components/shared/forms/EditJobDetailsForm';
 import { NoteListForm } from '@/components/shared/forms/NoteListForm';
+import JobDetailsSkeleton from '@/components/shared/skeleton/JobDetailsSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { CommonStatus, JobStatus, ROUTES } from '@/constants/common';
@@ -24,7 +26,7 @@ import {
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { ClipboardClose, Setting2, Stickynote, UserAdd } from 'iconsax-react';
+import { ClipboardClose, Note, Setting2, UserAdd } from 'iconsax-react';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JOB_MESSAGES } from '../../job-messages';
@@ -55,6 +57,10 @@ export default function JobDetailsPage() {
   const [isNoteSheetOpen, setIsNoteSheetOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+  const [isAddEmployeeSheetOpen, setIsAddEmployeeSheetOpen] = useState(false);
+  const [isSubmittingEmployee, setIsSubmittingEmployee] = useState(false);
+  const [isEditJobSheetOpen, setIsEditJobSheetOpen] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const { showErrorToast, showSuccessToast } = useToast();
   const { handleAuthError } = useAuth();
 
@@ -169,6 +175,46 @@ export default function JobDetailsPage() {
     { id: '6', name: 'Lisa Davis', image: '/images/profile.jpg' },
   ];
 
+  // Mock available employees for the AddEmployeeToJobForm
+  const availableEmployees = [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john.doe@company.com',
+      role: 'Developer',
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane.smith@company.com',
+      role: 'Designer',
+    },
+    {
+      id: '3',
+      name: 'Mike Johnson',
+      email: 'mike.johnson@company.com',
+      role: 'QA Engineer',
+    },
+    {
+      id: '4',
+      name: 'Sarah Wilson',
+      email: 'sarah.wilson@company.com',
+      role: 'Project Manager',
+    },
+    {
+      id: '5',
+      name: 'David Brown',
+      email: 'david.brown@company.com',
+      role: 'DevOps Engineer',
+    },
+    {
+      id: '6',
+      name: 'Lisa Davis',
+      email: 'lisa.davis@company.com',
+      role: 'Business Analyst',
+    },
+  ];
+
   // Mock menu options for user dropdown
   const userMenuOptions = [
     { label: 'View Profile', action: 'view_profile' },
@@ -194,7 +240,9 @@ export default function JobDetailsPage() {
   };
 
   const handleUpdateNote = (updatedNote: Note) => {
-    setNotes(prev => prev.map(note => note.id === updatedNote.id ? updatedNote : note));
+    setNotes(prev =>
+      prev.map(note => (note.id === updatedNote.id ? updatedNote : note))
+    );
     setEditingNote(null);
     setIsNoteSheetOpen(false);
     showSuccessToast('Note updated successfully');
@@ -214,11 +262,59 @@ export default function JobDetailsPage() {
     setEditingNote(null);
   };
 
-  const handleNoteSubmit = (noteData: { id: string; content: string; timestamp: Date }) => {
+  const handleNoteSubmit = (noteData: {
+    id: string;
+    content: string;
+    timestamp: Date;
+  }) => {
     if (editingNote) {
       handleUpdateNote({ ...noteData, id: editingNote.id });
     } else {
       handleAddNote(noteData);
+    }
+  };
+
+  const handleAddEmployee = async (employeeData: {
+    projectName: string;
+    room: string;
+    trade: string;
+    service: string;
+    startDate: string;
+    dueDate: string;
+    employeeIds: string[];
+  }) => {
+    try {
+      setIsSubmittingEmployee(true);
+      // Here you would typically make an API call to add the employee to the job
+      console.log('Adding employee to job:', employeeData);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showSuccessToast('Employee added to job successfully');
+      setIsAddEmployeeSheetOpen(false);
+    } catch (error) {
+      showErrorToast('Failed to add employee to job');
+    } finally {
+      setIsSubmittingEmployee(false);
+    }
+  };
+
+  const handleEditJob = async (jobData: any) => {
+    try {
+      setIsSubmittingEdit(true);
+      // Here you would typically make an API call to update the job
+      console.log('Updating job:', jobData);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showSuccessToast('Job updated successfully');
+      setIsEditJobSheetOpen(false);
+    } catch (error) {
+      showErrorToast('Failed to update job');
+    } finally {
+      setIsSubmittingEdit(false);
     }
   };
 
@@ -282,7 +378,7 @@ export default function JobDetailsPage() {
       {
         label: JOB_MESSAGES.ADD_EMPLOYEE_MENU,
         icon: UserAdd,
-        action: () => {},
+        action: () => setIsAddEmployeeSheetOpen(true),
         className:
           'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
       },
@@ -345,7 +441,7 @@ export default function JobDetailsPage() {
               className='bg-[#EBB40233] hover:bg-yellow-200 border-[#EBB402] text-[var(--text-dark)] px-4 py-2 rounded-full flex items-center gap-2'
               onClick={() => setIsNoteSheetOpen(true)}
             >
-              <Stickynote className='w-4 h-4' color='var(--text-dark)' />
+              <Note className='!w-5 !h-5' color='var(--text-dark)' />
               <span className='hidden sm:inline'>Notes</span>
             </Button>
 
@@ -415,8 +511,7 @@ export default function JobDetailsPage() {
         archivedStatusMessage={JOB_MESSAGES.ARCHIVED_STATUS}
         closedStatusMessage={JOB_MESSAGES.CLOSED_STATUS}
         onEditClick={() => {
-          // Handle edit functionality
-          console.log('Edit clicked');
+          setIsEditJobSheetOpen(true);
         }}
         onOtherQuestionsClick={() => {
           // Handle other questions functionality
@@ -454,18 +549,9 @@ export default function JobDetailsPage() {
       >
         <div className='space-y-6'>
           {/* Note Form */}
-          <NoteListForm
-            onSave={handleNoteSubmit}
-            onCancel={handleNoteSheetClose}
-            isSubmitting={isSubmittingNote}
-          />
-
           {/* Notes List */}
           {notes.length > 0 && (
             <div className='space-y-4'>
-              <h4 className='text-lg font-semibold text-[var(--text-dark)] border-t pt-4'>
-                Notes ({notes.length})
-              </h4>
               <div className='space-y-3 max-h-96 overflow-y-auto'>
                 {notes.map(note => (
                   <NoteListCard
@@ -478,7 +564,55 @@ export default function JobDetailsPage() {
               </div>
             </div>
           )}
+          <NoteListForm
+            onSave={handleNoteSubmit}
+            onCancel={handleNoteSheetClose}
+            isSubmitting={isSubmittingNote}
+          />
         </div>
+      </SideSheet>
+
+      {/* Add Employee Sidesheet */}
+      <SideSheet
+        open={isAddEmployeeSheetOpen}
+        onOpenChange={setIsAddEmployeeSheetOpen}
+        title='Add Employee to Job'
+        size='600px'
+      >
+        <AddEmployeeToJobForm
+          onSave={handleAddEmployee}
+          onCancel={() => setIsAddEmployeeSheetOpen(false)}
+          isSubmitting={isSubmittingEmployee}
+          availableEmployees={availableEmployees}
+        />
+      </SideSheet>
+
+      {/* Edit Job Details Sidesheet */}
+      <SideSheet
+        open={isEditJobSheetOpen}
+        onOpenChange={setIsEditJobSheetOpen}
+        title='Edit Job Details'
+        size='600px'
+      >
+        <EditJobDetailsForm
+          onSave={handleEditJob}
+          onCancel={() => setIsEditJobSheetOpen(false)}
+          isSubmitting={isSubmittingEdit}
+          defaultValues={{
+            generalInfo: {
+              fullName: job?.client_name || '',
+              email: job?.client_email || '',
+              phone: job?.client_phone_number || '',
+              address: job?.client_address || '',
+            },
+            propertyInfo: {},
+            projectInfo: {
+              projectName: job?.project_name || '',
+            },
+            category: {},
+            company_id: job?.company_id || '',
+          }}
+        />
       </SideSheet>
     </div>
   );

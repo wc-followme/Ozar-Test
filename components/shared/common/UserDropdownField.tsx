@@ -1,7 +1,8 @@
 import Dropdown from '@/components/shared/common/Dropdown';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowDown2 } from 'iconsax-react';
+import { ArrowDown2, Trash } from 'iconsax-react';
 import React from 'react';
+import { Avatar as CustomAvatar } from './Avatar';
 
 interface User {
   id: string;
@@ -35,6 +36,34 @@ const UserDropdownField: React.FC<UserDropdownFieldProps> = ({
 }) => {
   const visibleUsers = users.slice(0, maxVisible);
   const remainingCount = users.length - maxVisible;
+
+  // Create dropdown menu options with user information
+  const dropdownMenuOptions = users.map(user => ({
+    label: '', // Empty label since we're showing name in the icon
+    action: `user_${user.id}`,
+    icon: () => (
+      <div className='flex items-center justify-between w-full gap-2'>
+        <div className='flex items-center gap-3'>
+          <CustomAvatar
+            name={user.name}
+            {...(user.image && { image: user.image })}
+            height={32}
+            width={32}
+            className='flex-shrink-0 rounded-full'
+          />
+          <span className='text-base font-medium text-[var(--text-dark)]'>
+            {user.name}
+          </span>
+        </div>
+        <Trash
+          size={24}
+          className='text-[var(--text-secondary)] ml-auto !h-5 !w-5'
+          color='var(--text-dark)'
+          variant='Outline'
+        />
+      </div>
+    ),
+  }));
 
   const triggerContent = (
     <button
@@ -73,17 +102,19 @@ const UserDropdownField: React.FC<UserDropdownFieldProps> = ({
     </button>
   );
 
-  // If no menu options provided, just render the trigger content without dropdown
-  if (!menuOptions || menuOptions.length === 0) {
-    return triggerContent;
-  }
-
   return (
     <Dropdown
       align={align}
       trigger={triggerContent}
-      menuOptions={menuOptions}
-      onAction={action => onAction && onAction(action)}
+      menuOptions={dropdownMenuOptions}
+      onAction={action => {
+        if (action.startsWith('user_')) {
+          const userId = action.replace('user_', '');
+          onAction && onAction(userId);
+        } else {
+          onAction && onAction(action);
+        }
+      }}
     />
   );
 };

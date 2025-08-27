@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
-import { Stickynote } from 'iconsax-react';
 
 interface NoteListFormProps {
   onSave: (note: { id: string; content: string; timestamp: Date }) => void;
@@ -39,44 +38,37 @@ export const NoteListForm: React.FC<NoteListFormProps> = ({
   return (
     <div className='space-y-6'>
       <div className='space-y-4'>
-        <div className='flex items-center gap-3'>
-          <Stickynote className='w-6 h-6 text-[#EBB402]' />
-          <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
-            Add Note
-          </h3>
-        </div>
-        
         <form onSubmit={handleSubmit} className='space-y-4'>
           <div className='space-y-2'>
-            <label htmlFor='note-content' className='text-sm font-medium text-[var(--text-secondary)]'>
+            <label htmlFor='note-content' className='field-label'>
               Note Content
             </label>
             <Textarea
               id='note-content'
               placeholder='Enter your note here...'
               value={noteContent}
-              onChange={(e) => setNoteContent(e.target.value)}
-              className='min-h-[120px] resize-none border-[var(--border-dark)] focus:border-[var(--primary)]'
+              onChange={e => setNoteContent(e.target.value)}
+              className='min-h-[120px] resize-none input-field'
               required
             />
           </div>
 
-          <div className='flex items-center gap-3 pt-4'>
-            <Button
-              type='submit'
-              className='btn-primary flex-1'
-              disabled={!noteContent.trim() || isSubmitting}
-            >
-              {isSubmitting ? 'Adding Note...' : 'Add Note'}
-            </Button>
+          <div className='pt-4 flex items-center gap-3'>
             <Button
               type='button'
               variant='outline'
-              className='btn-secondary flex-1'
+              className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
               onClick={handleCancel}
               disabled={isSubmitting}
             >
               Cancel
+            </Button>
+            <Button
+              type='submit'
+              className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+              disabled={!noteContent.trim() || isSubmitting}
+            >
+              {isSubmitting ? 'Adding Note...' : 'Add Note'}
             </Button>
           </div>
         </form>
