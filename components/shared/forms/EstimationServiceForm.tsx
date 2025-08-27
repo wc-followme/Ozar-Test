@@ -342,6 +342,16 @@ export default function EstimationServiceForm({
                       }
                     }
                   }}
+                  onFocus={e => {
+                    if (
+                      e.currentTarget.value === '0' ||
+                      e.currentTarget.value === '0.0' ||
+                      e.currentTarget.value === '0.00'
+                    ) {
+                      setRateInput('');
+                      e.currentTarget.value = '';
+                    }
+                  }}
                   onBlur={() => {
                     const normalized =
                       rateInput === '' || rateInput === '.' ? '0' : rateInput;

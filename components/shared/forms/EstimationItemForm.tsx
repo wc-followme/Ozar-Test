@@ -352,6 +352,12 @@ export default function EstimationItemForm({
                   }
                 }
               }}
+              onFocus={e => {
+                const v = e.currentTarget.value.trim();
+                if (v === '0' || v === '0.0' || v === '0.00') {
+                  e.currentTarget.value = '';
+                }
+              }}
               onBlur={e => {
                 const val = e.currentTarget.value;
                 const fallback = val === '' || val === '.' ? '0' : val;
@@ -408,6 +414,12 @@ export default function EstimationItemForm({
                   }
                 }
               }}
+              onFocus={e => {
+                const v = e.currentTarget.value.trim();
+                if (v === '0' || v === '0.0' || v === '0.00') {
+                  e.currentTarget.value = '';
+                }
+              }}
               onBlur={e => {
                 const val = e.currentTarget.value;
                 const fallback = val === '' || val === '.' ? '0' : val;
@@ -425,7 +437,7 @@ export default function EstimationItemForm({
           className={`ml-4 space-y-1 pt-7 whitespace-nowrap ${useFixedWidths ? 'min-w-[150px] flex-shrink-0' : ''}`}
         >
           <Label className='field-label font-medium text-[var(--text-dark)] text-xs'>
-            Line Total
+            Material Cost
           </Label>
           <p className='text-lg font-semibold text-[var(--primary)]'>
             {formatCurrency(calculateLineTotal(item.rate, item.qty))}
