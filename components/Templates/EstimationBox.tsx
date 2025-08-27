@@ -81,6 +81,7 @@ interface Trade {
   endDate?: Date;
   markup?: number;
   markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
+  markup_trade_only?: number;
 }
 
 interface Room {
@@ -332,7 +333,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       laborCost: tradeTotals.labor_cost,
       materialCost: tradeTotals.material_cost,
       tradeTotal: tradeTotals.trade_total,
-      // Don't store the calculated markup value back - keep the original markup percentage
+      markup: tradeTotals.markup,
+      markup_trade_only: tradeTotals.markup_trade_only,
     };
   };
 

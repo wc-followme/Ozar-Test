@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { calculateLineTotal } from '@/lib/estimation-calculations';
+import { calculateMaterialCost } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { EyeSlash, Trash } from 'iconsax-react';
 import { useEffect, useState } from 'react';
@@ -440,7 +440,7 @@ export default function EstimationItemForm({
             Material Cost
           </Label>
           <p className='text-lg font-semibold text-[var(--primary)]'>
-            {formatCurrency(calculateLineTotal(item.rate, item.qty))}
+            {formatCurrency(calculateMaterialCost(item))}
           </p>
         </div>
       </div>
