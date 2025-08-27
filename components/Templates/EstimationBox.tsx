@@ -625,11 +625,32 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   };
 
-  const handleServiceSelect = (serviceId: string) => {
-    // Find which room and trade contains this service across ALL rooms
+  const handleServiceSelect = (serviceId: string, tradeUniqueKey?: string) => {
+    // If tradeUniqueKey provided, scope search to that trade
+    if (tradeUniqueKey) {
+      for (const room of rooms) {
+        const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
+        if (trade && trade.serviceList.some(s => s.id === serviceId)) {
+          setSelectedRoomId(room.id);
+          setSelectedTrade(trade.id);
+          setSelectedTradeUniqueKey(trade.uniqueKey);
+          if (!expandedRooms.includes(room.id)) {
+            setExpandedRooms(prev => [...prev, room.id]);
+          }
+          if (!expandedTrades.includes(trade.uniqueKey)) {
+            setExpandedTrades(prev => [...prev, trade.uniqueKey]);
+          }
+          setSelectedService(serviceId);
+          setShowServiceForm(true);
+          setShowAddService(true);
+          return;
+        }
+      }
+    }
+
+    // Fallback: find the first occurrence across all rooms
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
-
     for (const room of rooms) {
       const trade = room.trades.find(tr =>
         tr.serviceList.some(service => service.id === serviceId)
@@ -640,24 +661,16 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         break;
       }
     }
-
     if (foundRoom && foundTrade) {
-      // Set the room that contains this service
       setSelectedRoomId(foundRoom.id);
-
-      // Set the trade that contains this service
       setSelectedTrade(foundTrade.id);
       setSelectedTradeUniqueKey(foundTrade.uniqueKey);
-
-      // Ensure the room and trade are expanded
       if (!expandedRooms.includes(foundRoom.id)) {
         setExpandedRooms(prev => [...prev, foundRoom.id]);
       }
       if (!expandedTrades.includes(foundTrade.uniqueKey)) {
         setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
-
-      // Set service and form states
       setSelectedService(serviceId);
       setShowServiceForm(true);
       setShowAddService(true);
@@ -1486,7 +1499,13 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         handleTradeAccordionChange={handleTradeAccordionChange}
         handleTradeSelect={handleTradeSelect}
         selectedService={selectedService}
-        handleServiceSelect={handleServiceSelect}
+        selectedTradeUniqueKey={selectedTradeUniqueKey}
+        handleServiceSelect={(serviceId, tradeKey) => {
+          if (tradeKey) {
+            setSelectedTradeUniqueKey(tradeKey);
+          }
+          handleServiceSelect(serviceId, tradeKey);
+        }}
         formatCurrency={formatCurrency}
         selectedRoomId={selectedRoomId}
         toggleMainAccordion={toggleMainAccordion}
