@@ -333,12 +333,33 @@ export default function EstimationItemForm({
             </div>
             <Input
               type='text'
-              value={item.rate.toString()}
+              inputMode='decimal'
+              defaultValue={item.rate.toString()}
               onChange={e => {
-                const cleaned = e.target.value.replace(/[^0-9.]/g, '');
-                const numericValue =
-                  cleaned === '' ? 0 : parseFloat(cleaned) || 0;
-                handleInputChange('rate', numericValue);
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, '');
+                const parts = cleaned.split('.');
+                const next =
+                  parts.length > 2
+                    ? `${parts[0]}.${parts.slice(1).join('')}`
+                    : cleaned;
+                (e.target as HTMLInputElement).value = next;
+
+                if (next !== '' && !next.endsWith('.')) {
+                  const numeric = parseFloat(next);
+                  if (!Number.isNaN(numeric)) {
+                    handleInputChange('rate', numeric);
+                  }
+                }
+              }}
+              onBlur={e => {
+                const val = e.currentTarget.value;
+                const fallback = val === '' || val === '.' ? '0' : val;
+                e.currentTarget.value = fallback;
+                const numeric = parseFloat(fallback);
+                if (!Number.isNaN(numeric)) {
+                  handleInputChange('rate', numeric);
+                }
               }}
               placeholder='0.00'
               className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
@@ -369,11 +390,32 @@ export default function EstimationItemForm({
             </div>
             <Input
               type='text'
-              value={item.markup.toString()}
+              inputMode='decimal'
+              defaultValue={item.markup.toString()}
               onChange={e => {
-                const numericValue =
-                  parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                handleInputChange('markup', numericValue);
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, '');
+                const parts = cleaned.split('.');
+                const next =
+                  parts.length > 2
+                    ? `${parts[0]}.${parts.slice(1).join('')}`
+                    : cleaned;
+                (e.target as HTMLInputElement).value = next;
+                if (next !== '' && !next.endsWith('.')) {
+                  const numeric = parseFloat(next);
+                  if (!Number.isNaN(numeric)) {
+                    handleInputChange('markup', numeric);
+                  }
+                }
+              }}
+              onBlur={e => {
+                const val = e.currentTarget.value;
+                const fallback = val === '' || val === '.' ? '0' : val;
+                e.currentTarget.value = fallback;
+                const numeric = parseFloat(fallback);
+                if (!Number.isNaN(numeric)) {
+                  handleInputChange('markup', numeric);
+                }
               }}
               className='flex-1 rounded-l-none text-right !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
             />

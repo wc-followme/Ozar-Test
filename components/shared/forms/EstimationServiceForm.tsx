@@ -105,6 +105,13 @@ export default function EstimationServiceForm({
 
   const currentValues = calculateCurrentServiceValues();
 
+  // Maintain a local string for the rate so users can type transient values like "12." without it snapping to 12
+  const [rateInput, setRateInput] = useState<string>(service.rate.toString());
+
+  useEffect(() => {
+    setRateInput(service.rate.toString());
+  }, [service.rate]);
+
   // Fetch services from API based on trade UUID and company UUID
   const fetchServices = async (
     tradeUuid: string | null,
@@ -315,16 +322,33 @@ export default function EstimationServiceForm({
                 </div>
                 <Input
                   type='text'
-                  value={service.rate.toString()}
+                  inputMode='decimal'
+                  value={rateInput}
                   onChange={e => {
-                    const cleaned = e.target.value.replace(/[^0-9.]/g, '');
-                    const numericValue =
-                      cleaned === '' ? 0 : parseFloat(cleaned) || 0;
-                    if (onServiceUpdate) {
-                      onServiceUpdate({
-                        ...service,
-                        rate: numericValue,
-                      });
+                    const raw = e.target.value;
+                    const cleaned = raw.replace(/[^0-9.]/g, '');
+                    const parts = cleaned.split('.');
+                    const next =
+                      parts.length > 2
+                        ? `${parts[0]}.${parts.slice(1).join('')}`
+                        : cleaned;
+                    setRateInput(next);
+
+                    // Commit numeric value only when user isn't ending with a decimal point
+                    if (next !== '' && !next.endsWith('.')) {
+                      const numeric = parseFloat(next);
+                      if (!Number.isNaN(numeric) && onServiceUpdate) {
+                        onServiceUpdate({ ...service, rate: numeric });
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    const normalized =
+                      rateInput === '' || rateInput === '.' ? '0' : rateInput;
+                    setRateInput(normalized);
+                    const numeric = parseFloat(normalized);
+                    if (!Number.isNaN(numeric) && onServiceUpdate) {
+                      onServiceUpdate({ ...service, rate: numeric });
                     }
                   }}
                   placeholder='0.00'
