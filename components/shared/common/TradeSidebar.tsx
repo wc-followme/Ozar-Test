@@ -24,6 +24,7 @@ interface TradeSidebarProps {
   onCheckedItemsChange?: (checkedItems: Set<string>) => void;
   onAddToOutSourceTrades?: () => void;
   triggerAddToOutSource?: boolean;
+  onSubContractorSelect?: (subContractor: any) => void;
 }
 
 const TradeSidebar = forwardRef<
@@ -43,6 +44,7 @@ const TradeSidebar = forwardRef<
       onCheckedItemsChange,
       onAddToOutSourceTrades,
       triggerAddToOutSource = false,
+      onSubContractorSelect,
     },
     ref
   ) => {
@@ -300,7 +302,7 @@ const TradeSidebar = forwardRef<
         <div className='h-[calc(100vh_-_120px)] overflow-y-auto px-4 py-2'>
           {/* Title */}
           <div className='mb-4 px-2'>
-            <h2 className='text-lg font-semibold text-[var(--text-dark)]'>
+            <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
               My Trades
             </h2>
           </div>
@@ -553,16 +555,10 @@ const TradeSidebar = forwardRef<
               <div className='border-t border-[var(--border-dark)] my-4'></div>
 
               {/* Out Source Trades Title */}
-              <div className='flex items-center justify-between mb-4 px-2'>
-                <h2 className='text-lg font-semibold text-[var(--text-dark)]'>
+              <div className='mb-4 px-2'>
+                <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
                   Out Source Trades
                 </h2>
-                <button
-                  onClick={clearOutSourceTrades}
-                  className='text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors'
-                >
-                  Clear All
-                </button>
               </div>
 
               {/* Out Source Trades Accordion */}
@@ -764,6 +760,295 @@ const TradeSidebar = forwardRef<
                     </AccordionItem>
                   ));
                 })()}
+              </Accordion>
+            </>
+          )}
+
+          {/* Received Trades Section */}
+          {outSourceTrades.length > 0 && (
+            <>
+              {/* Divider */}
+              <div className='border-t border-[var(--border-dark)] my-4'></div>
+
+              {/* Received Trades Title */}
+              <div className='mb-4 px-2'>
+                <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
+                  Received Trades
+                </h2>
+              </div>
+
+              {/* Received Trades Accordion - Dynamic from outSourceTrades */}
+              <Accordion type='multiple' className='w-full'>
+                {/* Sub Contractor 1 - Using actual selected data */}
+                <AccordionItem
+                  key='sub_contractor_1'
+                  value='sub_contractor_1'
+                  className='border-none'
+                >
+                  <AccordionPrimitive.Header className='flex'>
+                    <AccordionPrimitive.Trigger
+                      className='flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'
+                      onClick={() => {
+                        if (onSubContractorSelect) {
+                          // Create sub contractor data from outSourceTrades
+                          const subContractorData = {
+                            id: 'sub_contractor_1',
+                            name: 'Sub Contractor 1',
+                            companyName: 'Company Name',
+                            total: outSourceTrades.reduce(
+                              (sum, item) => sum + item.value,
+                              0
+                            ),
+                            rooms: (() => {
+                              // Group items by room from outSourceTrades
+                              const roomsMap = new Map<string, any>();
+
+                              outSourceTrades.forEach(item => {
+                                if (item.type === 'room') {
+                                  if (!roomsMap.has(item.id)) {
+                                    roomsMap.set(item.id, {
+                                      ...item,
+                                      trades: new Map(),
+                                    });
+                                  }
+                                } else if (item.type === 'trade') {
+                                  const roomId = item.parentId;
+                                  if (!roomsMap.has(roomId)) {
+                                    roomsMap.set(roomId, {
+                                      id: roomId,
+                                      name: item.parentName,
+                                      type: 'room',
+                                      value: 0,
+                                      parentId: null,
+                                      trades: new Map(),
+                                    });
+                                  }
+                                  if (
+                                    !roomsMap.get(roomId)!.trades.has(item.id)
+                                  ) {
+                                    roomsMap.get(roomId)!.trades.set(item.id, {
+                                      ...item,
+                                      services: [],
+                                    });
+                                  }
+                                } else if (item.type === 'service') {
+                                  const roomId = item.grandParentId;
+                                  const tradeId = item.parentId;
+                                  if (!roomsMap.has(roomId)) {
+                                    roomsMap.set(roomId, {
+                                      id: roomId,
+                                      name: item.grandParentName,
+                                      type: 'room',
+                                      value: 0,
+                                      parentId: null,
+                                      trades: new Map(),
+                                    });
+                                  }
+                                  if (
+                                    !roomsMap.get(roomId)!.trades.has(tradeId)
+                                  ) {
+                                    roomsMap.get(roomId)!.trades.set(tradeId, {
+                                      id: tradeId,
+                                      name: item.parentName,
+                                      type: 'trade',
+                                      value: 0,
+                                      parentId: roomId,
+                                      parentName: item.grandParentName,
+                                      services: [],
+                                    });
+                                  }
+                                  roomsMap
+                                    .get(roomId)!
+                                    .trades.get(tradeId)!
+                                    .services.push(item);
+                                }
+                              });
+
+                              return Array.from(roomsMap.values()).map(
+                                room => ({
+                                  ...room,
+                                  trades: Array.from(room.trades.values()),
+                                })
+                              );
+                            })(),
+                          };
+                          onSubContractorSelect(subContractorData);
+                        }
+                      }}
+                    >
+                      <div className='flex items-center flex-1 min-w-0'>
+                        <IconChevronDown
+                          size={16}
+                          className='mr-2 transition-transform duration-200 text-[var(--text-dark)]'
+                          strokeWidth={2}
+                        />
+                        <span className='text-sm font-semibold text-[var(--text-dark)] truncate'>
+                          Sub Contractor 1
+                        </span>
+                      </div>
+                      <div className='text-xs font-semibold text-[var(--text-dark)]'>
+                        {(() => {
+                          // Calculate total from selected items
+                          const total = outSourceTrades.reduce(
+                            (sum, item) => sum + item.value,
+                            0
+                          );
+                          return formatCurrency(total);
+                        })()}
+                      </div>
+                    </AccordionPrimitive.Trigger>
+                  </AccordionPrimitive.Header>
+                  <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
+                    {/* Dynamic Room Accordions from selected data */}
+                    <div className='ml-4 mt-1'>
+                      {(() => {
+                        // Group items by room from outSourceTrades
+                        const roomsMap = new Map<string, any>();
+
+                        outSourceTrades.forEach(item => {
+                          if (item.type === 'room') {
+                            if (!roomsMap.has(item.id)) {
+                              roomsMap.set(item.id, {
+                                ...item,
+                                trades: new Map(),
+                              });
+                            }
+                          } else if (item.type === 'trade') {
+                            const roomId = item.parentId;
+                            if (!roomsMap.has(roomId)) {
+                              roomsMap.set(roomId, {
+                                id: roomId,
+                                name: item.parentName,
+                                type: 'room',
+                                value: 0,
+                                parentId: null,
+                                trades: new Map(),
+                              });
+                            }
+                            if (!roomsMap.get(roomId)!.trades.has(item.id)) {
+                              roomsMap.get(roomId)!.trades.set(item.id, {
+                                ...item,
+                                services: [],
+                              });
+                            }
+                          } else if (item.type === 'service') {
+                            const roomId = item.grandParentId;
+                            const tradeId = item.parentId;
+                            if (!roomsMap.has(roomId)) {
+                              roomsMap.set(roomId, {
+                                id: roomId,
+                                name: item.grandParentName,
+                                type: 'room',
+                                value: 0,
+                                parentId: null,
+                                trades: new Map(),
+                              });
+                            }
+                            if (!roomsMap.get(roomId)!.trades.has(tradeId)) {
+                              roomsMap.get(roomId)!.trades.set(tradeId, {
+                                id: tradeId,
+                                name: item.parentName,
+                                type: 'trade',
+                                value: 0,
+                                parentId: roomId,
+                                parentName: item.grandParentName,
+                                services: [],
+                              });
+                            }
+                            roomsMap
+                              .get(roomId)!
+                              .trades.get(tradeId)!
+                              .services.push(item);
+                          }
+                        });
+
+                        return Array.from(roomsMap.values()).map(room => (
+                          <AccordionItem
+                            key={`received_${room.id}`}
+                            value={`received_${room.id}`}
+                            className='border-none'
+                          >
+                            <AccordionPrimitive.Header className='flex'>
+                              <AccordionPrimitive.Trigger className='flex items-center justify-between py-2 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                                <div className='flex items-center flex-1 min-w-0'>
+                                  <IconChevronDown
+                                    size={16}
+                                    className='mr-2 transition-transform duration-200 text-[var(--text-dark)]'
+                                    strokeWidth={2}
+                                  />
+                                  <span className='text-sm font-medium text-[var(--text-dark)] truncate'>
+                                    {room.name}
+                                  </span>
+                                </div>
+                                <div className='text-xs font-semibold text-[var(--text-dark)]'>
+                                  {formatCurrency(room.value)}
+                                </div>
+                              </AccordionPrimitive.Trigger>
+                            </AccordionPrimitive.Header>
+                            <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
+                              {/* Dynamic Trade Accordions from selected data */}
+                              <div className='ml-4 mt-1'>
+                                <Accordion type='multiple' className='w-full'>
+                                  {Array.from(room.trades.values()).map(
+                                    (trade: any) => (
+                                      <AccordionItem
+                                        key={`received_${trade.id}`}
+                                        value={`received_${trade.id}`}
+                                        className='border-none'
+                                      >
+                                        <AccordionPrimitive.Header className='flex'>
+                                          <AccordionPrimitive.Trigger className='flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                                            <div className='flex items-center flex-1 min-w-0'>
+                                              <IconChevronDown
+                                                size={16}
+                                                className='mr-2 transition-transform duration-200 text-[var(--text-dark)]'
+                                                strokeWidth={2}
+                                              />
+                                              <span className='text-sm font-medium text-[var(--text-dark)] truncate'>
+                                                {trade.name}
+                                              </span>
+                                            </div>
+                                            <div className='text-xs font-semibold text-[var(--text-dark)]'>
+                                              {formatCurrency(trade.value)}
+                                            </div>
+                                          </AccordionPrimitive.Trigger>
+                                        </AccordionPrimitive.Header>
+                                        <AccordionContent className='px-0 pb-0 overflow-hidden transition-all duration-200 ease-in-out'>
+                                          {/* Dynamic Services from selected data */}
+                                          {trade.services.length > 0 && (
+                                            <div className='ml-6 mt-1'>
+                                              {trade.services.map(
+                                                (service: any) => (
+                                                  <div
+                                                    key={`received_${service.id}`}
+                                                    className='flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg'
+                                                  >
+                                                    <span className='text-sm font-medium group-hover:text-[var(--primary)] text-[var(--text-dark)]'>
+                                                      {service.name}
+                                                    </span>
+                                                    <div className='text-xs font-semibold text-[var(--text-dark)]'>
+                                                      {formatCurrency(
+                                                        service.value
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+                                          )}
+                                        </AccordionContent>
+                                      </AccordionItem>
+                                    )
+                                  )}
+                                </Accordion>
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        ));
+                      })()}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </>
           )}

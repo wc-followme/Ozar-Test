@@ -28,6 +28,7 @@ import {
 import { ArrowDown2, Location, Sms } from 'iconsax-react';
 import { useEffect, useState } from 'react';
 import NoDataFound from './NoDataFound';
+import { SubContractorListCard } from './SubContractorListCard';
 
 interface Material {
   id: string;
@@ -143,6 +144,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
   const [isAuctionBidMode, setIsAuctionBidMode] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [triggerAddToOutSource, setTriggerAddToOutSource] = useState(false);
+  const [selectedSubContractor, setSelectedSubContractor] = useState<any>(null);
   const [rooms, setRooms] = useState<Room[]>([
     {
       id: '0',
@@ -1322,7 +1324,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
       </div>
 
       {/* Main TradeComponent */}
-      <div className='flex bg-[var(--card-background)] rounded-[20px] w-full border border-[var(--border-dark)] overflow-hidden'>
+      <div className='flex bg-[var(--card-background)] rounded-[20px] w-full border border-[var(--border-dark)] overflow-hidden min-h-0'>
         {/* Sidebar */}
         <TradeSidebar
           onRoomSelect={room => {
@@ -1332,6 +1334,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             setShowAddService(false);
             setShowServiceForm(false);
             setSelectedService(null);
+            setSelectedSubContractor(null); // Clear sub contractor selection
           }}
           onTradeSelect={trade => {
             setSelectedTrade(trade.id);
@@ -1339,11 +1342,13 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             setShowAddService(true);
             setShowServiceForm(false);
             setSelectedService(null);
+            setSelectedSubContractor(null); // Clear sub contractor selection
           }}
           onServiceSelect={service => {
             setSelectedService(service.id);
             setShowServiceForm(true);
             setShowAddService(true);
+            setSelectedSubContractor(null); // Clear sub contractor selection
           }}
           selectedRoomId={selectedRoomId || ''}
           selectedTradeId={selectedTrade || ''}
@@ -1356,15 +1361,16 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             console.log('Items added to out source trades');
           }}
           triggerAddToOutSource={triggerAddToOutSource}
+          onSubContractorSelect={setSelectedSubContractor}
         />
 
         {/* Main Content */}
         <div
-          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
+          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 min-h-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
           style={{ maxWidth: 'calc(100vw - 320px - 48px - 32px)' }}
         >
           {/* Content Area */}
-          <div className='flex-1 overflow-hidden bg-[var(--background)]'>
+          <div className='flex-1 overflow-hidden bg-[var(--background)] min-h-0'>
             {/* Header */}
             <TradeHeader
               showAddService={showAddService}
@@ -1381,23 +1387,61 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
               handleAddTrade={handleAddTrade}
               handleAddService={handleAddService}
               onDeleteClick={handleDeleteClick}
+              selectedSubContractor={selectedSubContractor}
             />
 
             <div
-              className='h-full overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300'
+              className='flex-1 overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300 h-[calc(100vh_-_120px_-_75px)] max-h-[calc(100vh_-_120px_-_75px)]'
               style={{
                 WebkitOverflowScrolling: 'touch',
                 scrollBehavior: 'smooth',
                 touchAction: 'pan-x pan-y',
                 msOverflowStyle: 'auto',
                 scrollbarWidth: 'auto',
-                overflowX: 'auto',
-                overflowY: 'auto',
                 maxWidth: '100%',
               }}
             >
               <div className='p-6 min-w-[800px] w-full max-w-full'>
-                {!showAddService ? (
+                {selectedSubContractor ? (
+                  // Sub Contractor view - rooms with trades list and cost columns
+                  <div className='space-y-8'>
+                    {selectedSubContractor.rooms?.map(
+                      (room: {
+                        id: string;
+                        name: string;
+                        trades: Array<{
+                          id: string;
+                          name: string;
+                          dateRange?: string;
+                          laborCost?: number;
+                          materialCost?: number;
+                          tradeTotal?: number;
+                        }>;
+                      }) => (
+                        <div
+                          key={room.id}
+                          className='rounded-[10px] bg-[var(--white-background)] p-4'
+                        >
+                          <h3 className='text-lg font-bold text-[var(--text-dark)] mb-3'>
+                            {room.name}
+                          </h3>
+                          <div className='space-y-4'>
+                            {room.trades?.map(trade => (
+                              <SubContractorListCard
+                                id={String(trade.id)}
+                                name={trade.name}
+                                dateRange={'Mar 20 - Mar 23 (3D)'}
+                                laborCost={trade.laborCost}
+                                materialCost={trade.materialCost}
+                                tradeTotal={trade.tradeTotal}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+                ) : !showAddService ? (
                   // Room view - show trades list
                   selectedRoom && selectedRoom.trades.length > 0 ? (
                     <Sortable
