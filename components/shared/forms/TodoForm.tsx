@@ -10,9 +10,9 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { useToast } from '@/components/ui/use-toast';
-import { STORAGE_KEYS, TODO_MESSAGES } from '@/constants/common';
+import { TODO_MESSAGES } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { format } from 'date-fns';
 import { Calendar, Trash } from 'iconsax-react';
@@ -189,10 +189,12 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     const fetchJobs = async () => {
       setJobsLoading(true);
       try {
+        const companyId = getCompanyId();
         const response = await apiService.fetchJobsDropdown({
           page: 1,
           limit: 50,
           type: 'ALL',
+          ...(companyId && { company_id: companyId }),
         });
 
         if (response.statusCode === 200 && response.data?.data) {
@@ -221,18 +223,10 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     const fetchEmployees = async () => {
       setEmployeesLoading(true);
       try {
-        // Get company ID from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        const companyId = selectedCompany
-          ? JSON.parse(selectedCompany)?.id
-          : null;
+        const companyId = getCompanyId();
 
         if (!companyId) {
-          console.warn(
-            'No company ID found in localStorage - employees will not be loaded'
-          );
+          console.warn('No company ID found - employees will not be loaded');
           setEmployees([]);
           return;
         }
