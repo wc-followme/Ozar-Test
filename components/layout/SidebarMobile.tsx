@@ -126,6 +126,7 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
                   : [];
                 const isActive =
                   pathname === item.href ||
+                  (item.menu_id === 'projects' && item.href && pathname?.startsWith(item.href)) ||
                   (hasSubmenu &&
                     filteredSubmenu.some(subItem => pathname === subItem.href));
 

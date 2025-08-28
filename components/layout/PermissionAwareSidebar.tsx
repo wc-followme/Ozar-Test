@@ -175,8 +175,10 @@ export function PermissionAwareSidebar() {
   const renderMenuItem = (item: (typeof sidebarItems)[0]) => {
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const filteredSubmenu = hasSubmenu ? filterSubmenuItems(item.submenu) : [];
+    // Check if item is active - for job management, also check if pathname starts with the href
     const isActive =
       pathname === item.href ||
+      (item.menu_id === 'projects' && item.href && pathname?.startsWith(item.href)) ||
       (hasSubmenu &&
         filteredSubmenu.some(subItem => pathname === subItem.href));
 

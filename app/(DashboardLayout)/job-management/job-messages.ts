@@ -57,7 +57,7 @@ export const JOB_MESSAGES = {
 
   // Breadcrumbs
   BREADCRUMB_JOBS: 'Jobs',
-  JOB_MANAGEMENT_BREADCRUMB: 'Job Management',
+  JOB_MANAGEMENT_BREADCRUMB: 'Projects',
   CREATE_JOB_BREADCRUMB: 'Create Job',
   EDIT_JOB_BREADCRUMB: 'Edit Job',
 
