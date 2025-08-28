@@ -96,3 +96,11 @@ export interface DummyTrade {
   tradeName: string;
   category: string;
 }
+
+// Menu option interface for trade actions
+export interface MenuOption {
+  label: string;
+  action: string;
+  icon: any;
+  variant: 'default' | 'destructive';
+}

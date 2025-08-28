@@ -24,17 +24,20 @@ export const MATERIAL_MESSAGES = {
   // Menu options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RETRIEVE_MENU: 'Retrieve',
 
   // Success messages
   CREATE_SUCCESS: 'Material created successfully',
   UPDATE_SUCCESS: 'Material updated successfully',
   DELETE_SUCCESS: 'Material deleted successfully',
+  RETRIEVE_SUCCESS: 'Material retrieved successfully',
 
   // Error messages
   CREATE_ERROR: 'Failed to create material',
   UPDATE_ERROR: 'Failed to update material',
   DELETE_ERROR: 'Failed to delete material',
   FETCH_ERROR: 'Failed to fetch materials',
+  RETRIEVE_ERROR: 'Failed to retrieve material',
 
   // Delete confirmation
   DELETE_CONFIRM_TITLE: 'Delete Material',
@@ -47,7 +50,10 @@ export const MATERIAL_MESSAGES = {
   NO_MATERIALS_FOUND: 'No materials found',
   NO_MATERIALS_FOUND_DESCRIPTION:
     "You haven't created any materials yet. Start by adding your first one to organize your materials.",
+  ARCHIVED_MATERIALS_TITLE: 'Archived Materials',
+  NO_ARCHIVED_MATERIALS_FOUND: 'No archived materials found',
   // Validation messages
   MATERIAL_NAME_REQUIRED: 'Material name is required',
   SERVICE_REQUIRED: 'At least one service is required',
+  DEFAULT_MATERIAL_DELETE_ERROR: 'Cannot archive default material',
 } as const;

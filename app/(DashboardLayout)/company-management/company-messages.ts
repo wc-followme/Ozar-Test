@@ -3,13 +3,15 @@ export const COMPANY_MESSAGES = {
   // Success Messages
   CREATE_SUCCESS: 'Company created successfully.',
   UPDATE_SUCCESS: 'Company updated successfully.',
-  DELETE_SUCCESS: 'Company deleted successfully.',
+  DELETE_SUCCESS: 'Company archived successfully.',
+  RETRIEVE_SUCCESS: 'Company retrieved successfully.',
   STATUS_UPDATE_SUCCESS: 'Company status updated successfully.',
 
   // Error Messages
   CREATE_ERROR: 'Failed to create company.',
   UPDATE_ERROR: 'Failed to update company.',
-  DELETE_ERROR: 'Failed to delete company.',
+  DELETE_ERROR: 'Failed to archive company.',
+  RETRIEVE_ERROR: 'Failed to retrieve company.',
   FETCH_ERROR: 'Failed to fetch companies.',
   FETCH_DETAILS_ERROR: 'Failed to fetch company details.',
   STATUS_UPDATE_ERROR: 'Failed to update company status.',
@@ -120,6 +122,7 @@ export const COMPANY_MESSAGES = {
   // Menu Options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RETRIEVE_MENU: 'Retrieve',
 
   // Company Details Labels
   COMPANY_TYPE_LABEL: 'Construction Company',
@@ -146,4 +149,8 @@ export const COMPANY_MESSAGES = {
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
   DELETE_CONFIRM_SUBTITLE: 'This action cannot be undone.',
+  
+  // Archive related messages
+  ARCHIVED_COMPANIES_TITLE: 'Archived Companies',
+  NO_ARCHIVED_COMPANIES_FOUND: 'No archived companies found',
 };

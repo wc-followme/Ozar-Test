@@ -1,11 +1,7 @@
 'use client';
-import { InfoCard } from '@/components/shared/cards/InfoCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
-import { ServiceForm } from '@/components/shared/forms/ServiceForm';
+import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
@@ -20,36 +16,46 @@ import {
   getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
-import React, { useCallback, useEffect, useState } from 'react';
-import TradeCardSkeleton from '../../../components/shared/skeleton/TradeCardSkeleton';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
+import { useCallback, useEffect, useState } from 'react';
+import ArchiveList from './ArchiveList';
+import ServiceList from './ServiceList';
 import { SERVICE_MESSAGES } from './service-messages';
 import { Service } from './service-types';
 
-const menuOptions: {
-  label: string;
-  action: string;
-  icon: React.ElementType;
-  variant?: 'default' | 'destructive';
-}[] = [
-  {
-    label: SERVICE_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-    variant: 'default',
-  },
-  {
-    label: SERVICE_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-    variant: 'destructive',
-  },
-];
+// Get menu options based on current tab
+const getMenuOptions = (isArchive: boolean) => {
+  if (isArchive) {
+    // Archive tab - only show retrieve option
+    return [
+      {
+        label: SERVICE_MESSAGES.RETRIEVE_MENU,
+        action: ACTIONS.RETRIEVE,
+        icon: Refresh,
+        variant: 'default' as const,
+      },
+    ];
+  } else {
+    // Active services tab - show edit and delete options
+    return [
+      {
+        label: SERVICE_MESSAGES.EDIT_MENU,
+        action: ACTIONS.EDIT,
+        icon: Edit2,
+        variant: 'default' as const,
+      },
+      {
+        label: SERVICE_MESSAGES.DELETE_MENU,
+        action: ACTIONS.DELETE,
+        icon: Trash,
+        variant: 'destructive' as const,
+      },
+    ];
+  }
+};
 
 export default function ServiceManagementPage() {
   // Destructure constants for better readability
-  const { EDIT, DELETE } = ACTIONS;
-  const { ACTIVE } = CommonStatus;
   const { MATERIALS_LIMIT } = PAGINATION; // Using MATERIALS_LIMIT as it's 32, same as services
 
   const [services, setServices] = useState<Service[]>([]);
@@ -58,9 +64,7 @@ export default function ServiceManagementPage() {
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
-  const [deleteServiceName, setDeleteServiceName] = useState<string>('');
-  const [modalOpen, setModalOpen] = useState(false);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [editingServiceUuid, setEditingServiceUuid] = useState<
     string | undefined
@@ -83,10 +87,14 @@ export default function ServiceManagementPage() {
         // Get selected company ID using common function
         const companyId = getCompanyId();
 
+        // Determine status based on selected tab
+        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+
         const response = await apiService.fetchServices({
           page: targetPage,
           limit,
           name: search,
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
 
@@ -145,7 +153,7 @@ export default function ServiceManagementPage() {
         setLoading(false);
       }
     },
-    [limit, search, handleAuthError, showErrorToast]
+    [limit, search, handleAuthError, showErrorToast, selectedTab]
   );
 
   // Handle company changes
@@ -157,6 +165,11 @@ export default function ServiceManagementPage() {
   }, [fetchServices]);
 
   useCompanyChange(refetchServices);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchServices(1, false);
+  }, [selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -176,34 +189,34 @@ export default function ServiceManagementPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, fetchServices, page]);
 
-  const handleMenuAction = (action: string, idx: number) => {
-    const service = services[idx];
-    if (!service) return;
-
-    if (action === EDIT) {
-      setEditingServiceUuid(service.uuid);
-      setSideSheetOpen(true);
-    }
-    if (action === DELETE) {
-      setDeleteIdx(idx);
-      setDeleteServiceName(service.name || '');
-      setModalOpen(true);
-    }
+  const handleEditService = (uuid: string) => {
+    setEditingServiceUuid(uuid);
+    setSideSheetOpen(true);
   };
 
-  // Handler for deleting a service
-  const handleDeleteService = async (uuid: string) => {
+  // Archive handler (set service status to inactive)
+  const handleArchiveService = async (uuid: string) => {
     try {
-      const response = await apiService.deleteService(uuid);
-      setServices(prev => prev.filter(service => service.uuid !== uuid));
+      const service = services.find(s => s.uuid === uuid);
+
+      // Prevent archiving of default services
+      if (service?.is_default) {
+        showErrorToast(SERVICE_MESSAGES.DEFAULT_SERVICE_DELETE_ERROR || 'Cannot archive default service');
+        return;
+      }
+
+      const response = await apiService.updateServiceStatus(uuid, 'INACTIVE');
+      
       showSuccessToast(
         extractApiSuccessMessage(response, SERVICE_MESSAGES.DELETE_SUCCESS)
       );
+      fetchServices(1, false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
         return; // Don't show toast if it's an auth error
       }
+
       const message = extractApiErrorMessage(
         err,
         SERVICE_MESSAGES.DELETE_ERROR
@@ -212,14 +225,31 @@ export default function ServiceManagementPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (deleteIdx !== null) {
-      const service = services[deleteIdx];
-      if (service) {
-        await handleDeleteService(service.uuid);
+  // Handler for retrieving a service
+  const handleRetrieveService = async (uuid: string) => {
+    try {
+      const response = await apiService.updateServiceStatus(uuid, 'ACTIVE');
+      
+      showSuccessToast(
+        extractApiSuccessMessage(response, SERVICE_MESSAGES.RETRIEVE_SUCCESS)
+      );
+      
+      // Remove the retrieved service from the current list immediately
+      setServices(prev => prev.filter(s => s.uuid !== uuid));
+      
+      // Refresh list to reflect latest server state based on current tab
+      await fetchServices(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
-      setDeleteIdx(null);
-      setModalOpen(false);
+
+      const message = extractApiErrorMessage(
+        err,
+        SERVICE_MESSAGES.RETRIEVE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -246,13 +276,13 @@ export default function ServiceManagementPage() {
         description: '',
         is_default: false,
         is_active: true,
-        status: ACTIVE,
+        status: CommonStatus.ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         trades: trades.split(', ').map(trade => ({
           id: Date.now(),
           name: trade.trim(),
-          status: ACTIVE,
+          status: CommonStatus.ACTIVE,
         })),
         ...(companyId ? { company_id: companyId } : {}),
       };
@@ -288,7 +318,7 @@ export default function ServiceManagementPage() {
                 trades: trades.split(', ').map(trade => ({
                   id: Date.now(),
                   name: trade.trim(),
-                  status: ACTIVE,
+                  status: CommonStatus.ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -360,71 +390,32 @@ export default function ServiceManagementPage() {
 
           {/* Service Tab Content */}
           <TabsContent value='service' className='mt-6'>
-            {/* Service Grid */}
-            <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {services.length === 0 && loading ? (
-                // Initial loading state with skeleton cards
-                Array.from({ length: 10 }).map((_, idx) => (
-                  <TradeCardSkeleton key={idx} />
-                ))
-              ) : services.length === 0 && !loading ? (
-                <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
-                  <NoDataFound
-                    buttonText={SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
-                    onButtonClick={() => setSideSheetOpen(true)}
-                    description={SERVICE_MESSAGES.NO_SERVICES_FOUND_DESCRIPTION}
-                    showButton={canEdit ?? false}
-                  />
-                </div>
-              ) : (
-                services.map((service, idx) => {
-                  const { uuid, name, trades } = service;
-                  return (
-                    <InfoCard
-                      key={uuid}
-                      tradeName={name || ''}
-                      category={`${trades?.length || 0} Trade${(trades?.length || 0) !== 1 ? 's' : ''}`}
-                      menuOptions={menuOptions}
-                      onMenuAction={action => handleMenuAction(action, idx)}
-                      module='services'
-                    />
-                  );
-                })
-              )}
-            </div>
-
-            {/* Loading more services */}
-            {loading && services.length > 0 && (
-              <div className='w-full text-center py-4'>
-                <LoadingComponent variant='inline' size='md' text={''} />
-              </div>
-            )}
+            <ServiceList
+              services={services}
+              loading={loading}
+              noDataDescription={SERVICE_MESSAGES.NO_SERVICES_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false)}
+              onDelete={handleArchiveService}
+              onEdit={handleEditService}
+              onCreateService={() => setSideSheetOpen(true)}
+              canEdit={canEdit ?? false}
+            />
           </TabsContent>
 
           {/* Archive Tab Content */}
           <TabsContent value='archive' className='mt-6'>
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                title='Archived Services'
-                description='No archived services found'
-                buttonText=''
-                showButton={false}
-              />
-            </div>
+            <ArchiveList
+              services={services}
+              loading={loading}
+              noDataTitle={SERVICE_MESSAGES.ARCHIVED_SERVICES_TITLE}
+              noDataDescription={SERVICE_MESSAGES.NO_ARCHIVED_SERVICES_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveService}
+            />
           </TabsContent>
         </Tabs>
       </div>
 
-      <ConfirmDeleteModal
-        open={modalOpen}
-        title={SERVICE_MESSAGES.DELETE_CONFIRM_TITLE}
-        subtitle={SERVICE_MESSAGES.DELETE_CONFIRM_SUBTITLE.replace(
-          '{name}',
-          deleteServiceName || ''
-        )}
-        onCancel={() => setModalOpen(false)}
-        onDelete={handleDelete}
-      />
       <SideSheet
         title={
           editingServiceUuid

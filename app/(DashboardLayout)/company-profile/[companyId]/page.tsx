@@ -39,7 +39,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
   } = ROUTES;
   const { URL_COPIED_SUCCESS, COPY_FAILED_ERROR } = SHARE_MESSAGES;
   const { QUOTE_CREATE_SUCCESS, QUOTE_CREATE_ERROR } = JOB_MESSAGES;
-  const { PRIVATE } = JOB_PRIVACY;
+  const { PUBLIC } = JOB_PRIVACY;
   const router = useRouter();
   const { handleAuthError, user, isAuthenticated } = useAuth();
   const { showSuccessToast, showErrorToast } = useToast();
@@ -229,7 +229,7 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
 
       // Create job payload
       const jobPayload = {
-        job_privacy: PRIVATE,
+        job_privacy: PUBLIC,
         job_boxes_step: enabledBoxes, // Keep as array of step values
         company_id: uuid,
         question_json: questionJson,

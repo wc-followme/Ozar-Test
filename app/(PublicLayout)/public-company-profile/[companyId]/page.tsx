@@ -37,7 +37,7 @@ const CompanyProfile = ({ params }: PageProps) => {
   const { URL_COPIED_SUCCESS, COPY_FAILED_ERROR, SHARE_URL_ALERT } =
     SHARE_MESSAGES;
   const { QUOTE_CREATE_SUCCESS, QUOTE_CREATE_ERROR } = JOB_MESSAGES;
-  const { PRIVATE } = JOB_PRIVACY;
+  const { PUBLIC } = JOB_PRIVACY;
   const { showSuccessToast, showErrorToast } = useToast();
   const [company, setCompany] = useState<GetCompanyResponse['data'] | null>(
     null
@@ -139,7 +139,7 @@ const CompanyProfile = ({ params }: PageProps) => {
 
       // Create job payload
       const jobPayload = {
-        job_privacy: PRIVATE,
+        job_privacy: PUBLIC,
         job_boxes_step: enabledBoxes,
         company_id: uuid,
         question_json: questionJson,

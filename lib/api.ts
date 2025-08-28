@@ -1816,6 +1816,18 @@ class ApiService {
     });
   }
 
+  // Update trade status
+  async updateTradeStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/trades/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Get trades dropdown
   async getTradesDropdown(params?: {
     company_id?: string | number;
@@ -1895,6 +1907,18 @@ class ApiService {
     return this.makeRequest(`/services/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update service status
+  async updateServiceStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/services/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -2025,6 +2049,18 @@ class ApiService {
     return this.makeRequest(`/materials/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update material status
+  async updateMaterialStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/materials/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -2816,7 +2852,47 @@ class ApiService {
       },
     });
   }
+
+  async fetchTemplates({
+    page = 1,
+    limit = 10,
+    company_id,
+    status = 'ACTIVE',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    status?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    params.append('status', status);
+
+    return this.makeRequest(`/templates?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Archive template
+  async archiveTemplate(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Get template by UUID
+  async getTemplateById(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
+

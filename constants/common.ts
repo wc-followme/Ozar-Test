@@ -12,6 +12,7 @@ export const PAGINATION = {
   COMPANY_LIMIT: 8, // Limit for company management
   JOBS_LIMIT: 8, // Limit for job management
   TRADES_LIMIT: 32, // Limit for trade management
+  TEMPLATES_LIMIT: 16, // Limit for templates management with infinite scroll
 } as const;
 
 // Role IDs for role-based access control
@@ -441,9 +442,14 @@ export const JOB_MESSAGES = {
 
 // Job Privacy Constants
 export const JOB_PRIVACY = {
-  PRIVATE: 'PRIVATE',
+  //PRIVATE: 'PRIVATE',
   PUBLIC: 'PUBLIC',
 } as const;
+
+export const JOB_PRIVACY_OPTIONS = [
+  { label: 'Public Job', value: 'PUBLIC' },
+  { label: 'Private Job', value: 'PRIVATE' },
+];
 
 // Profile Top Block Constants
 export const PROFILE_DEFAULTS = {
@@ -482,6 +488,16 @@ export const PROFILE_BUTTON_LABELS = {
 // } as const;
 
 // Local Storage Keys
+// Template Type Constants
+export const TEMPLATE_TYPES = {
+  ESTIMATE_TEMPLATES: 'ESTIMATE_TEMPLATES',
+  OPTION_BID_TEMPLATES: 'OPTION_BID_TEMPLATES',
+  TOOL_TEMPLATES: 'TOOL_TEMPLATES',
+  DISCLAIMER_TEMPLATES: 'DISCLAIMER_TEMPLATES',
+} as const;
+
+export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
+
 export const STORAGE_KEYS = {
   SELECTED_COMPANY: 'selected_company',
   IS_AUTHENTICATED: 'isAuthenticated',
