@@ -211,6 +211,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
           <div className='flex items-center gap-2'>
             <Avatar
               name={avatarData?.name || 'NA'}
+              image={avatarData?.avatar}
               height={32}
               width={32}
               className='w-8 h-8 text-xs rounded-full'

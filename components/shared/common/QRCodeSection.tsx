@@ -1,76 +1,87 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
+import * as XLSX from 'xlsx';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { DocUploads } from './DocUploads';
 import { DynamicTable } from './DynamicTable';
 import { QRCodeListingCard } from './QRCodeListingCard';
 
-interface ToolIdBarcode {
-  id: string;
-  toolId: string;
-  barcode: string;
-}
-
 interface QRCodeSectionProps {
-  toolIds: ToolIdBarcode[];
-  onToolIdsChange: (toolIds: ToolIdBarcode[]) => void;
+  barcodes: string[];
+  onBarcodesChange: (barcodes: string[]) => void;
+  existingBarcodes?: Array<{ id: string; toolId: string; barcode: string }>;
+  onExistingBarcodesChange?: (
+    barcodes: Array<{ id: string; toolId: string; barcode: string }>
+  ) => void;
   className?: string;
 }
 
 export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
-  toolIds,
-  onToolIdsChange,
+  barcodes,
+  onBarcodesChange,
+  existingBarcodes = [],
+  onExistingBarcodesChange,
   className = '',
 }) => {
   const [activeTab, setActiveTab] = useState('qr-doc');
+  const [newBarcode, setNewBarcode] = useState('');
 
-  // Sample data for the table matching the image
-  const sampleToolData = [
-    {
-      id: '1',
-      toolId: '11345',
-      barcode: 'QR12345',
-    },
-    {
-      id: '2',
-      toolId: '10345',
-      barcode: 'QR12346',
-    },
-    {
-      id: '3',
-      toolId: '12745',
-      barcode: 'QR12347',
-    },
-    {
-      id: '4',
-      toolId: '12344',
-      barcode: 'QR12386',
-    },
+  // Create a single array with proper sequential numbering
+  const allTableData = [
+    // First add existing barcodes with sequential numbering
+    ...existingBarcodes.map((item, index) => ({
+      id: item.id,
+      no: String(index + 1).padStart(2, '0'),
+      toolIdBarcode: `${item.toolId} / ${item.barcode}`,
+      type: 'existing' as const,
+    })),
+    // Then add new barcodes continuing the numbering
+    ...barcodes.map((barcode, index) => ({
+      id: `new-${index}`,
+      no: String(existingBarcodes.length + index + 1).padStart(2, '0'),
+      toolIdBarcode: `- / ${barcode}`,
+      type: 'new' as const,
+    })),
   ];
 
-  // Column configuration for the DynamicTable - Simple table matching the image
+  // Column configuration for the DynamicTable
   const toolTableColumns = [
     {
-      key: 'toolId',
+      key: 'no',
+      label: 'No.',
+      type: 'text' as const,
+    },
+    {
+      key: 'toolIdBarcode',
       label: 'Tool ID / Barcode',
-      type: 'combined' as const,
-      subKey: 'barcode',
+      type: 'text' as const,
     },
   ];
 
   // State for delete confirmation modal
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<any>(null);
+  const [itemToDelete, setItemToDelete] = useState<{
+    toolIdBarcode: string;
+    type: 'new' | 'existing';
+    id: string;
+  } | null>(null);
 
   // Actions for the table (delete icon)
   const toolTableActions = [
     {
       key: 'delete',
       icon: 'Trash',
-      onClick: (row: any) => {
+      onClick: (row: {
+        toolIdBarcode: string;
+        type: 'new' | 'existing';
+        id: string;
+      }) => {
         setItemToDelete(row);
         setShowDeleteModal(true);
       },
@@ -86,13 +97,64 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
   // };
 
   const handleConfirmDelete = () => {
-    if (itemToDelete && (itemToDelete as any).id) {
-      // Remove from sample data (in real app, this would be API call)
-      const updatedData = sampleToolData.filter(
-        item => item.id !== (itemToDelete as any).id
-      );
-      console.log('Deleted item:', itemToDelete);
-      console.log('Updated data:', updatedData);
+    if (itemToDelete && itemToDelete.toolIdBarcode) {
+      // Extract barcode from the combined field (e.g., "11345 / QR12345" -> "QR12345")
+      const barcodeToDelete =
+        itemToDelete.toolIdBarcode.split(' / ')[1] ||
+        itemToDelete.toolIdBarcode;
+      const itemType = itemToDelete.type;
+      const itemId = itemToDelete.id;
+
+      if (itemType === 'new') {
+        // Remove barcode from new barcodes array
+        const updatedBarcodes = barcodes.filter(
+          barcode => barcode !== barcodeToDelete
+        );
+        onBarcodesChange(updatedBarcodes);
+      } else if (itemType === 'existing' && onExistingBarcodesChange) {
+        // Remove barcode from existing barcodes array
+        const updatedExistingBarcodes = existingBarcodes.filter(
+          item => item.id !== itemId
+        );
+        onExistingBarcodesChange(updatedExistingBarcodes);
+      }
+
+      // Check which files contain this barcode and update their mappings
+      const updatedFileBarcodeMap = { ...fileBarcodeMap };
+      const filesToRemove: string[] = [];
+
+      Object.keys(updatedFileBarcodeMap).forEach(fileName => {
+        const fileBarcodes = updatedFileBarcodeMap[fileName];
+        if (fileBarcodes) {
+          // Remove the deleted barcode from this file's barcodes
+          const updatedFileBarcodes = fileBarcodes.filter(
+            barcode => barcode !== barcodeToDelete
+          );
+
+          if (updatedFileBarcodes.length === 0) {
+            // If file has no barcodes left, mark it for removal
+            filesToRemove.push(fileName);
+          } else {
+            // Update file's barcode list
+            updatedFileBarcodeMap[fileName] = updatedFileBarcodes;
+          }
+        }
+      });
+
+      // Remove files that have no barcodes left
+      if (filesToRemove.length > 0) {
+        setUploadedFileNames(prev =>
+          prev.filter(fileName => !filesToRemove.includes(fileName))
+        );
+
+        // Remove files from barcode mapping
+        filesToRemove.forEach(fileName => {
+          delete updatedFileBarcodeMap[fileName];
+        });
+      }
+
+      // Update file barcode mapping
+      setFileBarcodeMap(updatedFileBarcodeMap);
     }
     setShowDeleteModal(false);
     setItemToDelete(null);
@@ -103,59 +165,347 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
     setItemToDelete(null);
   };
 
-  const handleDownloadTemplate = () => {
-    // Create CSV template
-    const csvContent = 'Tool ID,Barcode\n12345,QR12345\n10345,QR12346';
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'tool_qr_template.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+  const handleAddBarcode = () => {
+    const trimmedBarcode = newBarcode.trim();
+    if (trimmedBarcode) {
+      // Check for duplicates in current barcodes and all uploaded files
+      const allExistingBarcodes = new Set([
+        ...barcodes,
+        ...Object.values(fileBarcodeMap).flat(),
+      ]);
+
+      if (!allExistingBarcodes.has(trimmedBarcode)) {
+        onBarcodesChange([...barcodes, trimmedBarcode]);
+        setNewBarcode('');
+      } else {
+        // You could add a toast notification here to inform the user
+      }
+    }
+  };
+
+  const handleDownloadTemplate = (fileType: 'csv' | 'xlsx' = 'xlsx') => {
+    if (fileType === 'csv') {
+      // Download the CSV template file
+      const a = document.createElement('a');
+      a.href = '/barcodes_template.csv';
+      a.download = 'barcodes_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } else {
+      // Download the XLSX template file
+      const a = document.createElement('a');
+      a.href = '/barcodes_template.xlsx';
+      a.download = 'barcodes_template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
   };
 
   const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
+  const [fileBarcodeMap, setFileBarcodeMap] = useState<
+    Record<string, string[]>
+  >({});
 
   const handleBulkUpload = (file: File | null) => {
     if (file) {
-      // Avoid duplicate listing for the same file name in a single upload
-      setUploadedFileNames(prev =>
-        prev.includes(file.name) ? prev : [...prev, file.name]
-      );
-      // Handle CSV file upload
+      // Check if file already exists in uploaded files
+      const isFileAlreadyUploaded = uploadedFileNames.includes(file.name);
+
+      if (isFileAlreadyUploaded) {
+        return; // Skip processing if file already exists
+      }
+
+      // Add file to uploaded files list
+      setUploadedFileNames(prev => [...prev, file.name]);
+
+      // Handle CSV/XLSX file upload
       const reader = new FileReader();
       reader.onload = event => {
-        const csv = event.target?.result as string;
-        const lines = csv.split('\n');
-        const newToolIds: ToolIdBarcode[] = [];
+        const newBarcodes: string[] = [];
 
-        // Skip header row and process data
-        for (let i = 1; i < lines.length; i++) {
-          const [toolId, barcode] = (lines[i] || '').split(',');
-          if (toolId && barcode) {
-            newToolIds.push({
-              id: `tool-${Date.now()}-${i}`,
-              toolId: toolId.trim(),
-              barcode: barcode.trim(),
-            });
+        if (file.name.endsWith('.csv')) {
+          const text = event.target?.result as string;
+          // Handle CSV files
+          const lines = text.split(/\r?\n/); // Handle different line endings
+          // Skip header row and process data
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i]?.trim();
+            if (line) {
+              // Extract barcode from CSV line (single column format)
+              const barcode = line.split(',')[0]?.trim();
+              if (barcode && barcode !== 'Barcode') {
+                // Skip header if present
+                newBarcodes.push(barcode);
+              }
+            }
+          }
+        } else if (file.name.endsWith('.xlsx')) {
+          // Handle XLSX files using the xlsx library
+          try {
+            const data = new Uint8Array(event.target?.result as ArrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+
+            if (sheetName) {
+              const worksheet = workbook.Sheets[sheetName];
+
+              if (worksheet) {
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                  header: 1,
+                });
+
+                // Skip header row and extract barcodes from first column
+                for (let i = 1; i < jsonData.length; i++) {
+                  const row = jsonData[i] as any[];
+                  const barcode = row[0]?.toString().trim();
+                  if (barcode && barcode !== 'Barcode') {
+                    newBarcodes.push(barcode);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing XLSX file:', error);
           }
         }
 
-        onToolIdsChange([...toolIds, ...newToolIds]);
+        // Get all existing barcodes from current state and all uploaded files
+        const allExistingBarcodes = new Set([
+          ...barcodes,
+          ...Object.values(fileBarcodeMap).flat(),
+        ]);
+
+        // Filter out duplicates from new barcodes
+        const uniqueNewBarcodes = newBarcodes.filter(barcode => {
+          if (allExistingBarcodes.has(barcode)) {
+            return false;
+          }
+          return true;
+        });
+
+        // Store mapping of file to its barcodes (only unique ones)
+        setFileBarcodeMap(prev => ({
+          ...prev,
+          [file.name]: uniqueNewBarcodes,
+        }));
+
+        // Add new barcodes to existing ones (don't overwrite)
+        if (uniqueNewBarcodes.length > 0) {
+          onBarcodesChange([...barcodes, ...uniqueNewBarcodes]);
+        }
       };
-      reader.readAsText(file);
+
+      // Read file based on type
+      if (file.name.endsWith('.xlsx')) {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
     }
   };
 
   const handleBulkUploads = (files: File[]) => {
     if (!files || files.length === 0) return;
-    // De-duplicate by name for display
-    const names = files.map(f => f.name);
-    setUploadedFileNames(prev => Array.from(new Set([...prev, ...names])));
-    files.forEach(file => handleBulkUpload(file));
+
+    // Process all files and collect all barcodes first
+    const allNewBarcodes: { fileName: string; barcodes: string[] }[] = [];
+    let processedFiles = 0;
+
+    const processNextFile = (index: number) => {
+      if (index >= files.length) {
+        // All files processed, now update state
+        updateStateWithAllFiles(allNewBarcodes);
+        return;
+      }
+
+      const file = files[index];
+      if (!file) {
+        // Skip undefined files and process next
+        processNextFile(index + 1);
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = event => {
+        const newBarcodes: string[] = [];
+
+        if (file.name.endsWith('.csv')) {
+          const text = event.target?.result as string;
+          const lines = text.split(/\r?\n/);
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i]?.trim();
+            if (line) {
+              const barcode = line.split(',')[0]?.trim();
+              if (barcode && barcode !== 'Barcode') {
+                newBarcodes.push(barcode);
+              }
+            }
+          }
+        } else if (file.name.endsWith('.xlsx')) {
+          try {
+            const data = new Uint8Array(event.target?.result as ArrayBuffer);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+
+            if (sheetName) {
+              const worksheet = workbook.Sheets[sheetName];
+
+              if (worksheet) {
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                  header: 1,
+                });
+
+                for (let i = 1; i < jsonData.length; i++) {
+                  const row = jsonData[i] as any[];
+                  const barcode = row[0]?.toString().trim();
+                  if (barcode && barcode !== 'Barcode') {
+                    newBarcodes.push(barcode);
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error parsing XLSX file:', error);
+          }
+        }
+
+        allNewBarcodes.push({ fileName: file.name, barcodes: newBarcodes });
+        processedFiles++;
+
+        // Process next file
+        processNextFile(index + 1);
+      };
+
+      // Read file based on type
+      if (file.name.endsWith('.xlsx')) {
+        reader.readAsArrayBuffer(file);
+      } else {
+        reader.readAsText(file);
+      }
+    };
+
+    // Start processing files
+    processNextFile(0);
+  };
+
+  const updateStateWithAllFiles = (
+    fileBarcodes: { fileName: string; barcodes: string[] }[]
+  ) => {
+    // Collect all barcodes from all files
+    const allBarcodesFromFiles = fileBarcodes.flatMap(fb => fb.barcodes);
+
+    // Get all existing barcodes from current state and uploaded files
+    const allExistingBarcodes = new Set([
+      ...barcodes,
+      ...Object.values(fileBarcodeMap).flat(),
+    ]);
+
+    // Remove duplicates within the new files themselves AND with existing barcodes
+    const uniqueBarcodesAcrossAllFiles = new Set<string>();
+    const duplicatesFound: {
+      barcode: string;
+      reason: string;
+      files: string[];
+    }[] = [];
+
+    // Track which barcodes appear in which files for duplicate detection
+    const barcodeToFiles = new Map<string, string[]>();
+
+    fileBarcodes.forEach(fb => {
+      fb.barcodes.forEach(barcode => {
+        if (!barcodeToFiles.has(barcode)) {
+          barcodeToFiles.set(barcode, []);
+        }
+        barcodeToFiles.get(barcode)!.push(fb.fileName);
+      });
+    });
+
+    allBarcodesFromFiles.forEach(barcode => {
+      const filesWithThisBarcode = barcodeToFiles.get(barcode) || [];
+
+      if (allExistingBarcodes.has(barcode)) {
+        duplicatesFound.push({
+          barcode,
+          reason: 'Already exists in current data',
+          files: filesWithThisBarcode,
+        });
+      } else if (uniqueBarcodesAcrossAllFiles.has(barcode)) {
+        duplicatesFound.push({
+          barcode,
+          reason: 'Appears in multiple uploaded files',
+          files: filesWithThisBarcode,
+        });
+      } else {
+        uniqueBarcodesAcrossAllFiles.add(barcode);
+      }
+    });
+
+    const uniqueNewBarcodes = Array.from(uniqueBarcodesAcrossAllFiles);
+
+    // Update file names (only for files that have unique barcodes)
+    const validFileNames: string[] = [];
+    fileBarcodes.forEach(fb => {
+      const uniqueBarcodesForFile = fb.barcodes.filter(barcode =>
+        uniqueBarcodesAcrossAllFiles.has(barcode)
+      );
+      if (uniqueBarcodesForFile.length > 0) {
+        validFileNames.push(fb.fileName);
+      }
+    });
+
+    setUploadedFileNames(prev => {
+      const existingNames = new Set(prev);
+      const additionalNames = validFileNames.filter(
+        name => !existingNames.has(name)
+      );
+      return [...prev, ...additionalNames];
+    });
+
+    // Update file barcode mapping (only unique barcodes per file)
+    const newFileBarcodeMap: Record<string, string[]> = {};
+    fileBarcodes.forEach(fb => {
+      const uniqueBarcodesForFile = fb.barcodes.filter(barcode =>
+        uniqueBarcodesAcrossAllFiles.has(barcode)
+      );
+      if (uniqueBarcodesForFile.length > 0) {
+        newFileBarcodeMap[fb.fileName] = uniqueBarcodesForFile;
+      }
+    });
+
+    setFileBarcodeMap(prev => ({
+      ...prev,
+      ...newFileBarcodeMap,
+    }));
+
+    // Update main barcodes array
+    if (uniqueNewBarcodes.length > 0) {
+      onBarcodesChange([...barcodes, ...uniqueNewBarcodes]);
+    }
+  };
+
+  const handleFileRemove = (fileName: string) => {
+    // Get barcodes associated with this file
+    const fileBarcodesToRemove = fileBarcodeMap[fileName] || [];
+
+    // Remove file from uploaded files list
+    setUploadedFileNames(prev => prev.filter(name => name !== fileName));
+
+    // Remove file from barcode mapping
+    setFileBarcodeMap(prev => {
+      const newMap = { ...prev };
+      delete newMap[fileName];
+      return newMap;
+    });
+
+    // Remove associated barcodes from the main barcodes array
+    const updatedBarcodes = barcodes.filter(
+      barcode => !fileBarcodesToRemove.includes(barcode)
+    );
+
+    onBarcodesChange(updatedBarcodes);
   };
 
   return (
@@ -181,15 +531,47 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
         </TabsList>
 
         <TabsContent value='qr-scan' className='space-y-4'>
+          {/* Add Barcode Input */}
+          <div className='space-y-4 p-4 border border-[var(--border-dark)] rounded-lg bg-[var(--background)]'>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-end'>
+              <div className='md:col-span-2 space-y-2'>
+                <Label htmlFor='barcode-input' className='field-label'>
+                  Add Barcode
+                </Label>
+                <Input
+                  id='barcode-input'
+                  placeholder='Enter barcode...'
+                  value={newBarcode}
+                  onChange={e => setNewBarcode(e.target.value)}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') {
+                      handleAddBarcode();
+                    }
+                  }}
+                  className='input-field'
+                />
+              </div>
+              <Button
+                onClick={handleAddBarcode}
+                disabled={
+                  !newBarcode.trim() || barcodes.includes(newBarcode.trim())
+                }
+                className='btn-primary'
+              >
+                Add Barcode
+              </Button>
+            </div>
+          </div>
+
           {/* Tool Management Table */}
           <div className='space-y-4'>
             {/* Dynamic Table with Simple Tool Data */}
             <DynamicTable
               columns={toolTableColumns}
-              data={sampleToolData}
+              data={allTableData}
               actions={toolTableActions}
-              emptyMessage='No tools found'
-              showRowNumbers={true}
+              emptyMessage='No barcodes found'
+              showRowNumbers={false}
               tableConfig={{
                 headerBgColor: 'bg-[var(--background)]',
                 borderColor: 'border-[var(--border-dark)]',
@@ -200,8 +582,8 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
             {/* Delete Confirmation Modal */}
             <ConfirmDeleteModal
               open={showDeleteModal}
-              title={`Delete ${itemToDelete?.toolId} / ${itemToDelete?.barcode}?`}
-              subtitle='Are you sure you want to delete this tool? This action cannot be undone.'
+              title={`Delete barcode ${itemToDelete?.toolIdBarcode ? itemToDelete.toolIdBarcode.split(' / ')[1] : ''}?`}
+              subtitle='Are you sure you want to delete this barcode? This action cannot be undone.'
               onCancel={handleCancelDelete}
               onDelete={handleConfirmDelete}
               archiveButtonText='Delete'
@@ -211,12 +593,13 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
 
         <TabsContent value='qr-doc' className='space-y-4'>
           <DocUploads
-            title='Bulk Import QR Code'
-            description='Download template to see the required format'
+            title='Bulk Import Barcodes'
+            description='Download template to see the required format (single column with barcodes only)'
             supportedFormats='Supported formats: .csv, .xlsx'
             onFileChange={handleBulkUpload}
             onFilesChange={handleBulkUploads}
             onDownloadTemplate={handleDownloadTemplate}
+            showFileTypeOptions={true}
           />
           {uploadedFileNames.length > 0 && (
             <div className='space-y-2'>
@@ -224,11 +607,7 @@ export const QRCodeSection: React.FC<QRCodeSectionProps> = ({
                 <QRCodeListingCard
                   key={`${fileName}-${index}`}
                   fileName={fileName}
-                  onRemove={() =>
-                    setUploadedFileNames(prev =>
-                      prev.filter((_, i) => i !== index)
-                    )
-                  }
+                  onRemove={() => handleFileRemove(fileName)}
                 />
               ))}
             </div>

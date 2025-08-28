@@ -45,10 +45,10 @@ export const TOOL_DETAIL_ASSIGNED_COLUMNS = [
     subKey: 'barcode',
   },
   {
-    key: 'returnedBy',
+    key: 'assignedTo',
     label: 'Assigned to',
     type: 'avatar' as const,
-    avatarKey: 'returnedBy',
+    avatarKey: 'assignedTo',
     subtitleKey: 'employeeType',
   },
   {
@@ -118,10 +118,10 @@ export const TOOL_DETAIL_LOST_COLUMNS = [
     subKey: 'barcode',
   },
   {
-    key: 'returnedBy',
+    key: 'assignedTo',
     label: 'Assigned to',
     type: 'avatar' as const,
-    avatarKey: 'returnedBy',
+    avatarKey: 'assignedTo',
     subtitleKey: 'employeeType',
   },
   {
@@ -130,7 +130,7 @@ export const TOOL_DETAIL_LOST_COLUMNS = [
     type: 'text' as const,
   },
   {
-    key: 'returnedDate',
+    key: 'lostDate',
     label: 'Lost Date',
     type: 'date' as const,
   },
@@ -155,11 +155,6 @@ export const TOOL_HISTORY_BORROWED_COLUMNS = [
     label: 'Borrowed Date',
     type: 'date' as const,
   },
-  {
-    key: 'returnedDate',
-    label: 'Returned Date',
-    type: 'date' as const,
-  },
 ];
 
 export const TOOL_HISTORY_MAINTENANCE_COLUMNS = [
@@ -178,11 +173,6 @@ export const TOOL_HISTORY_MAINTENANCE_COLUMNS = [
   {
     key: 'assignedDate',
     label: 'Assigned Date',
-    type: 'date' as const,
-  },
-  {
-    key: 'returnedDate',
-    label: 'Returned Date',
     type: 'date' as const,
   },
   {

@@ -10,6 +10,8 @@ interface PortfolioBoxProps {
   id: string;
   title: string;
   image?: string;
+  /** Indicates if the image prop contains a video file URL */
+  isVideo?: boolean;
   imageCount?: number;
   videoCount?: number;
   onEdit?: ((id: string) => void) | undefined;
@@ -21,6 +23,7 @@ export const PortfolioBox = ({
   id,
   title,
   image,
+  isVideo = false,
   imageCount = 0,
   videoCount = 0,
   onEdit,
@@ -53,16 +56,29 @@ export const PortfolioBox = ({
 
   return (
     <div className='bg-[var(--bg-dark)] rounded-2xl border-2 border-[var(--border-dark)] overflow-hidden hover:shadow-md transition-shadow'>
-      {/* Image Section */}
+      {/* Media Section */}
       <div className='aspect-[298/296] flex items-center justify-center relative group bg-[var(--background)]'>
         {image ? (
-          <Image
-            src={image}
-            alt={title}
-            className='max-w-full object-cover h-auto w-auto max-h-full'
-            height={296}
-            width={298}
-          />
+          isVideo ? (
+            // Render video player for video files
+            <video
+              src={image}
+              className='max-w-full object-cover h-auto w-auto max-h-full rounded-t-2xl'
+              controls
+              preload='metadata'
+              muted
+            >
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <Image
+              src={image}
+              alt={title}
+              className='max-w-full object-cover h-auto w-auto max-h-full'
+              height={296}
+              width={298}
+            />
+          )
         ) : (
           <div className='flex flex-col items-center h-full justify-center text-[var(--text-secondary)]'>
             <Gallery
@@ -74,15 +90,15 @@ export const PortfolioBox = ({
         )}
         {/* Media Count Badge */}
         {(imageCount > 0 || videoCount > 0) && (
-          <div className='absolute bottom-2 right-2 bg-[var(--text-dark)]/70 backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2'>
+          <div className='absolute bottom-2 right-2 bg-[var(--white-background)] backdrop-blur-sm rounded-full px-3 py-1.5 flex items-center gap-2'>
             {imageCount > 0 && (
               <div className='flex items-center gap-1'>
                 <Gallery
                   size={16}
-                  className='text-white'
-                  color='var(--icon-dark)'
+                  className='text-[var(--text-dark)]'
+                  color='var(--text-dark)'
                 />
-                <span className='text-white text-sm font-medium'>
+                <span className='text-[var(--text-dark)] text-sm font-medium'>
                   {imageCount}
                 </span>
               </div>
@@ -91,10 +107,10 @@ export const PortfolioBox = ({
               <div className='flex items-center gap-1'>
                 <VideoPlay
                   size={16}
-                  className='text-white'
-                  color='var(--icon-dark)'
+                  className='text-[var(--text-dark)]'
+                  color='var(--text-dark)'
                 />
-                <span className='text-white text-sm font-medium'>
+                <span className='text-[var(--text-dark)] text-sm font-medium'>
                   {videoCount}
                 </span>
               </div>
