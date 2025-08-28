@@ -142,13 +142,13 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
           ) : (
             <>
               <div className='px-4'>
-                <Label className='field-label text-xs'>Line Total</Label>
+                <Label className='field-label text-xs'>Labor Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.lineTotal)}
                 </p>
               </div>
               <div className='border-l border-[var(--border-dark)] px-6'>
-                <Label className='field-label text-xs'>Service Total</Label>
+                <Label className='field-label text-xs'>Material Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.serviceTotal)}
                 </p>

@@ -43,11 +43,21 @@ export const calculateMaterialCost = (material: {
   rate: number;
   qty: number;
   is_hidden?: boolean;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }): number => {
   if (!shouldIncludeInCalculation(material)) {
     return 0;
   }
-  return calculateLineTotal(material.rate, material.qty);
+  const baseCost = calculateLineTotal(material.rate, material.qty);
+  const markupValue = safeNumber(material.markup || 0);
+  const markupType = material.markup_type || 'FLAT_AMOUNT';
+
+  if (markupType === 'PERCENTAGE') {
+    return baseCost + (baseCost * markupValue) / 100;
+  } else {
+    return baseCost + markupValue;
+  }
 };
 
 export const calculateServiceMaterialCost = (
@@ -56,6 +66,8 @@ export const calculateServiceMaterialCost = (
         rate: number;
         qty: number;
         is_hidden?: boolean;
+        markup?: number;
+        markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
       }>
     | undefined
     | null
@@ -74,6 +86,8 @@ export const calculateServiceFinishCost = (
         rate: number;
         qty: number;
         is_hidden?: boolean;
+        markup?: number;
+        markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
       }>
     | undefined
     | null
@@ -91,11 +105,15 @@ export const calculateServiceTotalMaterialCost = (
     rate: number;
     qty: number;
     is_hidden?: boolean;
+    markup?: number;
+    markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
   }>,
   finishes: Array<{
     rate: number;
     qty: number;
     is_hidden?: boolean;
+    markup?: number;
+    markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
   }> = []
 ): number => {
   const materialCost = calculateServiceMaterialCost(materials);
@@ -113,11 +131,15 @@ export const calculateTradeMaterialCost = (
           rate: number;
           qty: number;
           is_hidden?: boolean;
+          markup?: number;
+          markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
         }>;
         finishes?: Array<{
           rate: number;
           qty: number;
           is_hidden?: boolean;
+          markup?: number;
+          markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
         }>;
       }>
     | undefined
@@ -244,56 +266,9 @@ export const calculateMarkupValue = (trade: {
     });
 
     if (hasIndividualMarkupFields) {
-      // Flat amount markup: sum of individual material and finish markups (including 0 values)
-      return services.reduce((total, service) => {
-        if (!shouldIncludeInCalculation(service)) {
-          return total;
-        }
-
-        // Sum material markups
-        const materialMarkup = (service.materials || []).reduce(
-          (materialTotal, material) => {
-            if (!shouldIncludeInCalculation(material)) {
-              return materialTotal;
-            }
-            const markupValue = safeNumber(material.markup || 0);
-            const markupType = material.markup_type || 'FLAT_AMOUNT';
-
-            if (markupType === 'PERCENTAGE') {
-              // Calculate percentage of the material cost (qty * rate)
-              const materialCost = calculateMaterialCost(material);
-              return materialTotal + (materialCost * markupValue) / 100;
-            } else {
-              // Flat amount markup
-              return materialTotal + markupValue;
-            }
-          },
-          0
-        );
-
-        // Sum finish markups
-        const finishMarkup = (service.finishes || []).reduce(
-          (finishTotal, finish) => {
-            if (!shouldIncludeInCalculation(finish)) {
-              return finishTotal;
-            }
-            const markupValue = safeNumber(finish.markup || 0);
-            const markupType = finish.markup_type || 'FLAT_AMOUNT';
-
-            if (markupType === 'PERCENTAGE') {
-              // Calculate percentage of the finish cost (qty * rate)
-              const finishCost = calculateMaterialCost(finish);
-              return finishTotal + (finishCost * markupValue) / 100;
-            } else {
-              // Flat amount markup
-              return finishTotal + markupValue;
-            }
-          },
-          0
-        );
-
-        return total + materialMarkup + finishMarkup;
-      }, 0);
+      // Since item-level markups are now included in material cost,
+      // we only return trade-level markup to avoid double-counting
+      return safeNumber(markup);
     } else {
       // Trade-level flat amount markup: use the trade markup value directly
       return safeNumber(markup);
@@ -329,6 +304,7 @@ export const calculateTradeTotal = (trade: {
   labor_cost: number;
   material_cost: number;
   markup: number;
+  markup_trade_only: number;
   trade_total: number;
 } => {
   const services = trade.services || [];
@@ -336,11 +312,59 @@ export const calculateTradeTotal = (trade: {
   const materialCost = calculateTradeMaterialCost(services);
   const markupValue = calculateMarkupValue(trade);
 
+  // Calculate item-level markup sum (for display in Total Markup)
+  const itemMarkupSum = services.reduce((total, service) => {
+    if (!shouldIncludeInCalculation(service)) {
+      return total;
+    }
+
+    // Sum material markups
+    const materialMarkup = (service.materials || []).reduce(
+      (materialTotal, material) => {
+        if (!shouldIncludeInCalculation(material)) {
+          return materialTotal;
+        }
+        const markupValue = safeNumber(material.markup || 0);
+        const markupType = material.markup_type || 'FLAT_AMOUNT';
+
+        if (markupType === 'PERCENTAGE') {
+          const materialCost = calculateMaterialCost(material);
+          return materialTotal + (materialCost * markupValue) / 100;
+        } else {
+          return materialTotal + markupValue;
+        }
+      },
+      0
+    );
+
+    // Sum finish markups
+    const finishMarkup = (service.finishes || []).reduce(
+      (finishTotal, finish) => {
+        if (!shouldIncludeInCalculation(finish)) {
+          return finishTotal;
+        }
+        const markupValue = safeNumber(finish.markup || 0);
+        const markupType = finish.markup_type || 'FLAT_AMOUNT';
+
+        if (markupType === 'PERCENTAGE') {
+          const finishCost = calculateMaterialCost(finish);
+          return finishTotal + (finishCost * markupValue) / 100;
+        } else {
+          return finishTotal + markupValue;
+        }
+      },
+      0
+    );
+
+    return total + materialMarkup + finishMarkup;
+  }, 0);
+
   return {
     labor_cost: laborCost,
     material_cost: materialCost,
-    markup: markupValue,
-    trade_total: laborCost + materialCost + markupValue,
+    markup: itemMarkupSum, // Total of item-level markups for display
+    markup_trade_only: markupValue, // Trade-level markup for calculations
+    trade_total: laborCost + materialCost, // Only labor + material (markup already included in material cost)
   };
 };
 
@@ -379,7 +403,6 @@ export const calculateJobTotal = (
 } => {
   let totalLaborCost = 0;
   let totalMaterialCost = 0;
-  let totalMarkup = 0;
 
   jobRooms.forEach(room => {
     const trades = room.trades || [];
@@ -387,15 +410,15 @@ export const calculateJobTotal = (
       const tradeTotals = calculateTradeTotal(trade);
       totalLaborCost += tradeTotals.labor_cost;
       totalMaterialCost += tradeTotals.material_cost;
-      totalMarkup += tradeTotals.markup;
+      // Don't add trade-level markup since it's not included in trade totals
     });
   });
 
   return {
     labor_cost: totalLaborCost,
     material_cost: totalMaterialCost,
-    markup: totalMarkup,
-    trade_total: totalLaborCost + totalMaterialCost + totalMarkup,
+    markup: 0, // No additional markup since it's already included in material cost
+    trade_total: totalLaborCost + totalMaterialCost, // Only labor + material (markup already included)
   };
 };
 
