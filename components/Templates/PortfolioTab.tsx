@@ -22,6 +22,48 @@ import { extractApiErrorMessage } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
+// Utility function to detect if a file URL is a video
+/**
+ * Detects if a file URL represents a video file based on extension and URL patterns
+ * @param fileUrl - The URL or file path to check
+ * @returns true if the file appears to be a video, false otherwise
+ */
+const isVideoFile = (fileUrl: string): boolean => {
+  const videoExtensions = [
+    '.mp4',
+    '.mov',
+    '.avi',
+    '.webm',
+    '.mkv',
+    '.flv',
+    '.wmv',
+    '.m4v',
+    '.3gp',
+  ];
+  const lowerUrl = fileUrl.toLowerCase();
+
+  // Check for video file extensions
+  if (videoExtensions.some(ext => lowerUrl.includes(ext))) {
+    return true;
+  }
+
+  // Check for video MIME types in URL (if present)
+  if (lowerUrl.includes('video/')) {
+    return true;
+  }
+
+  // Check for common video file patterns in URLs
+  if (
+    lowerUrl.includes('/video/') ||
+    lowerUrl.includes('_video') ||
+    lowerUrl.includes('video_')
+  ) {
+    return true;
+  }
+
+  return false;
+};
+
 export const PortfolioTab = ({
   companyId,
   canEditCompany = false,
@@ -220,32 +262,39 @@ export const PortfolioTab = ({
 
     setIsSubmitting(true);
     try {
-      // Collect all image files and upload to get file keys
-      const imageFiles = (data.media || []).filter(file =>
-        file.type.startsWith('image/')
-      );
+      // Collect all media files and upload to get file keys
+      const mediaFiles = data.media || [];
       const uploadedImageKeys: string[] = [];
+      const uploadedVideoKeys: string[] = [];
 
-      for (const imageFile of imageFiles) {
+      for (const mediaFile of mediaFiles) {
         try {
-          const { name: fileName, type: fileType, size: fileSize } = imageFile;
+          const { name: fileName, type: fileType, size: fileSize } = mediaFile;
           const ext = fileName.split('.').pop() || 'png';
           const timestamp = Date.now();
           const projectUuid = uuidv4();
-          const generatedFileName = `project_${projectUuid}_${timestamp}.${ext}`;
+          const isVideo = fileType.startsWith('video/');
+          const generatedFileName = `${isVideo ? 'video' : 'image'}_${projectUuid}_${timestamp}.${ext}`;
 
+          const purpose = isCompanyOrUserProfile
+            ? UPLOAD_PURPOSES.USER_PROJECT
+            : UPLOAD_PURPOSES.COMPANY_PROJECT;
           const presigned = await getPresignedUrl({
             fileName: generatedFileName,
             fileType,
             fileSize,
-            purpose: UPLOAD_PURPOSES.COMPANY_PROJECT,
+            purpose,
             customPath: '',
           });
 
           const { data: presignedData } = presigned;
-          await uploadFileToPresignedUrl(presignedData['uploadUrl'], imageFile);
+          await uploadFileToPresignedUrl(presignedData['uploadUrl'], mediaFile);
           if (presignedData['fileKey']) {
-            uploadedImageKeys.push(presignedData['fileKey']);
+            if (isVideo) {
+              uploadedVideoKeys.push(presignedData['fileKey']);
+            } else {
+              uploadedImageKeys.push(presignedData['fileKey']);
+            }
           }
         } catch (uploadError) {
           if (handleAuthError(uploadError)) {
@@ -258,17 +307,26 @@ export const PortfolioTab = ({
         }
       }
 
-      // Edit mode: merge remaining existing images with newly uploaded ones
-      const baseExisting =
+      // Edit mode: merge remaining existing images and videos with newly uploaded ones
+      const baseExistingImages =
         editingProject && Array.isArray(data.existingImages)
           ? data.existingImages
           : editingProject?.images || [];
-      const mergedImages = [...baseExisting, ...uploadedImageKeys];
+
+      const baseExistingVideos =
+        editingProject && Array.isArray(data.existingVideos)
+          ? data.existingVideos
+          : editingProject?.videos || [];
+
+      const mergedImages = [...baseExistingImages, ...uploadedImageKeys];
+      const mergedVideos = [...baseExistingVideos, ...uploadedVideoKeys];
       const finalImages = Array.from(new Set(mergedImages));
+      const finalVideos = Array.from(new Set(mergedVideos));
 
       const projectData = {
         name: data.projectName,
-        ...(finalImages.length > 0 && { images: finalImages }),
+        images: finalImages,
+        videos: finalVideos,
         ...(isCompanyOrUserProfile
           ? { user_id: targetId }
           : { company_id: targetId }),
@@ -290,6 +348,7 @@ export const PortfolioTab = ({
                     ...p,
                     name: projectData.name,
                     images: finalImages,
+                    videos: finalVideos,
                   }
                 : p
             )
@@ -380,24 +439,35 @@ export const PortfolioTab = ({
               <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
                 {portfolioProjects.map((project: PortfolioProject) => {
                   const displayTitle = project.name || project.title || '';
+
+                  // Prioritize images over videos for display, but fall back to videos if no images
                   const rawImage =
                     (project.images && project.images[0]) ||
+                    (project.videos && project.videos[0]) ||
                     project.image ||
                     APP_CONFIG.IMAGES.PROJECT_PLACEHOLDER;
+
                   const displayImage =
                     rawImage &&
                     (rawImage.startsWith('http') || rawImage.startsWith('/'))
                       ? rawImage
                       : `${APP_CONFIG.CDN_URL}${rawImage}`;
+
+                  // Check if the display media is actually a video file
+                  const isVideo = isVideoFile(displayImage);
+
                   const imageCount =
                     project.images?.length || project.imageCount || 0;
-                  const videoCount = project.videoCount || 0;
+                  const videoCount =
+                    project.videos?.length || project.videoCount || 0;
+
                   return (
                     <PortfolioBox
                       key={project.uuid}
                       id={project.uuid}
                       title={displayTitle}
                       {...(displayImage && { image: displayImage })}
+                      {...(isVideo && { isVideo: true })}
                       imageCount={imageCount}
                       videoCount={videoCount}
                       onEdit={canEditCompany ? handleEdit : undefined}

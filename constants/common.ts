@@ -53,6 +53,8 @@ export const ROUTES = {
   COMPANY_DETAILS: '/company-management/company-details',
   ADD_USER: '/company-management/add-user',
   TOOLS_MANAGEMENT: '/tools-management',
+  TOOL_DETAIL: '/tools-management/tool-detail',
+  TOOL_VIDEOS_TUTORIAL: '/tools-management/tool-detail/videos-tutorial',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
   USER_PROFILE: '/user-management/profile',
@@ -405,6 +407,10 @@ export const MOCK_JOBS = [
 export const UPLOAD_PURPOSES = {
   COMPANY_COVER_IMAGE: 'company-cover-image',
   COMPANY_PROJECT: 'company-project',
+  USER_COVER_IMAGE: 'user-cover-image',
+  USER_PROJECT: 'user-project',
+  TOOL: 'tool',
+  TOOL_TUTORIAL: 'tool-tutorial',
 } as const;
 
 // Project Management Messages
