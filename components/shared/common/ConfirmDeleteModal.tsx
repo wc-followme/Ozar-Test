@@ -57,13 +57,19 @@ export function ConfirmDeleteModal({
         </p>
         <div className='flex gap-2 md:gap-4 w-full justify-center'>
           <Button
-            onClick={onCancel}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCancel();
+            }}
             className='h-[48px] px-6 md:px-8 border-2 border-[var(--border-dark)] bg-transparent rounded-full font-semibold text-[var(--text-dark)] flex items-center'
           >
             Cancel
           </Button>
           <Button
-            onClick={onDelete}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
             type='submit'
             className='h-[48px] px-6 md:px-12 bg-[var(--warning)] hover:bg-[var(--warning)] rounded-full font-semibold text-white'
           >
