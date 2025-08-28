@@ -107,30 +107,30 @@ export const ProfileOtherDetailsComponent = ({
             <RedirectionIcon className='text-[var(--text-secondary)] cursor-pointer hover:text-[var(--primary)]' />
           </div>
         </div>
-        <div className='lg:min-w-[600px] min-w-full max-w-full w-full'>
+        <div className='lg:min-w-[400px] min-w-full max-w-full'>
           <div className='flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 w-full'>
-            <div className='flex-1'>
+            <div>
               <label className='text-sm text-[var(--text-secondary)] font-normal'>
                 {PROFILE_DETAILS_MESSAGES.ADDRESS}
               </label>
-              <p className='text-[var(--text-dark)] font-medium text-sm'>
+              <p className='text-[var(--text-dark)] font-medium text-sm mt-1'>
                 {communication && city && pincode
                   ? `${communication}, ${city} ${pincode}`
                   : communication || city || pincode || '-'}
               </p>
             </div>
-            {showViewCompanyProfileButton && (
-              <div className='lg:flex-shrink-0 ml-auto'>
-                <Link
-                  href={companyProfileUrl || ''}
-                  className='btn-secondary text-[14px] gap-1 !px-[12px] xl:!px-[26px] !py-[10px] !h-9 rounded-full'
-                >
-                  {PROFILE_DETAILS_MESSAGES.VIEW_COMPANY_PROFILE}
-                </Link>
-              </div>
-            )}
           </div>
         </div>
+        {showViewCompanyProfileButton && (
+          <div className='lg:flex-shrink-0 ml-auto'>
+            <Link
+              href={companyProfileUrl || ''}
+              className='btn-secondary text-[14px] gap-1 !px-[12px] xl:!px-[26px] !py-[10px] !h-9 rounded-full'
+            >
+              {PROFILE_DETAILS_MESSAGES.VIEW_COMPANY_PROFILE}
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
