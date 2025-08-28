@@ -27,6 +27,15 @@ pipeline {
             script {
               def branchName = env.GIT_BRANCH ? env.GIT_BRANCH.replaceAll(/^origin\//, '') : (env.BRANCH_NAME ?: 'unknown')
               def prNumber = env.CHANGE_ID ?: ''
+
+              // If PR_NUMBER is empty, try extracting from merge commit
+              if (!prNumber?.trim()) {
+                prNumber = sh(
+                  script: "git log -1 --pretty=%s | grep -oE '#[0-9]+' | tr -d '#' || true",
+                  returnStdout: true
+                ).trim()
+              }
+
               sshagent(credentials: ['envision-ssh-key']) {
                 sh """
                   ssh -o StrictHostKeyChecking=no $EC2_USER_HOST_QA "
@@ -62,6 +71,15 @@ pipeline {
             script {
               def branchName = env.GIT_BRANCH ? env.GIT_BRANCH.replaceAll(/^origin\//, '') : (env.BRANCH_NAME ?: 'unknown')
               def prNumber = env.CHANGE_ID ?: ''
+
+              // If PR_NUMBER is empty, try extracting from merge commit
+              if (!prNumber?.trim()) {
+                prNumber = sh(
+                  script: "git log -1 --pretty=%s | grep -oE '#[0-9]+' | tr -d '#' || true",
+                  returnStdout: true
+                ).trim()
+              }
+
               sshagent(credentials: ['envision-ssh-key']) {
                 sh """
                   ssh -o StrictHostKeyChecking=no $EC2_USER_HOST_MASTER "
@@ -91,7 +109,7 @@ pipeline {
 
           slackSend(
             channel: 'proj-envision',
-            message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \nMore info at: ${env.BUILD_URL} \nWeb-Site URL: ${siteUrl}",
+            message: "Build: *${currentBuild.result}:* JOB ${env.JOB_NAME} build ${env.BUILD_NUMBER} \nPR: ${env.CHANGE_ID ?: 'N/A'} \nMore info at: ${env.BUILD_URL} \nWeb-Site URL: ${siteUrl}",
             color: color
           )
 
