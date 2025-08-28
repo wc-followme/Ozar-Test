@@ -462,7 +462,7 @@ export default function EstimationServiceForm({
         }}
         onItemUpdate={onMaterialUpdate || (() => {})}
         onItemDelete={onMaterialDelete || (() => {})}
-        defaultExpanded={true}
+        defaultExpanded={false}
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
@@ -497,7 +497,7 @@ export default function EstimationServiceForm({
         }}
         onItemUpdate={onFinishUpdate || (() => {})}
         onItemDelete={onFinishDelete || (() => {})}
-        defaultExpanded={true}
+        defaultExpanded={false}
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
@@ -514,7 +514,7 @@ export default function EstimationServiceForm({
         onAddTool={onAddTool || (() => {})}
         onRemoveTool={onRemoveTool || (() => {})}
         onReplaceTools={onReplaceTools || (() => {})}
-        defaultExpanded={true}
+        defaultExpanded={false}
         roomName={roomName}
         tradeName={tradeName}
         serviceName={service.name}
