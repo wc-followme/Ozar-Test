@@ -146,6 +146,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [triggerAddToOutSource, setTriggerAddToOutSource] = useState(false);
   const [selectedSubContractor, setSelectedSubContractor] = useState<any>(null);
+  const [isReceivedTradeService, setIsReceivedTradeService] =
+    useState<boolean>(false);
   const [rooms, setRooms] = useState<Room[]>([
     {
       id: '0',
@@ -1336,6 +1338,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             setShowServiceForm(false);
             setSelectedService(null);
             setSelectedSubContractor(null); // Clear sub contractor selection
+            setIsReceivedTradeService(false); // Clear received trade service flag
           }}
           onTradeSelect={trade => {
             setSelectedTrade(trade.id);
@@ -1344,12 +1347,15 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             setShowServiceForm(false);
             setSelectedService(null);
             setSelectedSubContractor(null); // Clear sub contractor selection
+            setIsReceivedTradeService(false); // Clear received trade service flag
           }}
           onServiceSelect={service => {
             setSelectedService(service.id);
             setShowServiceForm(true);
             setShowAddService(true);
             setSelectedSubContractor(null); // Clear sub contractor selection
+            // Check if this service is from received trades
+            setIsReceivedTradeService(service.isFromReceivedTrades || false);
           }}
           selectedRoomId={selectedRoomId || ''}
           selectedTradeId={selectedTrade || ''}
@@ -1417,6 +1423,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
                           laborCost?: number;
                           materialCost?: number;
                           tradeTotal?: number;
+                          services?: Array<any>;
                         }>;
                       }) => (
                         <div
@@ -1429,12 +1436,38 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
                           <div className='space-y-4'>
                             {room.trades?.map(trade => (
                               <SubContractorListCard
+                                key={trade.id}
                                 id={String(trade.id)}
                                 name={trade.name}
-                                dateRange={'Mar 20 - Mar 23 (3D)'}
-                                laborCost={trade.laborCost}
-                                materialCost={trade.materialCost}
-                                tradeTotal={trade.tradeTotal}
+                                dateRange={
+                                  trade.dateRange || 'Mar 20 - Mar 23 (3D)'
+                                }
+                                laborCost={trade.laborCost || 0}
+                                materialCost={trade.materialCost || 0}
+                                tradeTotal={trade.tradeTotal || 0}
+                                serviceCount={trade.services?.length || 0}
+                                onClick={() => {
+                                  // Find the actual trade data from tradeSidebarData
+                                  const actualTrade = tradeSidebarData
+                                    .flatMap(room => room.trades)
+                                    .find(
+                                      t =>
+                                        t.id === trade.id ||
+                                        t.uniqueKey === trade.id
+                                    );
+
+                                  if (actualTrade) {
+                                    // Set the selected trade to show its details
+                                    setSelectedTrade(actualTrade.id);
+                                    setSelectedTradeUniqueKey(
+                                      actualTrade.uniqueKey
+                                    );
+                                    setShowAddService(true);
+                                    setShowServiceForm(false);
+                                    setSelectedService(null);
+                                    setSelectedSubContractor(null); // Clear sub contractor view
+                                  }
+                                }}
                               />
                             ))}
                           </div>
@@ -1499,6 +1532,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
                       roomName={selectedRoom?.name || 'Room'}
                       tradeName={selectedTradeData?.name || 'Trade'}
                       tradeId={selectedTrade || undefined}
+                      isDisabled={isReceivedTradeService}
+                      isFromReceivedTrades={isReceivedTradeService}
                     />
                   ) : (
                     // Service selected but data not found

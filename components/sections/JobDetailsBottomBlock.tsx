@@ -5,6 +5,7 @@ import TradeComponent from '@/components/shared/common/TradeComponent';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ReactNode, useState } from 'react';
 import EstimateComponent from '../Templates/EstimateComponent';
+import WorkflowSection from './WorkflowSection';
 
 interface JobDetailsBottomBlockProps {
   initialTab?: string;
@@ -19,15 +20,108 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
     initialTab || 'estimate'
   );
 
-  // Temporary data for EstimateComponent
-  const breadcrumbData = [
-    { name: 'Job Management', href: '/job-management' },
-    { name: 'Job Details', href: '#' },
-  ];
+  // Sample workflow data
+  const [workflowSteps, setWorkflowSteps] = useState<any[]>([
+    {
+      id: '1',
+      name: 'Project Planning',
+      status: 'completed',
+      description: 'Define project scope, timeline, and resource requirements',
+      assignedTo: 'John Smith',
+      dueDate: '2024-01-15',
+      completedDate: '2024-01-14',
+      estimatedDuration: '3 days',
+    },
+    {
+      id: '2',
+      name: 'Site Preparation',
+      status: 'in-progress',
+      description: 'Prepare the construction site and set up equipment',
+      assignedTo: 'Mike Johnson',
+      dueDate: '2024-01-20',
+      estimatedDuration: '2 days',
+    },
+    {
+      id: '3',
+      name: 'Foundation Work',
+      status: 'pending',
+      description: 'Excavate and pour foundation',
+      assignedTo: 'Sarah Wilson',
+      dueDate: '2024-01-25',
+      estimatedDuration: '5 days',
+    },
+    {
+      id: '4',
+      name: 'Framing',
+      status: 'pending',
+      description: 'Install structural framework',
+      assignedTo: 'David Brown',
+      dueDate: '2024-02-05',
+      estimatedDuration: '7 days',
+    },
+  ]);
+
+  const [currentStep, setCurrentStep] = useState<string>('2');
+
+  // Temporary data for EstimateComponent - removed unused breadcrumbData
 
   const handleAddRoom = () => {
     console.log('Add room clicked');
     // TODO: Implement add room functionality
+  };
+
+  // Workflow handlers
+  const handleStepClick = (stepId: string) => {
+    setCurrentStep(stepId);
+    console.log('Step clicked:', stepId);
+  };
+
+  const handleAddStep = () => {
+    const newStep = {
+      id: Date.now().toString(),
+      name: 'New Workflow Step',
+      status: 'pending',
+      description: 'Description for the new workflow step',
+      assignedTo: 'Unassigned',
+      dueDate: '2024-02-15',
+      estimatedDuration: '1 day',
+    };
+    setWorkflowSteps(prev => [...prev, newStep]);
+  };
+
+  const handleEditStep = (stepId: string) => {
+    console.log('Edit step:', stepId);
+    // TODO: Implement edit step functionality
+  };
+
+  const handleCompleteStep = (stepId: string) => {
+    setWorkflowSteps(prev =>
+      prev.map(step =>
+        step.id === stepId
+          ? {
+              ...step,
+              status: 'completed',
+              completedDate: new Date().toISOString().split('T')[0],
+            }
+          : step
+      )
+    );
+  };
+
+  const handlePauseStep = (stepId: string) => {
+    setWorkflowSteps(prev =>
+      prev.map(step =>
+        step.id === stepId ? { ...step, status: 'blocked' } : step
+      )
+    );
+  };
+
+  const handleResumeStep = (stepId: string) => {
+    setWorkflowSteps(prev =>
+      prev.map(step =>
+        step.id === stepId ? { ...step, status: 'in-progress' } : step
+      )
+    );
   };
 
   return (
@@ -134,7 +228,16 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
             <ComingSoon />
           </TabsContent>
           <TabsContent value='workflow' className='m-0'>
-            <ComingSoon />
+            <WorkflowSection
+              workflowSteps={workflowSteps}
+              currentStep={currentStep}
+              onStepClick={handleStepClick}
+              onAddStep={handleAddStep}
+              onEditStep={handleEditStep}
+              onCompleteStep={handleCompleteStep}
+              onPauseStep={handlePauseStep}
+              onResumeStep={handleResumeStep}
+            />
           </TabsContent>
           <TabsContent value='calendar' className='m-0'>
             <ComingSoon />

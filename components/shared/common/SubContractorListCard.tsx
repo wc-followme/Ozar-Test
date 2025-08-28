@@ -8,6 +8,8 @@ interface SubContractorListCardProps {
   laborCost?: number;
   materialCost?: number;
   tradeTotal?: number;
+  serviceCount?: number;
+  onClick?: () => void;
 }
 
 const formatCurrency = (amount: number): string => {
@@ -25,19 +27,24 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
   laborCost,
   materialCost,
   tradeTotal,
+  serviceCount,
+  onClick,
 }) => {
   const labor = typeof laborCost === 'number' ? laborCost : 400;
   const material = typeof materialCost === 'number' ? materialCost : 1735;
   const total = typeof tradeTotal === 'number' ? tradeTotal : labor + material;
 
   return (
-    <div className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4'>
+    <div
+      className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4 cursor-pointer hover:bg-[var(--card-hover)] transition-colors'
+      onClick={onClick}
+    >
       <div className='flex items-start justify-between gap-4'>
         <div>
           <div className='text-[var(--text-dark)] font-semibold'>
             {name} -{' '}
             <span className='text-[var(--text-secondary)] font-normal'>
-              2 services
+              {serviceCount || 0} services
             </span>
           </div>
           <div className='text-sm text-[var(--text-dark)] mt-1 flex items-center gap-2'>

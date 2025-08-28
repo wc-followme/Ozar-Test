@@ -299,9 +299,9 @@ const TradeSidebar = forwardRef<
 
     return (
       <div className='w-80 bg-[var(--card-background)] border-r border-[var(--border-dark)]'>
-        <div className='h-[calc(100vh_-_120px)] overflow-y-auto px-4 py-2'>
+        <div className='h-[calc(100vh_-_120px)] overflow-y-auto p-4'>
           {/* Title */}
-          <div className='mb-4 px-2'>
+          <div className='mb-2 px-2'>
             <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
               My Trades
             </h2>
@@ -555,7 +555,7 @@ const TradeSidebar = forwardRef<
               <div className='border-t border-[var(--border-dark)] my-4'></div>
 
               {/* Out Source Trades Title */}
-              <div className='mb-4 px-2'>
+              <div className='mb-2 px-2'>
                 <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
                   Out Source Trades
                 </h2>
@@ -796,7 +796,7 @@ const TradeSidebar = forwardRef<
               <div className='border-t border-[var(--border-dark)] my-4'></div>
 
               {/* Received Trades Title */}
-              <div className='mb-4 px-2'>
+              <div className='mb-2 px-2'>
                 <h2 className="font-['Inter'] font-medium text-[12px] leading-[100%] text-[var(--text-secondary)]">
                   Received Trades
                 </h2>
@@ -994,7 +994,16 @@ const TradeSidebar = forwardRef<
                             className='border-none'
                           >
                             <AccordionPrimitive.Header className='flex'>
-                              <AccordionPrimitive.Trigger className='flex items-center justify-between py-2 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                              <AccordionPrimitive.Trigger
+                                className='flex items-center justify-between py-2 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'
+                                onClick={() =>
+                                  onRoomSelect &&
+                                  onRoomSelect({
+                                    uniqueKey: room.id,
+                                    name: room.name,
+                                  })
+                                }
+                              >
                                 <div className='flex items-center flex-1 min-w-0'>
                                   <IconChevronDown
                                     size={16}
@@ -1022,7 +1031,17 @@ const TradeSidebar = forwardRef<
                                         className='border-none'
                                       >
                                         <AccordionPrimitive.Header className='flex'>
-                                          <AccordionPrimitive.Trigger className='flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                                          <AccordionPrimitive.Trigger
+                                            className='flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'
+                                            onClick={() =>
+                                              onTradeSelect &&
+                                              onTradeSelect({
+                                                id: trade.id,
+                                                uniqueKey: trade.id,
+                                                name: trade.name,
+                                              })
+                                            }
+                                          >
                                             <div className='flex items-center flex-1 min-w-0'>
                                               <IconChevronDown
                                                 size={16}
@@ -1047,8 +1066,15 @@ const TradeSidebar = forwardRef<
                                                   <div
                                                     key={`received_${service.id}`}
                                                     className='flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg'
+                                                    onClick={() =>
+                                                      onServiceSelect &&
+                                                      onServiceSelect({
+                                                        id: service.id,
+                                                        isFromReceivedTrades: true,
+                                                      })
+                                                    }
                                                   >
-                                                    <span className='text-sm font-medium group-hover:text-[var(--primary)] text-[var(--text-dark)]'>
+                                                    <span className='text-sm font-medium group-hover:text-[var(--text-dark)] text-[var(--text-dark)]'>
                                                       {service.name}
                                                     </span>
                                                     <div className='text-xs font-semibold text-[var(--text-dark)]'>

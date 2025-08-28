@@ -1,6 +1,7 @@
 'use client';
 
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import { APP_CONFIG } from '@/constants/common';
 import { apiService, FetchUsersResponse, User } from '@/lib/api';
 import { getCompanyId } from '@/lib/utils';
@@ -133,9 +134,12 @@ export const TeamTab = ({ companyId }: TeamTabProps) => {
   if (teamMembers.length === 0) {
     return (
       <div className='space-y-6'>
-        <div className='text-center text-[var(--text-secondary)] p-4'>
-          No team members found
-        </div>
+        <NoDataFound
+          title=''
+          description='No team members found'
+          buttonText=''
+          showButton={false}
+        />
       </div>
     );
   }

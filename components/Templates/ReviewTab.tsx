@@ -3,6 +3,7 @@
 import { CustomerReviewBox } from '@/components/shared/common/CustomerReviewBox';
 import Dropdown from '@/components/shared/common/Dropdown';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
 import { APP_CONFIG } from '@/constants/common';
@@ -323,9 +324,12 @@ export const ReviewTab = ({
       {!loading && !error && (
         <div className='space-y-4'>
           {localReviews.length === 0 ? (
-            <div className='text-center py-8'>
-              <p className='text-gray-600'>No reviews found.</p>
-            </div>
+            <NoDataFound
+              title=''
+              description='No reviews found'
+              buttonText=''
+              showButton={false}
+            />
           ) : (
             <>
               {localReviews.map((review: any, index: number) => {

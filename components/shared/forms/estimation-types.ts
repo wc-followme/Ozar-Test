@@ -34,6 +34,7 @@ export interface Service {
   description: string;
   qty: number;
   rate: number;
+  markup?: number; // Add markup field for offer rate
   lineTotal: number;
   serviceTotal: number;
   tradeTotal: number;

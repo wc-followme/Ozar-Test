@@ -100,15 +100,15 @@ export default function TradeHeader({
             <Avatar
               name={selectedSubContractor.name}
               image={selectedSubContractor.image || ''}
-              height={40}
-              width={40}
-              className='rounded-full text-sm'
+              height={32}
+              width={32}
+              className='rounded-full text-xs'
             />
             <div>
-              <h1 className='text-xl font-semibold text-gray-800'>
+              <h1 className='text-base font-medium text-[var(--text-dark)]'>
                 {selectedSubContractor.name}
               </h1>
-              <p className='text-sm text-gray-500'>
+              <p className='text-xs font-medium text-[var(--text-secondary)]'>
                 {selectedSubContractor.companyName}
               </p>
             </div>
@@ -135,14 +135,14 @@ export default function TradeHeader({
           {!showAddService ? (
             // Room view - show room name only
             <div>
-              <h1 className='text-xl font-semibold text-gray-800'>
+              <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                 {selectedRoom?.name}
               </h1>
             </div>
           ) : showServiceForm && selectedServiceData ? (
             // Service view - show service name with breadcrumb
             <div>
-              <h1 className='text-xl font-semibold text-gray-800'>
+              <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                 {selectedServiceData.name}
               </h1>
               <p className='text-sm text-gray-500'>
@@ -154,7 +154,7 @@ export default function TradeHeader({
             // Trade view - show trade name with breadcrumb
             selectedTradeData && (
               <div>
-                <h1 className='text-xl font-semibold text-gray-800'>
+                <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                   {selectedTradeData.name}
                 </h1>
                 <p className='text-sm text-gray-500'>in {selectedRoom?.name}</p>
@@ -166,7 +166,7 @@ export default function TradeHeader({
           <Button
             variant='ghost'
             size='sm'
-            className='text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+            className='text-gray-600 hover:text-[var] hover:bg-gray-100'
             onClick={onDeleteClick}
           >
             <Trash className='h-5 w-5' />

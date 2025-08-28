@@ -27,6 +27,8 @@ interface EstimationItemsAccordionProps {
   borderClass?: string; // New prop to control border styling
   showAddButton?: boolean; // New prop to control add button visibility
   disableVariant?: boolean; // New prop to disable variant field in items
+  isDisabled?: boolean; // New prop to disable all form fields
+  isFromReceivedTrades?: boolean; // New prop to show Offer Rate instead of Markup
 }
 
 export default function EstimationItemsAccordion({
@@ -44,6 +46,8 @@ export default function EstimationItemsAccordion({
   borderClass = 'border-none', // Default to border-none
   showAddButton = true, // Default to true to maintain current behavior
   disableVariant = false,
+  isDisabled = false,
+  isFromReceivedTrades = false,
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -105,7 +109,7 @@ export default function EstimationItemsAccordion({
               </div>
               {showAddButton && (
                 <div
-                  className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                  className='btn-primary !pl-3 !pr-5 w-32 !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center !gap-1 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
                   onClick={e => {
                     e.stopPropagation();
                     onAddItem();
@@ -136,6 +140,8 @@ export default function EstimationItemsAccordion({
                     useFixedWidths={useFixedWidths}
                     containerWidthClass={containerWidthClass}
                     disableVariant={disableVariant}
+                    isDisabled={isDisabled}
+                    isFromReceivedTrades={isFromReceivedTrades}
                   />
                 ))}
               </div>
