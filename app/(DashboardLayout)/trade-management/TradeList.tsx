@@ -29,7 +29,6 @@ export default function TradeList({
   canEdit,
   onRetrieve,
 }: TradeListProps) {
-
   return (
     <div className='w-full'>
       {trades.length === 0 && loading ? (
@@ -51,7 +50,7 @@ export default function TradeList({
             </div>
           ) : (
             <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {trades.map((trade) => {
+              {trades.map(trade => {
                 const { uuid, name, categories } = trade;
                 return (
                   <InfoCard
@@ -61,8 +60,10 @@ export default function TradeList({
                     menuOptions={menuOptions}
                     onEdit={() => onEdit(uuid)}
                     onDelete={() => onDelete(uuid)}
-                    onRetrieve={onRetrieve ? async () => onRetrieve(uuid) : undefined}
-                    module='trades'
+                    onRetrieve={
+                      onRetrieve ? async () => onRetrieve(uuid) : undefined
+                    }
+                    module='catalogue_services'
                   />
                 );
               })}

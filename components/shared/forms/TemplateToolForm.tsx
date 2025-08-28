@@ -233,11 +233,13 @@ export function TemplateToolForm({
           service_id: serviceValue,
         });
         type Item = { id?: string | number; uuid?: string; name?: string };
-        const payload = res as unknown as { data?: Item[] | { data?: Item[] } };
+        const payload = res as unknown as {
+          data?: Item[] | { tools?: Item[] };
+        };
         const list: Item[] = Array.isArray(payload?.data)
           ? (payload.data as Item[])
-          : Array.isArray((payload?.data as { data?: Item[] })?.data)
-            ? ((payload.data as { data?: Item[] }).data as Item[])
+          : Array.isArray((payload?.data as { tools?: Item[] })?.tools)
+            ? ((payload.data as { tools?: Item[] }).tools as Item[])
             : [];
         const opts: Option[] = list
           .filter(i => !!i?.name)
