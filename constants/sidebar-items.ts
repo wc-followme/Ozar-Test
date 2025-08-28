@@ -43,16 +43,13 @@ export const SIDEBAR_TITLES = {
 
 // Permission categories constants
 export const PERMISSION_CATEGORIES = {
-  CATEGORIES: 'categories',
+  CATALOGUE_SERVICES: 'catalogue_services',
   ROLES: 'roles',
   USERS: 'users',
   COMPANIES: 'companies',
-  TRADES: 'trades',
-  SERVICES: 'services',
-  MATERIALS: 'materials',
-  TOOLS: 'tools',
   JOBS: 'jobs',
   TEMPLATES: 'templates',
+  GLOBAL_SETTINGS: 'global_settings',
 } as const;
 
 // Permission actions constants

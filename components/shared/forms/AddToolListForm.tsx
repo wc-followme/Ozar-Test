@@ -73,12 +73,12 @@ export default function AddToolListForm({
 
       type ToolItem = { id?: string | number; uuid?: string; name?: string };
       const payload = response as unknown as {
-        data?: ToolItem[] | { data?: ToolItem[] };
+        data?: ToolItem[] | { tools?: ToolItem[] };
       };
       const list: ToolItem[] = Array.isArray(payload?.data)
         ? (payload.data as ToolItem[])
-        : Array.isArray((payload?.data as { data?: ToolItem[] })?.data)
-          ? ((payload.data as { data?: ToolItem[] }).data as ToolItem[])
+        : Array.isArray((payload?.data as { tools?: ToolItem[] })?.tools)
+          ? ((payload.data as { tools?: ToolItem[] }).tools as ToolItem[])
           : [];
 
       const options = list
