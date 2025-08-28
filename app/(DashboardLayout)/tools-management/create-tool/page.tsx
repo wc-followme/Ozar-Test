@@ -88,12 +88,6 @@ export default function CreateToolPage() {
       barcodes,
     } = data;
 
-    console.log('=== CREATE TOOL PAYLOAD DATA ===');
-    console.log('Form data:', data);
-    console.log('Video tutorial URLs:', video_tutorial_urls);
-    console.log('Video tutorial links:', video_tutorial_links);
-    console.log('Barcodes:', barcodes);
-
     setFormLoading(true);
     try {
       const payload: CreateToolRequest = {
@@ -114,9 +108,6 @@ export default function CreateToolPage() {
             barcodes: barcodes.filter(Boolean),
           }),
       };
-
-      console.log('Final create payload:', payload);
-      console.log('================================');
 
       const response = await apiService.createTool(payload);
       const { statusCode, message } = response;

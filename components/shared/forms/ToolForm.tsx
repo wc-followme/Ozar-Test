@@ -107,7 +107,6 @@ const ToolForm: React.FC<ToolFormProps> = ({
     toolIds: initialToolIds,
     videos: initialVideos,
   } = initialValues || {};
-  console.log('-->', { initialValues, initialVideoLinks });
 
   // State for videos and QR codes
   const [videos, setVideos] = useState<File[]>([]);
@@ -215,23 +214,13 @@ const ToolForm: React.FC<ToolFormProps> = ({
 
       // Update the image URL with the new file key
       setImageUrl(fileKey);
-
-      console.log('Photo uploaded successfully:', {
-        fileName: generatedFileName,
-        fileKey,
-        imageUrl: fileKey,
-      });
     } catch (error: any) {
-      console.error('Error uploading photo:', error);
-
       // Handle different types of errors
       if (error.status === 401) {
         // Handle authentication error
         handleAuthError(error);
       } else {
         // Handle other upload errors
-        const errorMessage = error.message || 'Failed to upload photo';
-        console.error('Upload error:', errorMessage);
 
         // Reset photo state on error
         setPhoto(null);
@@ -290,8 +279,6 @@ const ToolForm: React.FC<ToolFormProps> = ({
         await uploadFileToPresignedUrl(presigned.data['uploadUrl'], video);
         uploadedUrls.push(presigned.data['fileKey'] || '');
       } catch (error: any) {
-        console.error('Error uploading video:', video.name, error);
-
         // Handle different types of errors
         if (error.status === 401) {
           // Handle authentication error
@@ -300,8 +287,6 @@ const ToolForm: React.FC<ToolFormProps> = ({
           break;
         } else {
           // Handle other upload errors
-          const errorMessage = error.message || 'Failed to upload video';
-          console.error('Video upload error:', errorMessage);
           // Continue with other videos, don't add this video to uploadedUrls
         }
       }
@@ -315,14 +300,6 @@ const ToolForm: React.FC<ToolFormProps> = ({
     name: string;
     brandName: string;
   }) => {
-    console.log('=== TOOL FORM SUBMIT DATA ===');
-    console.log('Form data:', data);
-    console.log('Videos to upload:', videos);
-    console.log('Video links:', videoLinks);
-    console.log('New barcodes:', barcodes);
-    console.log('Existing barcodes:', existingBarcodes);
-    console.log('Image URL:', imageUrl);
-
     // Clear previous errors
     setVideoLinkError('');
 
@@ -359,19 +336,11 @@ const ToolForm: React.FC<ToolFormProps> = ({
       barcodes: allBarcodes,
     };
 
-    console.log('Final payload:', payload);
-    console.log('==============================');
-
     onSubmit(payload);
   };
 
   // Store image URL in component state to prevent loss during re-renders
   const [imageUrl, setImageUrl] = useState<string>('');
-  console.log('imageUrl', {
-    imageUrl,
-    existingImageUrl,
-    initialImageUrl,
-  });
 
   // Create a wrapper for handleDeletePhoto that also clears image URL
   const handleDeletePhotoWrapper = () => {

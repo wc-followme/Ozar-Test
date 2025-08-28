@@ -24,7 +24,6 @@ export const LostTab: React.FC<LostTabProps> = ({
 }) => {
   // Transform API data to UI format
   const transformData = (apiData: ToolItemDetail[]) => {
-    console.log('apiData', apiData);
     return apiData.map(item => {
       // Destructure item properties for cleaner access
       const {
@@ -89,7 +88,6 @@ export const LostTab: React.FC<LostTabProps> = ({
   };
 
   const transformedData = transformData(data);
-  console.log('transformedData', transformedData);
 
   if (loading) {
     return <TableSkeleton columns={4} rows={6} showActions={true} />;
