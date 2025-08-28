@@ -8,6 +8,7 @@ import { CommonStatus, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { apiService } from '@/lib/api';
+import { usePermissions } from '@/lib/permission-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
@@ -50,8 +51,9 @@ const EditRolePage = () => {
   const uuid = params['uuid'] as string;
 
   // Get user permissions for roles
-  const userPermissions = getUserPermissionsFromStorage();
-  const canEditRole = userPermissions?.roles?.edit;
+  const { permissions, isLoading: permsLoading } = usePermissions();
+  const userPermissions = permissions || getUserPermissionsFromStorage();
+  const canViewRole = userPermissions?.roles?.view;
 
   const breadcrumbData: BreadcrumbItem[] = [
     { name: ROLE_MESSAGES.ROLE_MANAGEMENT_BREADCRUMB, href: ROLE_MANAGEMENT },
@@ -150,7 +152,7 @@ const EditRolePage = () => {
   };
 
   // Check if user has permission to edit roles
-  if (userPermissions && !canEditRole) {
+  if (userPermissions && !canViewRole) {
     return (
       <AccessDenied
         title={ACCESS_DENIED_MESSAGES.ROLE_DETAILS_TITLE}
@@ -160,7 +162,7 @@ const EditRolePage = () => {
     );
   }
 
-  if (loading) return <LoadingComponent variant='fullscreen' />;
+  if (loading || permsLoading) return <LoadingComponent variant='fullscreen' />;
   if (error) return <div className='p-8 text-[var(--warning)]'>{error}</div>;
 
   if (!initialValues) return null;
@@ -175,6 +177,7 @@ const EditRolePage = () => {
         isSubmitting={isSubmitting}
         initialValues={initialValues}
         onSubmit={onSubmit}
+        {...(userPermissions ? { allowedPermissions: userPermissions } : {})}
       />
     </div>
   );
