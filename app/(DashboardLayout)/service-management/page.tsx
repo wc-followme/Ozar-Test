@@ -75,8 +75,8 @@ export default function ServiceManagementPage() {
 
   // Get user permissions for services
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.services?.edit;
-  const canViewServices = userPermissions?.services?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewServices = userPermissions?.catalogue_services?.view;
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
@@ -88,7 +88,10 @@ export default function ServiceManagementPage() {
         const companyId = getCompanyId();
 
         // Determine status based on selected tab
-        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const response = await apiService.fetchServices({
           page: targetPage,
@@ -201,12 +204,15 @@ export default function ServiceManagementPage() {
 
       // Prevent archiving of default services
       if (service?.is_default) {
-        showErrorToast(SERVICE_MESSAGES.DEFAULT_SERVICE_DELETE_ERROR || 'Cannot archive default service');
+        showErrorToast(
+          SERVICE_MESSAGES.DEFAULT_SERVICE_DELETE_ERROR ||
+            'Cannot archive default service'
+        );
         return;
       }
 
       const response = await apiService.updateServiceStatus(uuid, 'INACTIVE');
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, SERVICE_MESSAGES.DELETE_SUCCESS)
       );
@@ -229,14 +235,14 @@ export default function ServiceManagementPage() {
   const handleRetrieveService = async (uuid: string) => {
     try {
       const response = await apiService.updateServiceStatus(uuid, 'ACTIVE');
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, SERVICE_MESSAGES.RETRIEVE_SUCCESS)
       );
-      
+
       // Remove the retrieved service from the current list immediately
       setServices(prev => prev.filter(s => s.uuid !== uuid));
-      
+
       // Refresh list to reflect latest server state based on current tab
       await fetchServices(1, false);
     } catch (err: unknown) {

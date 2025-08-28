@@ -32,7 +32,7 @@ export default function CreateToolPage() {
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
-  const canCreateTool = userPermissions?.tools?.edit;
+  const canCreateTool = userPermissions?.catalogue_services?.edit;
 
   const breadcrumbData: BreadcrumbItem[] = [
     { name: TOOL_MESSAGES.TOOL_MANAGEMENT_BREADCRUMB, href: TOOLS_MANAGEMENT },

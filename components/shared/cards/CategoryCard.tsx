@@ -57,8 +57,8 @@ export function CategoryCard({
 
   // Get user permissions for categories
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.categories?.edit;
-  const canArchive = userPermissions?.categories?.archive;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canArchive = userPermissions?.catalogue_services?.archive;
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {
@@ -195,8 +195,8 @@ export function CategoryCard({
       />
       <ConfirmRetrieveModal
         open={showRetrieve}
-        title="Are you sure you want to retrieve?"
-        subtitle="This will restore the category to active status."
+        title='Are you sure you want to retrieve?'
+        subtitle='This will restore the category to active status.'
         onCancel={() => setShowRetrieve(false)}
         onRetrieve={async () => {
           setShowRetrieve(false);

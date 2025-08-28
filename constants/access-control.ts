@@ -67,105 +67,23 @@ export const ACCESS_CONTROL_ACCORDIONS_DATA = [
     ],
   },
   {
-    title: 'Category Management Settings',
+    title: 'Catalogue & Services Settings',
     badgeLabel: 'Restricted',
     stripes: [
       {
-        title: 'Browse Category Setting',
+        title: 'Browse Services Setting',
         description:
-          'View complete service categories list and access category details',
+          'View complete catalogue and services list including categories, trades, services, materials, and tools',
       },
       {
-        title: 'Create & Modify Category Setting',
-        description: 'Create new service categories and manage categories',
-      },
-      {
-        title: 'Archive & Restore Category Setting',
+        title: 'Create & Modify Services Setting',
         description:
-          'Remove categories that are no longer needed with data safety controls',
-      },
-    ],
-  },
-  {
-    title: 'Trade Management Settings',
-    badgeLabel: 'Restricted',
-    stripes: [
-      {
-        title: 'Browse Trade Setting',
-        description: 'View complete trades list and access trade details',
+          'Create and manage catalogue items including categories, trades, services, materials, and tools',
       },
       {
-        title: 'Create & Modify Trade Setting',
-        description: 'Create new trades and manage trade categories',
-      },
-      {
-        title: 'Archive & Restore Trade Setting',
+        title: 'Archive & Restore Services Setting',
         description:
-          'Remove trade classifications that are no longer needed with data safety controls',
-      },
-    ],
-  },
-  {
-    title: 'Service Management Settings',
-    badgeLabel: 'Restricted',
-    stripes: [
-      {
-        title: 'Browse Service Setting',
-        description: 'View complete services list and access service details',
-      },
-      {
-        title: 'Create & Modify Service Setting',
-        description: 'Create new services and manage services',
-      },
-      {
-        title: 'Archive & Restore Service Setting',
-        description:
-          'Remove services that are no longer offered with data safety controls',
-      },
-    ],
-  },
-  {
-    title: 'Material Management Settings',
-    badgeLabel: 'Restricted',
-    stripes: [
-      {
-        title: 'Browse Material Setting',
-        description:
-          'View complete materials list and access material details including specifications',
-      },
-      {
-        title: 'Create & Modify Material Setting',
-        description: 'Create new material entries and manage material',
-      },
-      {
-        title: 'Archive & Restore Material Setting',
-        description:
-          'Remove materials that are no longer used with data safety controls',
-      },
-    ],
-  },
-  {
-    title: 'Tools Management Settings',
-    badgeLabel: 'Restricted',
-    stripes: [
-      {
-        title: 'Browse Tools Setting',
-        description:
-          'View complete tools list and access tool details including specifications',
-      },
-      {
-        title: 'Create & Modify Tools Setting',
-        description: 'Create new tool entries and manage tool specifications',
-      },
-      {
-        title: 'Archive & Restore Tools Setting',
-        description:
-          'Remove tools that are no longer in service with data safety controls',
-      },
-      {
-        title: 'Access Tool History Setting',
-        description:
-          'View comprehensive tool history including usage logs and maintenance records',
+          'Remove catalogue items that are no longer needed with data safety controls',
       },
     ],
   },

@@ -34,7 +34,6 @@ export default function MaterialList({
   onCreateMaterial,
   canEdit,
 }: MaterialListProps) {
-
   return (
     <div className='w-full'>
       {materials.length === 0 && loading ? (
@@ -56,7 +55,7 @@ export default function MaterialList({
             </div>
           ) : (
             <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {materials.map((material) => {
+              {materials.map(material => {
                 const { uuid, name, services } = material;
                 return (
                   <InfoCard
@@ -66,7 +65,7 @@ export default function MaterialList({
                     menuOptions={menuOptions}
                     onEdit={() => onEdit(uuid)}
                     onDelete={() => onDelete(uuid)}
-                    module='materials'
+                    module='catalogue_services'
                   />
                 );
               })}

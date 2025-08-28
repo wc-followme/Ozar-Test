@@ -461,31 +461,10 @@ export interface UserPermissions {
     assign_user: boolean;
     archive: boolean;
   };
-  categories: {
+  catalogue_services: {
     view: boolean;
     edit: boolean;
     archive: boolean;
-  };
-  trades: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  services: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  materials: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  tools: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-    history: boolean;
   };
   jobs: {
     view: boolean;

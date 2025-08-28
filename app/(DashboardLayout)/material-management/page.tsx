@@ -75,8 +75,8 @@ export default function MaterialManagementPage() {
 
   // Get user permissions for materials
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.materials?.edit;
-  const canViewMaterials = userPermissions?.materials?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewMaterials = userPermissions?.catalogue_services?.view;
 
   const fetchMaterials = useCallback(
     async (targetPage = 1, append = false) => {
@@ -88,7 +88,10 @@ export default function MaterialManagementPage() {
         const companyId = getCompanyId();
 
         // Determine status based on selected tab
-        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const response = await apiService.fetchMaterials({
           page: targetPage,
@@ -200,12 +203,15 @@ export default function MaterialManagementPage() {
 
       // Prevent archiving of default materials
       if (material?.is_default) {
-        showErrorToast(MATERIAL_MESSAGES.DEFAULT_MATERIAL_DELETE_ERROR || 'Cannot archive default material');
+        showErrorToast(
+          MATERIAL_MESSAGES.DEFAULT_MATERIAL_DELETE_ERROR ||
+            'Cannot archive default material'
+        );
         return;
       }
 
       const response = await apiService.updateMaterialStatus(uuid, 'INACTIVE');
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, MATERIAL_MESSAGES.DELETE_SUCCESS)
       );
@@ -228,14 +234,14 @@ export default function MaterialManagementPage() {
   const handleRetrieveMaterial = async (uuid: string) => {
     try {
       const response = await apiService.updateMaterialStatus(uuid, 'ACTIVE');
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, MATERIAL_MESSAGES.RETRIEVE_SUCCESS)
       );
-      
+
       // Remove the retrieved material from the current list immediately
       setMaterials(prev => prev.filter(m => m.uuid !== uuid));
-      
+
       // Refresh list to reflect latest server state based on current tab
       await fetchMaterials(1, false);
     } catch (err: unknown) {
@@ -392,7 +398,9 @@ export default function MaterialManagementPage() {
             <MaterialList
               materials={materials}
               loading={loading}
-              noDataDescription={MATERIAL_MESSAGES.NO_MATERIALS_FOUND_DESCRIPTION}
+              noDataDescription={
+                MATERIAL_MESSAGES.NO_MATERIALS_FOUND_DESCRIPTION
+              }
               menuOptions={getMenuOptions(false)}
               onDelete={handleArchiveMaterial}
               onEdit={handleEditMaterial}
@@ -414,7 +422,6 @@ export default function MaterialManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
-
 
       <SideSheet
         title={
