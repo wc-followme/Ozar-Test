@@ -2,7 +2,7 @@ import { AssignIcon } from '@/components/icons/AssignIcons';
 import { DetailsIcon } from '@/components/icons/DetailsIcon';
 import { ReturnIcon } from '@/components/icons/ReturnIcon';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { Danger, Edit2, Setting2, ShieldTick } from 'iconsax-react';
+import { Danger, Setting2, ShieldTick } from 'iconsax-react';
 import React from 'react';
 
 type IconComponent = React.ComponentType<{
@@ -41,7 +41,7 @@ export const TOOL_ACTIONS: Record<
     { label: 'Details', action: 'details', icon: DetailsIcon },
   ],
   lost: [
-    { label: 'Edit', action: 'edit', icon: Edit2 },
+    { label: 'Available', action: 'available', icon: ShieldTick },
     { label: 'Details', action: 'details', icon: DetailsIcon },
   ],
 };

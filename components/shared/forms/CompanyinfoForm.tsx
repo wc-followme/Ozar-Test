@@ -682,6 +682,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
                             field.onChange(date);
                             setDatePickerOpen(false); // Close popover after selection
                           }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                           initialFocus
                         />
                       </PopoverContent>

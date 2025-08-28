@@ -310,6 +310,7 @@ export interface PortfolioProject {
   uuid: string;
   name: string;
   images?: string[];
+  videos?: string[];
   company_uuid: string;
   company_name: string;
   created_at: string;
@@ -338,9 +339,10 @@ export interface FetchPortfolioResponse {
 }
 
 export interface CreateProjectRequest {
-  // DTO: name and images[]
+  // DTO: name, images[], and videos[]
   name: string;
   images?: string[];
+  videos?: string[];
   // Optional: if not provided, server may take from auth context
   company_id?: string;
 }
@@ -354,6 +356,7 @@ export interface CreatePortfolioResponse {
 export interface UpdateProjectRequest {
   name?: string;
   images?: string[];
+  videos?: string[];
   company_id?: string;
 }
 
@@ -547,44 +550,89 @@ export interface ToolAsset {
   updated_by: string;
 }
 
-export interface Tool {
+// Services associated with a tool (new response shape)
+export interface ToolServiceItem {
+  id: number | string;
+  uuid?: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+}
+
+// Individual tool item (barcode) in the new response
+export interface ToolItem {
   id: number;
   uuid: string;
-  name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  barcode: string;
+  status: string;
+  condition: string;
   created_at: string;
   updated_at: string;
-  company_id?: string;
-  services: Array<{
-    id: number | string;
-    name: string;
-    status: string;
-  }>;
-  assets?: ToolAsset[];
 }
+
+// Unified Tool interface that supports both legacy and new API shapes
+export interface Tool {
+  // Common/new fields
+  id?: number;
+  uuid: string;
+  name: string;
+  brand_name?: string;
+  image_url?: string;
+  total_quantity?: number;
+  available_quantity?: number;
+  maintenance_quantity?: number;
+  lost_quantity?: number;
+  assigned_quantity?: number;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
+  company?: { uuid: string; name: string };
+  services?: ToolServiceItem[];
+  tool_items?: ToolItem[];
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+}
+
+// New tools response shape
+export interface FetchToolsEnvelopeNew {
+  tools: Tool[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Old nested response shape
+export interface FetchToolsEnvelopeOld {
+  data: Tool[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export type FetchToolsResponseData =
+  | Tool[]
+  | FetchToolsEnvelopeNew
+  | FetchToolsEnvelopeOld;
 
 export interface FetchToolsResponse {
   statusCode: number;
   message: string;
-  data: Tool[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  data: FetchToolsResponseData;
 }
 
 export interface CreateToolRequest {
   name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
+  service_ids?: string;
+  barcodes?: string[];
   company_id?: string | number;
 }
 
@@ -596,10 +644,12 @@ export interface CreateToolResponse {
 
 export interface UpdateToolRequest {
   name?: string;
-  available_quantity?: number;
-  manufacturer?: string;
-  tool_assets?: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
   service_ids?: string;
+  barcodes?: string[];
   status?: 'ACTIVE' | 'INACTIVE';
   company_id?: string | number;
 }
@@ -619,6 +669,92 @@ export interface GetToolResponse {
   statusCode: number;
   message: string;
   data: Tool;
+}
+
+export interface GetToolQuantityStatisticsResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    uuid: string;
+    name: string;
+    available_quantity: number;
+    maintenance_quantity: number;
+    lost_quantity: number;
+    assigned_quantity: number;
+    total_quantity: number;
+  };
+}
+
+// Tool Items API interfaces
+export interface ToolItemDetail {
+  id: number;
+  uuid: string;
+  barcode: string;
+  status: 'available' | 'assigned' | 'maintenance' | 'lost';
+  condition: 'excellent' | 'good' | 'decent' | 'poor';
+  assigned_job_id?: number;
+  assigned_by_id?: number;
+  returned_by_id?: number;
+  due_date?: string;
+  returned_date?: string;
+  assigned_date?: string;
+  assigned_status?: 'temporary' | 'permanent';
+  issue?: string;
+  lost_date?: string;
+  created_at: string;
+  updated_at: string;
+  tool_id?: number;
+  tool_uuid?: string;
+  tool?: {
+    id: number;
+    uuid: string;
+    company_id: string;
+    name: string;
+    brand_name: string;
+    video_tutorial_urls: string[];
+    video_tutorial_link: string[];
+    image_url: string;
+    total_quantity: number;
+    available_quantity: number;
+    maintenance_quantity: number;
+    lost_quantity: number;
+    assigned_quantity: number;
+    created_at: string;
+    updated_at: string;
+    created_by: number;
+    updated_by: number;
+    status: string;
+  };
+  returnedBy?: {
+    id: number;
+    name: string;
+    profile_picture_url?: string;
+    designation?: string;
+  } | null;
+  assignedBy?: {
+    id: number;
+    name: string;
+    profile_picture_url?: string;
+    designation?: string;
+  } | null;
+  assignedJob?: {
+    id: number;
+    name: string;
+    project_id?: string | number;
+    uuid?: string;
+  } | null;
+}
+
+export interface FetchToolItemsResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    toolItems: ToolItemDetail[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // Service interface for dropdown
@@ -2036,11 +2172,14 @@ class ApiService {
     page?: number;
     limit?: number;
     type?: string;
+    company_id?: string | number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
     if (params?.type) queryParams.append('type', params.type);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -2061,6 +2200,102 @@ class ApiService {
     return this.makeRequest(`/tools/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getToolQuantityStatistics(
+    uuid: string,
+    companyId?: string | number
+  ): Promise<GetToolQuantityStatisticsResponse> {
+    const queryParams = new URLSearchParams();
+    if (companyId) {
+      queryParams.append('company_id', companyId.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/tools/statistics/quantities/${uuid}?${queryParams.toString()}`
+      : `/tools/statistics/quantities/${uuid}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async fetchToolItems(params?: {
+    page?: number;
+    limit?: number;
+    barcode?: string;
+    search?: string;
+    tool_id?: number;
+    tool_uuid?: string;
+    status?: 'available' | 'assigned' | 'maintenance' | 'lost';
+    condition?: 'excellent' | 'good' | 'decent' | 'poor';
+    assigned_job_id?: number;
+    assigned_by_id?: number;
+    returned_by_id?: number;
+    assigned_status?: 'temporary' | 'permanent';
+    issue?: string;
+    company_id?: string | number;
+    sort_by?: 'created_at' | 'updated_at' | 'id' | 'barcode' | 'assigned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<FetchToolItemsResponse> {
+    const queryParams = new URLSearchParams();
+
+    // Add all optional parameters
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.barcode) queryParams.append('barcode', params.barcode);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.tool_id)
+      queryParams.append('tool_id', params.tool_id.toString());
+    if (params?.tool_uuid) queryParams.append('tool_uuid', params.tool_uuid);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.condition) queryParams.append('condition', params.condition);
+    if (params?.assigned_job_id)
+      queryParams.append('assigned_job_id', params.assigned_job_id.toString());
+    if (params?.assigned_by_id)
+      queryParams.append('assigned_by_id', params.assigned_by_id.toString());
+    if (params?.returned_by_id)
+      queryParams.append('returned_by_id', params.returned_by_id.toString());
+    if (params?.assigned_status)
+      queryParams.append('assigned_status', params.assigned_status);
+    if (params?.issue) queryParams.append('issue', params.issue);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = queryParams.toString()
+      ? `/tool-items?${queryParams.toString()}`
+      : '/tool-items';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateToolItem(
+    uuid: string,
+    payload: {
+      status?: 'available' | 'assigned' | 'maintenance' | 'lost';
+      condition?: 'excellent' | 'good' | 'decent' | 'poor';
+      assigned_job_id?: number | string;
+      assigned_by_id?: number | string;
+      returned_by_id?: number | string;
+      due_date?: string;
+      returned_date?: string;
+      assigned_date?: string;
+      assigned_status?: 'temporary' | 'permanent';
+      issue?: string;
+      lost_date?: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/tool-items/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
     });
   }
   async fetchJobStatistics(params?: {
@@ -2143,6 +2378,145 @@ class ApiService {
   async deleteTool(uuid: string): Promise<DeleteToolResponse> {
     return this.makeRequest(`/tools/${uuid}`, {
       method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async addToolItemBarcodes(
+    toolUuid: string,
+    payload: { barcodes: string[] }
+  ): Promise<any> {
+    return this.makeRequest('/tool-items/tool-barcodes', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({
+        tool_uuid: toolUuid,
+        barcodes: payload.barcodes,
+      }),
+    });
+  }
+
+  async getToolItemByBarcode(
+    identifier: string,
+    toolUuid: string
+  ): Promise<any> {
+    return this.makeRequest(
+      `/tool-items/find/${identifier}?tool_uuid=${toolUuid}`,
+      {
+        method: 'GET',
+        headers: this.getRoleHeaders(),
+      }
+    );
+  }
+
+  async getToolItemHistory(
+    toolItemUuid: string,
+    historyType: 'borrowed' | 'maintenance'
+  ): Promise<any> {
+    return this.makeRequest(
+      `/tool-items/${toolItemUuid}/history?type=${historyType}`,
+      {
+        method: 'GET',
+        headers: this.getRoleHeaders(),
+      }
+    );
+  }
+
+  async getBorrowedHistory(params?: {
+    page?: number;
+    limit?: number;
+    toolItemId?: number;
+    borrowedById?: number;
+    jobId?: number;
+    search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.borrowedById)
+      queryParams.append('borrowedById', params.borrowedById.toString());
+    if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = `/tool-history/borrowed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getMaintenanceHistory(params?: {
+    page?: number;
+    limit?: number;
+    toolItemId?: number;
+    returnedById?: number;
+    jobId?: number;
+    search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.returnedById)
+      queryParams.append('returnedById', params.returnedById.toString());
+    if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = `/tool-history/maintenance${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getToolHistoryStatistics(params?: {
+    toolItemId?: number;
+    toolId?: number;
+    search?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.toolId) queryParams.append('toolId', params.toolId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    const url = `/tool-history/statistics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getToolItemDetail(toolItemUuid: string): Promise<any> {
+    return this.makeRequest(`/tool-items/${toolItemUuid}`, {
+      method: 'GET',
       headers: this.getRoleHeaders(),
     });
   }
@@ -2500,8 +2874,46 @@ class ApiService {
       },
     });
   }
+
+  async fetchTemplates({
+    page = 1,
+    limit = 10,
+    company_id,
+    status = 'ACTIVE',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    status?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    params.append('status', status);
+
+    return this.makeRequest(`/templates?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Archive template
+  async archiveTemplate(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Get template by UUID
+  async getTemplateById(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
-

@@ -317,15 +317,34 @@ export default function ServiceOptionServiceForm({
               <Label className='field-label'>Rate</Label>
               <Input
                 type='text'
+                inputMode='decimal'
                 value={service.rate.toString()}
                 onChange={e => {
-                  const numericValue =
-                    parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                  if (onServiceUpdate) {
-                    onServiceUpdate({
-                      ...service,
-                      rate: numericValue,
-                    });
+                  const raw = e.target.value;
+                  const cleaned = raw.replace(/[^0-9.]/g, '');
+                  const parts = cleaned.split('.');
+                  const next =
+                    parts.length > 2
+                      ? `${parts[0]}.${parts.slice(1).join('')}`
+                      : cleaned;
+
+                  // Reflect cleaned string in the input without forcing numeric commit yet
+                  (e.target as HTMLInputElement).value = next;
+
+                  if (next !== '' && !next.endsWith('.')) {
+                    const numeric = parseFloat(next);
+                    if (!Number.isNaN(numeric) && onServiceUpdate) {
+                      onServiceUpdate({ ...service, rate: numeric });
+                    }
+                  }
+                }}
+                onBlur={e => {
+                  const val = e.currentTarget.value;
+                  const fallback = val === '' || val === '.' ? '0' : val;
+                  e.currentTarget.value = fallback;
+                  const numeric = parseFloat(fallback);
+                  if (!Number.isNaN(numeric) && onServiceUpdate) {
+                    onServiceUpdate({ ...service, rate: numeric });
                   }
                 }}
                 className='input-field'

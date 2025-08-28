@@ -3,7 +3,6 @@
 import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
 import EstimationItemsAccordion from '@/components/shared/common/EstimationItemsAccordion';
 import SelectField from '@/components/shared/common/SelectField';
-import ServiceOptionListCard from '@/components/shared/common/ServiceOptionListCard';
 import SideSheet from '@/components/shared/common/SideSheet';
 import ToolsAccordion from '@/components/shared/common/ToolsAccordion';
 import { Card } from '@/components/ui/card';
@@ -71,21 +70,21 @@ export default function EstimationServiceForm({
   const [loading, setLoading] = useState(false);
   const [isServiceOptionSheetOpen, setIsServiceOptionSheetOpen] =
     useState(false);
-  const [selectedServiceOption, setSelectedServiceOption] = useState<any>(null);
+  const [selectedServiceOption, _setSelectedServiceOption] =
+    useState<any>(null);
 
-  // Sample service options data
-  const sampleServiceOptions = [
-    {
-      id: '1',
-      name: 'Basic Service Package',
-      tradeTotal: 1500.0,
-    },
-    {
-      id: '2',
-      name: 'Premium Service Package',
-      tradeTotal: 2500.0,
-    },
-  ];
+  // const sampleServiceOptions = [
+  //   {
+  //     id: '1',
+  //     name: 'Basic Service Package',
+  //     tradeTotal: 1500.0,
+  //   },
+  //   {
+  //     id: '2',
+  //     name: 'Premium Service Package',
+  //     tradeTotal: 2500.0,
+  //   },
+  // ];
 
   // Calculate current service values using backend logic
   const calculateCurrentServiceValues = () => {
@@ -106,12 +105,35 @@ export default function EstimationServiceForm({
 
   const currentValues = calculateCurrentServiceValues();
 
+  // Maintain a local string for the rate so users can type transient values like "12." without it snapping to 12
+  const [rateInput, setRateInput] = useState<string>(service.rate.toString());
+
+  useEffect(() => {
+    setRateInput(service.rate.toString());
+  }, [service.rate]);
+
   // Fetch services from API based on trade UUID and company UUID
   const fetchServices = async (
     tradeUuid: string | null,
     companyUuid: string | null
   ) => {
     if (!tradeUuid || !companyUuid) {
+      console.log(
+        'EstimationServiceForm: Missing tradeUuid or companyUuid, setting empty options'
+      );
+      setServiceOptions([]);
+      return;
+    }
+
+    // Ensure we only call the API with a real UUID; newly added default trades
+    // in the editor use generated ids like "default-trade-<timestamp>".
+    // Backend expects a UUID v4 (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(tradeUuid)) {
+      console.log(
+        'EstimationServiceForm: Invalid UUID format, setting empty options'
+      );
       setServiceOptions([]);
       return;
     }
@@ -189,11 +211,19 @@ export default function EstimationServiceForm({
               <Label className='field-label'>Service</Label>
               <SelectField
                 value={(() => {
-                  // Find the option that matches the current service name
-                  const matchingOption = serviceOptions.find(
+                  // Prefer UUID-based matching (edit mode)
+                  if (service.uuid) {
+                    const byUuid = serviceOptions.find(
+                      option => option.value === service.uuid
+                    );
+                    if (byUuid) return byUuid.value;
+                  }
+                  // Fallback to name-based matching (create mode or legacy)
+                  const byName = serviceOptions.find(
                     option => option.label === service.name
                   );
-                  return matchingOption ? matchingOption.value : service.name;
+                  // If still no match, return empty string so placeholder shows and options list is usable
+                  return byName ? byName.value : '';
                 })()}
                 onValueChange={newValue => {
                   // Find the selected option to get the display name and UUID
@@ -211,15 +241,21 @@ export default function EstimationServiceForm({
                     onServiceNameChange(newName);
                   }
                   if (onServiceUpdate) {
-                    const updatedService = {
+                    const updatedService: Service = {
                       ...service,
                       name: newName,
+                      // Reset dependent selections when service changes
+                      materials: [],
+                      finishes: [],
+                      tools: [],
                     };
 
                     if (serviceUuid) {
-                      (updatedService as any).uuid = serviceUuid;
+                      updatedService.uuid = serviceUuid;
                     } else {
-                      delete (updatedService as any).uuid;
+                      // Ensure no stale uuid remains
+                      delete (updatedService as unknown as { uuid?: string })
+                        .uuid;
                     }
 
                     onServiceUpdate(updatedService);
@@ -278,23 +314,57 @@ export default function EstimationServiceForm({
                 className='input-field'
               />
             </div>
-            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
+            <div className='space-y-2 w-[120px] min-w-[120px] overflow-hidden'>
               <Label className='field-label'>Rate</Label>
-              <Input
-                type='text'
-                value={service.rate.toString()}
-                onChange={e => {
-                  const numericValue =
-                    parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                  if (onServiceUpdate) {
-                    onServiceUpdate({
-                      ...service,
-                      rate: numericValue,
-                    });
-                  }
-                }}
-                className='input-field'
-              />
+              <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+                <div className='w-[40px] flex items-center justify-center font-bold text-[var(--text-dark)] select-none border-none bg-[var(--white-background)] rounded-l-[10px]'>
+                  $
+                </div>
+                <Input
+                  type='text'
+                  inputMode='decimal'
+                  value={rateInput}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    const cleaned = raw.replace(/[^0-9.]/g, '');
+                    const parts = cleaned.split('.');
+                    const next =
+                      parts.length > 2
+                        ? `${parts[0]}.${parts.slice(1).join('')}`
+                        : cleaned;
+                    setRateInput(next);
+
+                    // Commit numeric value only when user isn't ending with a decimal point
+                    if (next !== '' && !next.endsWith('.')) {
+                      const numeric = parseFloat(next);
+                      if (!Number.isNaN(numeric) && onServiceUpdate) {
+                        onServiceUpdate({ ...service, rate: numeric });
+                      }
+                    }
+                  }}
+                  onFocus={e => {
+                    if (
+                      e.currentTarget.value === '0' ||
+                      e.currentTarget.value === '0.0' ||
+                      e.currentTarget.value === '0.00'
+                    ) {
+                      setRateInput('');
+                      e.currentTarget.value = '';
+                    }
+                  }}
+                  onBlur={() => {
+                    const normalized =
+                      rateInput === '' || rateInput === '.' ? '0' : rateInput;
+                    setRateInput(normalized);
+                    const numeric = parseFloat(normalized);
+                    if (!Number.isNaN(numeric) && onServiceUpdate) {
+                      onServiceUpdate({ ...service, rate: numeric });
+                    }
+                  }}
+                  placeholder='0.00'
+                  className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+                />
+              </div>
             </div>
           </div>
           <div className='pt-7 ml-auto flex-shrink-0 min-w-fit'>
@@ -342,7 +412,8 @@ export default function EstimationServiceForm({
             className='input-field'
           />
         </div>
-        <div className='mt-4'>
+        {/* TODO: commented temporarily to remove service options from the service form */}
+        {/* <div className='mt-4'>
           <div className='flex items-center justify-between mb-4 pb-4 border-b border-[var(--border-dark)]'>
             <h3 className='text-lg font-semibold text-[var(--text-dark)]'>
               Service Options{' '}
@@ -361,7 +432,7 @@ export default function EstimationServiceForm({
               formatCurrency={formatCurrency}
             />
           </div>
-        </div>
+        </div> */}
       </Card>
 
       {/* Service Options */}
@@ -395,6 +466,10 @@ export default function EstimationServiceForm({
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
       />
 
       {/* Finishes Accordion */}
@@ -426,6 +501,10 @@ export default function EstimationServiceForm({
         serviceId={
           service.name ? service.uuid || service.id || undefined : undefined
         }
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
       />
 
       {/* Tools Accordion */}
@@ -455,11 +534,9 @@ export default function EstimationServiceForm({
           serviceOption={selectedServiceOption}
           onClose={() => setIsServiceOptionSheetOpen(false)}
           onApprove={() => {
-            console.log('Service option approved:', selectedServiceOption);
             setIsServiceOptionSheetOpen(false);
           }}
           onDecline={() => {
-            console.log('Service option declined:', selectedServiceOption);
             setIsServiceOptionSheetOpen(false);
           }}
         />

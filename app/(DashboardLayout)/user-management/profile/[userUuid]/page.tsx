@@ -10,6 +10,7 @@ import {
   ROLE_IDS,
   ROUTES,
   SHARE_MESSAGES,
+  UPLOAD_PURPOSES,
 } from '@/constants/common';
 import { apiService, GetUserResponse } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -234,7 +235,7 @@ const Profile = ({ params }: ProfilePageProps) => {
         fileName: generatedFileName,
         fileType: file.type,
         fileSize: file.size,
-        purpose: 'profile-picture',
+        purpose: UPLOAD_PURPOSES.USER_COVER_IMAGE,
         customPath: '',
       });
 

@@ -46,7 +46,7 @@ interface Trade {
   id: string;
   name: string;
   services: number;
-  dateRange: string;
+  dateRange?: string;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -157,17 +157,14 @@ export default function EstimationHeader({
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
               Add Trade
             </Button>
-          ) : showServiceForm && selectedServiceData ? (
-            <Button
-              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
-              onClick={() => {
-                // Handle option template logic here
-              }}
-            >
-              <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
-              Option Template
-            </Button>
-          ) : (
+          ) : showServiceForm && selectedServiceData ? //   onClick={() => { //   className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]' // <Button
+          //     // Handle option template logic here
+          //   }}
+          // >
+          //   <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
+          //   Option Template
+          // </Button>
+          null : (
             <Button
               className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={handleAddService}

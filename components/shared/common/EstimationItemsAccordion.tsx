@@ -26,6 +26,7 @@ interface EstimationItemsAccordionProps {
   cardWidthClass?: string; // New prop to control card width class
   borderClass?: string; // New prop to control border styling
   showAddButton?: boolean; // New prop to control add button visibility
+  disableVariant?: boolean; // New prop to disable variant field in items
 }
 
 export default function EstimationItemsAccordion({
@@ -42,8 +43,32 @@ export default function EstimationItemsAccordion({
   cardWidthClass = 'w-full min-w-max', // Default to w-full min-w-max
   borderClass = 'border-none', // Default to border-none
   showAddButton = true, // Default to true to maintain current behavior
+  disableVariant = false,
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  // Build a stable, deterministic key for each item without using array index
+  const getStableItemKey = (
+    item: EstimationItem,
+    listTitle: string,
+    svcId?: string
+  ): string => {
+    const baseId =
+      item.uuid ||
+      (item as unknown as { material_id?: string }).material_id ||
+      item.id;
+    if (baseId) {
+      return `${svcId || 'service'}_${listTitle}_${baseId}`;
+    }
+    const payload = `${svcId || 'service'}_${listTitle}_${JSON.stringify(item)}`;
+    let hash = 0;
+    for (let i = 0; i < payload.length; i++) {
+      // simple deterministic hash
+      hash = (hash << 5) - hash + payload.charCodeAt(i);
+      hash |= 0;
+    }
+    return `${svcId || 'service'}_${listTitle}_${Math.abs(hash)}`;
+  };
 
   const handleItemUpdate = (itemId: string, updatedItem: EstimationItem) => {
     onItemUpdate(itemId, updatedItem);
@@ -97,21 +122,37 @@ export default function EstimationItemsAccordion({
             </div>
           </AccordionTrigger>
           <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
-            <div className='space-y-4 mt-4'>
-              {items.map(item => (
-                <EstimationItemForm
-                  key={item.id}
-                  item={item}
-                  onItemUpdate={updatedItem =>
-                    handleItemUpdate(item.id, updatedItem)
-                  }
-                  onDelete={() => handleItemDelete(item.id)}
-                  serviceId={serviceId}
-                  useFixedWidths={useFixedWidths}
-                  containerWidthClass={containerWidthClass}
-                />
-              ))}
-            </div>
+            {items.length > 0 ? (
+              <div className='space-y-4 mt-4'>
+                {items.map(item => (
+                  <EstimationItemForm
+                    key={getStableItemKey(item, title, serviceId)}
+                    item={item}
+                    onItemUpdate={updatedItem =>
+                      handleItemUpdate(item.id, updatedItem)
+                    }
+                    onDelete={() => handleItemDelete(item.id)}
+                    serviceId={serviceId}
+                    useFixedWidths={useFixedWidths}
+                    containerWidthClass={containerWidthClass}
+                    disableVariant={disableVariant}
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className='text-gray-500 text-sm mt-4'>
+                {(() => {
+                  const lowered = title.trim().toLowerCase();
+                  const noun =
+                    lowered === 'material'
+                      ? 'materials'
+                      : lowered === 'finishes'
+                        ? 'finishes'
+                        : lowered;
+                  return `No ${noun} added yet. Click "+ ${addButtonText}" to add ${noun}.`;
+                })()}
+              </p>
+            )}
           </AccordionContent>
         </AccordionItem>
       </Accordion>

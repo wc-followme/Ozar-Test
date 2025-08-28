@@ -58,7 +58,7 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange: string;
+  dateRange?: string;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -88,7 +88,8 @@ interface EstimationBoxSidebarProps {
   handleTradeAccordionChange: (value: string[]) => void;
   handleTradeSelect: (tradeUniqueKey: string) => void;
   selectedService: string | null;
-  handleServiceSelect: (serviceId: string) => void;
+  selectedTradeUniqueKey: string | null;
+  handleServiceSelect: (serviceId: string, tradeUniqueKey?: string) => void;
   formatCurrency: (amount: number) => string;
   selectedRoomId: string;
   toggleMainAccordion: () => void;
@@ -106,6 +107,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
   handleTradeAccordionChange,
   handleTradeSelect,
   selectedService,
+  selectedTradeUniqueKey,
   handleServiceSelect,
   formatCurrency,
   selectedRoomId,
@@ -282,17 +284,24 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                     <div
                                       key={`${room.uniqueKey}_${trade.uniqueKey}_${service.id}`}
                                       className={`flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg ${
-                                        selectedService === service.id
+                                        selectedService === service.id &&
+                                        selectedTradeUniqueKey ===
+                                          trade.uniqueKey
                                           ? 'bg-[var(--background)]'
                                           : ''
                                       }`}
                                       onClick={() =>
-                                        handleServiceSelect(service.id)
+                                        handleServiceSelect(
+                                          service.id,
+                                          trade.uniqueKey
+                                        )
                                       }
                                     >
                                       <span
                                         className={`text-sm font-medium group-hover:text-[var(--primary)] ${
-                                          selectedService === service.id
+                                          selectedService === service.id &&
+                                          selectedTradeUniqueKey ===
+                                            trade.uniqueKey
                                             ? 'text-[var(--primary)]'
                                             : 'text-[var(--text-dark)]'
                                         }`}

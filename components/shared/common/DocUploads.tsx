@@ -2,9 +2,15 @@
 
 import FileUploadField from '@/components/shared/common/FileUploadField';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { DocumentDownload } from 'iconsax-react';
-import { Info } from 'lucide-react';
+import { ChevronDown, Info } from 'lucide-react';
 
 interface DocUploadsProps {
   title: string;
@@ -14,7 +20,8 @@ interface DocUploadsProps {
   onFilesChange?: (files: File[]) => void;
   uploading?: boolean;
   className?: string;
-  onDownloadTemplate?: () => void;
+  onDownloadTemplate?: (fileType?: 'csv' | 'xlsx') => void;
+  showFileTypeOptions?: boolean;
 }
 
 export const DocUploads: React.FC<DocUploadsProps> = ({
@@ -26,26 +33,29 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
   uploading = false,
   className = '',
   onDownloadTemplate,
+  showFileTypeOptions = false,
 }) => {
   const handleFileChange = (newFile: File | null) => {
     onFileChange(newFile);
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = (fileType?: 'csv' | 'xlsx') => {
+    const typeToUse = fileType || 'xlsx';
     if (onDownloadTemplate) {
-      onDownloadTemplate();
+      onDownloadTemplate(typeToUse);
     } else {
-      // Default CSV template download
-      const csvContent = 'Tool ID,Barcode\n12345,QR12345\n10345,QR12346';
-      const blob = new Blob([csvContent], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
+      // Default template download - use static files
       const a = document.createElement('a');
-      a.href = url;
-      a.download = 'template.csv';
+      if (typeToUse === 'csv') {
+        a.href = '/barcodes_template.csv';
+        a.download = 'barcodes_template.csv';
+      } else {
+        a.href = '/barcodes_template.xlsx';
+        a.download = 'barcodes_template.xlsx';
+      }
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
     }
   };
 
@@ -59,21 +69,51 @@ export const DocUploads: React.FC<DocUploadsProps> = ({
           </h3>
           <Info size={16} className='text-[var(--text-secondary)]' />
         </div>
-        <Button
-          type='button'
-          onClick={handleDownloadTemplate}
-          variant='ghost'
-          className='text-[var(--text-dark)] font-semibold text-sm'
-          size='sm'
-        >
-          <DocumentDownload
-            size={24}
-            className='!h-6 !w-5'
-            color='var(--text-dark)'
-            strokeWidth={4}
-          />
-          Download Template
-        </Button>
+        {showFileTypeOptions ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type='button'
+                variant='ghost'
+                className='text-[var(--text-dark)] font-semibold text-sm'
+                size='sm'
+              >
+                <DocumentDownload
+                  size={24}
+                  className='!h-6 !w-5'
+                  color='var(--text-dark)'
+                  strokeWidth={4}
+                />
+                Download Template
+                <ChevronDown size={16} className='ml-1' />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem onClick={() => handleDownloadTemplate('csv')}>
+                Download CSV Template
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadTemplate('xlsx')}>
+                Download XLSX Template
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button
+            type='button'
+            onClick={() => handleDownloadTemplate()}
+            variant='ghost'
+            className='text-[var(--text-dark)] font-semibold text-sm'
+            size='sm'
+          >
+            <DocumentDownload
+              size={24}
+              className='!h-6 !w-5'
+              color='var(--text-dark)'
+              strokeWidth={4}
+            />
+            Download Template
+          </Button>
+        )}
       </div>
 
       {description && (
