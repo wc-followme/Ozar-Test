@@ -96,6 +96,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       materials: { view: false, edit: false, archive: false },
       tools: { view: false, edit: false, archive: false, history: false },
       jobs: { view: false, edit: false, archive: false },
+      templates: { view: false, edit: false, archive: false },
+      global_settings: { view: false, edit: false },
     };
 
     // Map accordion indices to permission keys
@@ -109,6 +111,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       'materials', // 6: Material Management Settings
       'tools', // 7: Tools Management Settings
       'jobs', // 8: Job Creation & Basic Job Setup Settings
+      'templates', // 9: Templates Setting
+      'global_settings', // 10: Company Global Settings
     ];
 
     // Map stripe indices to permission keys for each accordion
@@ -122,6 +126,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       ['view', 'edit', 'archive'], // materials
       ['view', 'edit', 'archive', 'history'], // tools
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     accordionsData.forEach((accordion, accordionIdx) => {
@@ -336,6 +342,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                 'materials',
                 'tools',
                 'jobs',
+                'templates',
+                'global_settings',
               ];
               const permissionKey = permissionKeys[accordionIdx];
               const userPermissions = permissionKey
@@ -354,6 +362,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     ['view', 'edit', 'archive'], // materials
                     ['view', 'edit', 'archive', 'history'], // tools
                     ['view', 'edit', 'archive'], // jobs
+                    ['view', 'edit', 'archive'], // templates
+                    ['view', 'edit'], // global_settings
                   ];
                   const permissionNames = permissionNamesArray[accordionIdx];
                   const permissionName = permissionNames?.[stripeIdx];

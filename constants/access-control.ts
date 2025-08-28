@@ -188,4 +188,37 @@ export const ACCESS_CONTROL_ACCORDIONS_DATA = [
       },
     ],
   },
+  {
+    title: 'Templates Setting',
+    badgeLabel: 'Restricted',
+    stripes: [
+      {
+        title: 'Browse Templates Setting',
+        description: 'View complete templates list and access template details',
+      },
+      {
+        title: 'Create & Modify Templates Setting',
+        description: 'Create new templates and manage template configurations',
+      },
+      {
+        title: 'Archive & Restore Templates Setting',
+        description:
+          'Remove templates that are no longer needed with data safety controls',
+      },
+    ],
+  },
+  {
+    title: 'Company Global Settings',
+    badgeLabel: 'Restricted',
+    stripes: [
+      {
+        title: 'Browse Global Setting',
+        description: 'View company global settings and configurations',
+      },
+      {
+        title: 'Modify Global Setting',
+        description: 'Modify company global settings and configurations',
+      },
+    ],
+  },
 ];

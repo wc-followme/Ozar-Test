@@ -489,6 +489,15 @@ export interface UserPermissions {
     edit: boolean;
     archive: boolean;
   };
+  templates: {
+    view: boolean;
+    edit: boolean;
+    archive: boolean;
+  };
+  global_settings: {
+    view: boolean;
+    edit: boolean;
+  };
 }
 
 export interface GetUserPermissionsResponse {
@@ -2543,4 +2552,3 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
-

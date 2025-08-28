@@ -102,6 +102,8 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       'materials',
       'tools',
       'jobs',
+      'templates',
+      'global_settings',
     ];
     // Map stripe indices to permission keys for each accordion
     const stripeToPermissionMap = [
@@ -114,6 +116,8 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       ['view', 'edit', 'archive'], // materials
       ['view', 'edit', 'archive', 'history'], // tools
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     // Helper: Convert permissions object to accordions state
@@ -148,6 +152,8 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
         materials: { view: false, edit: false, archive: false },
         tools: { view: false, edit: false, archive: false, history: false },
         jobs: { view: false, edit: false, archive: false },
+        templates: { view: false, edit: false, archive: false },
+        global_settings: { view: false, edit: false },
       };
       accordions.forEach((accordion, accordionIdx) => {
         const permissionKey = accordionToPermissionMap[accordionIdx];
