@@ -45,7 +45,6 @@ const SelectField: React.FC<SelectFieldProps> = ({
   triggerClassName = '', // Destructure new prop
   disabled = false, // Destructure disabled prop
 }) => {
-  console.log('options', options);
   const [internalValue, setInternalValue] = useState(value);
 
   // Sync internal value with external value

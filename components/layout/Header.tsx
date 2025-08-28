@@ -43,6 +43,7 @@ export function Header() {
   const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [profileImageError, setProfileImageError] = useState(false);
 
   // Fetch companies function
   const fetchCompanies = async () => {
@@ -319,7 +320,7 @@ export function Header() {
               >
                 <Image
                   src={
-                    profile_picture_url
+                    profile_picture_url && !profileImageError
                       ? `${APP_CONFIG.CDN_URL}${profile_picture_url}`
                       : APP_CONFIG.IMAGES.USER_PLACEHOLDER
                   }
@@ -327,6 +328,7 @@ export function Header() {
                   width={40}
                   height={40}
                   className='h-full w-full rounded-full object-cover'
+                  onError={() => setProfileImageError(true)}
                 />
               </Button>
             }
