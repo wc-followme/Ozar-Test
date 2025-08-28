@@ -513,6 +513,7 @@ export const STORAGE_KEYS = {
 
 export const CUSTOM_EVENTS = {
   COMPANY_CHANGED: 'company-changed',
+  COMPANY_CREATED: 'COMPANY_CREATED',
   STORAGE: 'storage',
 } as const;
 

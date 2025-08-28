@@ -18,11 +18,11 @@ export const STEP_MESSAGES = {
   PROJECT_TYPE_REQUIRED: 'Please select a project type',
 
   // Form Labels
-  YOUR_NAME_LABEL: 'Your Name',
+  YOUR_NAME_LABEL: 'Your name',
   PROJECT_START_DATE_LABEL: 'Project Start Date',
   PROJECT_FINISH_DATE_LABEL: 'Project Finish Date',
   EMAIL_LABEL: 'Email',
-  PHONE_NUMBER_LABEL: 'Phone Number',
+  PHONE_NUMBER_LABEL: 'Phone number',
   YOUR_BUDGET_LABEL: 'Your Budget',
   PREFERRED_CONTRACTOR_LABEL: 'Preferred Contractor',
   ADDRESS_LABEL: 'Address',
@@ -30,15 +30,16 @@ export const STEP_MESSAGES = {
   BEST_TIME_TO_CONTACT_LABEL: 'Best time to contact',
 
   // Optional Details Form Labels
-  TYPE_OF_PROPERTY_LABEL: 'Type of Property',
-  AGE_OF_PROPERTY_LABEL: 'Age of Property',
-  APPROX_SQ_FT_LABEL: 'Approx. sq ft',
-  NOTIFICATION_STYLE_LABEL: 'Notification Style',
-  DAILY_WORK_TIMING_LABEL: 'Daily Work Timing',
-  OWNER_PRESENT_LABEL: 'Owner Need to Be Present',
-  WEEKEND_WORK_LABEL: 'Weekend Work Availability',
   ANIMALS_IN_HOME_LABEL: 'Animals in the Home',
   PET_TYPE_LABEL: 'Pet type?',
+
+  // Property Information Form Labels
+  PROPERTY_LABEL: 'Property',
+  PROPERTY_TYPE_LABEL: 'Type of property',
+  BHK_LABEL: 'No. of rooms',
+  FLOOR_LABEL: 'Floor',
+  APPROX_SQ_FT_PROPERTY_LABEL: 'Approx. sq ft',
+  AGE_OF_PROPERTY_PROPERTY_LABEL: 'Age of property',
 
   // Form Placeholders
   ENTER_FULL_NAME: 'Enter your full name',
@@ -154,4 +155,58 @@ export const STEP_MESSAGES = {
     MAX_LENGTH: 'maxLength',
     PATTERN: 'pattern',
   },
+};
+
+// Project Information Messages
+export const STEP_PROJECT_INFO_CONSTANTS = {
+  // Form Labels
+  PROJECT_NAME_LABEL: 'Project name',
+  PROJECT_START_DATE_LABEL: 'Project start date',
+  PROJECT_FINISH_DATE_LABEL: 'Project finish date',
+  OWNER_PRESENCE_LABEL: 'Owner presence',
+  WEEKEND_WORK_LABEL: 'Weekend work',
+  DAILY_WORK_TIMING_LABEL: 'Daily work timing',
+  BUDGET_LABEL: 'Your budget',
+  PREFERRED_CONTRACTOR_LABEL: 'Preferred contractor',
+
+  // Placeholders
+  PROJECT_NAME_PLACEHOLDER: 'Name Your Project',
+  SELECT_START_DATE: 'Select Date',
+  SELECT_FINISH_DATE: 'Select Date',
+  SELECT_OWNER_PRESENCE: 'Select option',
+  SELECT_WEEKEND_WORK: 'Select option',
+  START_TIME_PLACEHOLDER: 'Start Time',
+  END_TIME_PLACEHOLDER: 'End Time',
+  BUDGET_PLACEHOLDER: 'Enter your Budget',
+  SELECT_CONTRACTOR: 'Select contractor',
+
+  // Options
+  YES_OPTION: 'Yes',
+  NO_OPTION: 'No',
+  ANY_CONTRACTOR: 'Any',
+  SPECIFIC_CONTRACTOR: 'Specific Contractor',
+
+  // Validation Messages
+  PROJECT_NAME_REQUIRED: 'Project name is required',
+  START_DATE_REQUIRED: 'Project start date is required',
+  FINISH_DATE_REQUIRED: 'Project finish date is required',
+  OWNER_PRESENCE_REQUIRED: 'Owner presence is required',
+  WEEKEND_WORK_REQUIRED: 'Weekend work preference is required',
+  DAILY_WORK_TIMING_REQUIRED: 'Daily work timing is required',
+  BUDGET_REQUIRED: 'Budget is required',
+  PREFERRED_CONTRACTOR_REQUIRED: 'Preferred contractor is required',
+
+  // Form Title and Description
+  FORM_TITLE: 'Project Information',
+  FORM_DESCRIPTION:
+    'Tell us more about your project goals and constraints so we can plan efficiently and connect you with the right professionals.',
+
+  // Success Messages
+  FORM_SAVED_SUCCESS: 'Project information saved successfully',
+  FORM_UPDATED_SUCCESS: 'Project information updated successfully',
+
+  // Error Messages
+  FORM_SAVE_ERROR: 'Failed to save project information',
+  FORM_LOAD_ERROR: 'Failed to load project information',
+  VALIDATION_ERROR: 'Please check the form for errors',
 };

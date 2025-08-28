@@ -18,6 +18,7 @@ export interface Company {
   name: string;
   icon: string;
   color: string;
+  is_default?: boolean;
 }
 
 interface CompanyDropdownProps {

@@ -43,62 +43,62 @@ export function Header() {
   const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [profileImageError, setProfileImageError] = useState(false);
 
-  // Fetch companies from API only for Admin users
-  useEffect(() => {
+  // Fetch companies function
+  const fetchCompanies = async () => {
     if (!user) return;
 
     const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
     // Only fetch companies if user is admin
     if (isAdmin) {
-      const fetchCompanies = async () => {
-        try {
-          setLoadingCompanies(true);
-          const response = await apiService.getCompaniesDropdown();
+      try {
+        setLoadingCompanies(true);
+        const response = await apiService.getCompaniesDropdown();
 
-          if (response.statusCode === 200 && response.data) {
-            // Transform API response to match Company interface
-            const transformedCompanies: Company[] = response.data.map(
-              ({ uuid, name, image }: any) => ({
-                id: uuid,
-                name,
-                icon: image
-                  ? COMPANY_IMAGES.CDN_URL + image
-                  : COMPANY_IMAGES.PLACEHOLDER,
-              })
+        if (response.statusCode === 200 && response.data) {
+          // Transform API response to match Company interface
+          const transformedCompanies: Company[] = response.data.map(
+            ({ uuid, name, image, is_default }: any) => ({
+              id: uuid,
+              name,
+              icon: image
+                ? COMPANY_IMAGES.CDN_URL + image
+                : COMPANY_IMAGES.PLACEHOLDER,
+              is_default,
+            })
+          );
+
+          setCompanies(transformedCompanies);
+
+          // Load selected company using global utility function
+          const savedCompanyId = getCompanyId();
+          if (savedCompanyId) {
+            // Check if saved company exists in fetched companies
+            const foundCompany = transformedCompanies.find(
+              c => c.id === savedCompanyId
             );
-
-            setCompanies(transformedCompanies);
-
-            // Load selected company using global utility function
-            const savedCompanyId = getCompanyId();
-            if (savedCompanyId) {
-              // Check if saved company exists in fetched companies
-              const foundCompany = transformedCompanies.find(
-                c => c.id === savedCompanyId
-              );
-              setSelectedCompany(foundCompany || transformedCompanies[0]);
-            } else {
-              // Set first company as default and save to localStorage
-              const defaultCompany = transformedCompanies[0];
-              setSelectedCompany(defaultCompany);
-              localStorage.setItem(
-                STORAGE_KEYS.SELECTED_COMPANY,
-                JSON.stringify(defaultCompany)
-              );
-            }
+            setSelectedCompany(foundCompany || transformedCompanies[0]);
+          } else {
+            // Set company with is_default: true as default, fallback to first company
+            const defaultCompany =
+              transformedCompanies.find(c => c.is_default) ||
+              transformedCompanies[0];
+            setSelectedCompany(defaultCompany);
+            localStorage.setItem(
+              STORAGE_KEYS.SELECTED_COMPANY,
+              JSON.stringify(defaultCompany)
+            );
           }
-        } catch (error) {
-          // Fallback to empty array if API fails
-          setCompanies([]);
-          setSelectedCompany(undefined);
-        } finally {
-          setLoadingCompanies(false);
         }
-      };
-
-      fetchCompanies();
+      } catch (error) {
+        // Fallback to empty array if API fails
+        setCompanies([]);
+        setSelectedCompany(undefined);
+      } finally {
+        setLoadingCompanies(false);
+      }
     } else {
       // For non-admin users, get company data from user in localStorage
       try {
@@ -126,6 +126,30 @@ export function Header() {
         setLoadingCompanies(false);
       }
     }
+  };
+
+  // Fetch companies from API only for Admin users
+  useEffect(() => {
+    fetchCompanies();
+  }, [user]);
+
+  // Listen for company creation events to refresh the list
+  useEffect(() => {
+    const handleCompanyCreated = () => {
+      fetchCompanies();
+    };
+
+    window.addEventListener(
+      CUSTOM_EVENTS.COMPANY_CREATED,
+      handleCompanyCreated
+    );
+
+    return () => {
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CREATED,
+        handleCompanyCreated
+      );
+    };
   }, [user]);
 
   useEffect(() => {
@@ -222,11 +246,11 @@ export function Header() {
     }
 
     // Employee users see their company name only
-    if (userRoleId === ROLE_IDS.EMPLOYEE) {
+    if (userCompany) {
       return (
         <div className='flex items-center'>
           <span className='text-[var(--text-dark)] text-lg sm:text-2xl font-bold truncate'>
-            {userCompany || HEADER_MESSAGES.COMPANY.UNKNOWN_COMPANY}
+            {userCompany}
           </span>
         </div>
       );
@@ -296,7 +320,7 @@ export function Header() {
               >
                 <Image
                   src={
-                    profile_picture_url
+                    profile_picture_url && !profileImageError
                       ? `${APP_CONFIG.CDN_URL}${profile_picture_url}`
                       : APP_CONFIG.IMAGES.USER_PLACEHOLDER
                   }
@@ -304,6 +328,7 @@ export function Header() {
                   width={40}
                   height={40}
                   className='h-full w-full rounded-full object-cover'
+                  onError={() => setProfileImageError(true)}
                 />
               </Button>
             }
