@@ -1,11 +1,13 @@
 import {
   BHK_OPTIONS_ARRAY,
+  COMMERCIAL_PROPERTY_TYPE_OPTIONS,
   FIVE_BOX_SLUGS,
   FLOOR_OPTIONS_ARRAY,
+  INDUSTRIAL_PROPERTY_TYPE_OPTIONS,
   PROPERTY_AGE_OPTIONS_ARRAY,
   PROPERTY_INFORMATION_FIELDS,
   PROPERTY_TYPE_ARRAY,
-  PROPERTY_TYPE_OPTIONS_ARRAY,
+  RESIDENTIAL_PROPERTY_TYPE_OPTIONS,
   SQUARE_FOOTAGE_OPTIONS_ARRAY,
 } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import { STEP_MESSAGES } from '@/app/(DashboardLayout)/job-management/step-messages';
@@ -105,6 +107,31 @@ export function StepPropertyInfo({
       ...defaultValues,
     },
   });
+
+  const { watch, setValue } = form;
+  const selectedProperty = watch('property');
+  // Reset propertyType when property changes
+  useEffect(() => {
+    setValue('propertyType', '');
+  }, [selectedProperty, setValue]);
+
+  // Get property type options based on selected property
+  const getPropertyTypeOptions = () => {
+    switch (selectedProperty) {
+      case 'RESIDENTIAL':
+        return RESIDENTIAL_PROPERTY_TYPE_OPTIONS;
+      case 'COMMERCIAL':
+        return COMMERCIAL_PROPERTY_TYPE_OPTIONS;
+      case 'INDUSTRIAL':
+        return INDUSTRIAL_PROPERTY_TYPE_OPTIONS;
+      default:
+        return [
+          ...RESIDENTIAL_PROPERTY_TYPE_OPTIONS,
+          ...COMMERCIAL_PROPERTY_TYPE_OPTIONS,
+          ...INDUSTRIAL_PROPERTY_TYPE_OPTIONS,
+        ];
+    }
+  };
 
   // State for questions with id, text, and answer
   const [questions, setQuestions] = useState<any[]>([]);
@@ -211,7 +238,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              Property
+                              {STEP_MESSAGES.PROPERTY_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.PROPERTY
                               ) && <span className='text-red-500'>*</span>}
@@ -243,7 +270,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              Type of Property
+                              {STEP_MESSAGES.PROPERTY_TYPE_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.PROPERTY_TYPE
                               ) && <span className='text-red-500'>*</span>}
@@ -252,7 +279,7 @@ export function StepPropertyInfo({
                               <SelectField
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                options={PROPERTY_TYPE_OPTIONS_ARRAY}
+                                options={getPropertyTypeOptions()}
                                 placeholder='Select property type'
                                 className=''
                               />
@@ -273,7 +300,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              BHK
+                              {STEP_MESSAGES.BHK_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.BHK
                               ) && <span className='text-red-500'>*</span>}
@@ -303,7 +330,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              Floor
+                              {STEP_MESSAGES.FLOOR_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.FLOOR
                               ) && <span className='text-red-500'>*</span>}
@@ -333,7 +360,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              Approx. sq ft
+                              {STEP_MESSAGES.APPROX_SQ_FT_PROPERTY_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.APPROX_SQ_FT
                               ) && <span className='text-red-500'>*</span>}
@@ -365,7 +392,7 @@ export function StepPropertyInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              Age of Property
+                              {STEP_MESSAGES.AGE_OF_PROPERTY_PROPERTY_LABEL}
                               {isFieldRequired(
                                 PROPERTY_INFORMATION_FIELDS.AGE_OF_PROPERTY
                               ) && <span className='text-red-500'>*</span>}

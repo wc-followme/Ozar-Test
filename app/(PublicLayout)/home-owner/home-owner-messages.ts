@@ -137,17 +137,6 @@ export const HOME_OWNER_MESSAGES = {
   SELECT_START_DATE: 'Select start date',
   SELECT_FINISH_DATE: 'Select finish date',
 
-  // Optional Details Labels
-  PROPERTY_TYPE_LABEL: 'Type of Property',
-  AGE_OF_PROPERTY_LABEL: 'Age of Property',
-  APPROX_SQ_FT_LABEL: 'Approx. sq ft',
-  NOTIFICATION_STYLE_LABEL: 'Notification Style',
-  DAILY_WORK_TIMING_LABEL: 'Daily Work Timing',
-  OWNER_PRESENT_LABEL: 'Owner Need to Be Present',
-  WEEKEND_WORK_LABEL: 'Weekend Work Availability',
-  ANIMALS_IN_HOME_LABEL: 'Animals in the Home',
-  PET_TYPE_LABEL: 'Pet type?',
-
   // Optional Details Placeholders
   RESIDENTIAL: 'Residential',
   SELECT_AGE: 'Select age',

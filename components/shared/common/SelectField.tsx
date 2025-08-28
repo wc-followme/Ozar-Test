@@ -45,6 +45,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
   triggerClassName = '', // Destructure new prop
   disabled = false, // Destructure disabled prop
 }) => {
+  console.log('options', options);
   const [internalValue, setInternalValue] = useState(value);
 
   // Sync internal value with external value
@@ -72,16 +73,27 @@ const SelectField: React.FC<SelectFieldProps> = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent className={selectContentStyle}>
-          {options.map(({ value, label, disabled: optionDisabled }) => (
+          {options.length > 0 ? (
+            options.map(({ value, label, disabled: optionDisabled }) => (
+              <SelectItem
+                key={value}
+                value={value}
+                disabled={optionDisabled ?? false}
+                className={`${selectItemStyle} ${optionClassName}`}
+              >
+                {label}
+              </SelectItem>
+            ))
+          ) : (
             <SelectItem
-              key={value}
-              value={value}
-              disabled={optionDisabled ?? false}
+              key={'no-data'}
+              value={'no-data'}
+              disabled={true}
               className={`${selectItemStyle} ${optionClassName}`}
             >
-              {label}
+              No data available
             </SelectItem>
-          ))}
+          )}
         </SelectContent>
       </Select>
       {error && <FormErrorMessage message={error} />}

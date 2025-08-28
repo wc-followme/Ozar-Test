@@ -19,7 +19,6 @@ export interface GeneralInfoData {
   address: string;
   preferredContactMethod: string;
   contactStartTime: string;
-  contactEndTime: string;
   animals: string;
   petType: string;
 }
@@ -295,7 +294,6 @@ export const DEFAULT_GENERAL_INFO: GeneralInfoData = {
   address: '',
   preferredContactMethod: '',
   contactStartTime: '',
-  contactEndTime: '',
   animals: 'No',
   petType: '',
 };

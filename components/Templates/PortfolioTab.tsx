@@ -1,5 +1,6 @@
 'use client';
 
+import MediaPreviewModal from '@/components/shared/cards/MediaPreviewModal';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { PortfolioBox } from '@/components/shared/common/PortfolioBox';
@@ -94,6 +95,11 @@ export const PortfolioTab = ({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
+
+  // Media preview modal state
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
+  const [selectedProject, setSelectedProject] =
+    useState<PortfolioProject | null>(null);
 
   // Fetch projects with pagination
   const fetchProjects = useCallback(
@@ -395,6 +401,56 @@ export const PortfolioTab = ({
     setEditingProject(null);
   };
 
+  // Handle viewing project media
+  const handleViewMedia = (project: PortfolioProject) => {
+    setSelectedProject(project);
+    setIsMediaModalOpen(true);
+  };
+
+  // Prepare media items for the modal
+  const getMediaItems = (project: PortfolioProject) => {
+    const mediaItems: Array<{
+      id: string;
+      type?: string;
+      src: string;
+      thumbnail: string;
+    }> = [];
+
+    // Add images
+    if (project.images && project.images.length > 0) {
+      project.images.forEach((image, index) => {
+        const imageUrl = image.startsWith('http')
+          ? image
+          : `${APP_CONFIG.CDN_URL}${image}`;
+        mediaItems.push({
+          id: `image-${index}`,
+          type: 'image',
+          src: imageUrl,
+          thumbnail: imageUrl,
+        });
+      });
+    }
+
+    // Add videos
+    if (project.videos && project.videos.length > 0) {
+      project.videos.forEach((video, index) => {
+        const videoUrl = video.startsWith('http')
+          ? video
+          : `${APP_CONFIG.CDN_URL}${video}`;
+        // For videos, we'll use the same URL for both src and thumbnail
+        // The MediaPreviewModal will handle video thumbnail generation
+        mediaItems.push({
+          id: `video-${index}`,
+          type: 'video',
+          src: videoUrl,
+          thumbnail: videoUrl,
+        });
+      });
+    }
+
+    return mediaItems;
+  };
+
   return (
     <div className='space-y-6 w-full'>
       {canEditCompany && (
@@ -472,6 +528,7 @@ export const PortfolioTab = ({
                       videoCount={videoCount}
                       onEdit={canEditCompany ? handleEdit : undefined}
                       onDelete={canEditCompany ? handleDelete : undefined}
+                      onView={() => handleViewMedia(project)}
                       showEditMenu={canEditCompany}
                     />
                   );
@@ -517,6 +574,16 @@ export const PortfolioTab = ({
           initialData={editingProject}
         />
       </SideSheet>
+
+      {/* Media Preview Modal */}
+      <MediaPreviewModal
+        open={isMediaModalOpen}
+        onOpenChange={setIsMediaModalOpen}
+        projectName={
+          selectedProject?.name || selectedProject?.title || 'Project'
+        }
+        mediaItems={selectedProject ? getMediaItems(selectedProject) : []}
+      />
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Edit2, Gallery, Trash, VideoPlay } from 'iconsax-react';
 import { MoreVertical } from 'lucide-react';
 import Image from 'next/image';
+import { useRef, useState } from 'react';
 
 interface PortfolioBoxProps {
   id: string;
@@ -16,6 +17,7 @@ interface PortfolioBoxProps {
   videoCount?: number;
   onEdit?: ((id: string) => void) | undefined;
   onDelete?: ((id: string) => void) | undefined;
+  onView?: () => void;
   showEditMenu?: boolean;
 }
 
@@ -28,10 +30,35 @@ export const PortfolioBox = ({
   videoCount = 0,
   onEdit,
   onDelete,
+  onView,
   showEditMenu = true,
 }: PortfolioBoxProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleVideoLoad = () => {
+    if (videoRef.current) {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVideoError = () => {
+    setHasError(true);
+    setIsLoading(false);
+  };
+
+  const getVideoSrc = () => {
+    if (!image || image.trim() === '') {
+      return undefined;
+    }
+    return image.startsWith('http') ? image : image;
+  };
   const handleMenuAction = (action: string) => {
     switch (action) {
+      case 'view':
+        onView?.();
+        break;
       case 'edit':
         onEdit?.(id);
         break;
@@ -55,21 +82,43 @@ export const PortfolioBox = ({
   ];
 
   return (
-    <div className='bg-[var(--bg-dark)] rounded-2xl border-2 border-[var(--border-dark)] overflow-hidden hover:shadow-md transition-shadow'>
+    <div
+      className='bg-[var(--bg-dark)] rounded-2xl border-2 border-[var(--border-dark)] overflow-hidden hover:shadow-md transition-shadow cursor-pointer'
+      onClick={onView}
+    >
       {/* Media Section */}
       <div className='aspect-[298/296] flex items-center justify-center relative group bg-[var(--background)]'>
         {image ? (
           isVideo ? (
             // Render video player for video files
-            <video
-              src={image}
-              className='max-w-full object-cover h-auto w-auto max-h-full rounded-t-2xl'
-              controls
-              preload='metadata'
-              muted
-            >
-              Your browser does not support the video tag.
-            </video>
+            <div className='w-full h-full relative'>
+              {isLoading && (
+                <div className='absolute inset-0 bg-gray-200 flex items-center justify-center'>
+                  <div className='text-gray-500 text-sm'>Loading...</div>
+                </div>
+              )}
+
+              {hasError && (
+                <div className='absolute inset-0 bg-gray-200 flex items-center justify-center'>
+                  <div className='text-gray-500 text-sm'>
+                    Video not available
+                  </div>
+                </div>
+              )}
+
+              {getVideoSrc() && (
+                <video
+                  ref={videoRef}
+                  src={getVideoSrc()}
+                  className='w-full h-full object-cover'
+                  preload='metadata'
+                  muted
+                  onLoadedData={handleVideoLoad}
+                  onError={handleVideoError}
+                  style={{ display: isLoading || hasError ? 'none' : 'block' }}
+                />
+              )}
+            </div>
           ) : (
             <Image
               src={image}

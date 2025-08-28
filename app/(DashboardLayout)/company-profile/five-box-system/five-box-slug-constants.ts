@@ -6,10 +6,13 @@ export const FIVE_BOX_SLUGS = {
   ESTIMATION: 'estimation',
 } as const;
 
-export const PET_TYPES = {
-  DOG: 'Dog',
-  CAT: 'Cat',
-} as const;
+export const PET_TYPES = [
+  { value: 'dog', label: 'Dog' },
+  { value: 'cat', label: 'Cat' },
+  { value: 'bird', label: 'Bird' },
+  { value: 'fish', label: 'Fish' },
+  { value: 'other', label: 'Other' },
+];
 
 export const CONTACT_METHOD_OPTIONS_ARRAY = [
   { value: 'email', label: 'Email' },
@@ -22,24 +25,44 @@ export const PROPERTY_TYPE_ARRAY = [
   { value: 'RESIDENTIAL', label: 'Residential' },
   { value: 'COMMERCIAL', label: 'Commercial' },
   { value: 'INDUSTRIAL', label: 'Industrial' },
-  { value: 'MIXED', label: 'Mixed Use' },
 ];
 
-export const PROPERTY_TYPE_OPTIONS_ARRAY = [
-  { value: 'HOUSE_VILLA', label: 'House/Villa' },
-  { value: 'APARTMENT', label: 'Apartment' },
-  { value: 'CONDO', label: 'Condo' },
-  { value: 'TOWNHOUSE', label: 'Townhouse' },
-  { value: 'PENTHOUSE', label: 'Penthouse' },
+// Conditional Property Type Options based on Property Selection
+export const RESIDENTIAL_PROPERTY_TYPE_OPTIONS = [
+  { value: 'APARTMENT_FLAT', label: 'Apartment / Flat' },
+  { value: 'VILLA_BUNGALOW', label: 'Villa / Bungalow' },
+  { value: 'ROW_HOUSE', label: 'Row House' },
+  { value: 'FARMHOUSE', label: 'Farmhouse' },
+  { value: 'COOP_HOUSING', label: 'Co-op Housing / Society' },
+];
+
+export const COMMERCIAL_PROPERTY_TYPE_OPTIONS = [
+  { value: 'OFFICE_SPACE', label: 'Office Space' },
+  { value: 'RETAIL_SHOP', label: 'Retail Shop' },
+  { value: 'SHOWROOM', label: 'Showroom' },
+  { value: 'MALL_SHOPPING', label: 'Mall / Shopping Complex Unit' },
+  { value: 'RESTAURANT_HOTEL', label: 'Restaurant / Hotel' },
+  { value: 'COWORKING_SPACE', label: 'Co-working Space' },
+];
+
+export const INDUSTRIAL_PROPERTY_TYPE_OPTIONS = [
+  { value: 'WAREHOUSE_GODOWN', label: 'Warehouse / Godown' },
+  {
+    value: 'FACTORY_MANUFACTURING',
+    label: 'Factory / Manufacturing Unit',
+  },
+  { value: 'WORKSHOP', label: 'Workshop' },
+  { value: 'DATA_CENTER', label: 'Data Center' },
+  { value: 'COLD_STORAGE', label: 'Cold Storage' },
 ];
 
 export const BHK_OPTIONS_ARRAY = [
-  { value: '1', label: '1 BHK' },
-  { value: '2', label: '2 BHK' },
-  { value: '3', label: '3 BHK' },
-  { value: '4', label: '4 BHK' },
-  { value: '5', label: '5 BHK' },
-  { value: '6', label: '6+ BHK' },
+  { value: '1', label: '1 Room' },
+  { value: '2', label: '2 Rooms' },
+  { value: '3', label: '3 Rooms' },
+  { value: '4', label: '4 Rooms' },
+  { value: '5', label: '5 Rooms' },
+  { value: '6', label: '6+ Rooms' },
 ];
 
 export const FLOOR_OPTIONS_ARRAY = [
@@ -52,12 +75,12 @@ export const FLOOR_OPTIONS_ARRAY = [
 ];
 
 export const SQUARE_FOOTAGE_OPTIONS_ARRAY = [
-  { value: '500-1000', label: '500-1000 Sq / Ft' },
-  { value: '1000-1500', label: '1000-1500 Sq / Ft' },
-  { value: '1500-2000', label: '1500-2000 Sq / Ft' },
-  { value: '2000-2500', label: '2000-2500 Sq / Ft' },
-  { value: '2500-3000', label: '2500 Sq / Ft' },
-  { value: '3000-3500', label: '3000+ Sq / Ft' },
+  { value: '<500', label: '< 500 sq ft' },
+  { value: '500-1000', label: '500 – 1000 sq ft' },
+  { value: '1000-2000', label: '1000 – 2000 sq ft' },
+  { value: '2000-5000', label: '2000 – 5000 sq ft' },
+  { value: '5000-10000', label: '5000 – 10,000 sq ft' },
+  { value: '10000+', label: '10,000+ sq ft' },
 ];
 
 export const PROPERTY_AGE_OPTIONS_ARRAY = [
