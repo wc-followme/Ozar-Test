@@ -21,6 +21,7 @@ import NoDataFound from '../shared/common/NoDataFound';
 
 interface Material {
   id: string;
+  uuid?: string;
   name: string;
   variant: string;
   qty: number;
@@ -148,6 +149,7 @@ export default function EstimationBoxEdit({
   >(null);
   const [isLoadingFromStorage, setIsLoadingFromStorage] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]); // Start with empty rooms for edit mode
+  const [didInitialSync, setDidInitialSync] = useState(false);
 
   // Trades dropdown options from API
   const [tradeOptions, setTradeOptions] = useState<
@@ -326,19 +328,60 @@ export default function EstimationBoxEdit({
         room_name: room.name,
         trades: room.trades.map(trade => ({
           trade_id: trade.id,
+          id: trade.id,
+          uuid: trade.id,
           start_date: trade.start_date,
           end_date: trade.end_date,
           markup: trade.markup || 0,
           services: trade.serviceList.map(service => ({
             // Persist UUID when available; fallback to id for legacy items
-            service_id: (service as any).uuid || service.id,
+            service_id: service.uuid || service.id,
+            id: service.uuid || service.id,
+            uuid: service.uuid || service.id,
             service_order_no: 1,
             description: service.name,
             qty: service.qty,
             rate: service.rate,
-            materials: service.materials || [],
-            finishes: service.finishes || [],
-            tools: service.tools || [],
+            materials: Array.isArray(service.materials)
+              ? service.materials.map(m => ({
+                  id: m.uuid || m.id,
+                  uuid: m.uuid || m.id,
+                  name: m.name,
+                  variant: m.variant || '',
+                  qty: m.qty,
+                  unit: m.unit,
+                  description: m.description,
+                  rate: m.rate,
+                  markup: m.markup || 0,
+                  markup_type: m.markup_type || 'FLAT_AMOUNT',
+                  lineTotal: m.lineTotal || 0,
+                }))
+              : [],
+            finishes: Array.isArray(service.finishes)
+              ? service.finishes.map(f => ({
+                  id: f.uuid || f.id,
+                  uuid: f.uuid || f.id,
+                  name: f.name,
+                  variant: f.variant || '',
+                  qty: f.qty,
+                  unit: f.unit,
+                  description: f.description,
+                  rate: f.rate,
+                  markup: f.markup || 0,
+                  markup_type: f.markup_type || 'FLAT_AMOUNT',
+                  lineTotal: f.lineTotal || 0,
+                }))
+              : [],
+            tools: Array.isArray(service.tools)
+              ? service.tools.map(t => ({
+                  id: t.uuid || t.id,
+                  uuid: t.uuid || t.id,
+                  name: t.name,
+                  category: t.category || '',
+                  description: t.description || '',
+                  status: t.status || 'available',
+                }))
+              : [],
           })),
         })),
         // Extra fields for component functionality
@@ -505,6 +548,15 @@ export default function EstimationBoxEdit({
       setIsLoadingFromStorage(false);
     }, 100);
   }, [templateId]);
+
+  // After initial load completes, trigger one save to ensure hybrid format is written
+  useEffect(() => {
+    if (!isLoadingFromStorage && rooms.length > 0 && !didInitialSync) {
+      setDidInitialSync(true);
+      // Trigger rooms change to invoke the save effect with hybrid format
+      setRooms(prevRooms => [...prevRooms]);
+    }
+  }, [isLoadingFromStorage, rooms.length, didInitialSync]);
 
   // Rest of the component logic would be the same as EstimationBox
   // For brevity, I'll include the essential functions
@@ -1023,11 +1075,30 @@ export default function EstimationBoxEdit({
     }
   };
 
-  const handleServiceSelect = (serviceId: string) => {
-    // Find which room and trade contains this service across ALL rooms
+  const handleServiceSelect = (serviceId: string, tradeUniqueKey?: string) => {
+    // If a specific trade context is provided, scope the search to that trade
+    if (tradeUniqueKey) {
+      for (const room of rooms) {
+        const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
+        if (trade && trade.serviceList.some(s => s.id === serviceId)) {
+          setSelectedRoomId(room.id);
+          setSelectedTrade(trade.id);
+          setSelectedTradeUniqueKey(trade.uniqueKey);
+          if (!expandedRooms.includes(room.id)) {
+            setExpandedRooms(prev => [...prev, room.id]);
+          }
+          if (!expandedTrades.includes(trade.uniqueKey)) {
+            setExpandedTrades(prev => [...prev, trade.uniqueKey]);
+          }
+          setSelectedService(serviceId);
+          return;
+        }
+      }
+    }
+
+    // Fallback: find the first occurrence across all rooms
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
-
     for (const room of rooms) {
       const trade = room.trades.find(tr =>
         tr.serviceList.some(service => service.id === serviceId)
@@ -1038,24 +1109,16 @@ export default function EstimationBoxEdit({
         break;
       }
     }
-
     if (foundRoom && foundTrade) {
-      // Set the room that contains this service
       setSelectedRoomId(foundRoom.id);
-
-      // Set the trade that contains this service
       setSelectedTrade(foundTrade.id);
       setSelectedTradeUniqueKey(foundTrade.uniqueKey);
-
-      // Ensure the room and trade are expanded
       if (!expandedRooms.includes(foundRoom.id)) {
         setExpandedRooms(prev => [...prev, foundRoom.id]);
       }
       if (!expandedTrades.includes(foundTrade.uniqueKey)) {
         setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
-
-      // Set service selection
       setSelectedService(serviceId);
     }
   };
@@ -1200,7 +1263,13 @@ export default function EstimationBoxEdit({
         handleTradeAccordionChange={value => setExpandedTrades(value)}
         handleTradeSelect={handleTradeSelect}
         selectedService={selectedService}
-        handleServiceSelect={handleServiceSelect}
+        selectedTradeUniqueKey={selectedTradeUniqueKey}
+        handleServiceSelect={(serviceId, tradeKey) => {
+          if (tradeKey) {
+            setSelectedTradeUniqueKey(tradeKey);
+          }
+          handleServiceSelect(serviceId, tradeKey);
+        }}
         formatCurrency={amount =>
           new Intl.NumberFormat('en-US', {
             style: 'currency',

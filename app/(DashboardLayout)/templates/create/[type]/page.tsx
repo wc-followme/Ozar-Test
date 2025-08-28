@@ -208,12 +208,12 @@ export default function CreateTemplatePage({
                 ]}
                 className='mb-6'
               />
-              <Button
+              {/* <Button
                 className='btn-primary'
                 onClick={() => setIsTemplateSheetOpen(true)}
               >
                 Add From Templates
-              </Button>
+              </Button> */}
             </div>
             {/* Breadcrumb */}
 
@@ -240,12 +240,12 @@ export default function CreateTemplatePage({
                   { name: 'Service Options Template' },
                 ]}
               />
-              <Button
+              {/* <Button
                 className='btn-primary'
                 onClick={() => setIsTemplateSheetOpen(true)}
               >
                 Add From Templates
-              </Button>
+              </Button> */}
             </div>
 
             {/* Template Meta Fields */}
@@ -340,12 +340,12 @@ export default function CreateTemplatePage({
                   { name: 'Tools Template' },
                 ]}
               />
-              <Button
+              {/* <Button
                 className='btn-primary'
                 onClick={() => setIsTemplateSheetOpen(true)}
               >
                 Add From Templates
-              </Button>
+              </Button> */}
             </div>
 
             {/* Template Details Section */}
@@ -375,12 +375,12 @@ export default function CreateTemplatePage({
                   { name: 'Disclaimer' },
                 ]}
               />
-              <Button
+              {/* <Button
                 className='btn-primary'
                 onClick={() => setIsTemplateSheetOpen(true)}
               >
                 Add From Templates
-              </Button>
+              </Button> */}
             </div>
 
             {/* Template Details Section */}
