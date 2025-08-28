@@ -30,7 +30,6 @@ export default function ArchiveList({
   menuOptions,
   onRetrieve,
 }: ArchiveListProps) {
-
   return (
     <div className='w-full'>
       {materials.length === 0 && loading ? (
@@ -52,7 +51,7 @@ export default function ArchiveList({
             </div>
           ) : (
             <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {materials.map((material) => {
+              {materials.map(material => {
                 const { uuid, name, services } = material;
                 return (
                   <InfoCard
@@ -60,8 +59,10 @@ export default function ArchiveList({
                     tradeName={name || ''}
                     category={`${services?.length || 0} Service${(services?.length || 0) !== 1 ? 's' : ''}`}
                     menuOptions={menuOptions}
-                    onRetrieve={onRetrieve ? async () => onRetrieve(uuid) : undefined}
-                    module='materials'
+                    onRetrieve={
+                      onRetrieve ? async () => onRetrieve(uuid) : undefined
+                    }
+                    module='catalogue_services'
                   />
                 );
               })}

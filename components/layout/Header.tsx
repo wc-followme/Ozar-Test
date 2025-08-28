@@ -14,7 +14,7 @@ import { useAuth } from '@/lib/auth-context';
 import { HambergerMenu, Key } from 'iconsax-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { cn, getCompanyId } from '../../lib/utils';
+import { cn, getCompanyId, getCurrentUser } from '../../lib/utils';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import CompanyDropdown, { Company } from '../shared/common/CompanyDropdown';
 import Dropdown from '../shared/common/Dropdown';
@@ -100,8 +100,31 @@ export function Header() {
 
       fetchCompanies();
     } else {
-      // For non-admin users, set loading to false immediately
-      setLoadingCompanies(false);
+      // For non-admin users, get company data from user in localStorage
+      try {
+        const currentUser = getCurrentUser();
+        if (currentUser?.company?.uuid && currentUser?.company?.name) {
+          // Set selected company in localStorage for non-admin users
+          const userCompany: Company = {
+            id: currentUser.company.uuid,
+            name: currentUser.company.name,
+            icon: COMPANY_IMAGES.PLACEHOLDER, // Use placeholder icon for non-admin users
+            color: '#000000', // Default color for non-admin users
+          };
+
+          // Save to localStorage
+          localStorage.setItem(
+            STORAGE_KEYS.SELECTED_COMPANY,
+            JSON.stringify(userCompany)
+          );
+
+          setSelectedCompany(userCompany);
+        }
+      } catch (error) {
+        console.error('Error setting company data for non-admin user:', error);
+      } finally {
+        setLoadingCompanies(false);
+      }
     }
   }, [user]);
 

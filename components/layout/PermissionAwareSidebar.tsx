@@ -84,24 +84,9 @@ export function PermissionAwareSidebar() {
 
     switch (menu_item.title) {
       case SIDEBAR_TITLES.CATALOGUE_MANAGEMENT:
-        return (
-          hasPermission(
-            PERMISSION_CATEGORIES.CATEGORIES,
-            PERMISSION_ACTIONS.VIEW
-          ) ||
-          hasPermission(
-            PERMISSION_CATEGORIES.TRADES,
-            PERMISSION_ACTIONS.VIEW
-          ) ||
-          hasPermission(
-            PERMISSION_CATEGORIES.SERVICES,
-            PERMISSION_ACTIONS.VIEW
-          ) ||
-          hasPermission(
-            PERMISSION_CATEGORIES.MATERIALS,
-            PERMISSION_ACTIONS.VIEW
-          ) ||
-          hasPermission(PERMISSION_CATEGORIES.TOOLS, PERMISSION_ACTIONS.VIEW)
+        return hasPermission(
+          PERMISSION_CATEGORIES.CATALOGUE_SERVICES,
+          PERMISSION_ACTIONS.VIEW
         );
       case SIDEBAR_TITLES.ROLES_ACCOUNTS:
         return (
@@ -142,28 +127,12 @@ export function PermissionAwareSidebar() {
             PERMISSION_ACTIONS.VIEW
           );
         case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
-          return hasPermission(
-            PERMISSION_CATEGORIES.CATEGORIES,
-            PERMISSION_ACTIONS.VIEW
-          );
         case SIDEBAR_TITLES.TRADE_MANAGEMENT:
-          return hasPermission(
-            PERMISSION_CATEGORIES.TRADES,
-            PERMISSION_ACTIONS.VIEW
-          );
         case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
-          return hasPermission(
-            PERMISSION_CATEGORIES.SERVICES,
-            PERMISSION_ACTIONS.VIEW
-          );
         case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
-          return hasPermission(
-            PERMISSION_CATEGORIES.MATERIALS,
-            PERMISSION_ACTIONS.VIEW
-          );
         case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
           return hasPermission(
-            PERMISSION_CATEGORIES.TOOLS,
+            PERMISSION_CATEGORIES.CATALOGUE_SERVICES,
             PERMISSION_ACTIONS.VIEW
           );
         default:

@@ -53,8 +53,8 @@ const CategoryManagement = () => {
 
   // Get user permissions for categories
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.categories?.edit;
-  const canViewCategories = userPermissions?.categories?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewCategories = userPermissions?.catalogue_services?.view;
 
   // Get menu options based on current tab
   const getMenuOptions = (isArchive: boolean): MenuOption[] => {
@@ -118,7 +118,10 @@ const CategoryManagement = () => {
         const companyId = getCompanyId();
 
         // Determine status based on selected tab
-        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const res = await apiService.fetchCategories({
           page: targetPage,
@@ -305,14 +308,14 @@ const CategoryManagement = () => {
       console.log('Retrieving category:', uuid); // Debug log
       const response = await apiService.updateCategoryStatus(uuid, 'ACTIVE');
       console.log('Retrieve response:', response); // Debug log
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, CATEGORY_MESSAGES.RETRIEVE_SUCCESS)
       );
-      
+
       // Remove the retrieved category from the current list immediately
       setCategories(prev => prev.filter(c => c.uuid !== uuid));
-      
+
       // Refresh list to reflect latest server state based on current tab
       await fetchCategories(1, false);
     } catch (err: unknown) {
@@ -564,7 +567,9 @@ const CategoryManagement = () => {
             <CategoryList
               categories={categories}
               loading={loading}
-              noDataDescription={CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION}
+              noDataDescription={
+                CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION
+              }
               menuOptions={getMenuOptions(false)}
               onToggle={handleToggleStatus}
               onDelete={handleArchiveCategory}

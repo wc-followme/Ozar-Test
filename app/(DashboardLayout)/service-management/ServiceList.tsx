@@ -34,9 +34,6 @@ export default function ServiceList({
   onCreateService,
   canEdit,
 }: ServiceListProps) {
-
-
-
   return (
     <div className='w-full'>
       {services.length === 0 && loading ? (
@@ -58,7 +55,7 @@ export default function ServiceList({
             </div>
           ) : (
             <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-              {services.map((service) => {
+              {services.map(service => {
                 const { uuid, name, trades } = service;
                 return (
                   <InfoCard
@@ -68,7 +65,7 @@ export default function ServiceList({
                     menuOptions={menuOptions}
                     onEdit={() => onEdit(uuid)}
                     onDelete={() => onDelete(uuid)}
-                    module='services'
+                    module='catalogue_services'
                   />
                 );
               })}
