@@ -130,7 +130,7 @@ export function Sidebar() {
                           href={href || '#'}
                           className={cn(
                             'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                            pathname === href &&
+                            (pathname === href || (menu_id === 'projects' && href && pathname?.startsWith(href))) &&
                               'bg-[var(--primary)] text-white'
                           )}
                         >
@@ -149,7 +149,7 @@ export function Sidebar() {
                               href={href || '#'}
                               className={cn(
                                 'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                                pathname === href &&
+                                (pathname === href || (menu_id === 'projects' && href && pathname?.startsWith(href))) &&
                                   'bg-[var(--primary)] text-white'
                               )}
                             >

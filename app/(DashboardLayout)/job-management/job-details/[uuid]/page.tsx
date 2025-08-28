@@ -140,7 +140,7 @@ export default function JobDetailsPage() {
   };
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: JOB_MESSAGES.JOB_MANAGEMENT_TITLE, href: JOB_MANAGEMENT },
+    { name: JOB_MESSAGES.JOB_MANAGEMENT_BREADCRUMB, href: JOB_MANAGEMENT },
     { name: job?.project_id || job?.['uuid'] || 'Job Details' },
   ];
 
