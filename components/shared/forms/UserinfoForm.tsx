@@ -118,7 +118,6 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
           date_of_joining,
           role,
         } = initialData;
-        console.log('initialData', { initialData, roles });
         // Set role ID
         if (role) {
           setValue('role_id', role.uuid);

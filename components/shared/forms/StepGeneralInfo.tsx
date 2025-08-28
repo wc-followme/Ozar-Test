@@ -71,11 +71,6 @@ const createGeneralInfoSchema = (boxSettings: any) => {
     )
       ? yup.string().required(STEP_MESSAGES.CONTACT_START_TIME_REQUIRED)
       : yup.string().optional(),
-    contactEndTime: isFieldRequired(
-      GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT
-    )
-      ? yup.string().required(STEP_MESSAGES.CONTACT_END_TIME_REQUIRED)
-      : yup.string().optional(),
     animals: isFieldRequired(GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME)
       ? yup.string().required(STEP_MESSAGES.ANIMALS_REQUIRED)
       : yup.string().optional(),
@@ -123,7 +118,6 @@ export function StepGeneralInfo({
       address: '',
       preferredContactMethod: '',
       contactStartTime: '',
-      contactEndTime: '',
       animals: 'No',
       petType: '',
       ...defaultValues,
@@ -408,107 +402,48 @@ export function StepGeneralInfo({
                     {isFieldEnabled(
                       GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT
                     ) && (
-                      <div className='flex flex-col gap-1.5 sm:gap-2 space-y-2'>
-                        <FormLabel className='field-label'>
-                          {STEP_MESSAGES.BEST_TIME_TO_CONTACT_LABEL}
-                          {isFieldRequired(
-                            GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT
-                          ) && <span className='text-red-500'>*</span>}
-                        </FormLabel>
-                        <div className='flex items-start gap-4'>
-                          <FormField
-                            control={form.control}
-                            name='contactStartTime'
-                            render={({ field }) => (
-                              <FormItem className='w-full'>
-                                <FormControl>
-                                  <TimePicker
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    placeholder={
-                                      STEP_MESSAGES.SELECT_START_TIME
-                                    }
-                                    error={
-                                      !!form.formState.errors[
-                                        'contactStartTime'
-                                      ]
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name='contactEndTime'
-                            render={({ field }) => (
-                              <FormItem className='w-full'>
-                                <FormControl>
-                                  <TimePicker
-                                    value={field.value}
-                                    onChange={field.onChange}
-                                    placeholder={STEP_MESSAGES.SELECT_END_TIME}
-                                    error={
-                                      !!form.formState.errors['contactEndTime']
-                                    }
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  {/* Animals in the Home */}
-                  {isFieldEnabled(
-                    GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME
-                  ) && (
-                    <div className='flex flex-col gap-1.5 sm:gap-2'>
-                      <FormField
-                        control={form.control}
-                        name='animals'
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className='field-label'>
-                              {STEP_MESSAGES.ANIMALS_IN_HOME_LABEL}
-                              {isFieldRequired(
-                                GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME
-                              ) && <span className='text-red-500'>*</span>}
-                            </FormLabel>
-                            <FormControl>
-                              <SelectField
-                                value={field.value}
-                                onValueChange={field.onChange}
-                                options={[
-                                  { value: 'Yes', label: STEP_MESSAGES.YES },
-                                  { value: 'No', label: STEP_MESSAGES.NO },
-                                ]}
-                                placeholder={STEP_MESSAGES.YES}
-                                className=''
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  )}
-                  {/* Pet type? */}
-                  {animals === 'Yes' &&
-                    isFieldEnabled(GENERAL_INFORMATION_FIELDS.PET_TYPE) && (
                       <div className='flex flex-col gap-1.5 sm:gap-2'>
                         <FormField
                           control={form.control}
-                          name='petType'
+                          name='contactStartTime'
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className='field-label'>
-                                {STEP_MESSAGES.PET_TYPE_LABEL}
+                                {STEP_MESSAGES.BEST_TIME_TO_CONTACT_LABEL}
                                 {isFieldRequired(
-                                  GENERAL_INFORMATION_FIELDS.PET_TYPE
+                                  GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT
+                                ) && <span className='text-red-500'>*</span>}
+                              </FormLabel>
+                              <FormControl>
+                                <TimePicker
+                                  value={field.value}
+                                  onChange={field.onChange}
+                                  placeholder={STEP_MESSAGES.SELECT_START_TIME}
+                                  error={
+                                    !!form.formState.errors['contactStartTime']
+                                  }
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                    {/* Animals in the Home */}
+                    {isFieldEnabled(
+                      GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME
+                    ) && (
+                      <div className='flex flex-col gap-1.5 sm:gap-2'>
+                        <FormField
+                          control={form.control}
+                          name='animals'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className='field-label'>
+                                {STEP_MESSAGES.ANIMALS_IN_HOME_LABEL}
+                                {isFieldRequired(
+                                  GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME
                                 ) && <span className='text-red-500'>*</span>}
                               </FormLabel>
                               <FormControl>
@@ -516,16 +451,10 @@ export function StepGeneralInfo({
                                   value={field.value}
                                   onValueChange={field.onChange}
                                   options={[
-                                    {
-                                      value: PET_TYPES.DOG,
-                                      label: PET_TYPES.DOG,
-                                    },
-                                    {
-                                      value: PET_TYPES.CAT,
-                                      label: PET_TYPES.CAT,
-                                    },
+                                    { value: 'Yes', label: STEP_MESSAGES.YES },
+                                    { value: 'No', label: STEP_MESSAGES.NO },
                                   ]}
-                                  placeholder={STEP_MESSAGES.SELECT_PET_TYPE}
+                                  placeholder={STEP_MESSAGES.YES}
                                   className=''
                                 />
                               </FormControl>
@@ -535,6 +464,37 @@ export function StepGeneralInfo({
                         />
                       </div>
                     )}
+                    {/* Pet type? */}
+                    {animals === 'Yes' &&
+                      isFieldEnabled(GENERAL_INFORMATION_FIELDS.PET_TYPE) && (
+                        <div className='flex flex-col gap-1.5 sm:gap-2'>
+                          <FormField
+                            control={form.control}
+                            name='petType'
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className='field-label'>
+                                  {STEP_MESSAGES.PET_TYPE_LABEL}
+                                  {isFieldRequired(
+                                    GENERAL_INFORMATION_FIELDS.PET_TYPE
+                                  ) && <span className='text-red-500'>*</span>}
+                                </FormLabel>
+                                <FormControl>
+                                  <SelectField
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    options={PET_TYPES}
+                                    placeholder={STEP_MESSAGES.SELECT_PET_TYPE}
+                                    className=''
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                  </div>
                 </div>
               </div>
             </div>

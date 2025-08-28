@@ -150,7 +150,6 @@ export default function HomeOwnerWizardPage() {
             project_name,
             preferred_contact_method,
             contact_start_time,
-            contact_end_time,
             project_start_date,
             project_finish_date,
             budget,
@@ -191,9 +190,6 @@ export default function HomeOwnerWizardPage() {
             contactStartTime: contact_start_time
               ? convert24To12Hour(contact_start_time)
               : '',
-            contactEndTime: contact_end_time
-              ? convert24To12Hour(contact_end_time)
-              : '',
             animals: has_animals ? 'Yes' : 'No',
             petType: pet_type || '',
           });
@@ -204,9 +200,7 @@ export default function HomeOwnerWizardPage() {
             propertyType: property_type_detail || '', // Use property_type_detail from API
             bhk: bhk ? bhk.toString() : '',
             floor: floor === 0 ? 'ground' : floor ? floor.toString() : '',
-            approxSqFt: approx_sq_ft
-              ? `${approx_sq_ft}-${approx_sq_ft + 500}`
-              : '',
+            approxSqFt: approx_sq_ft || '',
             ageOfProperty: age_of_property || '0-5',
           });
 
@@ -598,7 +592,6 @@ export default function HomeOwnerWizardPage() {
           petType,
           preferredContactMethod,
           contactStartTime,
-          contactEndTime,
         } = generalInfo;
         if (fullName && fullName.trim() !== '') {
           payload.client_name = fullName;
@@ -622,9 +615,6 @@ export default function HomeOwnerWizardPage() {
         }
         if (contactStartTime && contactStartTime.trim() !== '') {
           payload.contact_start_time = convert12To24Hour(contactStartTime);
-        }
-        if (contactEndTime && contactEndTime.trim() !== '') {
-          payload.contact_end_time = convert12To24Hour(contactEndTime);
         }
       }
 
@@ -651,7 +641,7 @@ export default function HomeOwnerWizardPage() {
           payload.floor = floor === 'ground' ? 0 : parseInt(floor, 10);
         }
         if (approxSqFt && approxSqFt.trim() !== '') {
-          payload.approx_sq_ft = parseInt(approxSqFt.split('-')[0] || '0', 10);
+          payload.approx_sq_ft = approxSqFt;
         }
         if (ageOfProperty && ageOfProperty.trim() !== '') {
           payload.age_of_property = ageOfProperty;
@@ -660,20 +650,32 @@ export default function HomeOwnerWizardPage() {
 
       // Map project info data
       if (projectInfo) {
-        if (projectInfo.projectName && projectInfo.projectName.trim() !== '') {
-          payload.project_name = projectInfo.projectName;
+        const {
+          projectName,
+          projectStartDate,
+          projectFinishDate,
+          ownerPresence,
+          weekendWork,
+          dailyWorkTimingStart,
+          dailyWorkTimingEnd,
+          budget,
+          preferredContractor,
+        } = projectInfo;
+
+        if (projectName && projectName.trim() !== '') {
+          payload.project_name = projectName;
         }
 
         // Convert date objects to YYYY-MM-DD format
-        if (projectInfo.projectStartDate) {
-          const startDate = new Date(projectInfo.projectStartDate);
+        if (projectStartDate) {
+          const startDate = new Date(projectStartDate);
           if (!isNaN(startDate.getTime())) {
             payload.project_start_date = startDate.toISOString().split('T')[0];
           }
         }
 
-        if (projectInfo.projectFinishDate) {
-          const finishDate = new Date(projectInfo.projectFinishDate);
+        if (projectFinishDate) {
+          const finishDate = new Date(projectFinishDate);
           if (!isNaN(finishDate.getTime())) {
             payload.project_finish_date = finishDate
               .toISOString()
@@ -681,36 +683,23 @@ export default function HomeOwnerWizardPage() {
           }
         }
 
-        payload.owner_present_need = projectInfo.ownerPresence === 'yes';
-        payload.weekend_work = projectInfo.weekendWork === 'yes';
+        payload.owner_present_need = ownerPresence === 'yes';
+        payload.weekend_work = weekendWork === 'yes';
 
-        if (
-          projectInfo.dailyWorkTimingStart &&
-          projectInfo.dailyWorkTimingStart.trim() !== ''
-        ) {
-          payload.daily_work_start_time = convert12To24Hour(
-            projectInfo.dailyWorkTimingStart
-          );
+        if (dailyWorkTimingStart && dailyWorkTimingStart.trim() !== '') {
+          payload.daily_work_start_time =
+            convert12To24Hour(dailyWorkTimingStart);
         }
-        if (
-          projectInfo.dailyWorkTimingEnd &&
-          projectInfo.dailyWorkTimingEnd.trim() !== ''
-        ) {
-          payload.daily_work_end_time = convert12To24Hour(
-            projectInfo.dailyWorkTimingEnd
-          );
+        if (dailyWorkTimingEnd && dailyWorkTimingEnd.trim() !== '') {
+          payload.daily_work_end_time = convert12To24Hour(dailyWorkTimingEnd);
         }
 
-        if (projectInfo.budget && projectInfo.budget.trim() !== '') {
-          payload.budget =
-            parseInt(projectInfo.budget.replace(/[^0-9]/g, '')) || 0;
+        if (budget && budget.trim() !== '') {
+          payload.budget = parseInt(budget) || 0;
         }
 
-        if (
-          projectInfo.preferredContractor &&
-          projectInfo.preferredContractor.trim() !== ''
-        ) {
-          payload.preferred_contractor = projectInfo.preferredContractor;
+        if (preferredContractor && preferredContractor.trim() !== '') {
+          payload.preferred_contractor = preferredContractor;
         }
       }
 
