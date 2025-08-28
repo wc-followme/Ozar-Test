@@ -25,8 +25,9 @@ import {
   calculateTradeTotal,
   MARKUP_TYPES,
 } from '@/lib/estimation-calculations';
-import { ArrowDown2, Location, Sms } from 'iconsax-react';
+import { ArrowDown2, SmsTracking } from 'iconsax-react';
 import { useEffect, useState } from 'react';
+import { AuctionIcon } from '../../icons/AuctionIcon';
 import NoDataFound from './NoDataFound';
 import { SubContractorListCard } from './SubContractorListCard';
 
@@ -1297,12 +1298,12 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             {
               label: 'Send Via Email',
               action: 'send-email',
-              icon: Sms,
+              icon: SmsTracking,
             },
             {
               label: 'Add for Auction Bid',
               action: 'auction-bid',
-              icon: Location,
+              icon: AuctionIcon,
             },
           ]}
           onAction={action => {

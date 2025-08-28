@@ -666,7 +666,16 @@ const TradeSidebar = forwardRef<
                       className='border-none'
                     >
                       <AccordionPrimitive.Header className='flex'>
-                        <AccordionPrimitive.Trigger className='flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                        <AccordionPrimitive.Trigger
+                          className='flex items-center justify-between py-2 px-4 rounded-lg cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'
+                          onClick={() =>
+                            onRoomSelect &&
+                            onRoomSelect({
+                              uniqueKey: room.id,
+                              name: room.name,
+                            })
+                          }
+                        >
                           <div className='flex items-center flex-1 min-w-0'>
                             <IconChevronDown
                               size={16}
@@ -705,7 +714,17 @@ const TradeSidebar = forwardRef<
                                     className='border-none'
                                   >
                                     <AccordionPrimitive.Header className='flex'>
-                                      <AccordionPrimitive.Trigger className='flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'>
+                                      <AccordionPrimitive.Trigger
+                                        className='flex items-center justify-between py-1 px-4 rounded cursor-pointer transition-colors hover:no-underline w-full hover:bg-[var(--card-hover)]'
+                                        onClick={() =>
+                                          onTradeSelect &&
+                                          onTradeSelect({
+                                            id: trade.id,
+                                            uniqueKey: trade.id,
+                                            name: trade.name,
+                                          })
+                                        }
+                                      >
                                         <div className='flex items-center flex-1 min-w-0'>
                                           <IconChevronDown
                                             size={16}
@@ -735,6 +754,12 @@ const TradeSidebar = forwardRef<
                                               <div
                                                 key={service.id}
                                                 className='flex items-center justify-between py-2 px-4 cursor-pointer hover:bg-[var(--background)] group rounded-lg'
+                                                onClick={() =>
+                                                  onServiceSelect &&
+                                                  onServiceSelect({
+                                                    id: service.id,
+                                                  })
+                                                }
                                               >
                                                 <span className='text-sm font-medium group-hover:text-[var(--primary)] text-[var(--text-dark)]'>
                                                   {service.name}
