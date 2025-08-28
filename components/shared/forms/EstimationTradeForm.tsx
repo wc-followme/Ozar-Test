@@ -18,14 +18,15 @@ import { SortableItem } from '@/components/ui/sortable-item';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar as IconsaxCalendar } from 'iconsax-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface Trade {
   id: string;
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange: string;
+  start_date?: string | null;
+  end_date?: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -44,7 +45,6 @@ interface EstimationTradeFormProps {
   tradeUniqueKey: string; // Add trade unique key prop
   _onTradeUpdate?: (updatedTrade: Trade) => void;
   onServiceSelect?: (serviceId: string) => void;
-  _onAddService?: () => void;
   onTradeNameChange?: (newTradeName: string) => void;
   onTradeReplacement?: (
     oldTradeUniqueKey: string,
@@ -67,51 +67,93 @@ export default function EstimationTradeForm({
   onServiceReorder,
   onLocalStorageUpdate,
   tradeOptions = [],
-}: EstimationTradeFormProps) {
+}: Readonly<EstimationTradeFormProps>) {
   const [selectedTrade, setSelectedTrade] = useState('');
   const [selectedCurrency, setSelectedCurrency] = useState('$');
   const [startDatePickerOpen, setStartDatePickerOpen] = useState(false);
   const [endDatePickerOpen, setEndDatePickerOpen] = useState(false);
 
   // Use trade-specific data instead of local state
-  const startDate = trade.startDate || new Date();
-  const endDate =
-    trade.endDate ||
-    (() => {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      return tomorrow;
-    })();
+  const startDate = useMemo(() => {
+    if (trade.startDate) {
+      return typeof trade.startDate === 'string'
+        ? new Date(trade.startDate)
+        : trade.startDate;
+    }
+    return new Date();
+  }, [trade.startDate]);
+  const endDate = useMemo(() => {
+    if (trade.endDate) {
+      return typeof trade.endDate === 'string'
+        ? new Date(trade.endDate)
+        : trade.endDate;
+    }
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow;
+  }, [trade.endDate]);
 
   // Use provided tradeOptions or show nothing if no trades available
   const finalTradeOptions = tradeOptions.length > 0 ? tradeOptions : [];
 
   // Sync selectedTrade with trade prop to avoid duplicates
   useEffect(() => {
-    // Prefer matching by label (human-readable name). Fallback to matching by value.
-    const matchingOption = tradeOptions.find(
-      option => option.label === trade.name || option.value === trade.name
+    // Prefer matching by value (uuid); fallback to label; otherwise keep current trade id
+    const matchingByValue = tradeOptions.find(
+      option => option.value === trade.id
     );
-
-    if (matchingOption) {
-      setSelectedTrade(matchingOption.value);
-    } else if (tradeOptions.length > 0 && tradeOptions[0]) {
-      // Default to first available option when nothing matches
-      setSelectedTrade(tradeOptions[0].value);
-    } else {
-      setSelectedTrade('');
+    if (matchingByValue) {
+      setSelectedTrade(matchingByValue.value);
+      // Ensure parent trade name matches the selected option label
+      if (trade.name !== matchingByValue.label) {
+        onTradeReplacement?.(
+          tradeUniqueKey,
+          matchingByValue.value,
+          matchingByValue.label
+        );
+        onTradeNameChange?.(matchingByValue.label);
+      }
+      return;
     }
-  }, [trade.name, tradeOptions]);
+    const matchingByLabel = tradeOptions.find(
+      option => option.label === trade.name
+    );
+    if (matchingByLabel) {
+      setSelectedTrade(matchingByLabel.value);
+      return;
+    }
+    // If current trade is not in options (e.g., filtered), preserve current trade id
+    if (trade.id) {
+      setSelectedTrade(trade.id);
+      return;
+    }
+    // Otherwise clear selection
+    setSelectedTrade('');
+  }, [
+    trade.id,
+    trade.name,
+    tradeOptions,
+    tradeUniqueKey,
+    onTradeReplacement,
+    onTradeNameChange,
+  ]);
 
   // Save initial data when component mounts
   useEffect(() => {
     if (selectedTrade) {
-      const updates: any = {};
-      if (startDate) updates.start_date = startDate.toISOString();
-      if (endDate) updates.end_date = endDate.toISOString();
-      onLocalStorageUpdate?.();
+      const updates: { start_date?: string; end_date?: string } = {};
+      if (
+        startDate &&
+        startDate instanceof Date &&
+        !isNaN(startDate.getTime())
+      ) {
+        updates.start_date = startDate.toISOString();
+      }
+      if (endDate && endDate instanceof Date && !isNaN(endDate.getTime())) {
+        updates.end_date = endDate.toISOString();
+      }
     }
-  }, [selectedTrade, startDate, endDate, onLocalStorageUpdate]);
+  }, [selectedTrade, startDate, endDate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -159,11 +201,33 @@ export default function EstimationTradeForm({
                   // Also call the trade name change handler for backward compatibility
                   onTradeNameChange?.(newTradeName);
 
-                  // Save data after trade selection
-                  const updates: any = {};
-                  if (startDate) updates.start_date = startDate.toISOString();
-                  if (endDate) updates.end_date = endDate.toISOString();
+                  // When trade changes, clear services of this trade so user reselects
+                  _onTradeUpdate?.({
+                    ...trade,
+                    id: newValue,
+                    name: newTradeName,
+                    serviceList: [],
+                  });
+                  // Also persist empty selection to storage if needed
                   onLocalStorageUpdate?.();
+
+                  // Save data after trade selection
+                  const updates: { start_date?: string; end_date?: string } =
+                    {};
+                  if (
+                    startDate &&
+                    startDate instanceof Date &&
+                    !isNaN(startDate.getTime())
+                  ) {
+                    updates.start_date = startDate.toISOString();
+                  }
+                  if (
+                    endDate &&
+                    endDate instanceof Date &&
+                    !isNaN(endDate.getTime())
+                  ) {
+                    updates.end_date = endDate.toISOString();
+                  }
                 }}
                 options={finalTradeOptions}
                 placeholder='Select a trade'
@@ -333,31 +397,39 @@ export default function EstimationTradeForm({
       </Card>
 
       {/* Services List */}
-      {trade.serviceList.length > 0 && (
+
+      {trade.serviceList && trade.serviceList.length > 0 ? (
         <Sortable
           items={trade.serviceList}
           onReorder={onServiceReorder || (() => {})}
           idField='id'
         >
           <div className='space-y-4'>
-            {trade.serviceList.map(service => (
-              <SortableItem
-                key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
-                id={service.id}
-              >
-                {dragHandleProps => (
-                  <TradeListCardComponent
-                    service={service}
-                    variant='service'
-                    onClick={() => onServiceSelect?.(service.id)}
-                    className='mb-4'
-                    dragHandleProps={dragHandleProps}
-                  />
-                )}
-              </SortableItem>
-            ))}
+            {trade.serviceList.map(service => {
+              return (
+                <SortableItem
+                  key={`${roomUniqueKey}_${tradeUniqueKey}_${service.id}`}
+                  id={service.id}
+                >
+                  {dragHandleProps => (
+                    <TradeListCardComponent
+                      service={service}
+                      variant='service'
+                      onClick={() => onServiceSelect?.(service.id)}
+                      className='mb-4'
+                      dragHandleProps={dragHandleProps}
+                    />
+                  )}
+                </SortableItem>
+              );
+            })}
           </div>
         </Sortable>
+      ) : (
+        <div className='text-center text-gray-500 py-4'>
+          <p>No services found for this trade.</p>
+          <p className='text-sm'></p>
+        </div>
       )}
     </div>
   );

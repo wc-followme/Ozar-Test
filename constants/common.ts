@@ -12,6 +12,7 @@ export const PAGINATION = {
   COMPANY_LIMIT: 8, // Limit for company management
   JOBS_LIMIT: 8, // Limit for job management
   TRADES_LIMIT: 32, // Limit for trade management
+  TEMPLATES_LIMIT: 16, // Limit for templates management with infinite scroll
 } as const;
 
 // Role IDs for role-based access control
@@ -52,6 +53,8 @@ export const ROUTES = {
   COMPANY_DETAILS: '/company-management/company-details',
   ADD_USER: '/company-management/add-user',
   TOOLS_MANAGEMENT: '/tools-management',
+  TOOL_DETAIL: '/tools-management/tool-detail',
+  TOOL_VIDEOS_TUTORIAL: '/tools-management/tool-detail/videos-tutorial',
   USER_MANAGEMENT: '/user-management',
   CREATE_USER: '/user-management/create-user',
   USER_PROFILE: '/user-management/profile',
@@ -404,6 +407,10 @@ export const MOCK_JOBS = [
 export const UPLOAD_PURPOSES = {
   COMPANY_COVER_IMAGE: 'company-cover-image',
   COMPANY_PROJECT: 'company-project',
+  USER_COVER_IMAGE: 'user-cover-image',
+  USER_PROJECT: 'user-project',
+  TOOL: 'tool',
+  TOOL_TUTORIAL: 'tool-tutorial',
 } as const;
 
 // Project Management Messages
@@ -481,6 +488,16 @@ export const PROFILE_BUTTON_LABELS = {
 // } as const;
 
 // Local Storage Keys
+// Template Type Constants
+export const TEMPLATE_TYPES = {
+  ESTIMATE_TEMPLATES: 'ESTIMATE_TEMPLATES',
+  OPTION_BID_TEMPLATES: 'OPTION_BID_TEMPLATES',
+  TOOL_TEMPLATES: 'TOOL_TEMPLATES',
+  DISCLAIMER_TEMPLATES: 'DISCLAIMER_TEMPLATES',
+} as const;
+
+export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
+
 export const STORAGE_KEYS = {
   SELECTED_COMPANY: 'selected_company',
   IS_AUTHENTICATED: 'isAuthenticated',
