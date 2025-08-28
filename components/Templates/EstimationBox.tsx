@@ -81,6 +81,7 @@ interface Trade {
   endDate?: Date;
   markup?: number;
   markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
+  markup_trade_only?: number;
 }
 
 interface Room {
@@ -95,6 +96,7 @@ interface Room {
 interface EstimationBoxProps {
   _onClose: () => void;
   jobId?: string; // Add job ID prop for API calls
+  templateId?: string | undefined; // Add template ID prop for template context
   categoryId?: string; // Add category ID prop for filtering trades
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
@@ -121,6 +123,17 @@ const generateUniqueKey = (
   return `${prefix}_${timestamp}_${random}`;
 };
 
+// Helper function to get the appropriate localStorage key
+const getStorageKey = (jobId?: string, templateId?: string): string => {
+  if (templateId) {
+    return `template_rooms_${templateId}`;
+  } else if (jobId) {
+    return `job_rooms_${jobId}`;
+  } else {
+    return 'template_rooms'; // Default for new templates without ID
+  }
+};
+
 export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   const { showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
@@ -145,7 +158,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     {
       id: '0', // Use sequence number as room ID
       uniqueKey: generateUniqueKey('room'),
-      name: 'Home 1',
+      name: 'Room 1',
       total: 0.0,
       trades: [],
       isExpanded: true,
@@ -255,7 +268,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   // Save state whenever rooms change
   useEffect(() => {
     if (rooms.length > 0) {
-      updateLocalStorageFromState(rooms, props.jobId);
+      const storageKey = getStorageKey(props.jobId, props.templateId);
+      updateLocalStorageFromState(rooms, storageKey);
     }
   }, [rooms]);
 
@@ -319,7 +333,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       laborCost: tradeTotals.labor_cost,
       materialCost: tradeTotals.material_cost,
       tradeTotal: tradeTotals.trade_total,
-      // Don't store the calculated markup value back - keep the original markup percentage
+      markup: tradeTotals.markup,
+      markup_trade_only: tradeTotals.markup_trade_only,
     };
   };
 
@@ -347,12 +362,12 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleAddRoom = () => {
-    // If no rooms exist, create the default Home 1 room
+    // If no rooms exist, create the default Room 1 room
     if (rooms.length === 0) {
       const defaultRoom: Room = {
         id: '0', // Use sequence number as room ID
         uniqueKey: generateUniqueKey('room'),
-        name: 'Home 1',
+        name: 'Room 1',
         total: 0.0,
         isExpanded: true,
         trades: [],
@@ -612,11 +627,32 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
     }
   };
 
-  const handleServiceSelect = (serviceId: string) => {
-    // Find which room and trade contains this service across ALL rooms
+  const handleServiceSelect = (serviceId: string, tradeUniqueKey?: string) => {
+    // If tradeUniqueKey provided, scope search to that trade
+    if (tradeUniqueKey) {
+      for (const room of rooms) {
+        const trade = room.trades.find(tr => tr.uniqueKey === tradeUniqueKey);
+        if (trade && trade.serviceList.some(s => s.id === serviceId)) {
+          setSelectedRoomId(room.id);
+          setSelectedTrade(trade.id);
+          setSelectedTradeUniqueKey(trade.uniqueKey);
+          if (!expandedRooms.includes(room.id)) {
+            setExpandedRooms(prev => [...prev, room.id]);
+          }
+          if (!expandedTrades.includes(trade.uniqueKey)) {
+            setExpandedTrades(prev => [...prev, trade.uniqueKey]);
+          }
+          setSelectedService(serviceId);
+          setShowServiceForm(true);
+          setShowAddService(true);
+          return;
+        }
+      }
+    }
+
+    // Fallback: find the first occurrence across all rooms
     let foundRoom: Room | null = null;
     let foundTrade: Trade | null = null;
-
     for (const room of rooms) {
       const trade = room.trades.find(tr =>
         tr.serviceList.some(service => service.id === serviceId)
@@ -627,24 +663,16 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         break;
       }
     }
-
     if (foundRoom && foundTrade) {
-      // Set the room that contains this service
       setSelectedRoomId(foundRoom.id);
-
-      // Set the trade that contains this service
       setSelectedTrade(foundTrade.id);
       setSelectedTradeUniqueKey(foundTrade.uniqueKey);
-
-      // Ensure the room and trade are expanded
       if (!expandedRooms.includes(foundRoom.id)) {
         setExpandedRooms(prev => [...prev, foundRoom.id]);
       }
       if (!expandedTrades.includes(foundTrade.uniqueKey)) {
         setExpandedTrades(prev => [...prev, foundTrade.uniqueKey]);
       }
-
-      // Set service and form states
       setSelectedService(serviceId);
       setShowServiceForm(true);
       setShowAddService(true);
@@ -714,7 +742,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData, props.jobId);
+        const storageKey = getStorageKey(props.jobId, props.templateId);
+        updateLocalStorageFromState(roomsData, storageKey);
       }, 0);
     }
   };
@@ -778,7 +807,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
             serviceList: trade.serviceList || [],
           })),
         }));
-        updateLocalStorageFromState(roomsData, props.jobId);
+        const storageKey = getStorageKey(props.jobId, props.templateId);
+        updateLocalStorageFromState(roomsData, storageKey);
       }, 0);
 
       return updatedRooms;
@@ -1171,7 +1201,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           const defaultRoom: Room = {
             id: '0', // Use sequence number as room ID
             uniqueKey: generateUniqueKey('room'),
-            name: 'Home 1',
+            name: 'Room 1',
             total: 0.0,
             trades: [],
             isExpanded: true,
@@ -1290,7 +1320,8 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       })),
     }));
 
-    updateLocalStorageFromState(roomsData, props.jobId);
+    const storageKey = getStorageKey(props.jobId, props.templateId);
+    updateLocalStorageFromState(roomsData, storageKey);
   };
 
   const handleSave = async () => {
@@ -1301,7 +1332,7 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       // If jobId is provided, make API call
       if (props.jobId) {
         // Get the job_rooms data from localStorage
-        const storageKey = `job_rooms_${props.jobId}`;
+        const storageKey = getStorageKey(props.jobId, props.templateId);
         const jobRoomsData = localStorage.getItem(storageKey);
         if (jobRoomsData) {
           const jobRooms = JSON.parse(jobRoomsData);
@@ -1470,7 +1501,13 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         handleTradeAccordionChange={handleTradeAccordionChange}
         handleTradeSelect={handleTradeSelect}
         selectedService={selectedService}
-        handleServiceSelect={handleServiceSelect}
+        selectedTradeUniqueKey={selectedTradeUniqueKey}
+        handleServiceSelect={(serviceId, tradeKey) => {
+          if (tradeKey) {
+            setSelectedTradeUniqueKey(tradeKey);
+          }
+          handleServiceSelect(serviceId, tradeKey);
+        }}
         formatCurrency={formatCurrency}
         selectedRoomId={selectedRoomId}
         toggleMainAccordion={toggleMainAccordion}
@@ -1586,7 +1623,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
                     trade={selectedTradeData}
                     roomUniqueKey={selectedRoom?.uniqueKey || ''}
                     tradeUniqueKey={selectedTradeData?.uniqueKey || ''}
-                    _onTradeUpdate={handleTradeUpdate}
+                    _onTradeUpdate={(u: unknown) =>
+                      handleTradeUpdate(u as Trade)
+                    }
                     onTradeNameChange={handleTradeNameChange}
                     onTradeReplacement={handleTradeReplacement}
                     onServiceSelect={serviceId => {

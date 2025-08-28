@@ -393,7 +393,7 @@ export const demoTools: Tool[] = [
 export const initialRooms: Room[] = [
   {
     id: 'room-1',
-    name: 'Home 1',
+    name: 'Room 1',
     total: 0.0,
     trades: [],
     isExpanded: true,

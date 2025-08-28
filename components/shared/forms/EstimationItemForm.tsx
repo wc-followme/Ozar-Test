@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import { calculateLineTotal } from '@/lib/estimation-calculations';
+import { calculateMaterialCost } from '@/lib/estimation-calculations';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { EyeSlash, Trash } from 'iconsax-react';
 import { useEffect, useState } from 'react';
@@ -22,6 +22,7 @@ interface EstimationItemFormProps {
   serviceId?: string | undefined; // Add service ID prop for fetching materials
   useFixedWidths?: boolean; // New prop to control fixed widths
   containerWidthClass?: string; // New prop to control container width
+  disableVariant?: boolean; // Disable the variant SelectField (e.g., for Materials)
 }
 
 export default function EstimationItemForm({
@@ -31,6 +32,7 @@ export default function EstimationItemForm({
   serviceId, // Add service ID prop
   useFixedWidths = true, // Default to true to maintain current behavior
   containerWidthClass = 'w-full min-w-fit', // Default to responsive width
+  disableVariant = false,
 }: EstimationItemFormProps) {
   const [selectedCurrency, setSelectedCurrency] = useState(
     item.markup_type === 'PERCENTAGE' ? '%' : '$'
@@ -157,11 +159,18 @@ export default function EstimationItemForm({
           <Label className='field-label text-sm'>Material Name</Label>
           <SelectField
             value={(() => {
-              // Find the option that matches the current material name
-              const matchingOption = materialOptions.find(
+              // Prefer matching by UUID when available for pre-selection
+              if (item.uuid) {
+                const byUuid = materialOptions.find(
+                  option => option.value === item.uuid
+                );
+                if (byUuid) return byUuid.value;
+              }
+              // Fallback: match by label/name
+              const byName = materialOptions.find(
                 option => option.label === item.name
               );
-              return matchingOption ? matchingOption.value : item.name;
+              return byName ? byName.value : item.name;
             })()}
             onValueChange={newValue => {
               // Find the selected option to get the display name and UUID
@@ -201,9 +210,12 @@ export default function EstimationItemForm({
           <SelectField
             value={item.variant}
             onValueChange={value => handleInputChange('variant', value)}
-            options={[{ value: item.variant, label: item.variant }]}
+            options={
+              item.variant ? [{ value: item.variant, label: item.variant }] : []
+            }
             placeholder='Select variant'
             className='mb-0'
+            disabled={disableVariant}
           />
         </div>
         <div className={`space-y-2 w-[100px] min-w-[100px]`}>
@@ -251,7 +263,7 @@ export default function EstimationItemForm({
           <SelectField
             value={item.unit}
             onValueChange={value => handleInputChange('unit', value)}
-            options={[{ value: item.unit, label: item.unit }]}
+            options={item.unit ? [{ value: item.unit, label: item.unit }] : []}
             placeholder='Select unit'
             className='mb-0'
           />
@@ -315,16 +327,50 @@ export default function EstimationItemForm({
         </div>
         <div className={`space-y-2 ${useFixedWidths ? 'min-w-[150px]' : ''}`}>
           <Label className='field-label text-sm'>Rate</Label>
-          <Input
-            type='text'
-            value={formatCurrency(item.rate)}
-            onChange={e => {
-              const numericValue =
-                parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-              handleInputChange('rate', numericValue);
-            }}
-            className='input-field'
-          />
+          <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+            <div className='w-[60px] flex items-center justify-center font-bold text-[var(--text-dark)] select-none border-none bg-[var(--white-background)] rounded-l-[10px]'>
+              $
+            </div>
+            <Input
+              type='text'
+              inputMode='decimal'
+              defaultValue={item.rate.toString()}
+              onChange={e => {
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, '');
+                const parts = cleaned.split('.');
+                const next =
+                  parts.length > 2
+                    ? `${parts[0]}.${parts.slice(1).join('')}`
+                    : cleaned;
+                (e.target as HTMLInputElement).value = next;
+
+                if (next !== '' && !next.endsWith('.')) {
+                  const numeric = parseFloat(next);
+                  if (!Number.isNaN(numeric)) {
+                    handleInputChange('rate', numeric);
+                  }
+                }
+              }}
+              onFocus={e => {
+                const v = e.currentTarget.value.trim();
+                if (v === '0' || v === '0.0' || v === '0.00') {
+                  e.currentTarget.value = '';
+                }
+              }}
+              onBlur={e => {
+                const val = e.currentTarget.value;
+                const fallback = val === '' || val === '.' ? '0' : val;
+                e.currentTarget.value = fallback;
+                const numeric = parseFloat(fallback);
+                if (!Number.isNaN(numeric)) {
+                  handleInputChange('rate', numeric);
+                }
+              }}
+              placeholder='0.00'
+              className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+            />
+          </div>
         </div>
         <div className={`space-y-2 ${useFixedWidths ? 'min-w-[200px]' : ''}`}>
           <Label className='field-label text-sm'>Markup </Label>
@@ -350,11 +396,38 @@ export default function EstimationItemForm({
             </div>
             <Input
               type='text'
-              value={item.markup.toString()}
+              inputMode='decimal'
+              defaultValue={item.markup.toString()}
               onChange={e => {
-                const numericValue =
-                  parseFloat(e.target.value.replace(/[^0-9.]/g, '')) || 0;
-                handleInputChange('markup', numericValue);
+                const raw = e.target.value;
+                const cleaned = raw.replace(/[^0-9.]/g, '');
+                const parts = cleaned.split('.');
+                const next =
+                  parts.length > 2
+                    ? `${parts[0]}.${parts.slice(1).join('')}`
+                    : cleaned;
+                (e.target as HTMLInputElement).value = next;
+                if (next !== '' && !next.endsWith('.')) {
+                  const numeric = parseFloat(next);
+                  if (!Number.isNaN(numeric)) {
+                    handleInputChange('markup', numeric);
+                  }
+                }
+              }}
+              onFocus={e => {
+                const v = e.currentTarget.value.trim();
+                if (v === '0' || v === '0.0' || v === '0.00') {
+                  e.currentTarget.value = '';
+                }
+              }}
+              onBlur={e => {
+                const val = e.currentTarget.value;
+                const fallback = val === '' || val === '.' ? '0' : val;
+                e.currentTarget.value = fallback;
+                const numeric = parseFloat(fallback);
+                if (!Number.isNaN(numeric)) {
+                  handleInputChange('markup', numeric);
+                }
               }}
               className='flex-1 rounded-l-none text-right !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
             />
@@ -364,10 +437,10 @@ export default function EstimationItemForm({
           className={`ml-4 space-y-1 pt-7 whitespace-nowrap ${useFixedWidths ? 'min-w-[150px] flex-shrink-0' : ''}`}
         >
           <Label className='field-label font-medium text-[var(--text-dark)] text-xs'>
-            Line Total
+            Material Cost
           </Label>
           <p className='text-lg font-semibold text-[var(--primary)]'>
-            {formatCurrency(calculateLineTotal(item.rate, item.qty))}
+            {formatCurrency(calculateMaterialCost(item))}
           </p>
         </div>
       </div>
