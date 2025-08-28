@@ -11,20 +11,18 @@ import {
 import { COMPANY_IMAGES, HEADER_MESSAGES } from '@/constants/header-messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { HambergerMenu, Key, UserOctagon } from 'iconsax-react';
+import { HambergerMenu, Key } from 'iconsax-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { cn, getCompanyId } from '../../lib/utils';
-import { Search } from '../icons/Search';
+import { cn, getCompanyId, getCurrentUser } from '../../lib/utils';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import CompanyDropdown, { Company } from '../shared/common/CompanyDropdown';
 import Dropdown from '../shared/common/Dropdown';
 import SideSheet from '../shared/common/SideSheet';
-import { Input } from '../ui/input';
 import { SidebarMobile } from './SidebarMobile';
 
 const menuOptions = [
-  { label: 'View Profile', action: 'edit', icon: UserOctagon },
+  // { label: 'View Profile', action: 'edit', icon: UserOctagon },
   { label: 'Change Password', action: 'changePassword', icon: Key },
   { label: 'Logout', action: 'delete', icon: SignoutIcon },
 ];
@@ -101,8 +99,31 @@ export function Header() {
         setLoadingCompanies(false);
       }
     } else {
-      // For non-admin users, set loading to false immediately
-      setLoadingCompanies(false);
+      // For non-admin users, get company data from user in localStorage
+      try {
+        const currentUser = getCurrentUser();
+        if (currentUser?.company?.uuid && currentUser?.company?.name) {
+          // Set selected company in localStorage for non-admin users
+          const userCompany: Company = {
+            id: currentUser.company.uuid,
+            name: currentUser.company.name,
+            icon: COMPANY_IMAGES.PLACEHOLDER, // Use placeholder icon for non-admin users
+            color: '#000000', // Default color for non-admin users
+          };
+
+          // Save to localStorage
+          localStorage.setItem(
+            STORAGE_KEYS.SELECTED_COMPANY,
+            JSON.stringify(userCompany)
+          );
+
+          setSelectedCompany(userCompany);
+        }
+      } catch (error) {
+        console.error('Error setting company data for non-admin user:', error);
+      } finally {
+        setLoadingCompanies(false);
+      }
     }
   };
 
@@ -270,8 +291,7 @@ export function Header() {
           {renderCompanySection()}
         </div>
         <div className='flex items-center gap-4 md:gap-6'>
-          <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-[var(--secondary)] hidden md:flex'>
-            {/* Search Input */}
+          {/* <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-[var(--secondary)] hidden md:flex'>
             <Input
               id='Search'
               type='Search'
@@ -279,17 +299,11 @@ export function Header() {
               className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] !placeholder-[var(--text-placeholder)]'
               required
             />
-            {/* Type Selector */}
-            {/* <div className="flex items-center px-3 cursor-pointer gap-1">
-              <span className="text-gray-900 font-medium text-sm">{type}</span>
-              <ChevronDown className=" text-gray-700" />
-            </div> */}
 
-            {/* Search Button */}
             <Button className='bg-buttonblue hover:bg-buttonblue text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
               <Search />
             </Button>
-          </div>
+          </div> */}
           <ModeToggle />
           {/* <Link href='/'>
             <Notification />

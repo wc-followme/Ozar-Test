@@ -90,12 +90,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       roles: { view: false, edit: false, archive: false },
       users: { view: false, create: false, customize: false, archive: false },
       companies: { view: false, assign_user: false, archive: false },
-      categories: { view: false, edit: false, archive: false },
-      trades: { view: false, edit: false, archive: false },
-      services: { view: false, edit: false, archive: false },
-      materials: { view: false, edit: false, archive: false },
-      tools: { view: false, edit: false, archive: false, history: false },
+      catalogue_services: { view: false, edit: false, archive: false },
       jobs: { view: false, edit: false, archive: false },
+      templates: { view: false, edit: false, archive: false },
+      global_settings: { view: false, edit: false },
     };
 
     // Map accordion indices to permission keys
@@ -103,12 +101,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       'roles', // 0: Roles Access Control Settings
       'users', // 1: Users Access Control Settings
       'companies', // 2: Company Management & Operations Settings
-      'categories', // 3: Category Management Settings
-      'trades', // 4: Trade Management Settings
-      'services', // 5: Service Management Settings
-      'materials', // 6: Material Management Settings
-      'tools', // 7: Tools Management Settings
-      'jobs', // 8: Job Creation & Basic Job Setup Settings
+      'catalogue_services', // 3: Catalogue & Services Settings
+      'jobs', // 4: Job Creation & Basic Job Setup Settings
+      'templates', // 5: Templates Setting
+      'global_settings', // 6: Company Global Settings
     ];
 
     // Map stripe indices to permission keys for each accordion
@@ -116,12 +112,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       ['view', 'edit', 'archive'], // roles
       ['view', 'create', 'customize', 'archive'], // users
       ['view', 'assign_user', 'archive'], // companies
-      ['view', 'edit', 'archive'], // categories
-      ['view', 'edit', 'archive'], // trades
-      ['view', 'edit', 'archive'], // services
-      ['view', 'edit', 'archive'], // materials
-      ['view', 'edit', 'archive', 'history'], // tools
+      ['view', 'edit', 'archive'], // catalogue_services
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     accordionsData.forEach((accordion, accordionIdx) => {
@@ -330,12 +324,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                 'roles',
                 'users',
                 'companies',
-                'categories',
-                'trades',
-                'services',
-                'materials',
-                'tools',
+                'catalogue_services',
                 'jobs',
+                'templates',
+                'global_settings',
               ];
               const permissionKey = permissionKeys[accordionIdx];
               const userPermissions = permissionKey
@@ -348,12 +340,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     ['view', 'edit', 'archive'], // roles
                     ['view', 'create', 'customize', 'archive'], // users
                     ['view', 'assign_user', 'archive'], // companies
-                    ['view', 'edit', 'archive'], // categories
-                    ['view', 'edit', 'archive'], // trades
-                    ['view', 'edit', 'archive'], // services
-                    ['view', 'edit', 'archive'], // materials
-                    ['view', 'edit', 'archive', 'history'], // tools
+                    ['view', 'edit', 'archive'], // catalogue_services
                     ['view', 'edit', 'archive'], // jobs
+                    ['view', 'edit', 'archive'], // templates
+                    ['view', 'edit'], // global_settings
                   ];
                   const permissionNames = permissionNamesArray[accordionIdx];
                   const permissionName = permissionNames?.[stripeIdx];

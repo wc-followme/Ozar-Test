@@ -35,21 +35,17 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
 
     switch (item.title) {
       case 'Category Management':
-        return userPermissions?.categories?.view;
+      case 'Trade Management':
+      case 'Service Management':
+      case 'Material Management':
+      case 'Tools Management':
+        return userPermissions?.catalogue_services?.view;
       case 'Role Management':
         return userPermissions?.roles?.view;
       case 'User Management':
         return userPermissions?.users?.view;
       case 'Company Management':
         return userPermissions?.companies?.view;
-      case 'Trade Management':
-        return userPermissions?.trades?.view;
-      case 'Service Management':
-        return userPermissions?.services?.view;
-      case 'Material Management':
-        return userPermissions?.materials?.view;
-      case 'Tools Management':
-        return userPermissions?.tools?.view;
       case 'Jobs':
         return userPermissions?.jobs?.edit;
       case 'Home':
@@ -70,15 +66,11 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
         case 'Portal Users':
           return userPermissions?.users?.view;
         case 'Category Management':
-          return userPermissions?.categories?.view;
         case 'Trade Management':
-          return userPermissions?.trades?.view;
         case 'Service Management':
-          return userPermissions?.services?.view;
         case 'Material Management':
-          return userPermissions?.materials?.view;
         case 'Tools Management':
-          return userPermissions?.tools?.view;
+          return userPermissions?.catalogue_services?.view;
         default:
           return true;
       }
@@ -126,6 +118,7 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
                   : [];
                 const isActive =
                   pathname === item.href ||
+                  (item.menu_id === 'projects' && item.href && pathname?.startsWith(item.href)) ||
                   (hasSubmenu &&
                     filteredSubmenu.some(subItem => pathname === subItem.href));
 

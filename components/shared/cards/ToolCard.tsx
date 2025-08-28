@@ -50,8 +50,8 @@ export default function ToolCard({
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.tools?.edit;
-  const canArchive = userPermissions?.tools?.archive;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canArchive = userPermissions?.catalogue_services?.archive;
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {

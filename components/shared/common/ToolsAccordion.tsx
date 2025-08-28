@@ -92,12 +92,12 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
         });
         type ToolItem = { id?: string | number; uuid?: string; name?: string };
         const payload = response as unknown as {
-          data?: ToolItem[] | { data?: ToolItem[] };
+          data?: ToolItem[] | { tools?: ToolItem[] };
         };
         const list: ToolItem[] = Array.isArray(payload?.data)
           ? (payload.data as ToolItem[])
-          : Array.isArray((payload?.data as { data?: ToolItem[] })?.data)
-            ? ((payload.data as { data?: ToolItem[] }).data as ToolItem[])
+          : Array.isArray((payload?.data as { tools?: ToolItem[] })?.tools)
+            ? ((payload.data as { tools?: ToolItem[] }).tools as ToolItem[])
             : [];
         const map: Record<string, string> = {};
         list.forEach(t => {
@@ -179,7 +179,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
                     role='button'
                     tabIndex={0}
                     aria-label='Add tools'
-                    className='btn-primary text-base !pl-3 !pr-5 !gap-1 !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
+                    className='btn-primary text-sm !pl-3 !pr-5 w-32 !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)] inline-flex items-center justify-center !gap-1 whitespace-nowrap rounded-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer'
                     onClick={e => {
                       e.stopPropagation();
                       setIsSideSheetOpen(true);
@@ -195,7 +195,7 @@ export default function ToolsAccordion(props: Readonly<ToolsAccordionProps>) {
                     <Add
                       size='24'
                       color='var(--secondary)'
-                      className='!h-6 !w-6'
+                      className='!h-5 !w-5'
                     />
                     Tools
                   </div>

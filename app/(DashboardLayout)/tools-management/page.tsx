@@ -51,8 +51,8 @@ export default function ToolsManagement() {
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.tools?.edit;
-  const canViewTools = userPermissions?.tools?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewTools = userPermissions?.catalogue_services?.view;
 
   // Memoize menu options based on selected tab
   const menuOptions = useMemo(

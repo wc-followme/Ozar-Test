@@ -96,24 +96,20 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       'roles',
       'users',
       'companies',
-      'categories',
-      'trades',
-      'services',
-      'materials',
-      'tools',
+      'catalogue_services',
       'jobs',
+      'templates',
+      'global_settings',
     ];
     // Map stripe indices to permission keys for each accordion
     const stripeToPermissionMap = [
       ['view', 'edit', 'archive'], // roles
       ['view', 'create', 'customize', 'archive'], // users
       ['view', 'assign_user', 'archive'], // companies
-      ['view', 'edit', 'archive'], // categories
-      ['view', 'edit', 'archive'], // trades
-      ['view', 'edit', 'archive'], // services
-      ['view', 'edit', 'archive'], // materials
-      ['view', 'edit', 'archive', 'history'], // tools
+      ['view', 'edit', 'archive'], // catalogue_services
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     // Helper: Convert permissions object to accordions state
@@ -142,12 +138,10 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
         roles: { view: false, edit: false, archive: false },
         users: { view: false, create: false, customize: false, archive: false },
         companies: { view: false, assign_user: false, archive: false },
-        categories: { view: false, edit: false, archive: false },
-        trades: { view: false, edit: false, archive: false },
-        services: { view: false, edit: false, archive: false },
-        materials: { view: false, edit: false, archive: false },
-        tools: { view: false, edit: false, archive: false, history: false },
+        catalogue_services: { view: false, edit: false, archive: false },
         jobs: { view: false, edit: false, archive: false },
+        templates: { view: false, edit: false, archive: false },
+        global_settings: { view: false, edit: false },
       };
       accordions.forEach((accordion, accordionIdx) => {
         const permissionKey = accordionToPermissionMap[accordionIdx];
