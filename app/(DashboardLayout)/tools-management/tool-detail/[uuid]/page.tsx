@@ -21,15 +21,11 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, extractApiSuccessMessage } from '@/lib/utils';
 import { SearchNormal1 } from 'iconsax-react';
+import dynamic from 'next/dynamic';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import {
-  AssignedTab,
-  AvailableTab,
-  LostTab,
-  MaintenanceTab,
-} from '../components';
+import LoadingComponent from '../../../../../components/shared/common/LoadingComponent';
 import {
   TOOL_DETAIL_ACTION_KEYS,
   TOOL_DETAIL_BREADCRUMB,
@@ -40,13 +36,34 @@ import {
   TOOL_DETAIL_TAB_STATUS,
 } from '../constants';
 import { TransformedRowData } from '../types';
-// Action icons are provided via constants/tableactions
-// duplicate import removed
-import { AssignForm } from '@/components/shared/forms/AssignForm';
-import { LostForm } from '@/components/shared/forms/LostForm';
-import { MaintenanceForm } from '@/components/shared/forms/MaintenanceForm';
-import { ReturnForm } from '@/components/shared/forms/ReturnForm';
-import ToolDetailSkeleton from '@/components/shared/skeleton/ToolDetailSkeleton';
+
+// Lazy load heavy components only
+const AssignedTab = dynamic(() =>
+  import('../components').then(mod => ({ default: mod.AssignedTab }))
+);
+const AvailableTab = dynamic(() =>
+  import('../components').then(mod => ({ default: mod.AvailableTab }))
+);
+const LostTab = dynamic(() =>
+  import('../components').then(mod => ({ default: mod.LostTab }))
+);
+const MaintenanceTab = dynamic(() =>
+  import('../components').then(mod => ({ default: mod.MaintenanceTab }))
+);
+
+const AssignForm = dynamic(
+  () => import('@/components/shared/forms/AssignForm')
+);
+const LostForm = dynamic(() => import('@/components/shared/forms/LostForm'));
+const MaintenanceForm = dynamic(
+  () => import('@/components/shared/forms/MaintenanceForm')
+);
+const ReturnForm = dynamic(
+  () => import('@/components/shared/forms/ReturnForm')
+);
+const ToolDetailSkeleton = dynamic(
+  () => import('@/components/shared/skeleton/ToolDetailSkeleton')
+);
 
 export default function ToolDetailPage() {
   const params = useParams();
@@ -76,6 +93,13 @@ export default function ToolDetailPage() {
   // Tool items state - single state for current tab data
   const [toolItemsData, setToolItemsData] = useState<ToolItemDetail[]>([]);
   const [toolItemsLoading, setToolItemsLoading] = useState(false);
+
+  // Pagination state for infinite scroll
+  const [currentPage, setCurrentPage] = useState(1);
+  const [_totalPages, setTotalPages] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
   const { showSuccessToast, showErrorToast } = useToast();
 
   // Function to fetch tool details
@@ -129,13 +153,22 @@ export default function ToolDetailPage() {
     }
   }, [uuid]);
 
-  // Function to fetch tool items for a specific tab
+  // Function to fetch tool items for a specific tab with pagination
   const fetchToolItemsForTab = useCallback(
-    async (tabName: string, searchQuery?: string) => {
+    async (
+      tabName: string,
+      searchQuery?: string,
+      page: number = 1,
+      isLoadMore: boolean = false
+    ) => {
       if (!uuid) return;
 
       try {
-        setToolItemsLoading(true);
+        if (isLoadMore) {
+          setIsLoadingMore(true);
+        } else {
+          setToolItemsLoading(true);
+        }
 
         const status =
           TOOL_DETAIL_TAB_STATUS[
@@ -146,11 +179,31 @@ export default function ToolDetailPage() {
           await apiService.fetchToolItems({
             tool_uuid: uuid as string,
             status,
-            limit: 50, // Adjust as needed
+            page,
+            limit: 10, // Fixed limit for pagination
+            sort_by: 'updated_at', // Sort by creation date
+            sort_order: 'DESC', // Latest first (descending order)
             ...(searchQuery && { search: searchQuery }), // Add search parameter for barcode
           });
+
         if (response.statusCode === 200 && response.data) {
-          setToolItemsData(response.data.toolItems);
+          const {
+            toolItems,
+            totalPages: responseTotalPages,
+            page: responsePage,
+          } = response.data;
+
+          if (isLoadMore) {
+            // Append new data for infinite scroll
+            setToolItemsData(prev => [...prev, ...toolItems]);
+          } else {
+            // Replace data for new search or tab change
+            setToolItemsData(toolItems);
+          }
+
+          setCurrentPage(responsePage || page);
+          setTotalPages(responseTotalPages || 1);
+          setHasMoreData((responsePage || page) < (responseTotalPages || 1));
         }
       } catch (error: any) {
         if (error.status === 401) {
@@ -158,11 +211,43 @@ export default function ToolDetailPage() {
         }
         // Don't fail the entire request if tool items fail, just log the error
       } finally {
-        setToolItemsLoading(false);
+        if (isLoadMore) {
+          setIsLoadingMore(false);
+        } else {
+          setToolItemsLoading(false);
+        }
       }
     },
-    [uuid]
+    [uuid, handleAuthError]
   );
+
+  // Function to load more data for infinite scroll
+  const loadMoreData = useCallback(async () => {
+    if (!hasMoreData || isLoadingMore || !selectedTab) return;
+
+    const nextPage = currentPage + 1;
+    await fetchToolItemsForTab(
+      selectedTab,
+      debouncedSearchQuery,
+      nextPage,
+      true
+    );
+  }, [
+    hasMoreData,
+    isLoadingMore,
+    selectedTab,
+    currentPage,
+    debouncedSearchQuery,
+    fetchToolItemsForTab,
+  ]);
+
+  // Function to reset pagination when tab or search changes
+  const resetPagination = useCallback(() => {
+    setCurrentPage(1);
+    setTotalPages(1);
+    setHasMoreData(true);
+    setIsLoadingMore(false);
+  }, []);
 
   // Common function to update tool item
   const updateToolItem = useCallback(
@@ -249,9 +334,32 @@ export default function ToolDetailPage() {
   // Fetch tool items when tab changes or debounced search query changes
   useEffect(() => {
     if (toolData && uuid) {
-      fetchToolItemsForTab(selectedTab, debouncedSearchQuery);
+      resetPagination();
+      fetchToolItemsForTab(selectedTab, debouncedSearchQuery, 1, false);
     }
-  }, [selectedTab, debouncedSearchQuery, toolData, uuid, fetchToolItemsForTab]);
+  }, [
+    selectedTab,
+    debouncedSearchQuery,
+    toolData,
+    uuid,
+    fetchToolItemsForTab,
+    resetPagination,
+  ]);
+
+  // Infinite scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 // Trigger 1000px before bottom
+      ) {
+        loadMoreData();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMoreData]);
 
   const [assignDefaults, setAssignDefaults] = useState(
     TOOL_DETAIL_DEFAULTS.ASSIGN
@@ -325,12 +433,10 @@ export default function ToolDetailPage() {
       toolId,
       barcode,
       condition,
-      assignedJob,
       dueDate,
       assignedTo,
       assignedJobId,
     } = row;
-    console.log('row', { row });
     const { name: toolName } = toolData || {};
     const toolCondition = condition.toLowerCase();
     const { id: assignedToId } = assignedTo || {};
@@ -348,7 +454,7 @@ export default function ToolDetailPage() {
         dueDate: '',
         assignee: '',
         assigneeId: '',
-        job: assignedJob || '',
+        job: '',
         assignedStatus: '',
         isBarcodeEnabled: false, // Disable barcode field when assigning from dropdown
         isScanMode: false,
@@ -413,9 +519,10 @@ export default function ToolDetailPage() {
       const success = await updateToolItem(id, payload);
 
       if (success) {
-        // Refresh the current tab data
+        // Refresh the current tab data with pagination reset
         if (toolData && uuid) {
-          fetchToolItemsForTab(selectedTab, searchQuery);
+          resetPagination();
+          fetchToolItemsForTab(selectedTab, debouncedSearchQuery, 1, false);
         }
         // Refresh quantity statistics
         fetchQuantityStatistics();
@@ -622,6 +729,12 @@ export default function ToolDetailPage() {
                   loading={toolItemsLoading}
                   onDropdownAction={handleDropdownAction}
                 />
+                {/* Infinite scroll loader */}
+                {isLoadingMore && (
+                  <div className='text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value='assigned' className='mt-6'>
@@ -630,6 +743,12 @@ export default function ToolDetailPage() {
                   loading={toolItemsLoading}
                   onDropdownAction={handleDropdownAction}
                 />
+                {/* Infinite scroll loader */}
+                {isLoadingMore && (
+                  <div className='text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value='maintenance' className='mt-6'>
@@ -638,6 +757,12 @@ export default function ToolDetailPage() {
                   loading={toolItemsLoading}
                   onDropdownAction={handleDropdownAction}
                 />
+                {/* Infinite scroll loader */}
+                {isLoadingMore && (
+                  <div className='text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value='lost' className='mt-6'>
@@ -646,6 +771,12 @@ export default function ToolDetailPage() {
                   loading={toolItemsLoading}
                   onDropdownAction={handleDropdownAction}
                 />
+                {/* Infinite scroll loader */}
+                {isLoadingMore && (
+                  <div className='text-center py-4'>
+                    <LoadingComponent variant='inline' size='md' text={''} />
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
@@ -820,9 +951,15 @@ export default function ToolDetailPage() {
 
                 if (success) {
                   setSideSheetOpen(false);
-                  // Refresh the current tab data
+                  // Refresh the current tab data with pagination reset
                   if (toolData && uuid) {
-                    fetchToolItemsForTab(selectedTab, debouncedSearchQuery);
+                    resetPagination();
+                    fetchToolItemsForTab(
+                      selectedTab,
+                      debouncedSearchQuery,
+                      1,
+                      false
+                    );
                   }
                   // Refresh quantity statistics
                   fetchQuantityStatistics();
@@ -860,9 +997,15 @@ export default function ToolDetailPage() {
 
                 if (success) {
                   setSideSheetOpen(false);
-                  // Refresh the current tab data
+                  // Refresh the current tab data with pagination reset
                   if (toolData && uuid) {
-                    fetchToolItemsForTab(selectedTab, debouncedSearchQuery);
+                    resetPagination();
+                    fetchToolItemsForTab(
+                      selectedTab,
+                      debouncedSearchQuery,
+                      1,
+                      false
+                    );
                   }
                   // Refresh quantity statistics
                   fetchQuantityStatistics();
@@ -902,9 +1045,15 @@ export default function ToolDetailPage() {
 
                 if (success) {
                   setSideSheetOpen(false);
-                  // Refresh the current tab data
+                  // Refresh the current tab data with pagination reset
                   if (toolData && uuid) {
-                    fetchToolItemsForTab(selectedTab, debouncedSearchQuery);
+                    resetPagination();
+                    fetchToolItemsForTab(
+                      selectedTab,
+                      debouncedSearchQuery,
+                      1,
+                      false
+                    );
                   }
                   // Refresh quantity statistics
                   fetchQuantityStatistics();
@@ -951,9 +1100,15 @@ export default function ToolDetailPage() {
 
                 if (success) {
                   setSideSheetOpen(false);
-                  // Refresh the current tab data
+                  // Refresh the current tab data with pagination reset
                   if (toolData && uuid) {
-                    fetchToolItemsForTab(selectedTab, debouncedSearchQuery);
+                    resetPagination();
+                    fetchToolItemsForTab(
+                      selectedTab,
+                      debouncedSearchQuery,
+                      1,
+                      false
+                    );
                   }
                   // Refresh quantity statistics
                   fetchQuantityStatistics();

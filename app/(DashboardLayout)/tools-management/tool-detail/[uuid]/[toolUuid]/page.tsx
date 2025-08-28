@@ -8,11 +8,25 @@ import { APP_CONFIG, ROUTES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { SearchNormal1 } from 'iconsax-react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
-import { BorrowedHistoryTab, MaintenanceHistoryTab } from '../../components';
+import LoadingComponent from '../../../../../../components/shared/common/LoadingComponent';
+
+// Lazy load components
+const ToolDetailSkeleton = dynamic(
+  () => import('@/components/shared/skeleton/ToolDetailSkeleton')
+);
+const BorrowedHistoryTab = dynamic(() =>
+  import('../../components').then(mod => ({ default: mod.BorrowedHistoryTab }))
+);
+const MaintenanceHistoryTab = dynamic(() =>
+  import('../../components').then(mod => ({
+    default: mod.MaintenanceHistoryTab,
+  }))
+);
 
 export default function ToolDetailSlugPage() {
   const params = useParams();
@@ -39,11 +53,22 @@ export default function ToolDetailSlugPage() {
   const [maintenanceCount, setMaintenanceCount] = useState<number>(0);
   const [countsLoading, setCountsLoading] = useState(false);
 
+  // Pagination state for infinite scroll
+  const [currentPage, setCurrentPage] = useState(1);
+  const [_totalPages, setTotalPages] = useState(1);
+  const [hasMoreData, setHasMoreData] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  // Refs to prevent duplicate API calls
+  const hasFetchedToolDetails = useRef(false);
+  const hasFetchedCounts = useRef(false);
+
   // Function to fetch tool item details
   const fetchToolItemDetails = useCallback(async () => {
-    if (!toolUuid) return;
+    if (!toolUuid || hasFetchedToolDetails.current) return;
 
     try {
+      hasFetchedToolDetails.current = true;
       setLoading(true);
       setError(null);
 
@@ -67,9 +92,10 @@ export default function ToolDetailSlugPage() {
 
   // Function to fetch history counts
   const fetchHistoryCounts = useCallback(async () => {
-    if (!toolItemData?.id) return;
+    if (!toolItemData?.id || hasFetchedCounts.current) return;
 
     try {
+      hasFetchedCounts.current = true;
       setCountsLoading(true);
 
       // Fetch history statistics using new API (without search parameter)
@@ -91,37 +117,89 @@ export default function ToolDetailSlugPage() {
     }
   }, [toolItemData?.id, handleAuthError]);
 
-  // Function to fetch history data for selected tab
+  // Function to fetch history data for selected tab with pagination
   const fetchHistoryData = useCallback(
-    async (tabName: string, searchQuery?: string) => {
+    async (
+      tabName: string,
+      searchQuery?: string,
+      page: number = 1,
+      isLoadMore: boolean = false
+    ) => {
       if (!toolItemData?.id) return;
 
       try {
-        setHistoryLoading(true);
+        if (isLoadMore) {
+          setIsLoadingMore(true);
+        } else {
+          setHistoryLoading(true);
+        }
+
         if (tabName === 'borrowed') {
-          // Fetch borrowed history using new API
+          // Fetch borrowed history using new API with pagination and sorting
           const borrowedResponse = await apiService.getBorrowedHistory({
-            page: 1,
-            limit: 50,
+            page,
+            limit: 10, // Fixed limit for pagination
             toolItemId: toolItemData.id,
             ...(searchQuery && { search: searchQuery }), // Add search parameter conditionally
           });
           if (borrowedResponse.statusCode === 200 && borrowedResponse.data) {
-            setBorrowedHistoryData(borrowedResponse.data.data || []);
+            const {
+              data,
+              total,
+              page: responsePage,
+              limit: responseLimit,
+            } = borrowedResponse.data;
+
+            // Calculate total pages from total and limit
+            const calculatedTotalPages = Math.ceil(total / responseLimit);
+
+            if (isLoadMore) {
+              // Append new data for infinite scroll
+              setBorrowedHistoryData(prev => [...prev, ...(data || [])]);
+            } else {
+              // Replace data for new search or tab change
+              setBorrowedHistoryData(data || []);
+            }
+
+            setCurrentPage(responsePage || page);
+            setTotalPages(calculatedTotalPages);
+            setHasMoreData((responsePage || page) < calculatedTotalPages);
           }
         } else if (tabName === 'maintenance') {
-          // Fetch maintenance history using new API
+          // Fetch maintenance history using new API with pagination and sorting
           const maintenanceResponse = await apiService.getMaintenanceHistory({
-            page: 1,
-            limit: 50,
+            page,
+            limit: 10, // Fixed limit for pagination
             toolItemId: toolItemData.id,
+            sort_by: 'updated_at', // Sort by update date
+            sort_order: 'DESC', // Latest first (descending order)
             ...(searchQuery && { search: searchQuery }), // Add search parameter conditionally
           });
           if (
             maintenanceResponse.statusCode === 200 &&
             maintenanceResponse.data
           ) {
-            setMaintenanceHistoryData(maintenanceResponse.data.data || []);
+            const {
+              data,
+              total,
+              page: responsePage,
+              limit: responseLimit,
+            } = maintenanceResponse.data;
+
+            // Calculate total pages from total and limit
+            const calculatedTotalPages = Math.ceil(total / responseLimit);
+
+            if (isLoadMore) {
+              // Append new data for infinite scroll
+              setMaintenanceHistoryData(prev => [...prev, ...(data || [])]);
+            } else {
+              // Replace data for new search or tab change
+              setMaintenanceHistoryData(data || []);
+            }
+
+            setCurrentPage(responsePage || page);
+            setTotalPages(calculatedTotalPages);
+            setHasMoreData((responsePage || page) < calculatedTotalPages);
           }
         }
       } catch (error: any) {
@@ -129,11 +207,38 @@ export default function ToolDetailSlugPage() {
           handleAuthError(error);
         }
       } finally {
-        setHistoryLoading(false);
+        if (isLoadMore) {
+          setIsLoadingMore(false);
+        } else {
+          setHistoryLoading(false);
+        }
       }
     },
     [toolItemData?.id, handleAuthError]
   );
+
+  // Function to load more data for infinite scroll
+  const loadMoreData = useCallback(async () => {
+    if (!hasMoreData || isLoadingMore || !selectedTab) return;
+
+    const nextPage = currentPage + 1;
+    await fetchHistoryData(selectedTab, debouncedSearchQuery, nextPage, true);
+  }, [
+    hasMoreData,
+    isLoadingMore,
+    selectedTab,
+    currentPage,
+    debouncedSearchQuery,
+    fetchHistoryData,
+  ]);
+
+  // Function to reset pagination when tab or search changes
+  const resetPagination = useCallback(() => {
+    setCurrentPage(1);
+    setTotalPages(1);
+    setHasMoreData(true);
+    setIsLoadingMore(false);
+  }, []);
 
   // Debounced search callback
   const debouncedSearch = useDebouncedCallback(
@@ -147,6 +252,12 @@ export default function ToolDetailSlugPage() {
   useEffect(() => {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
+
+  // Reset fetch flags when toolUuid changes
+  useEffect(() => {
+    hasFetchedToolDetails.current = false;
+    hasFetchedCounts.current = false;
+  }, [toolUuid]);
 
   // Fetch tool item details on component mount
   useEffect(() => {
@@ -163,9 +274,31 @@ export default function ToolDetailSlugPage() {
   // Fetch history data when tab changes or search query changes
   useEffect(() => {
     if (toolItemData && selectedTab) {
-      fetchHistoryData(selectedTab, debouncedSearchQuery);
+      resetPagination();
+      fetchHistoryData(selectedTab, debouncedSearchQuery, 1, false);
     }
-  }, [selectedTab, toolItemData, debouncedSearchQuery, fetchHistoryData]);
+  }, [
+    selectedTab,
+    toolItemData,
+    debouncedSearchQuery,
+    fetchHistoryData,
+    resetPagination,
+  ]);
+
+  // Infinite scroll event listener
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + document.documentElement.scrollTop >=
+        document.documentElement.offsetHeight - 1000 // Trigger 1000px before bottom
+      ) {
+        loadMoreData();
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [loadMoreData]);
   // Breadcrumb data
   const breadcrumbData: BreadcrumbItem[] = [
     { name: 'Tools', href: ROUTES.TOOLS_MANAGEMENT },
@@ -178,18 +311,7 @@ export default function ToolDetailSlugPage() {
 
   // Show loading state
   if (loading) {
-    return (
-      <div className='w-full space-y-6'>
-        <Breadcrumb items={breadcrumbData} className='mb-4' />
-        <div className='bg-[--card-background] rounded-xl border border-[var(--border-dark)] p-6'>
-          <div className='flex items-center justify-center py-8'>
-            <div className='text-[var(--text-secondary)]'>
-              Loading tool item details...
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <ToolDetailSkeleton />;
   }
 
   // Show error state
@@ -326,6 +448,12 @@ export default function ToolDetailSlugPage() {
                 data={borrowedHistoryData}
                 loading={historyLoading}
               />
+              {/* Infinite scroll loader */}
+              {isLoadingMore && (
+                <div className='text-center py-4'>
+                  <LoadingComponent variant='inline' size='md' text={''} />
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value='maintenance' className='mt-6'>
@@ -333,6 +461,12 @@ export default function ToolDetailSlugPage() {
                 data={maintenanceHistoryData}
                 loading={historyLoading}
               />
+              {/* Infinite scroll loader */}
+              {isLoadingMore && (
+                <div className='text-center py-4'>
+                  <LoadingComponent variant='inline' size='md' text={''} />
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

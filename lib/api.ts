@@ -2237,6 +2237,8 @@ class ApiService {
     assigned_status?: 'temporary' | 'permanent';
     issue?: string;
     company_id?: string | number;
+    sort_by?: 'created_at' | 'updated_at' | 'id' | 'barcode' | 'assigned_date';
+    sort_order?: 'ASC' | 'DESC';
   }): Promise<FetchToolItemsResponse> {
     const queryParams = new URLSearchParams();
 
@@ -2261,6 +2263,8 @@ class ApiService {
     if (params?.issue) queryParams.append('issue', params.issue);
     if (params?.company_id)
       queryParams.append('company_id', params.company_id.toString());
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
     const url = queryParams.toString()
       ? `/tool-items?${queryParams.toString()}`
@@ -2425,6 +2429,13 @@ class ApiService {
     borrowedById?: number;
     jobId?: number;
     search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
   }): Promise<any> {
     const queryParams = new URLSearchParams();
 
@@ -2436,6 +2447,8 @@ class ApiService {
       queryParams.append('borrowedById', params.borrowedById.toString());
     if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
     if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
     const url = `/tool-history/borrowed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
@@ -2452,6 +2465,13 @@ class ApiService {
     returnedById?: number;
     jobId?: number;
     search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
   }): Promise<any> {
     const queryParams = new URLSearchParams();
 
@@ -2463,6 +2483,8 @@ class ApiService {
       queryParams.append('returnedById', params.returnedById.toString());
     if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
     if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
 
     const url = `/tool-history/maintenance${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
@@ -2895,4 +2917,3 @@ class ApiService {
 
 export const apiService = new ApiService();
 export type { ApiError, CreateRoleRequest, CreateRoleResponse, LoginResponse };
-

@@ -558,7 +558,7 @@ export const AssignForm: React.FC<AssignFormProps> = ({
             )}
           />
         </div>
-        <div className='space-y-2'>
+        <div className='space-y-2 md:col-span-2'>
           <Controller
             name='assignedStatus'
             control={control}

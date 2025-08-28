@@ -86,7 +86,10 @@ export default function TradeManagementPage() {
         const companyId = getCompanyId();
 
         // Determine status based on selected tab
-        const statusParam = selectedTab === 'archive' ? CommonStatus.INACTIVE : CommonStatus.ACTIVE;
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const response = await apiService.fetchTrades({
           page: targetPage,
@@ -212,32 +215,26 @@ export default function TradeManagementPage() {
         return; // Don't show toast if it's an auth error
       }
 
-      const message = extractApiErrorMessage(
-        err,
-        TRADE_MESSAGES.DELETE_ERROR
-      );
+      const message = extractApiErrorMessage(err, TRADE_MESSAGES.DELETE_ERROR);
       showErrorToast(message);
     }
   };
 
-
   // Handler for retrieving a trade
   const handleRetrieveTrade = async (uuid: string) => {
     try {
-  
       const response = await apiService.updateTradeStatus(uuid, 'ACTIVE');
-      
+
       showSuccessToast(
         extractApiSuccessMessage(response, TRADE_MESSAGES.RETRIEVE_SUCCESS)
       );
-      
+
       // Remove the retrieved trade from the current list immediately
       setTrades(prev => prev.filter(t => t.uuid !== uuid));
-      
+
       // Refresh list to reflect latest server state based on current tab
       await fetchTrades(1, false);
     } catch (err: unknown) {
-      console.error('Retrieve error:', err); // Debug log
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
         return; // Don't show toast if it's an auth error
@@ -413,7 +410,6 @@ export default function TradeManagementPage() {
           </TabsContent>
         </Tabs>
       </div>
-
 
       <SideSheet
         title={
