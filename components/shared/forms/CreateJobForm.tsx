@@ -238,7 +238,7 @@ export function CreateJobForm({
                 </span>
               )}
               {/* Dropdown */}
-              {(userOptions.length > 0) && showDropdown && (
+              {userOptions.length > 0 && showDropdown && (
                 <div className='absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded shadow mt-1 max-h-56 overflow-auto'>
                   {userLoading && (
                     <div className='p-2 text-gray-500 text-sm'>Loading...</div>
@@ -365,7 +365,9 @@ export function CreateJobForm({
           </div>
 
           {/* Job Type Radio Group */}
-          <div className={cn('space-y-3 hidden')}> {/* TODO: Remove hidden */}
+          <div className={cn('space-y-3 hidden')}>
+            {' '}
+            {/* TODO: Remove hidden */}
             {/* <Label className='fled-label'>{JOB_MESSAGES.JOB_TYPE_LABEL}</Label> */}
             <Controller
               name='job_privacy'
@@ -387,7 +389,7 @@ export function CreateJobForm({
           {/* Select Boxes Section */}
           <div className='space-y-3 sm:space-y-4'>
             <Label className='fled-label text-sm sm:text-base'>
-              Select Boxes
+              {JOB_MESSAGES.SELECT_BOXES_LABEL}
             </Label>
             <Controller
               name='job_boxes_step'
