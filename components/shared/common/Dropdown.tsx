@@ -11,6 +11,7 @@ export interface DropdownOption {
   label: string;
   action: string;
   icon?: React.ElementType;
+  disabled?: boolean;
 }
 
 interface DropdownProps {
@@ -41,18 +42,23 @@ export const Dropdown: React.FC<DropdownProps> = ({
         className
       )}
     >
-      {menuOptions.map(({ icon: Icon, label, action }, index) => (
+      {menuOptions.map(({ icon: Icon, label, action, disabled }, index) => (
         <DropdownMenuItem
           key={index}
           onClick={e => {
             e.stopPropagation();
-            onAction(action);
+            if (!disabled) {
+              onAction(action);
+            }
           }}
           className={cn(
-            'p-2 xl:p-[10px] font-medium cursor-pointer text-base transition-colors rounded-none flex items-center gap-2 hover:!bg-[var(--select-option)]',
+            'p-2 xl:p-[10px] font-medium text-base transition-colors rounded-none flex items-center gap-2',
             itemsClass,
             index !== menuOptions.length - 1 &&
-              'border-b border-[var(--border-dark)]'
+              'border-b border-[var(--border-dark)]',
+            disabled
+              ? 'cursor-not-allowed opacity-50 text-[var(--text-muted)]'
+              : 'cursor-pointer hover:!bg-[var(--select-option)]'
           )}
         >
           {Icon && (
