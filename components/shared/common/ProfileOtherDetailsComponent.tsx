@@ -1,5 +1,6 @@
 'use client';
 
+import { useToast } from '@/components/ui/use-toast';
 import { PROFILE_DETAILS_MESSAGES } from '@/constants/messages';
 import Link from 'next/link';
 import { RedirectionIcon } from '../../icons/RedirectionIcon';
@@ -33,6 +34,8 @@ export const ProfileOtherDetailsComponent = ({
   showViewCompanyProfileButton = true,
   companyProfileUrl,
 }: ProfileOtherDetailsComponentProps) => {
+  const { showSuccessToast, showErrorToast } = useToast();
+
   // Destructure company data for better readability
   const {
     name,
@@ -47,6 +50,23 @@ export const ProfileOtherDetailsComponent = ({
     projects,
     country_code,
   } = companyData || {};
+
+  // Copy phone number to clipboard
+  const copyPhoneNumber = async () => {
+    const phoneNumber = `${country_code || ''}${phone || phone_number}`;
+    try {
+      await navigator.clipboard.writeText(phoneNumber);
+      showSuccessToast(`${phoneNumber} has been copied to clipboard`);
+    } catch {
+      showErrorToast('Unable to copy phone number to clipboard');
+    }
+  };
+
+  // Open email client
+  const openEmailClient = () => {
+    if (!email) return;
+    window.location.href = `mailto:${email}`;
+  };
 
   return (
     <div className='bg-[var(--card-background)] rounded-[20px] border border-[var(--border-dark)] p-5 w-full'>
@@ -63,19 +83,37 @@ export const ProfileOtherDetailsComponent = ({
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             {PROFILE_DETAILS_MESSAGES.EMAIL}
           </label>
-          <p className='text-[var(--text-dark)] font-medium text-sm'>
-            {email || '-'}
-          </p>
+          {email ? (
+            <div className='flex items-center gap-2 mt-1'>
+              <span
+                onClick={openEmailClient}
+                className='text-[var(--text-dark)] font-medium text-sm hover:text-[var(--primary)] transition-colors cursor-pointer'
+                title='Click to open email client'
+              >
+                {email}
+              </span>
+            </div>
+          ) : (
+            <p className='text-[var(--text-dark)] font-medium text-sm'>-</p>
+          )}
         </div>
         <div className='lg:min-w-[200px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
             {PROFILE_DETAILS_MESSAGES.PHONE_NUMBER}
           </label>
-          <p className='text-[var(--text-dark)] font-medium text-sm'>
-            {phone || phone_number
-              ? `${country_code || ''} ${phone || phone_number}`
-              : '-'}
-          </p>
+          {phone || phone_number ? (
+            <div className='flex items-center gap-2 mt-1'>
+              <span
+                onClick={copyPhoneNumber}
+                className='text-[var(--text-dark)] font-medium text-sm hover:text-[var(--primary)] transition-colors cursor-pointer'
+                title='Click to copy phone number'
+              >
+                {`${country_code || ''} ${phone || phone_number}`}
+              </span>
+            </div>
+          ) : (
+            <p className='text-[var(--text-dark)] font-medium text-sm'>-</p>
+          )}
         </div>
         <div className='lg:min-w-[260px] min-w-full max-w-full'>
           <label className='text-sm text-[var(--text-secondary)] font-normal'>
@@ -104,7 +142,18 @@ export const ProfileOtherDetailsComponent = ({
             <p className='text-[var(--text-dark)] font-medium text-sm'>
               {website || '-'}
             </p>
-            <RedirectionIcon className='text-[var(--text-secondary)] cursor-pointer hover:text-[var(--primary)]' />
+            {website && website !== '-' && (
+              <a
+                href={
+                  website.startsWith('http') ? website : `https://${website}`
+                }
+                target='_blank'
+                rel='noopener noreferrer'
+                className='inline-block'
+              >
+                <RedirectionIcon className='text-[var(--text-secondary)] cursor-pointer hover:text-[var(--primary)] transition-colors' />
+              </a>
+            )}
           </div>
         </div>
         <div className='lg:min-w-[400px] min-w-full max-w-full'>
