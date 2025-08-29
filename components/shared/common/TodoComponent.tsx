@@ -91,7 +91,7 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
     );
     const [editLoading, setEditLoading] = useState(false);
     const { showSuccessToast, showErrorToast } = useToast();
-    const { user } = useAuth();
+    const { user, handleAuthError } = useAuth();
 
     // Fetch todo lists function
     const fetchTodoLists = async () => {
@@ -113,7 +113,12 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
         } else {
           setError('Failed to fetch todo lists');
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         console.error('Error fetching todo lists:', error);
         setError('Failed to fetch todo lists');
       } finally {
@@ -133,7 +138,12 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
         } else {
           showErrorToast('Failed to fetch todo list details');
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         console.error('Error fetching todo list for edit:', error);
         showErrorToast('Failed to fetch todo list details');
       } finally {
@@ -297,7 +307,12 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
               : 'Item marked as incomplete'
           );
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         // If API call fails, revert the optimistic update
         setTaskSections(prev =>
           prev.map(section =>

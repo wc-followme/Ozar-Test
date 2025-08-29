@@ -121,7 +121,7 @@ export const AppointmentsComponent = forwardRef<
     useState<Appointment | null>(null);
   const [editLoading, setEditLoading] = useState(false);
   const { showSuccessToast, showErrorToast } = useToast();
-  const { user } = useAuth();
+  const { user, handleAuthError } = useAuth();
 
   // Expose refresh method to parent components
   useImperativeHandle(ref, () => ({
@@ -146,7 +146,12 @@ export const AppointmentsComponent = forwardRef<
         setError(response.message || 'Failed to fetch appointments');
         showErrorToast(response.message || 'Failed to fetch appointments');
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle authentication errors
+      if (handleAuthError(error)) {
+        return; // Error was handled by auth context
+      }
+
       console.error('Error fetching appointments:', error);
       const message = extractApiErrorMessage(
         error,
@@ -177,7 +182,12 @@ export const AppointmentsComponent = forwardRef<
           response.message || 'Failed to fetch appointment details'
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle authentication errors
+      if (handleAuthError(error)) {
+        return; // Error was handled by auth context
+      }
+
       console.error('Error fetching appointment for edit:', error);
       const message = extractApiErrorMessage(
         error,
@@ -414,7 +424,12 @@ export const AppointmentsComponent = forwardRef<
         // Refresh appointments list
         fetchAppointments();
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle authentication errors
+      if (handleAuthError(error)) {
+        return; // Error was handled by auth context
+      }
+
       console.error('Error saving appointment:', error);
       const message = extractApiErrorMessage(
         error,
@@ -460,7 +475,12 @@ export const AppointmentsComponent = forwardRef<
         } else {
           showErrorToast(response.message || 'Failed to delete appointment');
         }
-      } catch (error) {
+      } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         console.error('Error deleting appointment:', error);
         const message = extractApiErrorMessage(
           error,
@@ -511,7 +531,12 @@ export const AppointmentsComponent = forwardRef<
           response.message || 'Failed to update appointment completion status'
         );
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle authentication errors
+      if (handleAuthError(error)) {
+        return; // Error was handled by auth context
+      }
+
       console.error('Error updating appointment completion status:', error);
       const message = extractApiErrorMessage(
         error,
