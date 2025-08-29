@@ -1,6 +1,7 @@
 'use client';
 
 import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
+import ComingSoon from '@/components/shared/common/ComingSoon';
 import { Dropdown } from '@/components/shared/common/Dropdown';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { PAGINATION, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
 import {
   AddSquare,
@@ -26,6 +28,7 @@ import { TemplateApiData, TemplateData } from './template-types';
 export default function TemplatesPage() {
   const router = useRouter();
   const { showErrorToast, showSuccessToast } = useToast();
+  const { isAuthenticated, handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('estimate');
   const [templates, setTemplates] = useState<TemplateApiData[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -43,6 +46,13 @@ export default function TemplatesPage() {
   const fetchTemplates = useCallback(
     async (pageNum = 1, append = false) => {
       try {
+        // Check authentication first
+        if (!isAuthenticated) {
+          showErrorToast('Please log in to access templates.');
+          router.push('/auth/login');
+          return;
+        }
+
         // Only show loading for initial load, not for infinite scroll
         if (!append) {
           setInitialLoading(true);
@@ -90,6 +100,11 @@ export default function TemplatesPage() {
           setHasMore(false);
         }
       } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         showErrorToast(
           extractApiErrorMessage(error, 'Failed to fetch templates.')
         );
@@ -101,12 +116,17 @@ export default function TemplatesPage() {
         }
       }
     },
-    [showErrorToast, selectedTab]
+    [showErrorToast, selectedTab, isAuthenticated, router, handleAuthError]
   );
 
   // Fetch counts for tabs
   const fetchTemplateCounts = useCallback(async () => {
     try {
+      // Check authentication first
+      if (!isAuthenticated) {
+        return;
+      }
+
       const companyId = getCompanyId();
       if (!companyId) {
         showErrorToast('Company ID not found. Please select a company.');
@@ -126,11 +146,16 @@ export default function TemplatesPage() {
         );
       }
     } catch (error: any) {
+      // Handle authentication errors
+      if (handleAuthError(error)) {
+        return; // Error was handled by auth context
+      }
+
       showErrorToast(
         extractApiErrorMessage(error, 'Failed to fetch template counts.')
       );
     }
-  }, [showErrorToast]);
+  }, [showErrorToast, isAuthenticated, handleAuthError]);
 
   // Archive template handler
   const handleArchiveTemplate = useCallback(
@@ -151,12 +176,17 @@ export default function TemplatesPage() {
           );
         }
       } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         showErrorToast(
           extractApiErrorMessage(error, 'Failed to archive template.')
         );
       }
     },
-    [showSuccessToast, showErrorToast, fetchTemplateCounts]
+    [showSuccessToast, showErrorToast, fetchTemplateCounts, handleAuthError]
   );
 
   // Retrieve (unarchive) template handler
@@ -179,12 +209,17 @@ export default function TemplatesPage() {
           );
         }
       } catch (error: any) {
+        // Handle authentication errors
+        if (handleAuthError(error)) {
+          return; // Error was handled by auth context
+        }
+
         showErrorToast(
           extractApiErrorMessage(error, 'Failed to retrieve template.')
         );
       }
     },
-    [showSuccessToast, showErrorToast, fetchTemplateCounts]
+    [showSuccessToast, showErrorToast, fetchTemplateCounts, handleAuthError]
   );
 
   // Edit template handler
@@ -197,14 +232,18 @@ export default function TemplatesPage() {
 
   // Fetch templates on component mount
   useEffect(() => {
-    setTemplates([]);
-    setHasMore(true);
-    fetchTemplates(1, false);
-    fetchTemplateCounts();
-  }, [fetchTemplates]);
+    if (isAuthenticated) {
+      setTemplates([]);
+      setHasMore(true);
+      fetchTemplates(1, false);
+      fetchTemplateCounts();
+    }
+  }, [fetchTemplates, isAuthenticated]);
 
   // Infinite scroll
   useEffect(() => {
+    if (!isAuthenticated) return;
+
     let currentPage = 1;
     let isLoadingMore = false;
 
@@ -224,7 +263,7 @@ export default function TemplatesPage() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, fetchTemplates]);
+  }, [hasMore, fetchTemplates, isAuthenticated]);
 
   // Filter templates by type
   const getTemplatesByType = (type: string) => {
@@ -310,11 +349,6 @@ export default function TemplatesPage() {
     }
   };
 
-  // Service Options (Option Bid) list
-  const serviceOptionTemplates = getTemplatesByType(
-    TEMPLATE_TYPES.OPTION_BID_TEMPLATES
-  );
-
   return (
     <div className='w-full'>
       {/* Header */}
@@ -345,6 +379,7 @@ export default function TemplatesPage() {
                     label: 'Service Options Template',
                     action: 'service-option',
                     icon: OptionBidIcon,
+                    disabled: true,
                   },
                   {
                     label: 'Tools Template',
@@ -381,6 +416,7 @@ export default function TemplatesPage() {
                     label: 'Service Options Template',
                     action: 'service-option',
                     icon: OptionBidIcon,
+                    disabled: true,
                   },
                   {
                     label: 'Tools Template',
@@ -522,11 +558,15 @@ export default function TemplatesPage() {
 
           {/* Service Options (Option Bid) Tab Content */}
           <TabsContent value='service-option' className='mt-6'>
+            <ComingSoon message="We're actively building this feature to make your experience even better. Got ideas or feedback? We'd love to hear them!" />
+
+            {/* Original dynamic code - commented out for now */}
+            {/*
             {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
-            ) : serviceOptionTemplates.length === 0 ? (
+            ) : _serviceOptionTemplates.length === 0 ? (
               <NoDataFound
                 title='No service option templates found'
                 description='Create a service option template to manage options quickly.'
@@ -536,7 +576,7 @@ export default function TemplatesPage() {
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {serviceOptionTemplates.map(template => (
+                  {_serviceOptionTemplates.map(template => (
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(
@@ -550,6 +590,7 @@ export default function TemplatesPage() {
                 </div>
               </>
             )}
+            */}
           </TabsContent>
 
           {/* Tools Tab Content */}
