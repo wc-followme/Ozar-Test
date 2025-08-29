@@ -147,7 +147,9 @@ export function PermissionAwareSidebar() {
     // Check if item is active - for job management, also check if pathname starts with the href
     const isActive =
       pathname === item.href ||
-      (item.menu_id === 'projects' && item.href && pathname?.startsWith(item.href)) ||
+      (item.menu_id === 'projects' &&
+        item.href &&
+        pathname?.startsWith(item.href)) ||
       (hasSubmenu &&
         filteredSubmenu.some(subItem => pathname === subItem.href));
 
@@ -275,7 +277,9 @@ export function PermissionAwareSidebar() {
               </ul>
             </ScrollArea>
             <div className='p-4 flex text-xs justify-center items-center border-t border-[var(--border-dark)] mt-auto'>
-              <Link href={versionUrl}>V-{versionInfo}</Link>
+              <Link href={versionUrl} target='_blank'>
+                V-{versionInfo}
+              </Link>
             </div>
           </div>
         </div>
