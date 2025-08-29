@@ -2,95 +2,38 @@
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { BoxCard } from '@/components/shared/cards/BoxCard';
-import { ACTIONS } from '@/constants/common';
-import { Edit2, Trash } from 'iconsax-react';
+import { useToast } from '@/components/ui/use-toast';
+import { ACTIONS, ROUTES } from '@/constants/common';
+import { useCompanyChange } from '@/hooks/use-company-change';
+import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
+import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
+import { Edit2 } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-
-interface MenuOption {
-  label: string;
-  action: string;
-  icon: React.ComponentType<{
-    size?: string | number;
-    color?: string;
-    variant?: 'Linear' | 'Outline' | 'Broken' | 'Bold' | 'Bulk' | 'TwoTone';
-  }>;
-}
+import { useCallback, useState } from 'react';
+import { FIVE_BOX_DATA } from './five-box-constants';
+import { FIVE_BOX_MESSAGES } from './five-box-messages';
+import { FiveBoxItem, MenuOption } from './five-box-types';
 
 const FiveBoxSystem = () => {
   const router = useRouter();
+  const { handleAuthError } = useAuth();
+  const { showSuccessToast, showErrorToast } = useToast();
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: 'Company Profile', href: '/company-profile' },
-    { name: '5-box system' }, // current page
+    { name: FIVE_BOX_MESSAGES.COMPANY_PROFILE, href: ROUTES.COMPANY_PROFILE },
+    { name: FIVE_BOX_MESSAGES.PAGE_TITLE }, // current page
   ];
 
-  const [boxData, setBoxData] = useState([
-    {
-      id: '01',
-      number: '01',
-      color: '#34AD4426', // Green
-      textColor: '#34AD44', // Dark green text
-      title: 'General Information',
-      description:
-        'Includes name, email, phone number, and basic contact details.',
-      enabled: true,
-      slug: 'general-information',
-    },
-    {
-      id: '02',
-      number: '02',
-      color: '#1A57BF1A', // Blue
-      textColor: '#1A57BF', // Dark blue text
-      title: 'Property Information',
-      description: 'Includes home size, number of BHKs, and floor count.',
-      enabled: true,
-      slug: 'property-information',
-    },
-    {
-      id: '03',
-      number: '03',
-      color: '#00A8BF26', // Light blue/cyan
-      textColor: '#00A8BF', // Dark cyan text
-      title: 'Project Information',
-      description:
-        'Includes work type (interior, exterior, etc.) and service scope.',
-      enabled: true,
-      slug: 'project-information',
-    },
-    {
-      id: '04',
-      number: '04',
-      color: '#90C91D26', // Yellow/light green
-      textColor: '#90C91D', // Dark yellow/green text
-      title: 'Category',
-      description: 'Includes project name, location, and key contacts.',
-      enabled: true,
-      slug: 'category',
-    },
-    {
-      id: '05',
-      number: '05',
-      color: '#D4323226', // Red/pink
-      textColor: '#D43232', // Dark red text
-      title: 'Estimation',
-      description: 'Includes pricing based on size, scope, and type of work.',
-      enabled: true,
-      slug: 'estimation',
-    },
-  ]);
+  const [boxData, setBoxData] = useState<FiveBoxItem[]>(FIVE_BOX_DATA);
+  const [loading, setLoading] = useState(true);
 
   const getMenuOptions = (): MenuOption[] => {
     return [
       {
-        label: 'Edit',
+        label: FIVE_BOX_MESSAGES.EDIT_MENU,
         action: ACTIONS.EDIT,
         icon: Edit2,
-      },
-      {
-        label: 'Delete',
-        action: ACTIONS.DELETE,
-        icon: Trash,
       },
     ];
   };
@@ -99,7 +42,7 @@ const FiveBoxSystem = () => {
     const box = boxData.find(b => b.id === id);
     if (box) {
       // Redirect to the dynamic page based on slug
-      router.push(`/company-profile/five-box-system/${box.slug}`);
+      router.push(`${ROUTES.FIVE_BOX_SYSTEM}/${box.slug}`);
     }
   };
 
@@ -107,7 +50,7 @@ const FiveBoxSystem = () => {
     const box = boxData.find(b => b.id === id);
     if (box) {
       // Redirect to the dynamic page based on slug
-      router.push(`/company-profile/five-box-system/${box.slug}`);
+      router.push(`${ROUTES.FIVE_BOX_SYSTEM}/${box.slug}`);
     }
   };
 
@@ -115,11 +58,117 @@ const FiveBoxSystem = () => {
     setBoxData(prev => prev.filter(box => box.id !== id));
   };
 
-  const handleToggle = (id: string) => {
-    setBoxData(prev =>
-      prev.map(box => (box.id === id ? { ...box, enabled: !box.enabled } : box))
-    );
+  // Fetch box settings from API
+  const fetchBoxSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Get fresh company ID inside the function
+      const currentCompanyId = getCompanyId();
+
+      const response = await apiService.getBoxSettings({
+        company_id: currentCompanyId,
+      });
+
+      if (response.statusCode === 200 && response?.data) {
+        const { default_selected_json } = response?.data || {};
+
+        // Update box data with API response
+        const updatedBoxData = FIVE_BOX_DATA.map(box => {
+          const apiBox = default_selected_json?.find(
+            (apiBox: any) => apiBox.id === box.id
+          );
+          return {
+            ...box,
+            enabled: apiBox?.enabled ?? box.enabled,
+          };
+        });
+
+        setBoxData(updatedBoxData);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      const errorMessage = extractApiErrorMessage(
+        err,
+        FIVE_BOX_MESSAGES.FETCH_ERROR
+      );
+      showErrorToast(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }, [handleAuthError, showErrorToast]); // Removed companyUuid from dependencies
+
+  // Update box settings via API
+  const updateBoxSettings = async (updatedBoxData: FiveBoxItem[]) => {
+    try {
+      const default_selected_json = updatedBoxData.map(box => ({
+        id: box.id,
+        enabled: box.enabled,
+      }));
+
+      // Get fresh company ID inside the function
+      const currentCompanyId = getCompanyId();
+
+      const response = await apiService.updateBoxSettings({
+        default_selected_json,
+        company_id: currentCompanyId,
+      });
+
+      if (response.statusCode === 200) {
+        showSuccessToast(response?.message ?? FIVE_BOX_MESSAGES.UPDATE_SUCCESS);
+      } else {
+        showErrorToast(response?.message ?? FIVE_BOX_MESSAGES.UPDATE_ERROR);
+      }
+    } catch (err: unknown) {
+      if (handleAuthError(err)) {
+        return;
+      }
+      const errorMessage = extractApiErrorMessage(
+        err,
+        FIVE_BOX_MESSAGES.UPDATE_ERROR
+      );
+      showErrorToast(errorMessage);
+    }
   };
+
+  // Handle company changes
+  const refetchBoxSettings = useCallback(() => {
+    setBoxData(FIVE_BOX_DATA);
+    fetchBoxSettings();
+  }, [fetchBoxSettings]);
+
+  useCompanyChange(refetchBoxSettings);
+
+  // Initial fetch handled by useCompanyChange hook
+
+  const handleToggle = async (id: string) => {
+    const updatedBoxData = boxData.map(box =>
+      box.id === id ? { ...box, enabled: !box.enabled } : box
+    );
+
+    setBoxData(updatedBoxData);
+
+    // Update via API
+    await updateBoxSettings(updatedBoxData);
+  };
+
+  if (loading) {
+    return (
+      <section className=''>
+        <div className='mb-6'>
+          <Breadcrumb items={breadcrumbData} />
+        </div>
+        <div className='flex items-center justify-center min-h-[400px]'>
+          <div className='text-center'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
+            <p className='text-muted-foreground'>{FIVE_BOX_MESSAGES.LOADING}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className=''>
@@ -130,23 +179,38 @@ const FiveBoxSystem = () => {
       {/* 5-box System Grid */}
       <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl w-full gap-3 xl:gap-6'>
         {boxData.map(
-          ({ id, number, color, textColor, title, description, enabled }) => (
-            <BoxCard
-              key={id}
-              id={id}
-              number={number}
-              color={color}
-              textColor={textColor}
-              title={title}
-              description={description}
-              enabled={enabled}
-              menuOptions={getMenuOptions()}
-              onEdit={() => handleEdit(id)}
-              onDelete={() => handleDelete(id)}
-              onToggle={() => handleToggle(id)}
-              onClick={() => handleCardClick(id)}
-            />
-          )
+          ({ id, number, color, textColor, title, description, enabled }) => {
+            const isEstimationCard = id === '05';
+            const isCategoryCard = id === '04';
+
+            const baseProps = {
+              id,
+              number,
+              color,
+              textColor,
+              title,
+              description,
+              enabled,
+              menuOptions: getMenuOptions(),
+              onEdit: () => handleEdit(id),
+              onDelete: () => handleDelete(id),
+              onToggle: () => handleToggle(id),
+              showMenu: !isCategoryCard && !isEstimationCard,
+            };
+
+            // Add onClick only for non-estimation cards
+            if (isEstimationCard) {
+              return <BoxCard key={id} {...baseProps} />;
+            } else {
+              return (
+                <BoxCard
+                  key={id}
+                  {...baseProps}
+                  onClick={() => handleCardClick(id)}
+                />
+              );
+            }
+          }
         )}
       </div>
     </section>

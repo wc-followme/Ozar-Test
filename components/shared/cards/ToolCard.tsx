@@ -1,10 +1,12 @@
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, ROUTES } from '@/constants/common';
 import { getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Badge } from '../../ui/badge';
+import { Label } from '../../ui/label';
 import Dropdown from '../common/Dropdown';
 
 interface ToolCardProps {
@@ -26,6 +28,8 @@ interface ToolCardProps {
   }[];
   onDelete: () => void;
   onEdit?: () => void;
+  onRetrieve?: () => void;
+  uuid?: string; // Add uuid prop for navigation
 }
 
 export default function ToolCard({
@@ -37,14 +41,17 @@ export default function ToolCard({
   menuOptions,
   onDelete,
   onEdit,
+  onRetrieve,
+  uuid,
 }: ToolCardProps) {
   const [showDelete, setShowDelete] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const router = useRouter();
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.tools?.edit;
-  const canArchive = userPermissions?.tools?.archive;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canArchive = userPermissions?.catalogue_services?.archive;
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {
@@ -60,8 +67,18 @@ export default function ToolCard({
   // Only show menu if there are any visible options
   const showMenu = filteredMenuOptions.length > 0;
 
+  // Handle card click to navigate to tool detail
+  const handleCardClick = () => {
+    if (uuid) {
+      router.push(`${ROUTES.TOOL_DETAIL}/${uuid}`);
+    }
+  };
+
   return (
-    <div className='bg-[var(--card-background)] hover:shadow-card-hover rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100'>
+    <div
+      className='bg-[var(--card-background)] hover:shadow-card-hover rounded-2xl p-2.5 flex flex-col border border-[var(--border-dark)] min-h-[6.25rem] relative transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+      onClick={handleCardClick}
+    >
       <div className='flex gap-3'>
         {/* Image */}
         <div className='w-[80px] h-[80px] rounded-[12px] overflow-hidden bg-[var(--border-light)] flex items-center justify-center flex-shrink-0'>
@@ -81,15 +98,22 @@ export default function ToolCard({
 
         {/* Tool Info */}
         <div className='flex-1 min-w-0'>
-          <h3 className='font-bold text-[var(--text)] truncate text-base mb-1'>
+          <h3 className='font-bold text-[var(--text)] truncate text-base leading-tight mb-1'>
             {name}
           </h3>
-          <p className='text-sm text-[var(--text-secondary)] mb-2'>{brand}</p>
+          <p className='text-xs text-[var(--text-secondary)] mb-1 font-medium'>
+            {brand}
+          </p>
           <div className='flex items-center gap-2'>
-            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1'>
-              Qty: {quantity}
-            </Badge>
-            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1'>
+            <div className='flex flex-col'>
+              <Label className='text-sm text-[var(--text-secondary)]'>
+                Quantity
+              </Label>
+              <span className='text-sm text-[var(--text)] font-bold'>
+                {quantity}
+              </span>
+            </div>
+            <Badge className='bg-[var(--border-light)] text-[var(--text)] text-xs px-2 py-1 ml-auto'>
               {videoCount} Video{videoCount !== 1 ? 's' : ''}
             </Badge>
           </div>
@@ -97,7 +121,10 @@ export default function ToolCard({
 
         {/* Menu */}
         {showMenu && (
-          <div className='absolute top-2.5 right-2'>
+          <div
+            className='absolute top-2.5 right-2'
+            onClick={e => e.stopPropagation()}
+          >
             <Dropdown
               menuOptions={filteredMenuOptions}
               onAction={action => {
@@ -106,6 +133,9 @@ export default function ToolCard({
                 }
                 if (action === ACTIONS.DELETE || action === ACTIONS.ARCHIVE)
                   setShowDelete(true);
+                if (action === ACTIONS.RETRIEVE) {
+                  if (onRetrieve) onRetrieve();
+                }
               }}
               trigger={
                 <button className='h-8 w-8 p-0 flex items-center justify-center rounded-full'>

@@ -251,7 +251,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
       {/* Login Button */}
       <Button
         type='submit'
-        disabled={isLoading || !email || !password}
+        disabled={isLoading}
         className='w-full h-12 bg-[var(--secondary)] hover:bg-green-700 text-white font-semibold rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed'
       >
         {isLoading ? (

@@ -7,17 +7,21 @@ interface NoDataFoundProps {
   buttonText?: string;
   onButtonClick?: () => void;
   showButton?: boolean;
+  height?: string;
 }
 
 const NoDataFound: React.FC<NoDataFoundProps> = ({
   title = 'Nothing Here Yet',
-  description = 'You haven&apos;t created any items yet. Start by adding your first one.',
+  description = "You haven't created any items yet. Start by adding your first one.",
   buttonText = 'Create',
   onButtonClick,
   showButton = true,
+  height = 'min-h-[60vh]',
 }) => {
   return (
-    <div className='flex flex-col items-center justify-center min-h-[60vh] h-full text-center'>
+    <div
+      className={`flex flex-col items-center justify-center ${height} h-full text-center`}
+    >
       <div className='mb-4 md:mb-8'>
         <Image
           src='/images/no-data-found.svg'

@@ -2,13 +2,14 @@
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ACTIONS } from '@/constants/common';
+import { ACTIONS, ROUTES } from '@/constants/common';
 import { cn, getUserPermissionsFromStorage } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { ConfirmDeleteModal } from '../common/ConfirmDeleteModal';
+import { ConfirmRetrieveModal } from '../common/ConfirmRetrieveModal';
 import Dropdown from '../common/Dropdown';
 
 interface MenuOption {
@@ -33,6 +34,7 @@ interface companyCardProps {
   isDefault?: boolean;
   companyUuid: string;
   onDelete?: () => void;
+  onRetrieve?: () => void;
 }
 
 export function CompanyCard({
@@ -46,9 +48,11 @@ export function CompanyCard({
   isDefault = false,
   companyUuid,
   onDelete,
+  onRetrieve,
 }: companyCardProps) {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [showRetrieve, setShowRetrieve] = useState(false);
   const router = useRouter();
   const [isPlaceholder, setIsPlaceholder] = useState(!image);
 
@@ -79,6 +83,9 @@ export function CompanyCard({
     if (option.action === ACTIONS.DELETE || option.action === ACTIONS.ARCHIVE) {
       return canArchive;
     }
+    if (option.action === ACTIONS.RETRIEVE) {
+      return canArchive; // Use archive permission for retrieve as well
+    }
     return true; // Show other actions by default
   });
 
@@ -102,7 +109,10 @@ export function CompanyCard({
   };
 
   const handleCardClick = () => {
-    router.push(`/company-management/company-details/${companyUuid}`);
+    if (showRetrieve || showDelete) {
+      return;
+    }
+    router.push(`${ROUTES.COMPANY_PROFILE}/${companyUuid}`);
   };
 
   const handleMenuAction = (action: string) => {
@@ -110,6 +120,8 @@ export function CompanyCard({
       router.push(`/company-management/edit-company/${companyUuid}`);
     } else if (action === ACTIONS.DELETE) {
       setShowDelete(true);
+    } else if (action === ACTIONS.RETRIEVE) {
+      setShowRetrieve(true);
     }
   };
 
@@ -239,6 +251,17 @@ export function CompanyCard({
         onDelete={async () => {
           setShowDelete(false);
           if (onDelete) await onDelete();
+        }}
+      />
+
+      <ConfirmRetrieveModal
+        open={showRetrieve}
+        title={`Are you sure you want to retrieve?`}
+        subtitle={`This will restore the company to active status.`}
+        onCancel={() => setShowRetrieve(false)}
+        onRetrieve={async () => {
+          setShowRetrieve(false);
+          if (onRetrieve) await onRetrieve();
         }}
       />
     </div>

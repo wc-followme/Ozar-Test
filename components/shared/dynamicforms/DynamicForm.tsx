@@ -245,14 +245,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
-            <Input
-              id={name}
-              type='time'
-              placeholder={placeholder}
+            <TimePicker
               value={formData[name] || ''}
-              onChange={e => handleInputChange(name, e.target.value)}
-              className={`mt-1 input-field ${hasError ? 'border-red-500' : ''}`}
-              required={required}
+              onChange={value => handleInputChange(name, value)}
+              placeholder={placeholder}
+              error={hasError}
             />
           </div>
         ) : type === 'category-selector' ? (
@@ -287,7 +284,7 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                       <div
                         className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-4`}
                         style={{
-                          background: bgColor || '#EBB4021A',
+                          backgroundColor: bgColor || '#EBB4021A',
                           color: color || '#EBB402',
                         }}
                       >

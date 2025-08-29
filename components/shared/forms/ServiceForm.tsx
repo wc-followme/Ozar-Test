@@ -6,9 +6,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants/common';
+
 import { apiService } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { serviceFormSchema } from '@/lib/validations/service';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
@@ -25,6 +25,7 @@ export default function ServiceForm({
 }: ServiceFormProps) {
   const [tradesOption, setTradesOption] = useState<Trade[]>([]);
   const [loadingTrades, setLoadingTrades] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const {
     control,
     handleSubmit,
@@ -38,24 +39,20 @@ export default function ServiceForm({
     },
   });
 
+  // Ensure we're on the client side to prevent hydration issues
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return; // Don't run on server side
+
     const fetchTrades = async () => {
       try {
         setLoadingTrades(true);
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const response = await apiService.getTradesDropdown({
           ...(companyId ? { company_id: companyId } : {}),
@@ -71,10 +68,10 @@ export default function ServiceForm({
       }
     };
     fetchTrades();
-  }, []);
+  }, [mounted]);
 
   useEffect(() => {
-    if (!initialServiceUuid || loadingTrades) return;
+    if (!mounted || !initialServiceUuid || loadingTrades) return; // Don't run on server side
 
     const fetchService = async () => {
       try {
@@ -100,24 +97,13 @@ export default function ServiceForm({
       }
     };
     fetchService();
-  }, [initialServiceUuid, reset, loadingTrades, tradesOption]);
+  }, [mounted, initialServiceUuid, reset, loadingTrades, tradesOption]);
 
   const onFormSubmit = async (data: any) => {
     const { serviceName, trades = [] } = data;
     try {
-      // Get selected company from localStorage
-      const selectedCompany = localStorage.getItem(
-        STORAGE_KEYS.SELECTED_COMPANY
-      );
-      let companyId: string | undefined;
-      if (selectedCompany) {
-        try {
-          const parsedCompany = JSON.parse(selectedCompany);
-          companyId = parsedCompany.id; // UUID from localStorage
-        } catch (error) {
-          console.error('Error parsing selected company:', error);
-        }
-      }
+      // Get selected company ID using global utility function
+      const companyId = getCompanyId();
 
       const payload = {
         name: serviceName,
@@ -181,6 +167,55 @@ export default function ServiceForm({
       );
     }
   };
+
+  // Show loading skeleton during SSR and initial client render to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className='space-y-4 sm:space-y-6 w-full max-w-xl'>
+        <div className='space-y-1 md:space-y-2'>
+          <Label htmlFor='trades' className='field-label text-sm sm:text-base'>
+            {SERVICE_MESSAGES.TRADE_LABEL}
+          </Label>
+          <Input
+            disabled
+            placeholder={SERVICE_MESSAGES.LOADING_TRADES}
+            className='h-12 w-full border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]'
+          />
+        </div>
+        <div className='space-y-1 md:space-y-2'>
+          <Label
+            htmlFor='serviceName'
+            className='field-label text-sm sm:text-base'
+          >
+            {SERVICE_MESSAGES.SERVICE_NAME_LABEL}
+          </Label>
+          <Input
+            id='serviceName'
+            placeholder={SERVICE_MESSAGES.ENTER_SERVICE_NAME}
+            className='input-field !h-12 border-[var(--border-dark)]'
+            disabled
+          />
+        </div>
+        <div className='pt-2 flex items-center gap-3 sm:gap-4'>
+          <Button
+            type='button'
+            variant='outline'
+            className='btn-secondary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+            disabled
+          >
+            {SERVICE_MESSAGES.CANCEL_BUTTON}
+          </Button>
+          <Button
+            type='submit'
+            className='btn-primary !px-4 md:!px-8 flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
+            disabled
+          >
+            {SERVICE_MESSAGES.CREATE_BUTTON}
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form

@@ -1,22 +1,15 @@
 'use client';
 
-import { CategoryCard } from '@/components/shared/cards/CategoryCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import CategoryForm from '@/components/shared/forms/CategoryForm';
-import CategoryCardSkeleton from '@/components/shared/skeleton/CategoryCardSkeleton';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  PAGINATION,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
+import { catIconOptions } from '@/constants/icon-options';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
-import { catIconOptions } from '@/constants/sidebar-items';
 import { STATUS_CODES } from '@/constants/status-codes';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import {
@@ -30,6 +23,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import {
@@ -37,10 +31,13 @@ import {
   createCategorySchema,
 } from '@/lib/validations/category';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Add, Edit2, Trash } from 'iconsax-react';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import ArchiveList from './ArchiveList';
+import CategoryList from './CategoryList';
 import { CATEGORY_MESSAGES } from './category-messages';
+import { MenuOption } from './category-types';
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -50,32 +47,45 @@ const CategoryManagement = () => {
   const [isLoadingCategory, setIsLoadingCategory] = useState(false);
   const [_page, setPage] = useState<number>(1);
   const [hasMore, setHasMore] = useState<boolean>(true);
+  const [selectedTab, setSelectedTab] = useState('category');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
 
   // Get user permissions for categories
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.categories?.edit;
-  const canViewCategories = userPermissions?.categories?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewCategories = userPermissions?.catalogue_services?.view;
 
-  // Memoize menu options to prevent unnecessary re-renders
-  const menuOptions = useMemo(
-    () => [
-      {
-        label: CATEGORY_MESSAGES.EDIT_MENU,
-        action: ACTIONS.EDIT,
-        icon: Edit2,
-        variant: 'default' as const,
-      },
-      {
-        label: CATEGORY_MESSAGES.DELETE_MENU,
-        action: ACTIONS.DELETE,
-        icon: Trash,
-        variant: 'destructive' as const,
-      },
-    ],
-    []
-  );
+  // Get menu options based on current tab
+  const getMenuOptions = (isArchive: boolean): MenuOption[] => {
+    if (isArchive) {
+      // Archive tab - only show retrieve option
+      return [
+        {
+          label: CATEGORY_MESSAGES.RETRIEVE_MENU,
+          action: ACTIONS.RETRIEVE,
+          icon: Refresh,
+          variant: 'default' as const,
+        },
+      ];
+    } else {
+      // Active categories tab - show edit and delete options
+      return [
+        {
+          label: CATEGORY_MESSAGES.EDIT_MENU,
+          action: ACTIONS.EDIT,
+          icon: Edit2,
+          variant: 'default' as const,
+        },
+        {
+          label: CATEGORY_MESSAGES.DELETE_MENU,
+          action: ACTIONS.DELETE,
+          icon: Trash,
+          variant: 'destructive' as const,
+        },
+      ];
+    }
+  };
 
   // Form management with react-hook-form
   const defaultIconOption = useMemo(() => catIconOptions[0], []);
@@ -104,24 +114,19 @@ const CategoryManagement = () => {
       }
 
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+
+        // Determine status based on selected tab
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const res = await apiService.fetchCategories({
           page: targetPage,
           limit: PAGINATION.CATEGORIES_LIMIT,
-          status: CommonStatus.ACTIVE, // Only fetch active categories
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
 
@@ -181,7 +186,7 @@ const CategoryManagement = () => {
         setLoading(false);
       }
     },
-    [handleAuthError, showErrorToast]
+    [handleAuthError, showErrorToast, selectedTab]
   );
 
   // Handle company changes
@@ -193,6 +198,11 @@ const CategoryManagement = () => {
   }, [fetchCategories]);
 
   useCompanyChange(refetchCategories);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchCategories(1, false);
+  }, [selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -214,12 +224,12 @@ const CategoryManagement = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, fetchCategories]);
 
-  // Delete handler
-  const handleDeleteCategory = async (uuid: string) => {
+  // Archive handler (delete category)
+  const handleArchiveCategory = async (uuid: string) => {
     try {
       const category = categories.find(c => c.uuid === uuid);
 
-      // Prevent deletion of default categories
+      // Prevent archiving of default categories
       if (category?.is_default) {
         showErrorToast(CATEGORY_MESSAGES.DEFAULT_CATEGORY_DELETE_ERROR);
         return;
@@ -239,6 +249,85 @@ const CategoryManagement = () => {
       const message = extractApiErrorMessage(
         err,
         CATEGORY_MESSAGES.DELETE_ERROR
+      );
+      showErrorToast(message);
+    }
+  };
+
+  // Status toggle handler
+  const handleToggleStatus = async (
+    uuid: string,
+    currentStatus: 'ACTIVE' | 'INACTIVE'
+  ) => {
+    try {
+      const category = categories.find(c => c.uuid === uuid);
+      if (!category || !category.uuid)
+        throw new Error(CATEGORY_MESSAGES.CATEGORY_NOT_FOUND_ERROR);
+
+      // Prevent status changes for default categories
+      if (category.is_default) {
+        showErrorToast(CATEGORY_MESSAGES.DEFAULT_CATEGORY_STATUS_ERROR);
+        return;
+      }
+
+      const newStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      const response = await apiService.updateCategoryStatus(
+        category.uuid,
+        newStatus
+      );
+      setCategories(categories =>
+        categories.map(c =>
+          c.uuid === category.uuid ? { ...c, status: newStatus } : c
+        )
+      );
+      showSuccessToast(
+        extractApiSuccessMessage(
+          response,
+          CATEGORY_MESSAGES.STATUS_UPDATE_SUCCESS
+        )
+      );
+      // Refresh list to reflect latest server state based on current tab
+      await fetchCategories(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(
+        err,
+        CATEGORY_MESSAGES.STATUS_UPDATE_ERROR
+      );
+      showErrorToast(message);
+    }
+  };
+
+  // Handler for retrieving a category
+  const handleRetrieveCategory = async (uuid: string) => {
+    try {
+      console.log('Retrieving category:', uuid); // Debug log
+      const response = await apiService.updateCategoryStatus(uuid, 'ACTIVE');
+      console.log('Retrieve response:', response); // Debug log
+
+      showSuccessToast(
+        extractApiSuccessMessage(response, CATEGORY_MESSAGES.RETRIEVE_SUCCESS)
+      );
+
+      // Remove the retrieved category from the current list immediately
+      setCategories(prev => prev.filter(c => c.uuid !== uuid));
+
+      // Refresh list to reflect latest server state based on current tab
+      await fetchCategories(1, false);
+    } catch (err: unknown) {
+      console.error('Retrieve error:', err); // Debug log
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(
+        err,
+        CATEGORY_MESSAGES.RETRIEVE_ERROR
       );
       showErrorToast(message);
     }
@@ -304,19 +393,10 @@ const CategoryManagement = () => {
           icon,
         };
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            if (parsedCompany.id) {
-              updateData.company_id = parsedCompany.id;
-            }
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          updateData.company_id = companyId;
         }
 
         const response = await apiService.updateCategory(uuid, updateData);
@@ -354,19 +434,10 @@ const CategoryManagement = () => {
           is_default: false, // New categories are not default
         };
 
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            if (parsedCompany.id) {
-              categoryData.company_id = parsedCompany.id;
-            }
-          } catch (error) {
-            console.error('Error parsing selected company:', error);
-          }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
+        if (companyId) {
+          categoryData.company_id = companyId;
         }
 
         const response = await apiService.createCategory(categoryData);
@@ -443,89 +514,85 @@ const CategoryManagement = () => {
   }
 
   return (
-    <section className='w-full pb-4'>
-      <header className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+    <div className='w-full'>
+      {/* Header */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>
             {CATEGORY_MESSAGES.CATEGORY_MANAGEMENT_TITLE}
           </h2>
-          {canEdit && (
-            <div className='flex justify-end'>
-              <Button
-                onClick={handleOpenCreateForm}
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-              >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
-                </span>
-              </Button>
-            </div>
-          )}
         </div>
-      </header>
+      </div>
 
-      {/* Categories Grid */}
-      {categories.length === 0 && loading ? (
-        <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-          {[...Array(8)].map((_, i) => (
-            <CategoryCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {categories.length === 0 && !loading ? (
-            <div className='h-full md:h-[calc(100vh_-_220px)] w-full'>
-              <NoDataFound
-                description={CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION}
-                buttonText={CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
-                onButtonClick={handleOpenCreateForm}
-                showButton={canEdit ?? false}
-              />
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='category'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Category
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <Button
+                  onClick={handleOpenCreateForm}
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {CATEGORY_MESSAGES.ADD_CATEGORY_BUTTON}
+                  </span>
+                </Button>
+              )}
             </div>
-          ) : (
-            <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6 w-full'>
-              {categories.map((category, index) => {
-                const iconOption = catIconOptions.find(
-                  opt => opt.value === category.icon
-                ) || {
-                  icon: () => null,
-                  color: '#00a8bf',
-                };
-                return (
-                  <CategoryCard
-                    key={category.uuid || index}
-                    name={category.name}
-                    description={category.description}
-                    iconSrc={props => {
-                      const Icon = iconOption.icon;
-                      // Map size prop to Tailwind class, and color to a text color class
-                      const sizeClass = props.size
-                        ? `w-[${props.size}px] h-[${props.size}px]`
-                        : 'w-8 h-8';
-                      const colorClass = props.color
-                        ? `text-[${props.color}]`
-                        : '';
-                      return <Icon className={`${sizeClass} ${colorClass}`} />;
-                    }}
-                    iconColor={iconOption.color}
-                    iconBgColor={iconOption.color + '26'}
-                    menuOptions={menuOptions}
-                    categoryUuid={category.uuid}
-                    onDelete={() => handleDeleteCategory(category.uuid)}
-                    onEdit={() => handleEditCategory(category.uuid)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-      {loading && categories.length > 0 && (
-        <div className='text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
+          </div>
+
+          {/* Category Tab Content */}
+          <TabsContent value='category' className='mt-6'>
+            <CategoryList
+              categories={categories}
+              loading={loading}
+              noDataDescription={
+                CATEGORY_MESSAGES.NO_CATEGORIES_FOUND_DESCRIPTION
+              }
+              menuOptions={getMenuOptions(false)}
+              onToggle={handleToggleStatus}
+              onDelete={handleArchiveCategory}
+              onEdit={handleEditCategory}
+              onCreateCategory={handleOpenCreateForm}
+              canEdit={canEdit ?? false}
+            />
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <ArchiveList
+              categories={categories}
+              loading={loading}
+              noDataTitle={CATEGORY_MESSAGES.ARCHIVED_CATEGORIES_TITLE}
+              noDataDescription={CATEGORY_MESSAGES.NO_ARCHIVED_CATEGORIES_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveCategory}
+              onToggle={handleToggleStatus}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
 
       {/* Create/Edit Category Side Sheet */}
       <SideSheet
@@ -567,7 +634,7 @@ const CategoryManagement = () => {
           )}
         </div>
       </SideSheet>
-    </section>
+    </div>
   );
 };
 

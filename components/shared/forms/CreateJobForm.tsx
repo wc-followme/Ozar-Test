@@ -1,5 +1,6 @@
 'use client';
 
+import { FIVE_BOX_DATA } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-constants';
 import { JOB_MESSAGES } from '@/app/(DashboardLayout)/job-management/job-messages';
 import {
   CreateJobFormData,
@@ -17,54 +18,12 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as yup from 'yup';
 import { showErrorToast } from '../../ui/use-toast';
 import { RadioGroupStripe } from '../common/RadioStripe';
 import { SelectBoxCard } from '../common/SelectBoxCard';
-
-const selectBoxOptions: SelectBoxOption[] = [
-  {
-    id: 'general-info',
-    value: 'FIRST',
-    title: 'General Information',
-    description:
-      'Includes name, email, phone number, and basic contact details.',
-    disabled: false,
-  },
-  {
-    id: 'property-info',
-    value: 'SECOND',
-    title: 'Property Information',
-    description:
-      'Covers home size, number of BHKs, and type of work (interior, exterior, etc.).',
-    disabled: false,
-  },
-  {
-    id: 'project-category',
-    value: 'THIRD',
-    title: 'Project Category',
-    description:
-      'Provides a detailed cost estimate based on selected services and property info.',
-    disabled: false,
-  },
-  {
-    id: 'project-info',
-    value: 'FOURTH',
-    title: 'Project Information',
-    description:
-      'Includes name, email, phone number, and basic contact details.',
-    disabled: true,
-  },
-  {
-    id: 'project-estimates',
-    value: 'FIFTH',
-    title: 'Project Estimates',
-    description: 'Covers home size, number of BHKs, and type of work.',
-    disabled: true,
-  },
-];
 
 const createJobSchema = yup.object({
   client_name: yup.string().required(JOB_MESSAGES.NAME_REQUIRED),
@@ -89,6 +48,7 @@ export function CreateJobForm({
   defaultValues,
   onCancel,
   generatedLink,
+  boxDefaults,
 }: CreateJobFormProps) {
   const {
     control,
@@ -127,6 +87,34 @@ export function CreateJobForm({
   const [userSelected, setUserSelected] = useState(false);
   const suppressNextSearch = useRef(false);
   const { showSuccessToast } = useToast();
+
+  // Derive select box options from FIVE_BOX_DATA
+  const jobSelectOptions = useMemo<SelectBoxOption[]>(() => {
+    return FIVE_BOX_DATA.map(box => ({
+      id: box.slug,
+      value: box.step,
+      title: box.title,
+      description: box.description,
+      disabled: false,
+    }));
+  }, []);
+
+  // Set default selections based on boxDefaults
+  useEffect(() => {
+    if (boxDefaults && Array.isArray(boxDefaults)) {
+      const enabledSteps = boxDefaults
+        .filter(box => box.enabled)
+        .map(box => box.id);
+
+      // Map box IDs to step values
+      const defaultSteps = FIVE_BOX_DATA.filter(box =>
+        enabledSteps.includes(box.id)
+      ).map(box => box.step);
+      if (defaultSteps.length > 0) {
+        setValue('job_boxes_step', defaultSteps);
+      }
+    }
+  }, [boxDefaults, setValue]);
 
   useEffect(() => {
     if (suppressNextSearch.current) {
@@ -250,7 +238,7 @@ export function CreateJobForm({
                 </span>
               )}
               {/* Dropdown */}
-              {(userOptions.length > 0 || userLoading) && showDropdown && (
+              {userOptions.length > 0 && showDropdown && (
                 <div className='absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded shadow mt-1 max-h-56 overflow-auto'>
                   {userLoading && (
                     <div className='p-2 text-gray-500 text-sm'>Loading...</div>
@@ -377,7 +365,9 @@ export function CreateJobForm({
           </div>
 
           {/* Job Type Radio Group */}
-          <div className='space-y-3'>
+          <div className={cn('space-y-3 hidden')}>
+            {' '}
+            {/* TODO: Remove hidden */}
             {/* <Label className='fled-label'>{JOB_MESSAGES.JOB_TYPE_LABEL}</Label> */}
             <Controller
               name='job_privacy'
@@ -399,7 +389,7 @@ export function CreateJobForm({
           {/* Select Boxes Section */}
           <div className='space-y-3 sm:space-y-4'>
             <Label className='fled-label text-sm sm:text-base'>
-              Select Boxes
+              {JOB_MESSAGES.SELECT_BOXES_LABEL}
             </Label>
             <Controller
               name='job_boxes_step'
@@ -414,7 +404,7 @@ export function CreateJobForm({
                 const isSelected = (v: string) => value.includes(v);
                 return (
                   <div className='grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3'>
-                    {selectBoxOptions.map(
+                    {jobSelectOptions.map(
                       ({
                         id,
                         value: optionValue,
@@ -422,17 +412,7 @@ export function CreateJobForm({
                         description,
                         disabled,
                       }) => {
-                        // Dependency logic
-                        let isDisabled = disabled;
-                        if (
-                          optionValue === 'FIRST' &&
-                          (isSelected('SECOND') || isSelected('THIRD'))
-                        ) {
-                          isDisabled = true;
-                        }
-                        if (optionValue === 'SECOND' && isSelected('THIRD')) {
-                          isDisabled = true;
-                        }
+                        const isDisabled = disabled;
                         return (
                           <SelectBoxCard
                             key={id}
@@ -445,57 +425,11 @@ export function CreateJobForm({
                             disabled={isDisabled}
                             onChange={checked => {
                               let selected = [...value];
-                              if (checked) {
-                                if (optionValue === 'FIRST') {
-                                  selected = Array.from(
-                                    new Set([...selected, 'FIRST'])
-                                  );
-                                } else if (optionValue === 'SECOND') {
-                                  selected = Array.from(
-                                    new Set([...selected, 'FIRST', 'SECOND'])
-                                  );
-                                } else if (optionValue === 'THIRD') {
-                                  selected = Array.from(
-                                    new Set([
-                                      ...selected,
-                                      'FIRST',
-                                      'SECOND',
-                                      'THIRD',
-                                    ])
-                                  );
-                                } else {
-                                  selected = Array.from(
+                              selected = checked
+                                ? Array.from(
                                     new Set([...selected, optionValue])
-                                  );
-                                }
-                              } else {
-                                if (optionValue === 'FIRST') {
-                                  // Only allow unselect if neither SECOND nor THIRD is selected
-                                  if (
-                                    !isSelected('SECOND') &&
-                                    !isSelected('THIRD')
-                                  ) {
-                                    selected = selected.filter(
-                                      v => v !== 'FIRST'
-                                    );
-                                  }
-                                } else if (optionValue === 'SECOND') {
-                                  // Only allow unselect if THIRD is not selected
-                                  if (!isSelected('THIRD')) {
-                                    selected = selected.filter(
-                                      v => v !== 'SECOND'
-                                    );
-                                  }
-                                } else if (optionValue === 'THIRD') {
-                                  selected = selected.filter(
-                                    v => v !== 'THIRD'
-                                  );
-                                } else {
-                                  selected = selected.filter(
-                                    v => v !== optionValue
-                                  );
-                                }
-                              }
+                                  )
+                                : selected.filter(v => v !== optionValue);
                               field.onChange(selected);
                             }}
                           />

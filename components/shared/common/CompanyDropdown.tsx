@@ -8,6 +8,7 @@ import {
   HEADER_MESSAGES,
 } from '@/constants/header-messages';
 import { cn } from '@/lib/utils';
+import { IconCheck } from '@tabler/icons-react';
 import { ChevronDown, Search } from 'lucide-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -17,6 +18,7 @@ export interface Company {
   name: string;
   icon: string;
   color: string;
+  is_default?: boolean;
 }
 
 interface CompanyDropdownProps {
@@ -116,23 +118,31 @@ export const CompanyDropdown: React.FC<CompanyDropdownProps> = ({
                     key={company.id}
                     onClick={() => handleSelect(company)}
                     className={cn(
-                      'flex items-center gap-3 py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors px-4',
+                      'flex items-center justify-between py-3 cursor-pointer hover:bg-[var(--card-hover)] transition-colors px-4',
                       index !== filteredCompanies.length - 1 &&
                         'border-b border-[var(--border-dark)]'
                     )}
                   >
-                    <div className='w-8 h-6 rounded-lg flex items-center justify-center truncate'>
-                      <Image
-                        src={company.icon}
-                        alt={company.name}
-                        width={20}
-                        height={20}
-                        className='w-5 h-5'
-                      />
+                    <div className='flex items-center gap-3 flex-1 min-w-0'>
+                      <div className='w-8 h-6 rounded-lg flex items-center justify-center truncate flex-shrink-0'>
+                        <Image
+                          src={company.icon}
+                          alt={company.name}
+                          width={20}
+                          height={20}
+                          className='w-5 h-5'
+                        />
+                      </div>
+                      <span className='text-[var(--text-dark)] font-medium truncate'>
+                        {company.name}
+                      </span>
                     </div>
-                    <span className='text-[var(--text-dark)] font-medium'>
-                      {company.name}
-                    </span>
+                    {selectedCompany?.id === company.id && (
+                      <IconCheck
+                        size={20}
+                        className='text-[var(--primary)] flex-shrink-0 ml-3'
+                      />
+                    )}
                   </div>
                 ))}
               </div>

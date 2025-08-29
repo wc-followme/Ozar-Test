@@ -15,7 +15,6 @@ import {
   PAGINATION,
   ROLE_IDS,
   ROUTES,
-  STORAGE_KEYS,
 } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
@@ -29,6 +28,7 @@ import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
   formatDate,
+  getCurrentUser,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@radix-ui/react-tabs';
@@ -204,21 +204,14 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
         });
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
 
-        // Get current user data from localStorage to determine admin role ID
-        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        // Get current user data using global utility function
+        const userData = getCurrentUser();
         let adminRoleId = null;
         let adminRoleUuid = null; // Default fallback
-        if (currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            // If current user is admin, use their role ID as reference
-            if (userData.role?.id) {
-              adminRoleId = userData.role.id;
-              adminRoleUuid = userData.role.uuid;
-            }
-          } catch (error) {
-            console.error('Error parsing user data from localStorage:', error);
-          }
+        if (userData?.role?.id) {
+          // If current user is admin, use their role ID as reference
+          adminRoleId = userData.role.id;
+          adminRoleUuid = userData.role.uuid;
         }
 
         setRoles(
@@ -578,7 +571,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
 
           <TabsContent value='about' className='py-4 md:py-6'>
             {/* About Section */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-borderlightgray p-3 md:p-5 mb-4 md:mb-6 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-2'>
                 {COMPANY_MESSAGES.ABOUT_LABEL}
               </div>
@@ -587,7 +580,7 @@ const CompanyDetails = ({ params }: CompanyDetailsPageProps) => {
               </div>
             </div>
             {/* Contact Info Row */}
-            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-[#EAECF0] p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
+            <div className='bg-[var(--white-background)] rounded-[12px] md:rounded-[16px] border border-borderlightgray p-3 md:p-5 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300'>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6 text-sm'>
                 <div className='min-w-0'>
                   <div className='font-normal text-[var(--text-secondary)] mb-1 text-sm'>

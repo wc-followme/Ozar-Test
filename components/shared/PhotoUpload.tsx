@@ -22,7 +22,7 @@ export function PhotoUpload({ onFileUpload }: PhotoUploadProps) {
   };
 
   return (
-    <div className='aspect-square w-full mx-auto lg:mx-0 rounded-lg overflow-hidden bg-[#00A8BF26]'>
+    <div className='aspect-square w-full mx-auto lg:mx-0 rounded-lg overflow-hidden bg-cyanwave-light'>
       <input
         ref={inputRef}
         type='file'

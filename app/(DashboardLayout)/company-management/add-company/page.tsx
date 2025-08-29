@@ -5,7 +5,7 @@ import AccessDenied from '@/components/shared/common/AccessDenied';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { CompanyInfoForm } from '@/components/shared/forms/CompanyinfoForm';
 import { useToast } from '@/components/ui/use-toast';
-import { CommonStatus, ROUTES } from '@/constants/common';
+import { CommonStatus, CUSTOM_EVENTS, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateCompanyRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -87,6 +87,11 @@ export default function AddCompanyPage() {
     }
   };
 
+  const handleDeletePhoto = () => {
+    setPhotoFile(null);
+    setFileKey('');
+  };
+
   const handleCreateCompany = async (data: CompanyCreateFormData) => {
     setFormLoading(true);
     try {
@@ -151,6 +156,10 @@ export default function AddCompanyPage() {
       showSuccessToast(
         extractApiSuccessMessage(response, COMPANY_MESSAGES.CREATE_SUCCESS)
       );
+
+      // Dispatch custom event to refresh companies list in Header
+      window.dispatchEvent(new CustomEvent(CUSTOM_EVENTS.COMPANY_CREATED));
+
       router.push(ROUTES.COMPANY_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
@@ -186,6 +195,7 @@ export default function AddCompanyPage() {
               <PhotoUploadField
                 photo={photoFile}
                 onPhotoChange={handlePhotoChange}
+                onDeletePhoto={handleDeletePhoto}
                 label={COMPANY_MESSAGES.UPLOAD_PHOTO_LABEL}
                 text={COMPANY_MESSAGES.UPLOAD_PHOTO_TEXT}
                 cardHeight='h-[265px]'

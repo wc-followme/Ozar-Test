@@ -106,6 +106,7 @@ export interface User {
   country_code: string;
   phone_number: string;
   profile_picture_url: string;
+  cover_image?: string;
   status: string;
   created_at: string;
   updated_at: string;
@@ -115,6 +116,9 @@ export interface User {
   address?: string;
   city?: string;
   pincode?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  isReviewed?: boolean;
   role: {
     id?: number | string; // Not provided in login response
     uuid: string;
@@ -124,6 +128,7 @@ export interface User {
     id?: number | string;
     uuid: string;
     name: string;
+    image?: string;
   };
 }
 
@@ -185,6 +190,7 @@ export interface UpdateUserRequest {
   country_code?: string;
   phone_number?: string;
   profile_picture_url?: string;
+  cover_image?: string;
   date_of_joining?: string;
   designation?: string;
   preferred_communication_method?: string;
@@ -282,6 +288,7 @@ export interface UpdateCompanyRequest {
   pincode?: string;
   projects?: string;
   image?: string;
+  cover_image?: string;
   is_default?: boolean;
   status?: 'ACTIVE' | 'INACTIVE';
 }
@@ -294,6 +301,72 @@ export interface UpdateCompanyResponse {
 
 // Company delete response
 export interface DeleteCompanyResponse {
+  statusCode: number;
+  message: string;
+}
+
+// Portfolio/Projects interfaces
+export interface PortfolioProject {
+  uuid: string;
+  name: string;
+  images?: string[];
+  videos?: string[];
+  company_uuid: string;
+  company_name: string;
+  created_at: string;
+  updated_at: string;
+  // Legacy fields for backward compatibility
+  id?: number;
+  title?: string;
+  type?: string;
+  year?: string;
+  image?: string;
+  imageCount?: number;
+  videoCount?: number;
+  company_id?: string;
+}
+
+export interface FetchPortfolioResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    data: PortfolioProject[];
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface CreateProjectRequest {
+  // DTO: name, images[], and videos[]
+  name: string;
+  images?: string[];
+  videos?: string[];
+  // Optional: if not provided, server may take from auth context
+  company_id?: string;
+}
+
+export interface CreatePortfolioResponse {
+  statusCode: number;
+  message: string;
+  data?: PortfolioProject;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  images?: string[];
+  videos?: string[];
+  company_id?: string;
+}
+
+export interface UpdatePortfolioResponse {
+  statusCode: number;
+  message: string;
+  data?: PortfolioProject;
+}
+
+export interface DeletePortfolioResponse {
   statusCode: number;
   message: string;
 }
@@ -388,36 +461,24 @@ export interface UserPermissions {
     assign_user: boolean;
     archive: boolean;
   };
-  categories: {
+  catalogue_services: {
     view: boolean;
     edit: boolean;
     archive: boolean;
-  };
-  trades: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  services: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  materials: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-  };
-  tools: {
-    view: boolean;
-    edit: boolean;
-    archive: boolean;
-    history: boolean;
   };
   jobs: {
     view: boolean;
     edit: boolean;
     archive: boolean;
+  };
+  templates: {
+    view: boolean;
+    edit: boolean;
+    archive: boolean;
+  };
+  global_settings: {
+    view: boolean;
+    edit: boolean;
   };
 }
 
@@ -454,6 +515,10 @@ export interface GetCompanyResponse {
     contractor_name: string;
     contractor_email: string;
     contractor_phone: string;
+    cover_image?: string;
+    averageRating?: number;
+    reviewCount?: number;
+    isReviewed?: boolean;
   };
 }
 
@@ -473,44 +538,89 @@ export interface ToolAsset {
   updated_by: string;
 }
 
-export interface Tool {
+// Services associated with a tool (new response shape)
+export interface ToolServiceItem {
+  id: number | string;
+  uuid?: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+}
+
+// Individual tool item (barcode) in the new response
+export interface ToolItem {
   id: number;
   uuid: string;
-  name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
-  status: 'ACTIVE' | 'INACTIVE';
+  barcode: string;
+  status: string;
+  condition: string;
   created_at: string;
   updated_at: string;
-  company_id?: string;
-  services: Array<{
-    id: number | string;
-    name: string;
-    status: string;
-  }>;
-  assets?: ToolAsset[];
 }
+
+// Unified Tool interface that supports both legacy and new API shapes
+export interface Tool {
+  // Common/new fields
+  id?: number;
+  uuid: string;
+  name: string;
+  brand_name?: string;
+  image_url?: string;
+  total_quantity?: number;
+  available_quantity?: number;
+  maintenance_quantity?: number;
+  lost_quantity?: number;
+  assigned_quantity?: number;
+  status: 'ACTIVE' | 'INACTIVE' | string;
+  created_at?: string;
+  updated_at?: string;
+  created_by?: number;
+  updated_by?: number;
+  company?: { uuid: string; name: string };
+  services?: ToolServiceItem[];
+  tool_items?: ToolItem[];
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+}
+
+// New tools response shape
+export interface FetchToolsEnvelopeNew {
+  tools: Tool[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+// Old nested response shape
+export interface FetchToolsEnvelopeOld {
+  data: Tool[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export type FetchToolsResponseData =
+  | Tool[]
+  | FetchToolsEnvelopeNew
+  | FetchToolsEnvelopeOld;
 
 export interface FetchToolsResponse {
   statusCode: number;
   message: string;
-  data: Tool[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  data: FetchToolsResponseData;
 }
 
 export interface CreateToolRequest {
   name: string;
-  available_quantity: number;
-  manufacturer: string;
-  tool_assets: string;
-  service_ids: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
+  service_ids?: string;
+  barcodes?: string[];
   company_id?: string | number;
 }
 
@@ -522,10 +632,12 @@ export interface CreateToolResponse {
 
 export interface UpdateToolRequest {
   name?: string;
-  available_quantity?: number;
-  manufacturer?: string;
-  tool_assets?: string;
+  brand_name?: string;
+  video_tutorial_urls?: string[];
+  video_tutorial_link?: string[];
+  image_url?: string;
   service_ids?: string;
+  barcodes?: string[];
   status?: 'ACTIVE' | 'INACTIVE';
   company_id?: string | number;
 }
@@ -545,6 +657,92 @@ export interface GetToolResponse {
   statusCode: number;
   message: string;
   data: Tool;
+}
+
+export interface GetToolQuantityStatisticsResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    uuid: string;
+    name: string;
+    available_quantity: number;
+    maintenance_quantity: number;
+    lost_quantity: number;
+    assigned_quantity: number;
+    total_quantity: number;
+  };
+}
+
+// Tool Items API interfaces
+export interface ToolItemDetail {
+  id: number;
+  uuid: string;
+  barcode: string;
+  status: 'available' | 'assigned' | 'maintenance' | 'lost';
+  condition: 'excellent' | 'good' | 'decent' | 'poor';
+  assigned_job_id?: number;
+  assigned_by_id?: number;
+  returned_by_id?: number;
+  due_date?: string;
+  returned_date?: string;
+  assigned_date?: string;
+  assigned_status?: 'temporary' | 'permanent';
+  issue?: string;
+  lost_date?: string;
+  created_at: string;
+  updated_at: string;
+  tool_id?: number;
+  tool_uuid?: string;
+  tool?: {
+    id: number;
+    uuid: string;
+    company_id: string;
+    name: string;
+    brand_name: string;
+    video_tutorial_urls: string[];
+    video_tutorial_link: string[];
+    image_url: string;
+    total_quantity: number;
+    available_quantity: number;
+    maintenance_quantity: number;
+    lost_quantity: number;
+    assigned_quantity: number;
+    created_at: string;
+    updated_at: string;
+    created_by: number;
+    updated_by: number;
+    status: string;
+  };
+  returnedBy?: {
+    id: number;
+    name: string;
+    profile_picture_url?: string;
+    designation?: string;
+  } | null;
+  assignedBy?: {
+    id: number;
+    name: string;
+    profile_picture_url?: string;
+    designation?: string;
+  } | null;
+  assignedJob?: {
+    id: number;
+    name: string;
+    project_id?: string | number;
+    uuid?: string;
+  } | null;
+}
+
+export interface FetchToolItemsResponse {
+  statusCode: number;
+  message: string;
+  data: {
+    toolItems: ToolItemDetail[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 
 // Service interface for dropdown
@@ -845,13 +1043,15 @@ class ApiService {
     company_id = '',
     search = '',
     status = 'ACTIVE',
+    user_type = '',
   }: {
     page?: number;
     limit?: number;
     role_id?: string | number;
     company_id?: string | number;
     search?: string;
-    status?: 'ACTIVE' | 'INACTIVE' | '';
+    status?: 'ACTIVE' | 'INACTIVE';
+    user_type?: string;
   }): Promise<FetchUsersResponse> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -860,6 +1060,7 @@ class ApiService {
     if (company_id) params.append('company_id', String(company_id));
     if (search) params.append('search', search);
     if (status) params.append('status', status);
+    if (user_type) params.append('user_type', user_type);
     return this.makeRequest(`/users?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -923,6 +1124,7 @@ class ApiService {
     phone_number = '',
     email = '',
     role_id = '',
+    company_id = '',
     page = 1,
     limit = 10,
   }: {
@@ -930,6 +1132,7 @@ class ApiService {
     phone_number?: string;
     email?: string;
     role_id?: string | number;
+    company_id?: string | number;
     page?: number;
     limit?: number;
   }): Promise<any> {
@@ -938,8 +1141,32 @@ class ApiService {
     if (phone_number) params.append('phone_number', phone_number);
     if (email) params.append('email', email);
     if (role_id) params.append('role_id', String(role_id));
+    if (company_id) params.append('company_id', String(company_id));
     params.append('page', String(page));
     params.append('limit', String(limit));
+    return this.makeRequest(`/users/dropdown?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  /**
+   * Get users dropdown for forms (simplified version)
+   */
+  async fetchUsersDropdown({
+    company_id,
+    page = 1,
+    limit = 10,
+  }: {
+    company_id: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('company_id', company_id);
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+
     return this.makeRequest(`/users/dropdown?${params.toString()}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
@@ -989,6 +1216,106 @@ class ApiService {
       method: 'PATCH',
       headers: this.getRoleHeaders(),
       body: JSON.stringify({ status }),
+    });
+  }
+
+  // Projects management methods
+  async fetchProjects({
+    page = 1,
+    limit = 10,
+    company_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id?: string;
+  }): Promise<FetchPortfolioResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(company_id && { company_id }),
+    });
+
+    return this.makeRequest(`/companies/projects?${params}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createProject(
+    data: CreateProjectRequest
+  ): Promise<CreatePortfolioResponse> {
+    return this.makeRequest('/companies/projects', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProject(
+    uuid: string,
+    data: UpdateProjectRequest
+  ): Promise<UpdatePortfolioResponse> {
+    return this.makeRequest(`/companies/projects/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProject(uuid: string): Promise<DeletePortfolioResponse> {
+    return this.makeRequest(`/companies/projects/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // User projects management methods
+  async fetchUserProjects({
+    page = 1,
+    limit = 10,
+    user_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    user_id?: string;
+  }): Promise<FetchPortfolioResponse> {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(user_id && { user_id }),
+    });
+
+    return this.makeRequest(`/users/projects?${params}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createUserProject(
+    data: CreateProjectRequest
+  ): Promise<CreatePortfolioResponse> {
+    return this.makeRequest('/users/projects', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUserProject(
+    uuid: string,
+    data: UpdateProjectRequest
+  ): Promise<UpdatePortfolioResponse> {
+    return this.makeRequest(`/users/projects/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUserProject(uuid: string): Promise<DeletePortfolioResponse> {
+    return this.makeRequest(`/users/projects/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
     });
   }
 
@@ -1119,6 +1446,205 @@ class ApiService {
   async deleteCategory(uuid: string): Promise<DeleteCategoryResponse> {
     return this.makeRequest(`/categories/${uuid}`, {
       method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch categories with services
+  async fetchCategoriesWithServices({
+    page = 1,
+    limit = 10,
+    search = '',
+    status = 'ACTIVE',
+    sortBy = 'name',
+    sortOrder = 'ASC',
+    company_id = '',
+  }: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: 'ACTIVE' | 'INACTIVE' | '';
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+    company_id?: string | number;
+  }): Promise<FetchCategoriesResponse> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+    if (company_id) params.append('company_id', String(company_id));
+
+    return this.makeRequest(`/categories/with-services?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Create company review
+  async createCompanyReview(payload: {
+    company_id: string;
+    rating: number;
+    review: string;
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data?: any;
+  }> {
+    return this.makeRequest('/companies/reviews', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Create user review
+  async createUserReview(payload: {
+    user_id: string;
+    rating: number;
+    review: string;
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data?: any;
+  }> {
+    return this.makeRequest('/users/reviews', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch company reviews
+  async fetchCompanyReviews({
+    page = 1,
+    limit = 10,
+    company_id = '',
+    reviewer_id = '',
+    rating,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id?: string | number;
+    reviewer_id?: string | number;
+    rating?: number | string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data: {
+      data: Array<{
+        id: number;
+        uuid: string;
+        company_id: string;
+        reviewer_id: string;
+        rating: number;
+        review: string;
+        created_at: string;
+        updated_at: string;
+        reviewer?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          profile_image?: string;
+        };
+        company?: {
+          id: number;
+          uuid: string;
+          name: string;
+        };
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (company_id) params.append('company_id', String(company_id));
+    if (reviewer_id) params.append('reviewer_id', String(reviewer_id));
+    if (rating) params.append('rating', String(rating));
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    return this.makeRequest(`/companies/reviews?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch user reviews
+  async fetchUserReviews({
+    page = 1,
+    limit = 10,
+    user_id = '',
+    reviewer_id = '',
+    rating,
+    sortBy = 'created_at',
+    sortOrder = 'DESC',
+  }: {
+    page?: number;
+    limit?: number;
+    user_id?: string | number;
+    reviewer_id?: string | number;
+    rating?: number | string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<{
+    statusCode: number;
+    message: string;
+    data: {
+      data: Array<{
+        id: number;
+        uuid: string;
+        user_id: string;
+        reviewer_id: string;
+        rating: number;
+        review: string;
+        created_at: string;
+        updated_at: string;
+        reviewer?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+          profile_image?: string;
+        };
+        user?: {
+          id: number;
+          uuid: string;
+          first_name: string;
+          last_name: string;
+          email: string;
+        };
+      }>;
+      total: number;
+      page: number;
+      limit: number;
+      totalPages: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    if (user_id) params.append('user_id', String(user_id));
+    if (reviewer_id) params.append('reviewer_id', String(reviewer_id));
+    if (rating) params.append('rating', String(rating));
+    if (sortBy) params.append('sortBy', sortBy);
+    if (sortOrder) params.append('sortOrder', sortOrder);
+
+    return this.makeRequest(`/users/reviews?${params.toString()}`, {
+      method: 'GET',
       headers: this.getRoleHeaders(),
     });
   }
@@ -1278,6 +1804,18 @@ class ApiService {
     });
   }
 
+  // Update trade status
+  async updateTradeStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/trades/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
+    });
+  }
+
   // Get trades dropdown
   async getTradesDropdown(params?: {
     company_id?: string | number;
@@ -1306,6 +1844,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     trade_id = '',
+    trade_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1315,6 +1854,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     trade_id?: string | number;
+    trade_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1325,6 +1865,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (trade_id) params.append('trade_id', String(trade_id));
+    if (trade_uuid) params.append('trade_uuid', trade_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/services?${params.toString()}`, {
       method: 'GET',
@@ -1354,6 +1895,18 @@ class ApiService {
     return this.makeRequest(`/services/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update service status
+  async updateServiceStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/services/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -1433,6 +1986,7 @@ class ApiService {
     is_active = true,
     status = 'ACTIVE',
     service_id = '',
+    service_uuid = '',
     company_id = '',
   }: {
     page?: number;
@@ -1442,6 +1996,7 @@ class ApiService {
     is_active?: boolean;
     status?: string;
     service_id?: string | number;
+    service_uuid?: string;
     company_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
@@ -1452,6 +2007,7 @@ class ApiService {
     if (is_active !== undefined) params.append('is_active', String(is_active));
     if (status) params.append('status', status);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/materials?${params.toString()}`, {
       method: 'GET',
@@ -1481,6 +2037,18 @@ class ApiService {
     return this.makeRequest(`/materials/${uuid}`, {
       method: 'GET',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update material status
+  async updateMaterialStatus(
+    uuid: string,
+    status: 'ACTIVE' | 'INACTIVE'
+  ): Promise<any> {
+    return this.makeRequest(`/materials/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({ status }),
     });
   }
 
@@ -1518,6 +2086,7 @@ class ApiService {
     limit = 10,
     name = '',
     service_id = '',
+    service_uuid = '',
     status = 'ACTIVE',
     company_id = '',
   }: {
@@ -1525,6 +2094,7 @@ class ApiService {
     limit?: number;
     name?: string;
     service_id?: string | number;
+    service_uuid?: string;
     status?: 'ACTIVE' | 'INACTIVE' | '';
     company_id?: string | number;
   }): Promise<FetchToolsResponse> {
@@ -1533,6 +2103,7 @@ class ApiService {
     params.append('limit', String(limit));
     if (name) params.append('name', name);
     if (service_id) params.append('service_id', String(service_id));
+    if (service_uuid) params.append('service_uuid', service_uuid);
     if (status) params.append('status', status);
     if (company_id) params.append('company_id', String(company_id));
     return this.makeRequest(`/tools?${params.toString()}`, {
@@ -1544,11 +2115,13 @@ class ApiService {
   // Job management API
   async createJob(payload: {
     client_id?: string | number;
-    client_name: string;
-    client_email: string;
-    client_phone_number: string;
-    job_boxes_step: string;
+    client_name?: string;
+    client_email?: string;
+    client_phone_number?: string;
+    job_boxes_step: string[] | string;
     job_privacy: string;
+    question_json?: any;
+    company_id?: string;
   }): Promise<any> {
     return this.makeRequest('/jobs', {
       method: 'POST',
@@ -1564,6 +2137,7 @@ class ApiService {
     status?: string;
     type?: string;
     job_status?: string;
+    company_id?: string | number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -1571,6 +2145,29 @@ class ApiService {
     if (params?.status) queryParams.append('status', params.status);
     if (params?.type) queryParams.append('type', params.type);
     if (params?.job_status) queryParams.append('job_status', params.job_status);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch jobs for dropdown (for todo form)
+  async fetchJobsDropdown(params?: {
+    page?: number;
+    limit?: number;
+    type?: string;
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.type) queryParams.append('type', params.type);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -1593,8 +2190,115 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
-  async fetchJobStatistics(): Promise<any> {
-    return this.makeRequest('/jobs/statistics', {
+
+  async getToolQuantityStatistics(
+    uuid: string,
+    companyId?: string | number
+  ): Promise<GetToolQuantityStatisticsResponse> {
+    const queryParams = new URLSearchParams();
+    if (companyId) {
+      queryParams.append('company_id', companyId.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/tools/statistics/quantities/${uuid}?${queryParams.toString()}`
+      : `/tools/statistics/quantities/${uuid}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async fetchToolItems(params?: {
+    page?: number;
+    limit?: number;
+    barcode?: string;
+    search?: string;
+    tool_id?: number;
+    tool_uuid?: string;
+    status?: 'available' | 'assigned' | 'maintenance' | 'lost';
+    condition?: 'excellent' | 'good' | 'decent' | 'poor';
+    assigned_job_id?: number;
+    assigned_by_id?: number;
+    returned_by_id?: number;
+    assigned_status?: 'temporary' | 'permanent';
+    issue?: string;
+    company_id?: string | number;
+    sort_by?: 'created_at' | 'updated_at' | 'id' | 'barcode' | 'assigned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<FetchToolItemsResponse> {
+    const queryParams = new URLSearchParams();
+
+    // Add all optional parameters
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.barcode) queryParams.append('barcode', params.barcode);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.tool_id)
+      queryParams.append('tool_id', params.tool_id.toString());
+    if (params?.tool_uuid) queryParams.append('tool_uuid', params.tool_uuid);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.condition) queryParams.append('condition', params.condition);
+    if (params?.assigned_job_id)
+      queryParams.append('assigned_job_id', params.assigned_job_id.toString());
+    if (params?.assigned_by_id)
+      queryParams.append('assigned_by_id', params.assigned_by_id.toString());
+    if (params?.returned_by_id)
+      queryParams.append('returned_by_id', params.returned_by_id.toString());
+    if (params?.assigned_status)
+      queryParams.append('assigned_status', params.assigned_status);
+    if (params?.issue) queryParams.append('issue', params.issue);
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = queryParams.toString()
+      ? `/tool-items?${queryParams.toString()}`
+      : '/tool-items';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateToolItem(
+    uuid: string,
+    payload: {
+      status?: 'available' | 'assigned' | 'maintenance' | 'lost';
+      condition?: 'excellent' | 'good' | 'decent' | 'poor';
+      assigned_job_id?: number | string;
+      assigned_by_id?: number | string;
+      returned_by_id?: number | string;
+      due_date?: string;
+      returned_date?: string;
+      assigned_date?: string;
+      assigned_status?: 'temporary' | 'permanent';
+      issue?: string;
+      lost_date?: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/tool-items/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+  async fetchJobStatistics(params?: {
+    company_id?: string | number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/jobs/statistics?${queryParams.toString()}`
+      : '/jobs/statistics';
+
+    return this.makeRequest(url, {
       method: 'GET',
       headers: this.getRoleHeaders(),
     });
@@ -1666,13 +2370,537 @@ class ApiService {
     });
   }
 
+  async addToolItemBarcodes(
+    toolUuid: string,
+    payload: { barcodes: string[] }
+  ): Promise<any> {
+    return this.makeRequest('/tool-items/tool-barcodes', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({
+        tool_uuid: toolUuid,
+        barcodes: payload.barcodes,
+      }),
+    });
+  }
+
+  async getToolItemByBarcode(
+    identifier: string,
+    toolUuid: string
+  ): Promise<any> {
+    return this.makeRequest(
+      `/tool-items/find/${identifier}?tool_uuid=${toolUuid}`,
+      {
+        method: 'GET',
+        headers: this.getRoleHeaders(),
+      }
+    );
+  }
+
+  async getToolItemHistory(
+    toolItemUuid: string,
+    historyType: 'borrowed' | 'maintenance'
+  ): Promise<any> {
+    return this.makeRequest(
+      `/tool-items/${toolItemUuid}/history?type=${historyType}`,
+      {
+        method: 'GET',
+        headers: this.getRoleHeaders(),
+      }
+    );
+  }
+
+  async getBorrowedHistory(params?: {
+    page?: number;
+    limit?: number;
+    toolItemId?: number;
+    borrowedById?: number;
+    jobId?: number;
+    search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.borrowedById)
+      queryParams.append('borrowedById', params.borrowedById.toString());
+    if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = `/tool-history/borrowed${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getMaintenanceHistory(params?: {
+    page?: number;
+    limit?: number;
+    toolItemId?: number;
+    returnedById?: number;
+    jobId?: number;
+    search?: string;
+    sort_by?:
+      | 'created_at'
+      | 'updated_at'
+      | 'id'
+      | 'assigned_date'
+      | 'returned_date';
+    sort_order?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.returnedById)
+      queryParams.append('returnedById', params.returnedById.toString());
+    if (params?.jobId) queryParams.append('jobId', params.jobId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sort_by) queryParams.append('sort_by', params.sort_by);
+    if (params?.sort_order) queryParams.append('sort_order', params.sort_order);
+
+    const url = `/tool-history/maintenance${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getToolHistoryStatistics(params?: {
+    toolItemId?: number;
+    toolId?: number;
+    search?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.toolItemId)
+      queryParams.append('toolItemId', params.toolItemId.toString());
+    if (params?.toolId) queryParams.append('toolId', params.toolId.toString());
+    if (params?.search) queryParams.append('search', params.search);
+
+    const url = `/tool-history/statistics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async getToolItemDetail(toolItemUuid: string): Promise<any> {
+    return this.makeRequest(`/tool-items/${toolItemUuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   async getCompaniesDropdown(): Promise<any> {
     return this.makeRequest('/companies/dropdown', {
       headers: this.getRoleHeaders(),
     });
   }
 
+  // Five-box system API methods
+  async getBoxSettings(params?: {
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.company_id) {
+      queryParams.append('company_id', params.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+  // Create todo list
+  async createTodoList(payload: {
+    job_uuid: string;
+    title: string;
+    date: string;
+    user_uuids: string[];
+    items: Array<{ description: string }>;
+  }): Promise<any> {
+    return this.makeRequest('/todo-lists', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch todo lists
+  async fetchTodoLists(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.makeRequest(`/todo-lists?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateBoxSettings(payload: {
+    default_selected_json?: Array<{ id: string; enabled: boolean }>;
+    field_status_json?: any;
+    question_json?: any;
+    company_id?: string | number | undefined;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (payload.company_id) {
+      queryParams.append('company_id', payload.company_id.toString());
+    }
+
+    const url = queryParams.toString()
+      ? `/companies/box-settings?${queryParams.toString()}`
+      : '/companies/box-settings';
+
+    return this.makeRequest(url, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Update todo item completion status
+  async updateTodoItemCompletion(
+    itemUuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/items/${itemUuid}/set-completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ is_completed: isCompleted }),
+    });
+  }
+
+  // Fetch single todo list by ID
+  async fetchTodoListById(uuid: string): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update todo list
+  async updateTodoList(
+    uuid: string,
+    payload: {
+      title: string;
+      date: string;
+      user_uuids: string[];
+      items: Array<{
+        uuid?: string; // Optional for new items
+        description: string;
+      }>;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/todo-lists/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
   // Removed testConnection and all debug code
+  // Create appointment
+  async createAppointment(payload: {
+    agenda: string;
+    appointment_with: string;
+    date: string;
+    start_time: string;
+    end_time: string;
+    address: string;
+    notes: string;
+    user_uuids: string;
+  }): Promise<any> {
+    return this.makeRequest('/appointments', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Fetch appointments
+  async fetchAppointments(params?: {
+    page?: number;
+    limit?: number;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+
+    return this.makeRequest(`/appointments?${queryParams.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Fetch single appointment by ID
+  async fetchAppointmentById(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Update appointment
+  async updateAppointment(
+    uuid: string,
+    payload: {
+      agenda: string;
+      appointment_with: string;
+      date: string;
+      start_time: string;
+      end_time: string;
+      address: string;
+      notes: string;
+      user_uuids: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  // Mark appointment as completed
+  async markAppointmentCompleted(
+    uuid: string,
+    isCompleted: boolean
+  ): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}/completion`, {
+      method: 'PATCH',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        is_completed: isCompleted,
+      }),
+    });
+  }
+
+  // Delete appointment
+  async deleteAppointment(uuid: string): Promise<any> {
+    return this.makeRequest(`/appointments/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Generic request method for custom endpoints
+  async makeGenericRequest(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<any> {
+    return this.makeRequest(endpoint, {
+      headers: {
+        ...this.getRoleHeaders(),
+        ...options.headers,
+      },
+      ...options,
+    });
+  }
+
+  // Public APIs for estimation (no auth required)
+  async fetchTradesPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    category_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    category_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (category_id) {
+      params.append('category_id', String(category_id));
+    }
+
+    return this.makeRequest(`/trades/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchServicesPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    trade_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    trade_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (trade_id) {
+      params.append('trade_id', String(trade_id));
+    }
+
+    return this.makeRequest(`/services/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchMaterialsPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    service_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    service_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
+
+    return this.makeRequest(`/materials/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchToolsPublic({
+    page = 1,
+    limit = 10,
+    company_id,
+    service_id,
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    service_id?: string | number;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
+
+    return this.makeRequest(`/tools/public?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        'app-type': 'mobile',
+        'Accept-Language': 'en',
+        'Content-Type': 'application/json',
+      },
+    });
+  }
+
+  async fetchTemplates({
+    page = 1,
+    limit = 10,
+    company_id,
+    status = 'ACTIVE',
+  }: {
+    page?: number;
+    limit?: number;
+    company_id: string | number;
+    status?: string;
+  }): Promise<any> {
+    const params = new URLSearchParams();
+    params.append('page', String(page));
+    params.append('limit', String(limit));
+    params.append('company_id', String(company_id));
+    params.append('status', status);
+
+    return this.makeRequest(`/templates?${params.toString()}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Archive template
+  async archiveTemplate(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  // Get template by UUID
+  async getTemplateById(uuid: string): Promise<any> {
+    return this.makeRequest(`/templates/${uuid}`, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

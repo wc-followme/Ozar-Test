@@ -24,17 +24,21 @@ export const SERVICE_MESSAGES = {
   // Menu options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RETRIEVE_MENU: 'Retrieve',
 
   // Success messages
   CREATE_SUCCESS: 'Service created successfully',
   UPDATE_SUCCESS: 'Service updated successfully',
   DELETE_SUCCESS: 'Service deleted successfully',
+  RETRIEVE_SUCCESS: 'Service retrieved successfully',
 
   // Error messages
   CREATE_ERROR: 'Failed to create service',
   UPDATE_ERROR: 'Failed to update service',
   DELETE_ERROR: 'Failed to delete service',
   FETCH_ERROR: 'Failed to fetch services',
+  RETRIEVE_ERROR: 'Failed to retrieve service',
+  DEFAULT_SERVICE_DELETE_ERROR: 'Cannot archive default service',
 
   // Delete confirmation
   DELETE_CONFIRM_TITLE: 'Delete Service',
@@ -43,9 +47,12 @@ export const SERVICE_MESSAGES = {
 
   // Loading and empty states
   LOADING_SERVICES: 'Loading services...',
+  LOADING_SERVICES_DROPDOWN: 'Loading services...',
   NO_SERVICES_FOUND: 'No services found',
   NO_SERVICES_FOUND_DESCRIPTION:
     "You haven't created any services yet. Start by adding your first one to organize your services.",
+  ARCHIVED_SERVICES_TITLE: 'Archived Services',
+  NO_ARCHIVED_SERVICES_FOUND: 'No archived services found',
 
   // Validation messages
   SERVICE_NAME_REQUIRED: 'Service name is required',

@@ -107,13 +107,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check both localStorage and cookies for backward compatibility
       const savedAuth =
         localStorage.getItem(STORAGE_KEYS.IS_AUTHENTICATED) ||
-        getCookie(STORAGE_KEYS.IS_AUTHENTICATED_COOKIE);
+        getCookie(STORAGE_KEYS.IS_AUTHENTICATED_COOKIE) ||
+        getCookie('is_authenticated'); // Server-side cookie name
       const savedUser =
         localStorage.getItem(STORAGE_KEYS.USER) ||
-        getCookie(STORAGE_KEYS.USER_DATA);
+        getCookie(STORAGE_KEYS.USER_DATA) ||
+        getCookie('user_data'); // Server-side cookie name
+
       const token =
         localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-        getCookie(STORAGE_KEYS.AUTH_TOKEN);
+        getCookie(STORAGE_KEYS.AUTH_TOKEN) ||
+        getCookie('auth_token'); // Server-side cookie name
 
       const isAuthenticated = savedAuth === 'true';
       const hasUserData = savedUser && token;
@@ -121,11 +125,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (isAuthenticated && hasUserData) {
         setIsAuthenticated(true);
         try {
-          setUser(JSON.parse(savedUser));
+          const parsedUser = JSON.parse(savedUser);
+          setUser(parsedUser);
         } catch {
           // If parsing fails, clear everything
           logout();
         }
+      } else {
+        // If not authenticated, ensure state is cleared
+        setIsAuthenticated(false);
+        setUser(null);
       }
       setIsLoading(false);
     };
@@ -163,7 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           role,
           company,
         } = loginUserData;
-        console.log('loginUserData', loginUserData);
+
         const { id: role_id, uuid: role_uuid, name: role_name } = role;
         const { uuid: company_uuid, name: company_name } = company;
         // Transform login user data to match User interface

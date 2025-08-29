@@ -1,13 +1,9 @@
 'use client';
 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { JOB_PRIVACY_OPTIONS } from '@/constants/common';
 import { cn } from '@/lib/utils';
 import { Check } from 'lucide-react';
-
-const options = [
-  { label: 'Public Job', value: 'PUBLIC' },
-  { label: 'Private Job', value: 'PRIVATE' },
-];
 
 export function RadioGroupStripe({
   value,
@@ -22,7 +18,7 @@ export function RadioGroupStripe({
       onValueChange={onChange}
       className='flex items-center gap-2 sm:gap-4 w-full'
     >
-      {options.map(({ value: optionValue, label: optionLabel }) => (
+      {JOB_PRIVACY_OPTIONS.map(({ value: optionValue, label: optionLabel }) => (
         <label
           key={optionValue}
           htmlFor={optionValue}

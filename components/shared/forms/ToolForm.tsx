@@ -4,13 +4,16 @@ import { TOOL_MESSAGES } from '@/app/(DashboardLayout)/tools-management/tool-mes
 import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
 import MultiSelect from '@/components/shared/common/MultiSelect';
 import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
+import { QRCodeSection } from '@/components/shared/common/QRCodeSection';
+import { VideoTutorialSection } from '@/components/shared/common/VideoTutorialSection';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { STORAGE_KEYS } from '@/constants/common';
+import { APP_CONFIG, UPLOAD_PURPOSES } from '@/constants/common';
 import { apiService, Service } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
-import { cn } from '@/lib/utils';
+import { cn, getCompanyId } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useCallback, useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -20,11 +23,7 @@ import * as yup from 'yup';
 // Validation schema
 const toolFormSchema = yup.object({
   name: yup.string().required(TOOL_MESSAGES.NAME_REQUIRED),
-  manufacturer: yup.string().required(TOOL_MESSAGES.MANUFACTURER_REQUIRED),
-  available_quantity: yup
-    .number()
-    .min(1, TOOL_MESSAGES.QUANTITY_MIN)
-    .required(TOOL_MESSAGES.QUANTITY_REQUIRED),
+  brandName: yup.string().required('Brand name is required.'),
   services: yup.array().min(1, TOOL_MESSAGES.SERVICES_REQUIRED),
 });
 
@@ -35,22 +34,26 @@ interface ToolFormProps {
   uploading?: boolean;
   onSubmit: (data: {
     name: string;
-    available_quantity: number;
-    manufacturer: string;
-    tool_assets: string;
+    brandName: string;
+    image_url: string;
     service_ids: string;
+    video_tutorial_urls?: string[];
+    video_tutorial_links?: string[];
+    barcodes?: string[];
   }) => void;
   loading?: boolean;
   onCancel?: () => void;
   setUploading?: (uploading: boolean) => void;
   setFileKey?: (fileKey: string) => void;
   existingImageUrl?: string | undefined;
-  existingToolAssets?: string;
   initialValues?: {
     name?: string;
-    available_quantity?: number;
-    manufacturer?: string;
+    brandName?: string;
     services?: (string | number)[];
+    videos?: File[];
+    videoLinks?: string[];
+    toolIds?: Array<{ id: string; toolId: string; barcode: string }>;
+    image_url?: string;
   };
   isEdit?: boolean;
 }
@@ -66,7 +69,6 @@ const ToolForm: React.FC<ToolFormProps> = ({
   setUploading,
   setFileKey,
   existingImageUrl,
-  existingToolAssets,
   initialValues,
   isEdit = false,
 }) => {
@@ -74,6 +76,16 @@ const ToolForm: React.FC<ToolFormProps> = ({
   const [services, setServices] = useState<Service[]>([]);
   const [loadingServices, setLoadingServices] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+
+  const { handleAuthError } = useAuth();
+
+  // Destructure initialValues for form default values
+  const {
+    name: initialName,
+    brandName: initialBrandName,
+    services: initialServices,
+    image_url: initialImageUrl,
+  } = initialValues || {};
 
   const {
     control,
@@ -83,72 +95,99 @@ const ToolForm: React.FC<ToolFormProps> = ({
   } = useForm({
     resolver: yupResolver(toolFormSchema),
     defaultValues: {
-      name: initialValues?.name || '',
-      manufacturer: initialValues?.manufacturer || '',
-      available_quantity: initialValues?.available_quantity || 1,
-      services:
-        initialValues?.services?.map(s => s.toString()).filter(Boolean) || [],
+      name: initialName || '',
+      brandName: initialBrandName || '',
+      services: initialServices?.map(s => s.toString()).filter(Boolean) || [],
     },
   });
 
-  // Update form state when initialValues change (for switching between create/edit modes)
+  // Destructure initialValues for cleaner state initialization
+  const {
+    videoLinks: initialVideoLinks,
+    toolIds: initialToolIds,
+    videos: initialVideos,
+  } = initialValues || {};
+
+  // State for videos and QR codes
+  const [videos, setVideos] = useState<File[]>([]);
+  const [videoLinks, setVideoLinks] = useState<string[]>(
+    initialVideoLinks || []
+  );
+  const [barcodes, setBarcodes] = useState<string[]>([]);
+
+  // State for validation error messages
+  const [videoLinkError, setVideoLinkError] = useState<string>('');
+
+  // Clear error when video links change
+  useEffect(() => {
+    if (videoLinkError && videoLinks.every(link => link.trim())) {
+      setVideoLinkError('');
+    }
+  }, [videoLinks, videoLinkError]);
+
+  // State for existing barcodes with toolId information (for edit mode)
+  const [existingBarcodes, setExistingBarcodes] = useState<
+    Array<{ id: string; toolId: string; barcode: string }>
+  >(initialToolIds || []);
+
+  // State for existing video URLs (for edit mode)
+  const [existingVideoUrls, setExistingVideoUrls] = useState<string[]>(
+    Array.isArray(initialVideos)
+      ? initialVideos.filter(v => typeof v === 'string')
+      : []
+  );
+
+  // Initialize form only once when component first mounts
   const initializeForm = useCallback(() => {
     if (isEdit && initialValues) {
+      // Destructure initialValues for cleaner code
+      const { name, brandName, services, videoLinks, toolIds, videos } =
+        initialValues;
+
       // Edit mode - populate with existing data
       reset({
-        name: initialValues.name || '',
-        manufacturer: initialValues.manufacturer || '',
-        available_quantity: initialValues.available_quantity || 1,
-        services:
-          initialValues.services?.map(s => s.toString()).filter(Boolean) || [],
+        name: name || '',
+        brandName: brandName || '',
+        services: services?.map(s => s.toString()).filter(Boolean) || [],
       });
+      setVideos([]); // New videos to upload
+      setVideoLinks(videoLinks || []); // Existing video links
+      setBarcodes([]); // New barcodes to add
+      setExistingBarcodes(toolIds || []); // Existing barcodes with toolId
+      setExistingVideoUrls(
+        Array.isArray(videos) ? videos.filter(v => typeof v === 'string') : []
+      ); // Existing video URLs
+      setImageUrl(initialImageUrl || ''); // Set existing image URL
     } else if (!isEdit) {
       // Create mode - reset to empty form
       reset({
         name: '',
-        manufacturer: '',
-        available_quantity: 1,
+        brandName: '',
         services: [],
       });
+      setVideos([]);
+      setVideoLinks([]);
+      setBarcodes([]);
+      setExistingBarcodes([]);
+      setImageUrl(''); // Clear image URL for create mode
     }
   }, [isEdit, initialValues, reset]);
 
   useEffect(() => {
-    // Only initialize once when component mounts or when switching between create/edit modes
+    // Only initialize once when component first mounts
     if (!isFormInitialized) {
       initializeForm();
       setIsFormInitialized(true);
     }
   }, [isFormInitialized, initializeForm]);
 
-  // Handle mode switching (create to edit or vice versa)
-  useEffect(() => {
-    // Only reset when switching modes, not during normal data entry
-    if (isFormInitialized) {
-      const currentMode = isEdit ? 'edit' : 'create';
-      const hasInitialValues = !!initialValues;
-
-      // If switching from create to edit mode with data, or edit to create mode
-      if (
-        (currentMode === 'edit' && hasInitialValues) ||
-        (currentMode === 'create' && !hasInitialValues)
-      ) {
-        // Add a small delay to ensure we're not in the middle of user input
-        const timer = setTimeout(() => {
-          initializeForm();
-        }, 100);
-
-        return () => clearTimeout(timer);
-      }
-    }
-    return undefined;
-  }, [isEdit, initialValues, isFormInitialized, initializeForm]);
-
   // Handle photo change with upload
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
       setPhoto(null);
       setFileKey?.('');
+      // Clear the image URL when photo is removed
+      setImageUrl('');
       return;
     }
 
@@ -165,18 +204,29 @@ const ToolForm: React.FC<ToolFormProps> = ({
         fileName: generatedFileName,
         fileType: file.type,
         fileSize: file.size,
-        purpose: 'tool',
+        purpose: UPLOAD_PURPOSES.TOOL,
         customPath: '',
       });
 
       await uploadFileToPresignedUrl(presigned.data['uploadUrl'], file);
-      setFileKey?.(presigned.data['fileKey'] || '');
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      // setErrors(prev => ({
-      //   ...prev,
-      //   general: TOOL_MESSAGES.UPLOAD_ERROR,
-      // }));
+      const fileKey = presigned.data['fileKey'] || '';
+      setFileKey?.(fileKey);
+
+      // Update the image URL with the new file key
+      setImageUrl(fileKey);
+    } catch (error: any) {
+      // Handle different types of errors
+      if (error.status === 401) {
+        // Handle authentication error
+        handleAuthError(error);
+      } else {
+        // Handle other upload errors
+
+        // Reset photo state on error
+        setPhoto(null);
+        setFileKey?.('');
+        setImageUrl('');
+      }
     } finally {
       setUploading?.(false);
     }
@@ -187,19 +237,8 @@ const ToolForm: React.FC<ToolFormProps> = ({
     const loadServices = async () => {
       setLoadingServices(true);
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         const response = await apiService.getServicesDropdown(
           companyId ? { company_id: companyId } : undefined
@@ -218,32 +257,96 @@ const ToolForm: React.FC<ToolFormProps> = ({
     loadServices();
   }, []);
 
-  const handleSubmitForm = (data: {
-    services?: any[] | undefined;
-    name: string;
-    manufacturer: string;
-    available_quantity: number;
-  }) => {
-    onSubmit({
-      name: data.name.trim(),
-      available_quantity: data.available_quantity,
-      manufacturer: data.manufacturer.trim(),
-      tool_assets: preservedToolAssets || '', // Use preserved tool assets to prevent loss during re-renders
-      service_ids: (data.services || []).join(','), // Convert array to comma-separated string
-    });
+  // Upload videos to S3 and get URLs
+  const uploadVideosToS3 = async (videoFiles: File[]): Promise<string[]> => {
+    const uploadedUrls: string[] = [];
+
+    for (const video of videoFiles) {
+      try {
+        const ext = video.name.split('.').pop() || 'mp4';
+        const timestamp = Date.now();
+        const toolUuid = uuidv4();
+        const generatedFileName = `tool_tutorial_${toolUuid}_${timestamp}.${ext}`;
+
+        const presigned = await getPresignedUrl({
+          fileName: generatedFileName,
+          fileType: video.type,
+          fileSize: video.size,
+          purpose: UPLOAD_PURPOSES.TOOL_TUTORIAL,
+          customPath: '',
+        });
+
+        await uploadFileToPresignedUrl(presigned.data['uploadUrl'], video);
+        uploadedUrls.push(presigned.data['fileKey'] || '');
+      } catch (error: any) {
+        // Handle different types of errors
+        if (error.status === 401) {
+          // Handle authentication error
+          handleAuthError(error);
+          // Break the loop as authentication failed
+          break;
+        } else {
+          // Handle other upload errors
+          // Continue with other videos, don't add this video to uploadedUrls
+        }
+      }
+    }
+
+    return uploadedUrls;
   };
 
-  // Preserve existing tool assets in component state to prevent loss during re-renders
-  const [preservedToolAssets, setPreservedToolAssets] = useState<string>(
-    existingToolAssets || ''
-  );
+  const handleSubmitForm = async (data: {
+    services?: string[] | undefined;
+    name: string;
+    brandName: string;
+  }) => {
+    // Clear previous errors
+    setVideoLinkError('');
 
-  // Update preserved tool assets when prop changes
-  useEffect(() => {
-    if (existingToolAssets) {
-      setPreservedToolAssets(existingToolAssets);
+    // Validate video links and barcodes - check for blank entries
+    const blankLinks = videoLinks.filter(link => !link.trim());
+    if (blankLinks.length > 0) {
+      setVideoLinkError('Please remove blank video links before submitting');
+      return;
     }
-  }, [existingToolAssets]);
+
+    // Upload videos to S3
+    const videoTutorialUrls =
+      videos.length > 0 ? await uploadVideosToS3(videos) : [];
+
+    // Combine existing barcodes with new barcodes
+    const allBarcodes = [
+      ...existingBarcodes.map(item => item.barcode), // Existing barcodes
+      ...barcodes, // New barcodes
+    ];
+
+    // Combine existing video URLs with new uploaded videos
+    const allVideoTutorialUrls = [
+      ...existingVideoUrls.map(url => url.replace(APP_CONFIG.CDN_URL, '')), // Remove CDN prefix from existing URLs
+      ...videoTutorialUrls, // New uploaded videos
+    ];
+
+    const payload = {
+      name: data.name.trim(),
+      brandName: data.brandName.trim(),
+      image_url: imageUrl || '',
+      service_ids: (data.services || []).join(','),
+      video_tutorial_urls: allVideoTutorialUrls,
+      video_tutorial_links: videoLinks,
+      barcodes: allBarcodes,
+    };
+
+    onSubmit(payload);
+  };
+
+  // Store image URL in component state to prevent loss during re-renders
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  // Create a wrapper for handleDeletePhoto that also clears image URL
+  const handleDeletePhotoWrapper = () => {
+    setImageUrl('');
+    handleDeletePhoto();
+  };
 
   return (
     <div className='p-0 w-full'>
@@ -259,77 +362,104 @@ const ToolForm: React.FC<ToolFormProps> = ({
         )} */}
 
         {/* Photo Upload */}
-        <PhotoUploadField
-          photo={photo}
-          onPhotoChange={handlePhotoChange}
-          onDeletePhoto={handleDeletePhoto}
-          uploading={uploading}
-          label={TOOL_MESSAGES.TOOL_IMAGE_LABEL}
-          text={
-            <>
-              1600 x 1200 (4:3) recommended. <br /> PNG and JPG files are
-              allowed
-            </>
-          }
-          existingImageUrl={existingImageUrl}
-        />
-
-        {/* Services Select */}
-        <Controller
-          name='services'
-          control={control}
-          render={({ field }) => (
-            <MultiSelect
-              label={TOOL_MESSAGES.SERVICES_LABEL}
-              options={services}
-              getOptionLabel={(option: Service) => option?.name || ''}
-              getOptionValue={(option: Service) => String(option?.id)}
-              value={
-                Array.isArray(field.value)
-                  ? field.value.filter(
-                      (v): v is string => typeof v === 'string'
-                    )
-                  : []
-              }
-              onChange={field.onChange}
-              placeholder={
-                loadingServices
-                  ? TOOL_MESSAGES.LOADING_SERVICES
-                  : TOOL_MESSAGES.SELECT_SERVICES
-              }
-              error={errors.services?.message || ''}
-              name='services'
-            />
-          )}
-        />
-
-        {/* Tool Name */}
-        <div className='space-y-1 md:space-y-2'>
-          <Label htmlFor='tool-name' className='field-label'>
-            {TOOL_MESSAGES.TOOL_NAME_LABEL}
-          </Label>
-          <Controller
-            name='name'
-            control={control}
-            render={({ field }) => (
-              <Input
-                id='tool-name'
-                placeholder={TOOL_MESSAGES.ENTER_TOOL_NAME}
-                {...field}
-                className={cn(
-                  'input-field',
-                  errors.name
-                    ? 'border-[var(--warning)]'
-                    : 'border-[var(--border-dark)]'
+        <div className='flex sm:flex-row flex-col items-start gap-4 shrink-0'>
+          <PhotoUploadField
+            photo={photo}
+            onPhotoChange={handlePhotoChange}
+            onDeletePhoto={handleDeletePhotoWrapper}
+            uploading={uploading}
+            label={TOOL_MESSAGES.TOOL_IMAGE_LABEL}
+            text={''}
+            existingImageUrl={existingImageUrl}
+            cardHeight='h-[120px] py-3'
+            className='min-w-[120px]'
+          />
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 w-full'>
+            <div className='space-y-1 md:space-y-2'>
+              <Label htmlFor='tool-name' className='field-label'>
+                {TOOL_MESSAGES.TOOL_NAME_LABEL}
+              </Label>
+              <Controller
+                name='name'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='tool-name'
+                    placeholder={TOOL_MESSAGES.ENTER_TOOL_NAME}
+                    {...field}
+                    className={cn(
+                      'input-field',
+                      errors.name
+                        ? 'border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
                 )}
               />
-            )}
-          />
-          <FormErrorMessage message={errors.name?.message || ''} />
+              <FormErrorMessage message={errors.name?.message || ''} />
+            </div>
+
+            <div className='space-y-1 md:space-y-2'>
+              <Label htmlFor='brand-name' className='field-label'>
+                {TOOL_MESSAGES.BRAND_NAME_LABEL}
+              </Label>
+              <Controller
+                name='brandName'
+                control={control}
+                render={({ field }) => (
+                  <Input
+                    id='brand-name'
+                    placeholder={TOOL_MESSAGES.ENTER_BRAND_NAME}
+                    {...field}
+                    className={cn(
+                      'input-field',
+                      errors.brandName
+                        ? 'border-[var(--warning)]'
+                        : 'border-[var(--border-dark)]'
+                    )}
+                  />
+                )}
+              />
+              <FormErrorMessage message={errors.brandName?.message || ''} />
+            </div>
+            <div className='sm:col-span-full'>
+              <Controller
+                name='services'
+                control={control}
+                render={({ field }) => (
+                  <MultiSelect
+                    label={TOOL_MESSAGES.SERVICES_LABEL}
+                    options={services}
+                    getOptionLabel={(option: Service) => option?.name || ''}
+                    getOptionValue={(option: Service) => String(option?.id)}
+                    value={
+                      Array.isArray(field.value)
+                        ? field.value.filter(
+                            (v): v is string => typeof v === 'string'
+                          )
+                        : []
+                    }
+                    onChange={field.onChange}
+                    placeholder={
+                      loadingServices
+                        ? TOOL_MESSAGES.LOADING_SERVICES
+                        : TOOL_MESSAGES.SELECT_SERVICES
+                    }
+                    error={errors.services?.message || ''}
+                    name='services'
+                  />
+                )}
+              />
+            </div>
+          </div>
         </div>
 
+        {/* Services Select */}
+
+        {/* Tool Name and Brand Name */}
+
         {/* Manufacturer */}
-        <div className='space-y-1 md:space-y-2'>
+        {/* <div className='space-y-1 md:space-y-2'>
           <Label htmlFor='manufacturer' className='field-label'>
             {TOOL_MESSAGES.MANUFACTURER_LABEL}
           </Label>
@@ -351,40 +481,29 @@ const ToolForm: React.FC<ToolFormProps> = ({
             )}
           />
           <FormErrorMessage message={errors.manufacturer?.message || ''} />
-        </div>
+        </div> */}
 
-        {/* Quantity */}
-        <div className='space-y-1 md:space-y-2'>
-          <Label htmlFor='quantity' className='field-label'>
-            {TOOL_MESSAGES.QUANTITY_LABEL}
-          </Label>
-          <Controller
-            name='available_quantity'
-            control={control}
-            render={({ field }) => (
-              <Input
-                id='quantity'
-                type='number'
-                min='1'
-                placeholder={TOOL_MESSAGES.ENTER_QUANTITY}
-                {...field}
-                onChange={e => field.onChange(parseInt(e.target.value) || 1)}
-                className={cn(
-                  'input-field',
-                  errors.available_quantity
-                    ? 'border-[var(--warning)]'
-                    : 'border-[var(--border-dark)]'
-                )}
-              />
-            )}
-          />
-          <FormErrorMessage
-            message={errors.available_quantity?.message || ''}
-          />
-        </div>
+        {/* Video Tutorial Section */}
+        <VideoTutorialSection
+          videos={videos}
+          onVideosChange={setVideos}
+          videoLinks={videoLinks}
+          onVideoLinksChange={setVideoLinks}
+          existingVideoUrls={existingVideoUrls}
+          onExistingVideoUrlsChange={setExistingVideoUrls}
+          errorMessage={videoLinkError}
+        />
+
+        {/* QR Code Section */}
+        <QRCodeSection
+          barcodes={barcodes}
+          onBarcodesChange={setBarcodes}
+          existingBarcodes={existingBarcodes}
+          onExistingBarcodesChange={setExistingBarcodes}
+        />
 
         {/* Form Actions */}
-        <div className='flex items-center justify-end space-x-3 pt-4'>
+        <div className='flex items-center space-x-3 pt-4'>
           <Button
             type='button'
             variant='outline'

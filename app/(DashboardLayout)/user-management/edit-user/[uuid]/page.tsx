@@ -7,13 +7,7 @@ import PhotoUploadField from '@/components/shared/common/PhotoUploadField';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
-import {
-  CommonStatus,
-  PAGINATION,
-  ROLE_IDS,
-  ROUTES,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { CommonStatus, PAGINATION, ROLE_IDS, ROUTES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import {
   apiService,
@@ -22,10 +16,13 @@ import {
   UserPermissions,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { usePermissions } from '@/lib/permission-context';
 import { getPresignedUrl, uploadFileToPresignedUrl } from '@/lib/upload';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
+  getCurrentUser,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -76,6 +73,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
 
   // State for which accordion is open
   const [openAccordionIdx, setOpenAccordionIdx] = useState(0);
+  // Current user's own permissions (to restrict what they can assign)
+  const { permissions: allowedPermissions } = usePermissions();
 
   // Function to calculate access level based on enabled permissions
   const calculateAccessLevel = (
@@ -94,12 +93,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       roles: { view: false, edit: false, archive: false },
       users: { view: false, create: false, customize: false, archive: false },
       companies: { view: false, assign_user: false, archive: false },
-      categories: { view: false, edit: false, archive: false },
-      trades: { view: false, edit: false, archive: false },
-      services: { view: false, edit: false, archive: false },
-      materials: { view: false, edit: false, archive: false },
-      tools: { view: false, edit: false, archive: false, history: false },
+      catalogue_services: { view: false, edit: false, archive: false },
       jobs: { view: false, edit: false, archive: false },
+      templates: { view: false, edit: false, archive: false },
+      global_settings: { view: false, edit: false },
     };
 
     // Map accordion indices to permission keys
@@ -107,12 +104,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       'roles', // 0: Roles Access Control Settings
       'users', // 1: Users Access Control Settings
       'companies', // 2: Company Management & Operations Settings
-      'categories', // 3: Category Management Settings
-      'trades', // 4: Trade Management Settings
-      'services', // 5: Service Management Settings
-      'materials', // 6: Material Management Settings
-      'tools', // 7: Tools Management Settings
-      'jobs', // 8: Job Creation & Basic Job Setup Settings
+      'catalogue_services', // 3: Catalogue & Services Settings
+      'jobs', // 4: Job Creation & Basic Job Setup Settings
+      'templates', // 5: Templates Setting
+      'global_settings', // 6: Company Global Settings
     ];
 
     // Map stripe indices to permission keys for each accordion
@@ -120,12 +115,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
       ['view', 'edit', 'archive'], // roles
       ['view', 'create', 'customize', 'archive'], // users
       ['view', 'assign_user', 'archive'], // companies
-      ['view', 'edit', 'archive'], // categories
-      ['view', 'edit', 'archive'], // trades
-      ['view', 'edit', 'archive'], // services
-      ['view', 'edit', 'archive'], // materials
-      ['view', 'edit', 'archive', 'history'], // tools
+      ['view', 'edit', 'archive'], // catalogue_services
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     accordionsData.forEach((accordion, accordionIdx) => {
@@ -236,19 +229,8 @@ export default function EditUserPage({ params }: EditUserPageProps) {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Get selected company from localStorage for roles
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch (error) {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using global utility function
+        const companyId = getCompanyId();
 
         // Fetch user details and roles in parallel
         const [userRes, rolesRes] = await Promise.all([
@@ -273,21 +255,13 @@ export default function EditUserPage({ params }: EditUserPageProps) {
 
         // Set roles data
         const roleList = isRoleApiResponse(rolesRes) ? rolesRes.data.data : [];
-        console.log(roleList);
-        const currentUser = localStorage.getItem(STORAGE_KEYS.USER);
+        const userData = getCurrentUser();
         let adminRoleId = null;
         let adminRoleUuid = null; // Default fallback
-        if (currentUser) {
-          try {
-            const userData = JSON.parse(currentUser);
-            // If current user is admin, use their role ID as reference
-            if (userData.role?.id) {
-              adminRoleId = userData.role.id;
-              adminRoleUuid = userData.role.uuid;
-            }
-          } catch (error) {
-            console.error('Error parsing user data from localStorage:', error);
-          }
+        if (userData?.role?.id) {
+          // If current user is admin, use their role ID as reference
+          adminRoleId = userData.role.id;
+          adminRoleUuid = userData.role.uuid;
         }
         setRoles(
           roleList
@@ -353,12 +327,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                 'roles',
                 'users',
                 'companies',
-                'categories',
-                'trades',
-                'services',
-                'materials',
-                'tools',
+                'catalogue_services',
                 'jobs',
+                'templates',
+                'global_settings',
               ];
               const permissionKey = permissionKeys[accordionIdx];
               const userPermissions = permissionKey
@@ -371,12 +343,10 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                     ['view', 'edit', 'archive'], // roles
                     ['view', 'create', 'customize', 'archive'], // users
                     ['view', 'assign_user', 'archive'], // companies
-                    ['view', 'edit', 'archive'], // categories
-                    ['view', 'edit', 'archive'], // trades
-                    ['view', 'edit', 'archive'], // services
-                    ['view', 'edit', 'archive'], // materials
-                    ['view', 'edit', 'archive', 'history'], // tools
+                    ['view', 'edit', 'archive'], // catalogue_services
                     ['view', 'edit', 'archive'], // jobs
+                    ['view', 'edit', 'archive'], // templates
+                    ['view', 'edit'], // global_settings
                   ];
                   const permissionNames = permissionNamesArray[accordionIdx];
                   const permissionName = permissionNames?.[stripeIdx];
@@ -680,7 +650,76 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                   <div className='flex flex-col gap-4'>
                     {accordions.map((accordion, idx) => {
                       const { title, stripes } = accordion;
-                      const accessLevel = calculateAccessLevel(stripes);
+
+                      // Map index to module and stripes
+                      const permissionKey = (
+                        [
+                          'roles',
+                          'users',
+                          'companies',
+                          'catalogue_services',
+                          'jobs',
+                          'templates',
+                          'global_settings',
+                        ] as const
+                      )[idx];
+                      const stripePermMap = [
+                        ['view', 'edit', 'archive'], // roles
+                        ['view', 'create', 'customize', 'archive'], // users
+                        ['view', 'assign_user', 'archive'], // companies
+                        ['view', 'edit', 'archive'], // catalogue_services
+                        ['view', 'edit', 'archive'], // jobs
+                        ['view', 'edit', 'archive'], // templates
+                        ['view', 'edit'], // global_settings
+                      ] as const;
+
+                      const modulePerms = allowedPermissions?.[
+                        permissionKey as keyof typeof allowedPermissions
+                      ] as Record<string, boolean> | undefined;
+
+                      // Hide entire module if user cannot view it
+                      const canSeeAccordion =
+                        !allowedPermissions ||
+                        (modulePerms && modulePerms['view']);
+                      if (!canSeeAccordion) return null;
+
+                      const rawStripes =
+                        ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes || [];
+                      const visibleStripes = rawStripes
+                        .map((stripe, sIdx) => {
+                          const permName = stripePermMap[idx]?.[sIdx];
+                          const canSeeStripe =
+                            !allowedPermissions ||
+                            (permName ? modulePerms?.[permName] : true);
+                          if (!canSeeStripe) return null;
+                          return {
+                            title: stripe.title,
+                            description: stripe.description,
+                            checked:
+                              typeof stripes?.[sIdx] === 'boolean'
+                                ? stripes[sIdx]
+                                : false,
+                            onToggle: () => handleToggle(idx, sIdx),
+                          };
+                        })
+                        .filter(Boolean) as {
+                        title: string;
+                        description: string;
+                        checked: boolean;
+                        onToggle: () => void;
+                      }[];
+
+                      if (visibleStripes.length === 0) return null;
+
+                      const visibleBools = stripes.filter((_, sIdx) => {
+                        const permName = stripePermMap[idx]?.[sIdx];
+                        return (
+                          !allowedPermissions ||
+                          (permName ? modulePerms?.[permName] : true)
+                        );
+                      });
+                      const accessLevel = calculateAccessLevel(visibleBools);
+
                       return (
                         <div
                           key={title + idx}
@@ -689,24 +728,7 @@ export default function EditUserPage({ params }: EditUserPageProps) {
                           <CompanyManagementAddUser
                             title={title}
                             badgeLabel={accessLevel}
-                            stripes={
-                              Array.isArray(stripes) &&
-                              Array.isArray(
-                                ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes
-                              )
-                                ? ACCESS_CONTROL_ACCORDIONS_DATA[
-                                    idx
-                                  ]?.stripes.map((stripe, sIdx) => ({
-                                    title: stripe.title,
-                                    description: stripe.description,
-                                    checked:
-                                      typeof stripes?.[sIdx] === 'boolean'
-                                        ? stripes[sIdx]
-                                        : false,
-                                    onToggle: () => handleToggle(idx, sIdx),
-                                  }))
-                                : []
-                            }
+                            stripes={visibleStripes}
                             open={openAccordionIdx === idx}
                             onOpenChange={open =>
                               setOpenAccordionIdx(open ? idx : -1)

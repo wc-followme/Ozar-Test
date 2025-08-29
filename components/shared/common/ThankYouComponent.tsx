@@ -1,7 +1,11 @@
 'use client';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
+import { ROUTES } from '@/constants/common';
+import { THANK_YOU_MESSAGES } from '@/constants/messages';
+import { TickCircle } from 'iconsax-react';
+import { useRouter } from 'next/navigation';
+import { Button } from '../../ui/button';
 
 interface ThankYouComponentProps {
   title?: string;
@@ -9,36 +13,47 @@ interface ThankYouComponentProps {
 }
 
 export function ThankYouComponent({
-  title = 'Thank You!',
-  message = 'Your project details have been successfully submitted. We will review your information and get back to you soon.',
+  title = THANK_YOU_MESSAGES.DEFAULT_TITLE,
+  message = THANK_YOU_MESSAGES.DEFAULT_MESSAGE,
 }: ThankYouComponentProps) {
+  const router = useRouter();
+
+  const handleLoginClick = () => {
+    router.push(ROUTES.AUTH_LOGIN);
+  };
+
   return (
-    <div className='min-h-screen bg-[var(--white-background)] flex flex-col items-center justify-center p-4'>
-      <Card className='w-full max-w-md bg-[var(--card-background)] shadow-lg border-0 rounded-3xl'>
-        <CardContent className='p-8 text-center'>
+    <div className='bg-[var(--white-background)] flex flex-col items-center justify-center p-4 rounded-2xl'>
+      <Card className='w-full bg-[var(--card-background)] border-0'>
+        <CardContent className='p-8 text-center border-0'>
           {/* Success Icon */}
           <div className='flex justify-center mb-6'>
-            <div className='w-20 h-20 bg-green-100 rounded-full flex items-center justify-center'>
-              <CheckCircle className='w-12 h-12 text-green-600' />
-            </div>
+            <TickCircle
+              className=' text-green-600'
+              color='var(--secondary)'
+              variant='Bold'
+              size={125}
+            />
           </div>
 
           {/* Title */}
-          <h1 className='text-2xl font-bold text-[var(--text-dark)] mb-4'>
+          <h1 className='text-2xl font-normal text-[var(--text-dark)] mb-6 max-w-[505px] mx-auto text-center'>
             {title}
           </h1>
 
           {/* Message */}
-          <p className='text-[var(--text-secondary)] text-base leading-relaxed mb-8'>
+          <p className='text-[var(--text-secondary)] text-lg leading-snug mb-8 max-w-[456px] mx-auto text-center'>
             {message}
           </p>
 
           {/* Additional Info */}
-          <div className='mt-6 pt-6 border-t border-[var(--border-light)]'>
-            <p className='text-sm text-[var(--text-secondary)]'>
-              You will receive a confirmation email shortly with further
-              details.
-            </p>
+          <div className=''>
+            <Button
+              className='btn-primary text-center mx-auto'
+              onClick={handleLoginClick}
+            >
+              {THANK_YOU_MESSAGES.GO_TO_LOGIN_BUTTON}
+            </Button>
           </div>
         </CardContent>
       </Card>

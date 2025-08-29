@@ -79,7 +79,7 @@ export default function JobDetailsPage() {
       }
     };
     if (uuid) fetchJobData();
-  }, [uuid, showErrorToast, handleAuthError]);
+  }, [uuid]); // Only depend on uuid to prevent duplicate calls
 
   const handleArchiveClick = () => {
     setShowArchiveConfirm(true);
@@ -140,7 +140,7 @@ export default function JobDetailsPage() {
   };
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: JOB_MESSAGES.JOB_MANAGEMENT_TITLE, href: JOB_MANAGEMENT },
+    { name: JOB_MESSAGES.JOB_MANAGEMENT_BREADCRUMB, href: JOB_MANAGEMENT },
     { name: job?.project_id || job?.['uuid'] || 'Job Details' },
   ];
 
@@ -319,8 +319,8 @@ export default function JobDetailsPage() {
         </div>
         {/* Details */}
         <div className='flex-1 px-0 md:px-6 w-full'>
-          <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 border-b border-[var(--border-dark)] pb-2 mb-3'>
-            <div className='min-w-0 break-words'>
+          <div className='flex flex-wrap gap-y-4 md:gap-4 border-b border-[var(--border-dark)] pb-2 mb-3'>
+            <div className='break-words flex-1 min-w-52'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.PROJECT_ID_LABEL}
               </div>
@@ -328,7 +328,7 @@ export default function JobDetailsPage() {
                 {projectId}
               </div>
             </div>
-            <div className='min-w-0 break-words'>
+            <div className='break-words flex-1'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.PROJECT_NAME_LABEL}
               </div>
@@ -336,7 +336,7 @@ export default function JobDetailsPage() {
                 {projectName}
               </div>
             </div>
-            <div className='min-w-0 break-words'>
+            <div className='break-words flex-1'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.JOB_CATEGORY_LABEL}
               </div>
@@ -344,7 +344,7 @@ export default function JobDetailsPage() {
                 {categoryName}
               </div>
             </div>
-            <div className='md:col-span-2 flex flex-col md:flex-row md:items-center gap-2 min-w-0 break-words'>
+            <div className='flex-1 flex flex-col md:flex-row md:items-center gap-2 break-words'>
               <div>
                 <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                   {JOB_MESSAGES.BUDGET_LABEL}
@@ -366,8 +366,8 @@ export default function JobDetailsPage() {
               </div>
             </div>
           </div>
-          <div className='grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-y-4 md:gap-4 items-start md:items-center mt-2'>
-            <div className='min-w-0 break-words'>
+          <div className='flex flex-wrap gap-y-4 md:gap-4 items-start md:items-center mt-2'>
+            <div className='min-w-60 break-words'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.CLIENT_NAME_LABEL}
               </div>
@@ -375,7 +375,7 @@ export default function JobDetailsPage() {
                 {clientName}
               </div>
             </div>
-            <div className='min-w-0 break-words'>
+            <div className='flex-1 min-w-fit'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.EMAIL_LABEL}
               </div>
@@ -383,7 +383,7 @@ export default function JobDetailsPage() {
                 {clientEmail}
               </div>
             </div>
-            <div className='min-w-0 break-words'>
+            <div className='flex-1 min-w-36 break-words'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.PHONE_NUMBER_LABEL}
               </div>
@@ -391,7 +391,7 @@ export default function JobDetailsPage() {
                 {clientPhone}
               </div>
             </div>
-            <div className='md:col-span-2 min-w-0 break-words'>
+            <div className='min-w-48 flex-1 break-words'>
               <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
                 {JOB_MESSAGES.ADDRESS_LABEL}
               </div>

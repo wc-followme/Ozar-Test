@@ -1,19 +1,11 @@
 'use client';
-import { InfoCard } from '@/components/shared/cards/InfoCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
-import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import ServiceForm from '@/components/shared/forms/ServiceForm';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import {
-  ACTIONS,
-  CommonStatus,
-  PAGINATION,
-  STORAGE_KEYS,
-} from '@/constants/common';
+import { ACTIONS, CommonStatus, PAGINATION } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { useCompanyChange } from '@/hooks/use-company-change';
 import { apiService } from '@/lib/api';
@@ -21,38 +13,49 @@ import { useAuth } from '@/lib/auth-context';
 import {
   extractApiErrorMessage,
   extractApiSuccessMessage,
+  getCompanyId,
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
-import { Add, Edit2, Trash } from 'iconsax-react';
-import React, { useCallback, useEffect, useState } from 'react';
-import TradeCardSkeleton from '../../../components/shared/skeleton/TradeCardSkeleton';
+import { Add, Edit2, Refresh, Trash } from 'iconsax-react';
+import { useCallback, useEffect, useState } from 'react';
+import ArchiveList from './ArchiveList';
+import ServiceList from './ServiceList';
 import { SERVICE_MESSAGES } from './service-messages';
 import { Service } from './service-types';
 
-const menuOptions: {
-  label: string;
-  action: string;
-  icon: React.ElementType;
-  variant?: 'default' | 'destructive';
-}[] = [
-  {
-    label: SERVICE_MESSAGES.EDIT_MENU,
-    action: ACTIONS.EDIT,
-    icon: Edit2,
-    variant: 'default',
-  },
-  {
-    label: SERVICE_MESSAGES.DELETE_MENU,
-    action: ACTIONS.DELETE,
-    icon: Trash,
-    variant: 'destructive',
-  },
-];
+// Get menu options based on current tab
+const getMenuOptions = (isArchive: boolean) => {
+  if (isArchive) {
+    // Archive tab - only show retrieve option
+    return [
+      {
+        label: SERVICE_MESSAGES.RETRIEVE_MENU,
+        action: ACTIONS.RETRIEVE,
+        icon: Refresh,
+        variant: 'default' as const,
+      },
+    ];
+  } else {
+    // Active services tab - show edit and delete options
+    return [
+      {
+        label: SERVICE_MESSAGES.EDIT_MENU,
+        action: ACTIONS.EDIT,
+        icon: Edit2,
+        variant: 'default' as const,
+      },
+      {
+        label: SERVICE_MESSAGES.DELETE_MENU,
+        action: ACTIONS.DELETE,
+        icon: Trash,
+        variant: 'destructive' as const,
+      },
+    ];
+  }
+};
 
 export default function ServiceManagementPage() {
   // Destructure constants for better readability
-  const { EDIT, DELETE } = ACTIONS;
-  const { ACTIVE } = CommonStatus;
   const { MATERIALS_LIMIT } = PAGINATION; // Using MATERIALS_LIMIT as it's 32, same as services
 
   const [services, setServices] = useState<Service[]>([]);
@@ -61,20 +64,19 @@ export default function ServiceManagementPage() {
   const [search] = useState('');
   const [loading, setLoading] = useState(true);
   const [hasMore, setHasMore] = useState(true);
-  const [deleteIdx, setDeleteIdx] = useState<number | null>(null);
-  const [deleteServiceName, setDeleteServiceName] = useState<string>('');
-  const [modalOpen, setModalOpen] = useState(false);
+
   const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [editingServiceUuid, setEditingServiceUuid] = useState<
     string | undefined
   >(undefined);
+  const [selectedTab, setSelectedTab] = useState('service');
   const { showSuccessToast, showErrorToast } = useToast();
   const { handleAuthError } = useAuth();
 
   // Get user permissions for services
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.services?.edit;
-  const canViewServices = userPermissions?.services?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewServices = userPermissions?.catalogue_services?.view;
 
   const fetchServices = useCallback(
     async (targetPage = 1, append = false) => {
@@ -82,24 +84,20 @@ export default function ServiceManagementPage() {
         setLoading(true);
       }
       try {
-        // Get selected company from localStorage
-        const selectedCompany = localStorage.getItem(
-          STORAGE_KEYS.SELECTED_COMPANY
-        );
-        let companyId: string | undefined;
-        if (selectedCompany) {
-          try {
-            const parsedCompany = JSON.parse(selectedCompany);
-            companyId = parsedCompany.id; // UUID from localStorage
-          } catch {
-            companyId = undefined;
-          }
-        }
+        // Get selected company ID using common function
+        const companyId = getCompanyId();
+
+        // Determine status based on selected tab
+        const statusParam =
+          selectedTab === 'archive'
+            ? CommonStatus.INACTIVE
+            : CommonStatus.ACTIVE;
 
         const response = await apiService.fetchServices({
           page: targetPage,
           limit,
           name: search,
+          status: statusParam,
           ...(companyId ? { company_id: companyId } : {}),
         });
 
@@ -158,7 +156,7 @@ export default function ServiceManagementPage() {
         setLoading(false);
       }
     },
-    [limit, search, handleAuthError, showErrorToast]
+    [limit, search, handleAuthError, showErrorToast, selectedTab]
   );
 
   // Handle company changes
@@ -170,6 +168,11 @@ export default function ServiceManagementPage() {
   }, [fetchServices]);
 
   useCompanyChange(refetchServices);
+
+  // Refetch when tab changes
+  useEffect(() => {
+    fetchServices(1, false);
+  }, [selectedTab]);
 
   // Infinite scroll
   useEffect(() => {
@@ -189,34 +192,37 @@ export default function ServiceManagementPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loading, hasMore, fetchServices, page]);
 
-  const handleMenuAction = (action: string, idx: number) => {
-    const service = services[idx];
-    if (!service) return;
-
-    if (action === EDIT) {
-      setEditingServiceUuid(service.uuid);
-      setSideSheetOpen(true);
-    }
-    if (action === DELETE) {
-      setDeleteIdx(idx);
-      setDeleteServiceName(service.name || '');
-      setModalOpen(true);
-    }
+  const handleEditService = (uuid: string) => {
+    setEditingServiceUuid(uuid);
+    setSideSheetOpen(true);
   };
 
-  // Handler for deleting a service
-  const handleDeleteService = async (uuid: string) => {
+  // Archive handler (set service status to inactive)
+  const handleArchiveService = async (uuid: string) => {
     try {
-      const response = await apiService.deleteService(uuid);
-      setServices(prev => prev.filter(service => service.uuid !== uuid));
+      const service = services.find(s => s.uuid === uuid);
+
+      // Prevent archiving of default services
+      if (service?.is_default) {
+        showErrorToast(
+          SERVICE_MESSAGES.DEFAULT_SERVICE_DELETE_ERROR ||
+            'Cannot archive default service'
+        );
+        return;
+      }
+
+      const response = await apiService.updateServiceStatus(uuid, 'INACTIVE');
+
       showSuccessToast(
         extractApiSuccessMessage(response, SERVICE_MESSAGES.DELETE_SUCCESS)
       );
+      fetchServices(1, false);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
         return; // Don't show toast if it's an auth error
       }
+
       const message = extractApiErrorMessage(
         err,
         SERVICE_MESSAGES.DELETE_ERROR
@@ -225,14 +231,31 @@ export default function ServiceManagementPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (deleteIdx !== null) {
-      const service = services[deleteIdx];
-      if (service) {
-        await handleDeleteService(service.uuid);
+  // Handler for retrieving a service
+  const handleRetrieveService = async (uuid: string) => {
+    try {
+      const response = await apiService.updateServiceStatus(uuid, 'ACTIVE');
+
+      showSuccessToast(
+        extractApiSuccessMessage(response, SERVICE_MESSAGES.RETRIEVE_SUCCESS)
+      );
+
+      // Remove the retrieved service from the current list immediately
+      setServices(prev => prev.filter(s => s.uuid !== uuid));
+
+      // Refresh list to reflect latest server state based on current tab
+      await fetchServices(1, false);
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
       }
-      setDeleteIdx(null);
-      setModalOpen(false);
+
+      const message = extractApiErrorMessage(
+        err,
+        SERVICE_MESSAGES.RETRIEVE_ERROR
+      );
+      showErrorToast(message);
     }
   };
 
@@ -243,17 +266,8 @@ export default function ServiceManagementPage() {
   }) => {
     const { serviceName, trades, serviceData } = data;
 
-    // Get selected company from localStorage
-    const selectedCompany = localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY);
-    let companyId: string | undefined;
-    if (selectedCompany) {
-      try {
-        const parsedCompany = JSON.parse(selectedCompany);
-        companyId = parsedCompany.id; // UUID from localStorage
-      } catch {
-        // Silently fail if company data is invalid
-      }
-    }
+    // Get selected company ID using common function
+    const companyId = getCompanyId();
 
     // Use the actual service data from API response if available
     if (serviceData) {
@@ -268,13 +282,13 @@ export default function ServiceManagementPage() {
         description: '',
         is_default: false,
         is_active: true,
-        status: ACTIVE,
+        status: CommonStatus.ACTIVE,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         trades: trades.split(', ').map(trade => ({
           id: Date.now(),
           name: trade.trim(),
-          status: ACTIVE,
+          status: CommonStatus.ACTIVE,
         })),
         ...(companyId ? { company_id: companyId } : {}),
       };
@@ -310,7 +324,7 @@ export default function ServiceManagementPage() {
                 trades: trades.split(', ').map(trade => ({
                   id: Date.now(),
                   name: trade.trim(),
-                  status: ACTIVE,
+                  status: CommonStatus.ACTIVE,
                 })),
                 updated_at: new Date().toISOString(),
               }
@@ -334,76 +348,80 @@ export default function ServiceManagementPage() {
   return (
     <div className='w-full'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4 xl:mb-8'>
-        <div className='flex items-center justify-between w-full'>
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <div className='flex flex-col md:flex-row gap-4 md:items-center justify-between w-full'>
           <h2 className='page-title'>
             {SERVICE_MESSAGES.SERVICE_MANAGEMENT_TITLE}
           </h2>
-          {canEdit && (
-            <div className='flex justify-end'>
-              <Button
-                className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
-                onClick={() => setSideSheetOpen(true)}
+        </div>
+      </div>
+
+      {/* Tabs Row */}
+      <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
+        <Tabs
+          value={selectedTab}
+          onValueChange={setSelectedTab}
+          className='w-full'
+        >
+          <div className='flex sm:flex-row flex-col-reverse items-center justify-between sm:gap-3'>
+            <TabsList className='grid w-full sm:max-w-[328px] grid-cols-2 bg-[var(--dark-background)] p-1 rounded-[30px] h-auto font-normal shadow-lg sm:shadow-none'>
+              <TabsTrigger
+                value='service'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
               >
-                <Add size='24' color='#fff' className='sm:hidden' />
-                <span className='hidden sm:inline'>
-                  {SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
-                </span>
-              </Button>
+                Service
+              </TabsTrigger>
+              <TabsTrigger
+                value='archive'
+                className='px-4 py-2 text-base transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
+              >
+                Archive
+              </TabsTrigger>
+            </TabsList>
+
+            <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto'>
+              {canEdit && (
+                <Button
+                  className='btn-primary flex items-center shrink-0 justify-center !px-0 sm:!px-6 text-center !w-[42px] sm:!w-auto rounded-full shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto'
+                  onClick={() => setSideSheetOpen(true)}
+                >
+                  <Add size='24' color='#fff' className='sm:hidden' />
+                  <span className='hidden sm:inline'>
+                    {SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
+                  </span>
+                </Button>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-      {/* Service Grid */}
-      <div className='grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] xl:grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 xl:gap-6'>
-        {services.length === 0 && loading ? (
-          // Initial loading state with skeleton cards
-          Array.from({ length: 10 }).map((_, idx) => (
-            <TradeCardSkeleton key={idx} />
-          ))
-        ) : services.length === 0 && !loading ? (
-          <div className='col-span-full text-center h-full md:h-[calc(100vh_-_220px)]'>
-            <NoDataFound
-              buttonText={SERVICE_MESSAGES.ADD_SERVICE_BUTTON}
-              onButtonClick={() => setSideSheetOpen(true)}
-              description={SERVICE_MESSAGES.NO_SERVICES_FOUND_DESCRIPTION}
-              showButton={canEdit ?? false}
-            />
           </div>
-        ) : (
-          services.map((service, idx) => {
-            const { uuid, name, trades } = service;
-            return (
-              <InfoCard
-                key={uuid}
-                tradeName={name || ''}
-                category={`${trades?.length || 0} Trade${(trades?.length || 0) !== 1 ? 's' : ''}`}
-                menuOptions={menuOptions}
-                onMenuAction={action => handleMenuAction(action, idx)}
-                module='services'
-              />
-            );
-          })
-        )}
+
+          {/* Service Tab Content */}
+          <TabsContent value='service' className='mt-6'>
+            <ServiceList
+              services={services}
+              loading={loading}
+              noDataDescription={SERVICE_MESSAGES.NO_SERVICES_FOUND_DESCRIPTION}
+              menuOptions={getMenuOptions(false)}
+              onDelete={handleArchiveService}
+              onEdit={handleEditService}
+              onCreateService={() => setSideSheetOpen(true)}
+              canEdit={canEdit ?? false}
+            />
+          </TabsContent>
+
+          {/* Archive Tab Content */}
+          <TabsContent value='archive' className='mt-6'>
+            <ArchiveList
+              services={services}
+              loading={loading}
+              noDataTitle={SERVICE_MESSAGES.ARCHIVED_SERVICES_TITLE}
+              noDataDescription={SERVICE_MESSAGES.NO_ARCHIVED_SERVICES_FOUND}
+              menuOptions={getMenuOptions(true)}
+              onRetrieve={handleRetrieveService}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Loading more services */}
-      {loading && services.length > 0 && (
-        <div className='w-full text-center py-4'>
-          <LoadingComponent variant='inline' size='md' text={''} />
-        </div>
-      )}
-
-      <ConfirmDeleteModal
-        open={modalOpen}
-        title={SERVICE_MESSAGES.DELETE_CONFIRM_TITLE}
-        subtitle={SERVICE_MESSAGES.DELETE_CONFIRM_SUBTITLE.replace(
-          '{name}',
-          deleteServiceName || ''
-        )}
-        onCancel={() => setModalOpen(false)}
-        onDelete={handleDelete}
-      />
       <SideSheet
         title={
           editingServiceUuid

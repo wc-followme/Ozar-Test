@@ -2,30 +2,38 @@
 import { ModeToggle } from '@/components/mode-toggle';
 import ChangePasswordForm from '@/components/shared/forms/ChangePasswordForm';
 import { Button } from '@/components/ui/button';
-import { CUSTOM_EVENTS, ROLE_IDS, STORAGE_KEYS } from '@/constants/common';
+import {
+  APP_CONFIG,
+  CUSTOM_EVENTS,
+  ROLE_IDS,
+  STORAGE_KEYS,
+} from '@/constants/common';
 import { COMPANY_IMAGES, HEADER_MESSAGES } from '@/constants/header-messages';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { HambergerMenu, Key, UserOctagon } from 'iconsax-react';
+import { HambergerMenu, Key } from 'iconsax-react';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { cn } from '../../lib/utils';
-import { Search } from '../icons/Search';
+import { cn, getCompanyId, getCurrentUser } from '../../lib/utils';
 import { SignoutIcon } from '../icons/SignoutIcon';
 import CompanyDropdown, { Company } from '../shared/common/CompanyDropdown';
 import Dropdown from '../shared/common/Dropdown';
 import SideSheet from '../shared/common/SideSheet';
-import { Input } from '../ui/input';
 import { SidebarMobile } from './SidebarMobile';
 
 const menuOptions = [
-  { label: 'View Profile', action: 'edit', icon: UserOctagon },
+  // { label: 'View Profile', action: 'edit', icon: UserOctagon },
   { label: 'Change Password', action: 'changePassword', icon: Key },
   { label: 'Logout', action: 'delete', icon: SignoutIcon },
 ];
 
 export function Header() {
   const { logout, user } = useAuth();
+
+  // Destructure user data
+  const { role, company, profile_picture_url } = user || {};
+  const { id: userRoleId } = role || {};
+  const { name: userCompany } = company || {};
 
   // Add scroll direction state
   const [showHeader, setShowHeader] = useState(true);
@@ -35,76 +43,113 @@ export function Header() {
   const [selectedCompany, setSelectedCompany] = useState<Company | undefined>();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loadingCompanies, setLoadingCompanies] = useState(true);
+  const [profileImageError, setProfileImageError] = useState(false);
 
-  // Fetch companies from API only for Admin users
-  useEffect(() => {
+  // Fetch companies function
+  const fetchCompanies = async () => {
     if (!user) return;
 
-    const { role: userRole } = user;
-    const { id: roleId } = userRole;
-    const isAdmin = roleId === ROLE_IDS.ADMIN;
+    const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
     // Only fetch companies if user is admin
     if (isAdmin) {
-      const fetchCompanies = async () => {
-        try {
-          setLoadingCompanies(true);
-          const response = await apiService.getCompaniesDropdown();
+      try {
+        setLoadingCompanies(true);
+        const response = await apiService.getCompaniesDropdown();
 
-          if (response.statusCode === 200 && response.data) {
-            // Transform API response to match Company interface
-            const transformedCompanies: Company[] = response.data.map(
-              ({ uuid, name, image }: any) => ({
-                id: uuid,
-                name,
-                icon: image
-                  ? COMPANY_IMAGES.CDN_URL + image
-                  : COMPANY_IMAGES.PLACEHOLDER,
-              })
+        if (response.statusCode === 200 && response.data) {
+          // Transform API response to match Company interface
+          const transformedCompanies: Company[] = response.data.map(
+            ({ uuid, name, image, is_default }: any) => ({
+              id: uuid,
+              name,
+              icon: image
+                ? COMPANY_IMAGES.CDN_URL + image
+                : COMPANY_IMAGES.PLACEHOLDER,
+              is_default,
+            })
+          );
+
+          setCompanies(transformedCompanies);
+
+          // Load selected company using global utility function
+          const savedCompanyId = getCompanyId();
+          if (savedCompanyId) {
+            // Check if saved company exists in fetched companies
+            const foundCompany = transformedCompanies.find(
+              c => c.id === savedCompanyId
             );
-
-            setCompanies(transformedCompanies);
-
-            // Load selected company from localStorage
-            const savedCompany = localStorage.getItem(
-              STORAGE_KEYS.SELECTED_COMPANY
+            setSelectedCompany(foundCompany || transformedCompanies[0]);
+          } else {
+            // Set company with is_default: true as default, fallback to first company
+            const defaultCompany =
+              transformedCompanies.find(c => c.is_default) ||
+              transformedCompanies[0];
+            setSelectedCompany(defaultCompany);
+            localStorage.setItem(
+              STORAGE_KEYS.SELECTED_COMPANY,
+              JSON.stringify(defaultCompany)
             );
-            if (savedCompany) {
-              try {
-                const parsedCompany = JSON.parse(savedCompany);
-                // Check if saved company exists in fetched companies
-                const foundCompany = transformedCompanies.find(
-                  c => c.id === parsedCompany.id
-                );
-                setSelectedCompany(foundCompany || transformedCompanies[0]);
-              } catch (error) {
-                console.error('Error parsing saved company:', error);
-                setSelectedCompany(transformedCompanies[0]);
-              }
-            } else {
-              // Set first company as default and save to localStorage
-              const defaultCompany = transformedCompanies[0];
-              setSelectedCompany(defaultCompany);
-              localStorage.setItem(
-                STORAGE_KEYS.SELECTED_COMPANY,
-                JSON.stringify(defaultCompany)
-              );
-            }
           }
-        } catch (error) {
-          // Fallback to empty array if API fails
-          setCompanies([]);
-          setSelectedCompany(undefined);
-        } finally {
-          setLoadingCompanies(false);
         }
-      };
-
-      fetchCompanies();
+      } catch (error) {
+        // Fallback to empty array if API fails
+        setCompanies([]);
+        setSelectedCompany(undefined);
+      } finally {
+        setLoadingCompanies(false);
+      }
     } else {
-      // For non-admin users, set loading to false immediately
-      setLoadingCompanies(false);
+      // For non-admin users, get company data from user in localStorage
+      try {
+        const currentUser = getCurrentUser();
+        if (currentUser?.company?.uuid && currentUser?.company?.name) {
+          // Set selected company in localStorage for non-admin users
+          const userCompany: Company = {
+            id: currentUser.company.uuid,
+            name: currentUser.company.name,
+            icon: COMPANY_IMAGES.PLACEHOLDER, // Use placeholder icon for non-admin users
+            color: '#000000', // Default color for non-admin users
+          };
+
+          // Save to localStorage
+          localStorage.setItem(
+            STORAGE_KEYS.SELECTED_COMPANY,
+            JSON.stringify(userCompany)
+          );
+
+          setSelectedCompany(userCompany);
+        }
+      } catch (error) {
+        console.error('Error setting company data for non-admin user:', error);
+      } finally {
+        setLoadingCompanies(false);
+      }
     }
+  };
+
+  // Fetch companies from API only for Admin users
+  useEffect(() => {
+    fetchCompanies();
+  }, [user]);
+
+  // Listen for company creation events to refresh the list
+  useEffect(() => {
+    const handleCompanyCreated = () => {
+      fetchCompanies();
+    };
+
+    window.addEventListener(
+      CUSTOM_EVENTS.COMPANY_CREATED,
+      handleCompanyCreated
+    );
+
+    return () => {
+      window.removeEventListener(
+        CUSTOM_EVENTS.COMPANY_CREATED,
+        handleCompanyCreated
+      );
+    };
   }, [user]);
 
   useEffect(() => {
@@ -175,9 +220,6 @@ export function Header() {
   const renderCompanySection = () => {
     if (!user) return null;
 
-    const { role, company } = user;
-    const { id: userRoleId } = role;
-    const { name: userCompany } = company;
     const isAdmin = userRoleId === ROLE_IDS.ADMIN;
 
     // Show loading state only for admin users while fetching companies
@@ -204,11 +246,11 @@ export function Header() {
     }
 
     // Employee users see their company name only
-    if (userRoleId === ROLE_IDS.EMPLOYEE) {
+    if (userCompany) {
       return (
         <div className='flex items-center'>
           <span className='text-[var(--text-dark)] text-lg sm:text-2xl font-bold truncate'>
-            {userCompany || HEADER_MESSAGES.COMPANY.UNKNOWN_COMPANY}
+            {userCompany}
           </span>
         </div>
       );
@@ -250,26 +292,19 @@ export function Header() {
           {renderCompanySection()}
         </div>
         <div className='flex items-center gap-4 md:gap-6'>
-          <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-[var(--secondary)] hidden md:flex'>
-            {/* Search Input */}
+          {/* <div className='items-center border-2 border-[var(--border-dark)] rounded-[20px] overflow-hidden w-[280px] xl:w-[443px] focus-within:border-[var(--secondary)] hidden md:flex'>
             <Input
               id='Search'
               type='Search'
               placeholder={HEADER_MESSAGES.SEARCH.PLACEHOLDER}
-              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] placeholder-[#C0C6CD] !placeholder-[var(--text-placeholder)]'
+              className='pl-4 h-12 text-[16px] border-0 focus:border-[var(--secondary)] focus:ring-[var(--secondary)] bg-transparent rounded-[10px] !placeholder-[var(--text-placeholder)]'
               required
             />
-            {/* Type Selector */}
-            {/* <div className="flex items-center px-3 cursor-pointer gap-1">
-              <span className="text-gray-900 font-medium text-sm">{type}</span>
-              <ChevronDown className=" text-gray-700" />
-            </div> */}
 
-            {/* Search Button */}
-            <Button className='bg-[#263796] hover:bg-[#263796] text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
+            <Button className='bg-buttonblue hover:bg-buttonblue text-white h-10 w-10 flex items-center justify-center rounded-[16px] m-1'>
               <Search />
             </Button>
-          </div>
+          </div> */}
           <ModeToggle />
           {/* <Link href='/'>
             <Notification />
@@ -285,13 +320,15 @@ export function Header() {
               >
                 <Image
                   src={
-                    user?.profile_picture_url ||
-                    '/images/user-img-placeholder.png'
+                    profile_picture_url && !profileImageError
+                      ? `${APP_CONFIG.CDN_URL}${profile_picture_url}`
+                      : APP_CONFIG.IMAGES.USER_PLACEHOLDER
                   }
                   alt='profile'
                   width={40}
                   height={40}
                   className='h-full w-full rounded-full object-cover'
+                  onError={() => setProfileImageError(true)}
                 />
               </Button>
             }

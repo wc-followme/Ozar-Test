@@ -42,6 +42,8 @@ export const USER_MESSAGES = {
     "You haven't created any users yet. Start by adding your first one to organize your users.",
   NO_MORE_USERS: 'No more users to load.',
   USER_NOT_FOUND: 'User not found',
+  ARCHIVED_USERS_TITLE: 'Archived Users',
+  NO_ARCHIVED_USERS_FOUND: 'No archived users found',
 
   // Form Placeholders
   SELECT_ROLE: 'Select role',
@@ -77,11 +79,12 @@ export const USER_MESSAGES = {
   CANCEL_BUTTON: 'Cancel',
   DELETE_USER_BUTTON: 'Delete User',
   ARCHIVE_BUTTON: 'Archive',
+  RETRIEVE_BUTTON: 'Retrieve',
   ADD_ADMIN_USER_BUTTON: 'Create User',
   REMOVE_PHOTO_ARIA: 'Remove photo',
 
   // Page Titles and Headers
-  USER_MANAGEMENT_TITLE: 'Employee Management',
+  USER_MANAGEMENT_TITLE: 'Staff Management',
   ADD_USER_TITLE: 'Add User',
   EDIT_USER_TITLE: 'Edit',
 

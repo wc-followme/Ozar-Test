@@ -10,7 +10,7 @@ import React from 'react';
 export interface DropdownOption {
   label: string;
   action: string;
-  icon: React.ElementType;
+  icon?: React.ElementType;
 }
 
 interface DropdownProps {
@@ -37,7 +37,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
     <DropdownMenuContent
       align={align}
       className={cn(
-        'bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]',
+        'bg-[var(--card-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-xl',
         className
       )}
     >
@@ -49,18 +49,20 @@ export const Dropdown: React.FC<DropdownProps> = ({
             onAction(action);
           }}
           className={cn(
-            'text-sm xl:text-base p-2 xl:p-[10px] rounded-md cursor-pointer transition-colors flex font-medium items-center gap-2 hover:!bg-[var(--select-option)]',
+            'p-2 xl:p-[10px] font-medium cursor-pointer text-base transition-colors rounded-none flex items-center gap-2 hover:!bg-[var(--select-option)]',
             itemsClass,
             index !== menuOptions.length - 1 &&
               'border-b border-[var(--border-dark)]'
           )}
         >
-          <Icon
-            size='24'
-            color='var(--text-dark)'
-            className='!h-6 !w-6'
-            variant='Outline'
-          />
+          {Icon && (
+            <Icon
+              size='20'
+              color='var(--text-dark)'
+              className='!h-6 !w-6'
+              variant='Outline'
+            />
+          )}
           <span>{label}</span>
         </DropdownMenuItem>
       ))}

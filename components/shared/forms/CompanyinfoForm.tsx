@@ -36,32 +36,35 @@ import FormErrorMessage from '../common/FormErrorMessage';
 import PhotoUploadField from '../common/PhotoUploadField';
 
 // Validation schema
-const companyFormSchema = yup.object({
-  name: yup.string().required(COMPANY_MESSAGES.NAME_REQUIRED),
-  tagline: yup.string().required(COMPANY_MESSAGES.TAGLINE_REQUIRED),
-  about: yup.string().required(COMPANY_MESSAGES.ABOUT_REQUIRED),
-  email: yup
-    .string()
-    .email('Please enter a valid email address')
-    .required(COMPANY_MESSAGES.EMAIL_REQUIRED),
-  phone_number: yup.string().required(COMPANY_MESSAGES.PHONE_REQUIRED),
-  country_code: yup.string().required(),
-  communication: yup.string().required('Address is required'),
-  website: yup.string().required(COMPANY_MESSAGES.WEBSITE_REQUIRED),
-  expiry_date: yup.date().required(COMPANY_MESSAGES.EXPIRY_DATE_REQUIRED),
-  preferred_communication_method: yup
-    .string()
-    .required(COMPANY_MESSAGES.PREFERRED_COMMUNICATION_REQUIRED),
-  city: yup.string().required(COMPANY_MESSAGES.CITY_REQUIRED),
-  pincode: yup.string().required(COMPANY_MESSAGES.PINCODE_REQUIRED),
-  contractor_name: yup.string().optional(),
-  contractor_email: yup
-    .string()
-    .email('Please enter a valid email address')
-    .optional(),
-  contractor_phone: yup.string().optional(),
-  contractor_country_code: yup.string().optional(),
-});
+const createCompanyFormSchema = (showExpiryDate: boolean) =>
+  yup.object({
+    name: yup.string().required(COMPANY_MESSAGES.NAME_REQUIRED),
+    tagline: yup.string().required(COMPANY_MESSAGES.TAGLINE_REQUIRED),
+    about: yup.string().required(COMPANY_MESSAGES.ABOUT_REQUIRED),
+    email: yup
+      .string()
+      .email('Please enter a valid email address')
+      .required(COMPANY_MESSAGES.EMAIL_REQUIRED),
+    phone_number: yup.string().required(COMPANY_MESSAGES.PHONE_REQUIRED),
+    country_code: yup.string().required(),
+    communication: yup.string().required('Address is required'),
+    website: yup.string().required(COMPANY_MESSAGES.WEBSITE_REQUIRED),
+    ...(showExpiryDate && {
+      expiry_date: yup.date().required(COMPANY_MESSAGES.EXPIRY_DATE_REQUIRED),
+    }),
+    preferred_communication_method: yup
+      .string()
+      .required(COMPANY_MESSAGES.PREFERRED_COMMUNICATION_REQUIRED),
+    city: yup.string().required(COMPANY_MESSAGES.CITY_REQUIRED),
+    pincode: yup.string().required(COMPANY_MESSAGES.PINCODE_REQUIRED),
+    contractor_name: yup.string().optional(),
+    contractor_email: yup
+      .string()
+      .email('Please enter a valid email address')
+      .optional(),
+    contractor_phone: yup.string().optional(),
+    contractor_country_code: yup.string().optional(),
+  });
 
 export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
   ({
@@ -70,6 +73,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
     loading = false,
     initialData,
     isEditMode = false,
+    showExpiryDate = true,
   }) => {
     const router = useRouter();
     const [isInitialized, setIsInitialized] = useState(false);
@@ -90,7 +94,7 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
       setValue,
       formState: { errors },
     } = useForm({
-      resolver: yupResolver(companyFormSchema),
+      resolver: yupResolver(createCompanyFormSchema(showExpiryDate)),
       defaultValues: {
         name: '',
         tagline: '',
@@ -629,62 +633,66 @@ export const CompanyInfoForm: React.FC<CompanyInfoFormProps> = React.memo(
               <FormErrorMessage message={errors.website?.message || ''} />
             </div>
 
-            {/* Expiry Date */}
-            <div className='space-y-2'>
-              <Label className='field-label'>
-                {COMPANY_MESSAGES.EXPIRY_DATE_LABEL}
-              </Label>
-              <Controller
-                name='expiry_date'
-                control={control}
-                render={({ field }) => (
-                  <Popover
-                    open={datePickerOpen}
-                    onOpenChange={setDatePickerOpen}
-                  >
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant={'outline'}
-                        className={cn(
-                          'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px]',
-                          !field.value && 'text-muted-foreground',
-                          errors.expiry_date
-                            ? '!border-[var(--warning)]'
-                            : 'border-[var(--border-dark)]'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP')
-                        ) : (
-                          <span className='flex-1'>
-                            {COMPANY_MESSAGES.SELECT_EXPIRY_DATE}
-                          </span>
-                        )}
-                        <IconsaxCalendar
-                          className='ml-2 !h-6 !w-6'
-                          color='var(--primary)'
-                        />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      className='w-auto p-0 bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
-                      align='start'
+            {/* Expiry Date - Only show if showExpiryDate is true */}
+            {showExpiryDate && (
+              <div className='space-y-2'>
+                <Label className='field-label'>
+                  {COMPANY_MESSAGES.EXPIRY_DATE_LABEL}
+                </Label>
+                <Controller
+                  name='expiry_date'
+                  control={control}
+                  render={({ field }) => (
+                    <Popover
+                      open={datePickerOpen}
+                      onOpenChange={setDatePickerOpen}
                     >
-                      <Calendar
-                        mode='single'
-                        selected={field.value}
-                        onSelect={date => {
-                          field.onChange(date);
-                          setDatePickerOpen(false); // Close popover after selection
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                )}
-              />
-              <FormErrorMessage message={errors.expiry_date?.message || ''} />
-            </div>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={'outline'}
+                          className={cn(
+                            'w-full h-12 justify-between text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px]',
+                            !field.value && 'text-muted-foreground',
+                            errors.expiry_date
+                              ? '!border-[var(--warning)]'
+                              : 'border-[var(--border-dark)]'
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value as Date, 'PPP')
+                          ) : (
+                            <span className='flex-1'>
+                              {COMPANY_MESSAGES.SELECT_EXPIRY_DATE}
+                            </span>
+                          )}
+                          <IconsaxCalendar
+                            className='ml-2 !h-6 !w-6'
+                            color='var(--primary)'
+                          />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className='w-auto p-0 bg-[var(--white-background)] border border-[var(--border-dark)] shadow-[0px_2px_8px_0px_#0000001A] rounded-[8px]'
+                        align='start'
+                      >
+                        <Calendar
+                          mode='single'
+                          selected={field.value as Date}
+                          onSelect={(date: Date | undefined) => {
+                            field.onChange(date);
+                            setDatePickerOpen(false); // Close popover after selection
+                          }}
+                          disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  )}
+                />
+                <FormErrorMessage message={errors.expiry_date?.message || ''} />
+              </div>
+            )}
+
             {/* Preferred Communication */}
             <div className='space-y-2'>
               <Label className='field-label'>

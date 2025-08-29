@@ -1,16 +1,8 @@
 'use client';
 
-import { catIconOptions } from '@/constants/sidebar-items';
+import { CategoryItem } from '@/app/(DashboardLayout)/templates/template-types';
+import { catIconOptions } from '@/constants/icon-options';
 import React from 'react';
-
-interface CategoryItem {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  color: string;
-  bgColor: string;
-}
 
 interface CategoryComponentProps {
   categoryData: CategoryItem[];
@@ -90,10 +82,7 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                           >
                             <div
                               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
-                              style={{
-                                background: bgColor,
-                                color: color,
-                              }}
+                              style={{ backgroundColor: bgColor, color: color }}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;
@@ -352,7 +341,7 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                               <div
                                 className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
                                 style={{
-                                  background: bgColor,
+                                  backgroundColor: bgColor,
                                   color: color,
                                 }}
                               >
@@ -411,7 +400,7 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                                 <div
                                   className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0`}
                                   style={{
-                                    background: bgColor,
+                                    backgroundColor: bgColor,
                                     color: color,
                                   }}
                                 >
@@ -470,10 +459,7 @@ const CategoryComponent: React.FC<CategoryComponentProps> = ({
                           >
                             <div
                               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-[16px] flex items-center justify-center mb-3 sm:mb-0 sm:mr-4 flex-shrink-0`}
-                              style={{
-                                background: bgColor,
-                                color: color,
-                              }}
+                              style={{ backgroundColor: bgColor, color: color }}
                             >
                               {(() => {
                                 const IconComponent = iconOption.icon;

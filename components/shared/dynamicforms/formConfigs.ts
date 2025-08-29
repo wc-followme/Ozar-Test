@@ -1,8 +1,26 @@
-import { PROJECT_MESSAGES } from '@/constants/messages';
+import {
+  BHK_OPTIONS_ARRAY,
+  COMMERCIAL_PROPERTY_TYPE_OPTIONS,
+  FIVE_BOX_SLUGS,
+  FLOOR_OPTIONS_ARRAY,
+  GENERAL_INFORMATION_FIELDS,
+  INDUSTRIAL_PROPERTY_TYPE_OPTIONS,
+  PET_TYPES,
+  PROJECT_INFORMATION_FIELDS,
+  PROPERTY_AGE_OPTIONS_ARRAY,
+  PROPERTY_INFORMATION_FIELDS,
+  PROPERTY_TYPE_ARRAY,
+  RESIDENTIAL_PROPERTY_TYPE_OPTIONS,
+  SQUARE_FOOTAGE_OPTIONS_ARRAY,
+} from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
+import {
+  STEP_MESSAGES,
+  STEP_PROJECT_INFO_CONSTANTS,
+} from '@/app/(DashboardLayout)/job-management/step-messages';
 import { FormConfig } from './DynamicForm';
 
 export const formConfigs: Record<string, FormConfig> = {
-  'general-information': {
+  [FIVE_BOX_SLUGS.GENERAL_INFORMATION]: {
     id: '01',
     number: '01',
     color: '#10B981',
@@ -11,10 +29,10 @@ export const formConfigs: Record<string, FormConfig> = {
       'Fill out your details to help us contact you and understand your project better.',
     fields: [
       {
-        name: 'yourName',
-        label: 'Your Name',
+        name: GENERAL_INFORMATION_FIELDS.YOUR_NAME,
+        label: STEP_MESSAGES.YOUR_NAME_LABEL,
         type: 'text',
-        placeholder: 'Enter your full name',
+        placeholder: STEP_MESSAGES.ENTER_FULL_NAME,
         required: true,
         validation: {
           minLength: 2,
@@ -23,10 +41,10 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-6', // Full width
       },
       {
-        name: 'email',
-        label: 'Email',
+        name: GENERAL_INFORMATION_FIELDS.EMAIL,
+        label: STEP_MESSAGES.EMAIL_LABEL,
         type: 'email',
-        placeholder: 'Enter your email',
+        placeholder: STEP_MESSAGES.ENTER_EMAIL,
         required: true,
         validation: {
           pattern: '^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$',
@@ -34,10 +52,10 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'phoneNumber',
-        label: 'Phone Number',
+        name: GENERAL_INFORMATION_FIELDS.PHONE_NUMBER,
+        label: STEP_MESSAGES.PHONE_NUMBER_LABEL,
         type: 'tel',
-        placeholder: 'Enter your number',
+        placeholder: STEP_MESSAGES.ENTER_PHONE_NUMBER,
         required: true,
         validation: {
           pattern: '^[+]?[0-9\\s\\-\\(\\)]{10,}$',
@@ -45,10 +63,10 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (right column)
       },
       {
-        name: 'address',
-        label: 'Address',
+        name: GENERAL_INFORMATION_FIELDS.ADDRESS,
+        label: STEP_MESSAGES.ADDRESS_LABEL,
         type: 'textarea',
-        placeholder: 'Enter your address',
+        placeholder: STEP_MESSAGES.ENTER_ADDRESS,
         required: true,
         validation: {
           minLength: 10,
@@ -57,10 +75,10 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-6', // Full width
       },
       {
-        name: 'preferredContactMethod',
-        label: 'Preferred contact method',
+        name: GENERAL_INFORMATION_FIELDS.PREFERRED_CONTACT_METHOD,
+        label: STEP_MESSAGES.PREFERRED_CONTACT_METHOD_LABEL,
         type: 'select',
-        placeholder: 'Select contact method',
+        placeholder: STEP_MESSAGES.SELECT_CONTACT_METHOD,
         required: true,
         options: [
           { value: 'phone', label: 'Phone' },
@@ -70,47 +88,37 @@ export const formConfigs: Record<string, FormConfig> = {
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'bestTimeToContact',
-        label: 'Best time to contact',
-        type: 'timerange',
-        placeholder: 'Start time',
+        name: GENERAL_INFORMATION_FIELDS.BEST_TIME_TO_CONTACT,
+        label: STEP_MESSAGES.BEST_TIME_TO_CONTACT_LABEL,
+        type: 'time',
+        placeholder: STEP_MESSAGES.SELECT_START_TIME,
         required: true,
-        validation: {
-          startTime: 'bestTimeToContactStart',
-          endTime: 'bestTimeToContactEnd',
-        },
         className: 'md:col-span-3', // Half width (right column)
       },
       {
-        name: 'animalsInHome',
-        label: 'Animals in the Home',
+        name: GENERAL_INFORMATION_FIELDS.ANIMALS_IN_HOME,
+        label: STEP_MESSAGES.ANIMALS_IN_HOME_LABEL,
         type: 'select',
         placeholder: 'Select option',
         required: true,
         options: [
-          { value: 'yes', label: 'Yes' },
-          { value: 'no', label: 'No' },
+          { value: 'yes', label: STEP_MESSAGES.YES },
+          { value: 'no', label: STEP_MESSAGES.NO },
         ],
         className: 'md:col-span-3', // Half width (left column)
       },
       {
-        name: 'petType',
-        label: 'Pet type?',
+        name: GENERAL_INFORMATION_FIELDS.PET_TYPE,
+        label: STEP_MESSAGES.PET_TYPE_LABEL,
         type: 'select',
-        placeholder: 'Select pet type',
+        placeholder: STEP_MESSAGES.SELECT_PET_TYPE,
         required: false,
-        options: [
-          { value: 'dog', label: 'Dog' },
-          { value: 'cat', label: 'Cat' },
-          { value: 'bird', label: 'Bird' },
-          { value: 'fish', label: 'Fish' },
-          { value: 'other', label: 'Other' },
-        ],
+        options: PET_TYPES,
         className: 'md:col-span-3', // Half width (right column)
       },
     ],
   },
-  'property-information': {
+  [FIVE_BOX_SLUGS.PROPERTY_INFORMATION]: {
     id: '02',
     number: '02',
     color: '#3B82F6',
@@ -119,106 +127,71 @@ export const formConfigs: Record<string, FormConfig> = {
       'Share key property details to help us tailor solutions that suit your space and structure.',
     fields: [
       {
-        name: 'property',
-        label: 'Property',
+        name: PROPERTY_INFORMATION_FIELDS.PROPERTY,
+        label: STEP_MESSAGES.PROPERTY_LABEL,
+        type: 'select',
+        placeholder: 'Select property type',
+        required: true,
+        options: PROPERTY_TYPE_ARRAY,
+      },
+      {
+        name: PROPERTY_INFORMATION_FIELDS.PROPERTY_TYPE,
+        label: STEP_MESSAGES.PROPERTY_TYPE_LABEL,
         type: 'select',
         placeholder: 'Select property type',
         required: true,
         options: [
-          { value: 'residential', label: 'Residential' },
-          { value: 'commercial', label: 'Commercial' },
-          { value: 'industrial', label: 'Industrial' },
-          { value: 'mixed', label: 'Mixed Use' },
+          ...RESIDENTIAL_PROPERTY_TYPE_OPTIONS,
+          ...COMMERCIAL_PROPERTY_TYPE_OPTIONS,
+          ...INDUSTRIAL_PROPERTY_TYPE_OPTIONS,
         ],
       },
       {
-        name: 'propertyType',
-        label: 'Type of Property',
+        name: PROPERTY_INFORMATION_FIELDS.BHK,
+        label: STEP_MESSAGES.BHK_LABEL,
         type: 'select',
-        placeholder: 'Select property type',
+        placeholder: 'Select no. of rooms',
         required: true,
-        options: [
-          { value: 'house-villa', label: 'House/Villa' },
-          { value: 'apartment', label: 'Apartment' },
-          { value: 'condo', label: 'Condo' },
-          { value: 'townhouse', label: 'Townhouse' },
-          { value: 'penthouse', label: 'Penthouse' },
-        ],
+        options: BHK_OPTIONS_ARRAY,
       },
       {
-        name: 'bhk',
-        label: 'BHK',
-        type: 'select',
-        placeholder: 'Select BHK',
-        required: true,
-        options: [
-          { value: '1', label: '1 BHK' },
-          { value: '2', label: '2 BHK' },
-          { value: '3', label: '3 BHK' },
-          { value: '4', label: '4 BHK' },
-          { value: '5', label: '5 BHK' },
-          { value: '6+', label: '6+ BHK' },
-        ],
-      },
-      {
-        name: 'floor',
-        label: 'Floor',
+        name: PROPERTY_INFORMATION_FIELDS.FLOOR,
+        label: STEP_MESSAGES.FLOOR_LABEL,
         type: 'select',
         placeholder: 'Select floor',
         required: true,
-        options: [
-          { value: 'ground', label: 'Ground Floor' },
-          { value: '1', label: '1 Floor' },
-          { value: '2', label: '2 Floor' },
-          { value: '3', label: '3 Floor' },
-          { value: '4', label: '4 Floor' },
-          { value: '5+', label: '5+ Floor' },
-        ],
+        options: FLOOR_OPTIONS_ARRAY,
       },
       {
-        name: 'approxSqFt',
-        label: 'Approx. sq ft',
+        name: PROPERTY_INFORMATION_FIELDS.APPROX_SQ_FT,
+        label: STEP_MESSAGES.APPROX_SQ_FT_PROPERTY_LABEL,
         type: 'select',
         placeholder: 'Select square footage',
         required: true,
-        options: [
-          { value: '500-1000', label: '500-1000 Sq / Ft' },
-          { value: '1000-1500', label: '1000-1500 Sq / Ft' },
-          { value: '1500-2000', label: '1500-2000 Sq / Ft' },
-          { value: '2000-2500', label: '2000-2500 Sq / Ft' },
-          { value: '2500-3000', label: '2500 Sq / Ft' },
-          { value: '3000+', label: '3000+ Sq / Ft' },
-        ],
+        options: SQUARE_FOOTAGE_OPTIONS_ARRAY,
       },
       {
-        name: 'ageOfProperty',
-        label: 'Age of Property',
+        name: PROPERTY_INFORMATION_FIELDS.AGE_OF_PROPERTY,
+        label: STEP_MESSAGES.AGE_OF_PROPERTY_PROPERTY_LABEL,
         type: 'select',
         placeholder: 'Select property age',
         required: true,
-        options: [
-          { value: '0-5', label: '0-5 years' },
-          { value: '5-10', label: '5-10 years' },
-          { value: '10-15', label: '10-15 years' },
-          { value: '15-20', label: '15-20 years' },
-          { value: '20-25', label: '20 years' },
-          { value: '25+', label: '25+ years' },
-        ],
+        options: PROPERTY_AGE_OPTIONS_ARRAY,
       },
     ],
   },
-  'project-information': {
+  [FIVE_BOX_SLUGS.PROJECT_INFORMATION]: {
     id: '03',
     number: '03',
     color: '#06B6D4',
-    title: PROJECT_MESSAGES.FORM_TITLE,
-    description: PROJECT_MESSAGES.FORM_DESCRIPTION,
+    title: STEP_PROJECT_INFO_CONSTANTS.FORM_TITLE,
+    description: STEP_PROJECT_INFO_CONSTANTS.FORM_DESCRIPTION,
     fields: [
       {
-        name: 'projectName',
-        label: PROJECT_MESSAGES.PROJECT_NAME_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_NAME,
+        label: STEP_PROJECT_INFO_CONSTANTS.PROJECT_NAME_LABEL,
         type: 'text',
-        placeholder: PROJECT_MESSAGES.PROJECT_NAME_PLACEHOLDER,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.PROJECT_NAME_PLACEHOLDER,
         required: true,
         validation: {
           minLength: 3,
@@ -226,46 +199,46 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'projectStartDate',
-        label: PROJECT_MESSAGES.PROJECT_START_DATE_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_START_DATE,
+        label: STEP_PROJECT_INFO_CONSTANTS.PROJECT_START_DATE_LABEL,
         type: 'date',
-        placeholder: PROJECT_MESSAGES.SELECT_START_DATE,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.SELECT_START_DATE,
         required: true,
       },
       {
-        name: 'projectFinishDate',
-        label: PROJECT_MESSAGES.PROJECT_FINISH_DATE_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.PROJECT_FINISH_DATE,
+        label: STEP_PROJECT_INFO_CONSTANTS.PROJECT_FINISH_DATE_LABEL,
         type: 'date',
-        placeholder: PROJECT_MESSAGES.SELECT_FINISH_DATE,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.SELECT_FINISH_DATE,
         required: true,
       },
       {
-        name: 'ownerPresence',
-        label: PROJECT_MESSAGES.OWNER_PRESENCE_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.OWNER_PRESENCE,
+        label: STEP_PROJECT_INFO_CONSTANTS.OWNER_PRESENCE_LABEL,
         type: 'select',
-        placeholder: PROJECT_MESSAGES.SELECT_OWNER_PRESENCE,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.SELECT_OWNER_PRESENCE,
         required: true,
         options: [
-          { value: 'yes', label: PROJECT_MESSAGES.YES_OPTION },
-          { value: 'no', label: PROJECT_MESSAGES.NO_OPTION },
+          { value: 'yes', label: STEP_PROJECT_INFO_CONSTANTS.YES_OPTION },
+          { value: 'no', label: STEP_PROJECT_INFO_CONSTANTS.NO_OPTION },
         ],
       },
       {
-        name: 'weekendWork',
-        label: PROJECT_MESSAGES.WEEKEND_WORK_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.WEEKEND_WORK,
+        label: STEP_PROJECT_INFO_CONSTANTS.WEEKEND_WORK_LABEL,
         type: 'select',
-        placeholder: PROJECT_MESSAGES.SELECT_WEEKEND_WORK,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.SELECT_WEEKEND_WORK,
         required: true,
         options: [
-          { value: 'yes', label: PROJECT_MESSAGES.YES_OPTION },
-          { value: 'no', label: PROJECT_MESSAGES.NO_OPTION },
+          { value: 'yes', label: STEP_PROJECT_INFO_CONSTANTS.YES_OPTION },
+          { value: 'no', label: STEP_PROJECT_INFO_CONSTANTS.NO_OPTION },
         ],
       },
       {
-        name: 'dailyWorkTiming',
-        label: PROJECT_MESSAGES.DAILY_WORK_TIMING_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING,
+        label: STEP_PROJECT_INFO_CONSTANTS.DAILY_WORK_TIMING_LABEL,
         type: 'timerange',
-        placeholder: PROJECT_MESSAGES.START_TIME_PLACEHOLDER,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.START_TIME_PLACEHOLDER,
         required: true,
         validation: {
           startTime: 'dailyWorkTimingStart',
@@ -273,10 +246,10 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'budget',
-        label: PROJECT_MESSAGES.BUDGET_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.BUDGET,
+        label: STEP_PROJECT_INFO_CONSTANTS.BUDGET_LABEL,
         type: 'text',
-        placeholder: PROJECT_MESSAGES.BUDGET_PLACEHOLDER,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.BUDGET_PLACEHOLDER,
         required: true,
         validation: {
           minLength: 3,
@@ -284,14 +257,17 @@ export const formConfigs: Record<string, FormConfig> = {
         },
       },
       {
-        name: 'preferredContractor',
-        label: PROJECT_MESSAGES.PREFERRED_CONTRACTOR_LABEL,
+        name: PROJECT_INFORMATION_FIELDS.PREFERRED_CONTRACTOR,
+        label: STEP_PROJECT_INFO_CONSTANTS.PREFERRED_CONTRACTOR_LABEL,
         type: 'select',
-        placeholder: PROJECT_MESSAGES.SELECT_CONTRACTOR,
+        placeholder: STEP_PROJECT_INFO_CONSTANTS.SELECT_CONTRACTOR,
         required: true,
         options: [
-          { value: 'any', label: PROJECT_MESSAGES.ANY_CONTRACTOR },
-          { value: 'specific', label: PROJECT_MESSAGES.SPECIFIC_CONTRACTOR },
+          { value: 'any', label: STEP_PROJECT_INFO_CONSTANTS.ANY_CONTRACTOR },
+          {
+            value: 'specific',
+            label: STEP_PROJECT_INFO_CONSTANTS.SPECIFIC_CONTRACTOR,
+          },
         ],
       },
     ],

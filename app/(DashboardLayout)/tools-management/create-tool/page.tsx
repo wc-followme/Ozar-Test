@@ -4,7 +4,7 @@ import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ToolForm } from '@/components/shared/forms/ToolForm';
 import { useToast } from '@/components/ui/use-toast';
-import { ROUTES } from '@/constants/common';
+import { ROUTES, UPLOAD_PURPOSES } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
 import { apiService, CreateToolRequest } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -18,13 +18,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { TOOL_MESSAGES } from '../tool-messages';
-import { ToolCreateFormData } from '../tool-types';
 
 export default function CreateToolPage() {
   // Destructure constants for better readability
   const { TOOLS_MANAGEMENT } = ROUTES;
 
-  const [fileKey, setFileKey] = useState<string>('');
   const [uploading, setUploading] = useState<boolean>(false);
   const [formLoading, setFormLoading] = useState(false);
   const router = useRouter();
@@ -34,7 +32,7 @@ export default function CreateToolPage() {
 
   // Get user permissions for tools
   const userPermissions = getUserPermissionsFromStorage();
-  const canCreateTool = userPermissions?.tools?.edit;
+  const canCreateTool = userPermissions?.catalogue_services?.edit;
 
   const breadcrumbData: BreadcrumbItem[] = [
     { name: TOOL_MESSAGES.TOOL_MANAGEMENT_BREADCRUMB, href: TOOLS_MANAGEMENT },
@@ -44,7 +42,6 @@ export default function CreateToolPage() {
   const handlePhotoChange = async (file: File | null) => {
     if (!file) {
       setPhotoFile(null);
-      setFileKey('');
       return;
     }
     setPhotoFile(file);
@@ -58,33 +55,58 @@ export default function CreateToolPage() {
         fileName: generatedFileName,
         fileType: file.type,
         fileSize: file.size,
-        purpose: 'tool', // Using 'tool' as purpose for tool images
+        purpose: UPLOAD_PURPOSES.TOOL,
         customPath: ``,
       });
       const { data } = presigned;
-      const { uploadUrl, fileKey: presignedFileKey } = data;
+      const { uploadUrl } = data;
       await uploadFileToPresignedUrl(uploadUrl, file);
-      setFileKey(presignedFileKey || '');
     } catch (_: unknown) {
       showErrorToast(TOOL_MESSAGES.CREATE_ERROR);
       setPhotoFile(null);
-      setFileKey('');
     } finally {
       setUploading(false);
     }
   };
 
-  const handleCreateTool = async (data: ToolCreateFormData) => {
-    const { name, available_quantity, manufacturer, service_ids } = data;
+  const handleCreateTool = async (data: {
+    name: string;
+    brandName: string;
+    image_url: string;
+    service_ids: string;
+    video_tutorial_urls?: string[];
+    video_tutorial_links?: string[];
+    barcodes?: string[];
+  }) => {
+    const {
+      name,
+      brandName,
+      service_ids,
+      image_url,
+      video_tutorial_urls,
+      video_tutorial_links,
+      barcodes,
+    } = data;
 
     setFormLoading(true);
     try {
       const payload: CreateToolRequest = {
-        name,
-        available_quantity,
-        manufacturer,
-        tool_assets: fileKey,
+        name: name.trim(),
+        brand_name: brandName.trim(),
         service_ids,
+        ...(image_url && { image_url }),
+        ...(video_tutorial_urls &&
+          video_tutorial_urls.length > 0 && {
+            video_tutorial_urls: video_tutorial_urls.filter(Boolean),
+          }),
+        ...(video_tutorial_links &&
+          video_tutorial_links.length > 0 && {
+            video_tutorial_link: video_tutorial_links.filter(Boolean),
+          }),
+        ...(barcodes &&
+          barcodes.length > 0 && {
+            barcodes: barcodes.filter(Boolean),
+          }),
       };
 
       const response = await apiService.createTool(payload);
@@ -116,7 +138,6 @@ export default function CreateToolPage() {
 
   const handleDeletePhoto = () => {
     setPhotoFile(null);
-    setFileKey('');
   };
 
   // Check if user has permission to create tools

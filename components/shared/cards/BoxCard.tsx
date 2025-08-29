@@ -33,6 +33,7 @@ export interface BoxCardProps {
   onDelete?: () => void;
   onToggle?: () => void;
   onClick?: () => void; // New prop for card click
+  showMenu?: boolean; // New prop to control menu visibility
 }
 
 export const BoxCard: React.FC<BoxCardProps> = ({
@@ -47,6 +48,7 @@ export const BoxCard: React.FC<BoxCardProps> = ({
   onDelete,
   onToggle,
   onClick,
+  showMenu: showMenuProp = true, // Default to true for backward compatibility
 }) => {
   const [isToggling, setIsToggling] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -67,8 +69,8 @@ export const BoxCard: React.FC<BoxCardProps> = ({
     return true; // Show other actions by default
   });
 
-  // Only show menu if there are any visible options
-  const showMenu = filteredMenuOptions.length > 0;
+  // Only show menu if there are any visible options AND showMenu prop is true
+  const showMenu = showMenuProp && filteredMenuOptions.length > 0;
 
   const handleToggle = async () => {
     if (!onToggle) return;
@@ -106,7 +108,9 @@ export const BoxCard: React.FC<BoxCardProps> = ({
 
   return (
     <div
-      className='bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover p-6 transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 cursor-pointer'
+      className={`bg-[var(--card-background)] flex flex-col rounded-3xl border border-[var(--border-dark)] hover:shadow-card-hover p-6 transition-all duration-300 shadow-lg sm:shadow-none transform hover:scale-[1.02] sm:hover:scale-100 active:scale-[0.98] sm:active:scale-100 ${
+        onClick ? 'cursor-pointer' : 'cursor-default'
+      }`}
       onClick={handleCardClick}
     >
       {/* Header with Digit Circle and Menu */}

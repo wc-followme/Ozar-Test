@@ -39,10 +39,11 @@ export const JOB_MESSAGES = {
   UPDATING_BUTTON: 'Updating...',
 
   // Form Labels
-  JOB_NAME_LABEL: 'New to Us / Already with Us',
-  PHONE_LABEL: 'Phone Number',
+  JOB_NAME_LABEL: 'New to us / Already with us',
+  PHONE_LABEL: 'Phone number',
   JOB_TYPE_LABEL: 'Job Type',
   LINK_LABEL: 'Link',
+  SELECT_BOXES_LABEL: 'Select boxes',
 
   // Form Placeholders
   ENTER_JOB_NAME: 'Enter client full name',
@@ -57,7 +58,7 @@ export const JOB_MESSAGES = {
 
   // Breadcrumbs
   BREADCRUMB_JOBS: 'Jobs',
-  JOB_MANAGEMENT_BREADCRUMB: 'Job Management',
+  JOB_MANAGEMENT_BREADCRUMB: 'Projects',
   CREATE_JOB_BREADCRUMB: 'Create Job',
   EDIT_JOB_BREADCRUMB: 'Edit Job',
 

@@ -79,7 +79,6 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
   }) => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [datePickerOpen, setDatePickerOpen] = useState(false);
-
     const {
       control,
       handleSubmit,
@@ -277,8 +276,8 @@ export const UserInfoForm: React.FC<UserInfoFormProps> = React.memo(
                 label={USER_MESSAGES.ROLE_LABEL}
                 value={field.value}
                 onValueChange={field.onChange}
-                options={roles.map(({ uuid, name, status }) => ({
-                  value: String(uuid),
+                options={roles?.map(({ uuid, name, status }) => ({
+                  value: uuid,
                   label: status === 'INACTIVE' ? `${name} (Deactivated)` : name,
                   disabled: status === 'INACTIVE',
                 }))}

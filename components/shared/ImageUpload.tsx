@@ -24,12 +24,12 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div
       className={cn(
-        'aspect-square w-full mx-auto lg:mx-0 rounded-2xl overflow-hidden bg-[#00A8BF26]',
+        'aspect-square w-full mx-auto lg:mx-0 rounded-2xl bg-cyanwave-light',
         className
       )}
     >
       <div
-        className='w-full h-full border-image-custom rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer text-center px-4 py-6'
+        className='w-full h-full border-2 border-dashed border-[#00A8BF] rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer text-center px-4 py-6'
         onClick={onClick}
       >
         {icon ?? <GalleryAdd size='32' color='#00A8BF' variant='Outline' />}

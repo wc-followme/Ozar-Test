@@ -100,3 +100,29 @@ export interface DummyTool {
   manufacturer: string;
   totalQuantity: number;
 }
+
+// Tool History Management Types
+export interface ToolHistoryData {
+  id: string;
+  borrowedBy: {
+    name: string;
+    avatar: string;
+  };
+  employeeType: string;
+  assignedJob: string;
+  borrowedDate: string;
+  returnedDate: string;
+}
+
+export interface ToolMaintenanceData {
+  id: string;
+  returnedBy: {
+    name: string;
+    avatar: string;
+  };
+  employeeType: string;
+  assignedJob: string;
+  assignedDate: string;
+  returnedDate: string;
+  issue: string;
+}

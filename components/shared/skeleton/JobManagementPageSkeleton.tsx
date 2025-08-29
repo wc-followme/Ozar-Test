@@ -1,10 +1,9 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Gallery } from 'iconsax-react';
 import React from 'react';
 
 const JobCardSkeleton: React.FC = () => (
-  <div className='border-1 border-[#E8EAED] shadow-sm bg-[var(--card-background)] rounded-[16px] overflow-hidden w-full min-h-[390px] flex flex-col cursor-pointer'>
+  <div className='border-1 border-[var(--border-dark)] shadow-sm bg-[var(--card-background)] rounded-[16px] overflow-hidden w-full min-h-[390px] flex flex-col cursor-pointer'>
     {/* Image Skeleton */}
     <div className='relative w-full h-48'>
       <Skeleton className='w-full h-full object-cover rounded-t-lg bg-[var(--bg-skeleton)] flex items-center justify-center'>
@@ -56,7 +55,7 @@ const JobCardSkeleton: React.FC = () => (
 const JobManagementPageSkeleton: React.FC = () => (
   <div className=''>
     {/* Stats Cards Skeleton */}
-    <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
+    {/* <div className='grid grid-cols-2 lg:grid-cols-4 gap-3 xl:gap-6 mb-8'>
       {[...Array(4)].map((_, i) => (
         <Card
           key={i}
@@ -71,13 +70,13 @@ const JobManagementPageSkeleton: React.FC = () => (
                 <Skeleton className='h-3 w-24 rounded bg-[var(--bg-skeleton)]' />
               </div>
               <div className='w-12 h-12 rounded-[16px] bg-[var(--bg-skeleton)] flex items-center justify-center mb-4'>
-                <Skeleton className='w-5 h-5 rounded bg-[#E0E2E5]' />
+                <Skeleton className='w-5 h-5 rounded bg-[var(--bg-skeleton)]' />
               </div>
             </div>
           </CardContent>
         </Card>
       ))}
-    </div>
+    </div> */}
     {/* Tabs and Create Job Button Skeleton */}
     <div className='flex flex-row items-start lg:items-center gap-2 w-full sm:mb-10 mb-6'>
       <Skeleton className='h-16 sm:h-12 rounded-full bg-[var(--bg-skeleton)] w-full sm:w-1/2' />
