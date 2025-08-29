@@ -21,7 +21,7 @@ const FiveBoxSystem = () => {
   const { showSuccessToast, showErrorToast } = useToast();
 
   const breadcrumbData: BreadcrumbItem[] = [
-    { name: FIVE_BOX_MESSAGES.COMPANY_PROFILE, href: ROUTES.COMPANY_PROFILE },
+   // { name: FIVE_BOX_MESSAGES.COMPANY_PROFILE, href: ROUTES.COMPANY_PROFILE },
     { name: FIVE_BOX_MESSAGES.PAGE_TITLE }, // current page
   ];
 
