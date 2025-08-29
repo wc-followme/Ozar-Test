@@ -120,7 +120,7 @@ export function StepGeneralInfo({
       address: '',
       preferredContactMethod: '',
       contactStartTime: '',
-      animals: 'No',
+      animals: ANIMALS_VALUES.NO,
       petType: '',
       ...defaultValues,
     },
@@ -468,7 +468,7 @@ export function StepGeneralInfo({
                       </div>
                     )}
                     {/* Pet type? */}
-                    {animals === 'Yes' &&
+                    {animals === ANIMALS_VALUES.YES &&
                       isFieldEnabled(GENERAL_INFORMATION_FIELDS.PET_TYPE) && (
                         <div className='flex flex-col gap-1.5 sm:gap-2'>
                           <FormField
