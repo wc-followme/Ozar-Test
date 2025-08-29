@@ -60,6 +60,11 @@ export function Sidebar() {
           PERMISSION_CATEGORIES.USERS,
           PERMISSION_ACTIONS.VIEW
         );
+      case SIDEBAR_TITLES.ROLES_ACCOUNTS:
+        return (
+          hasPermission(PERMISSION_CATEGORIES.ROLES, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.USERS, PERMISSION_ACTIONS.VIEW)
+        );
       case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
         return hasPermission(
           PERMISSION_CATEGORIES.COMPANIES,
@@ -68,6 +73,11 @@ export function Sidebar() {
       case SIDEBAR_TITLES.TEMPLATES_MANAGEMENT:
         return hasPermission(
           PERMISSION_CATEGORIES.TEMPLATES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.SETTINGS:
+        return hasPermission(
+          PERMISSION_CATEGORIES.GLOBAL_SETTINGS,
           PERMISSION_ACTIONS.VIEW
         );
       case SIDEBAR_TITLES.PROJECTS:
