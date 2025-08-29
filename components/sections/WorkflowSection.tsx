@@ -8,7 +8,10 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { ArrowDown2, Clock, Play, TickCircle, Warning2 } from 'iconsax-react';
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { DraftIcon } from '../icons/DraftIcon';
+import { UserCheckedIcon } from '../icons/UserCheckedIcon';
 
 interface WorkflowStep {
   id: string;
@@ -68,6 +71,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
   onPauseStep,
   onResumeStep,
 }) => {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedWorkflowItems, setSelectedWorkflowItems] = useState<
     Set<string>
@@ -343,6 +347,18 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
   const handleQuickAction = (action: string) => {
     console.log('Quick action:', action);
     // Handle quick actions here
+    switch (action) {
+      case 'draft-pole':
+        // Handle draft pole action
+        console.log('Draft pole clicked');
+        break;
+      case 'pole-planning':
+        // Navigate to poll planning page
+        router.push('/job-management/poll-planning');
+        break;
+      default:
+        console.log('Unknown action:', action);
+    }
   };
 
   // Filter workflow items based on search
@@ -382,10 +398,12 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
               {
                 label: 'Draft Pole',
                 action: 'draft-pole',
+                icon: DraftIcon,
               },
               {
                 label: 'Pole Planning',
                 action: 'pole-planning',
+                icon: UserCheckedIcon,
               },
             ]}
             onAction={handleQuickAction}
