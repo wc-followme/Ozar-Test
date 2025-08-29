@@ -248,7 +248,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={PROPERTY_TYPE_ARRAY}
-                                placeholder='Select property type'
+                                placeholder={STEP_MESSAGES.SELECT_PROPERTY_TYPE}
                                 className=''
                               />
                             </FormControl>
@@ -280,7 +280,9 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={getPropertyTypeOptions()}
-                                placeholder='Select property type'
+                                placeholder={
+                                  STEP_MESSAGES.SELECT_PROPERTY_TYPE_DETAIL
+                                }
                                 className=''
                               />
                             </FormControl>
@@ -310,7 +312,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={BHK_OPTIONS_ARRAY}
-                                placeholder='Select BHK'
+                                placeholder={STEP_MESSAGES.SELECT_BHK}
                                 className=''
                               />
                             </FormControl>
@@ -340,7 +342,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={FLOOR_OPTIONS_ARRAY}
-                                placeholder='Select floor'
+                                placeholder={STEP_MESSAGES.SELECT_FLOOR}
                                 className=''
                               />
                             </FormControl>
@@ -370,7 +372,9 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={SQUARE_FOOTAGE_OPTIONS_ARRAY}
-                                placeholder='Select square footage'
+                                placeholder={
+                                  STEP_MESSAGES.SELECT_SQUARE_FOOTAGE
+                                }
                                 className=''
                               />
                             </FormControl>
@@ -402,7 +406,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={PROPERTY_AGE_OPTIONS_ARRAY}
-                                placeholder='Select property age'
+                                placeholder={STEP_MESSAGES.SELECT_PROPERTY_AGE}
                                 className=''
                               />
                             </FormControl>

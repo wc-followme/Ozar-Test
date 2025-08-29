@@ -30,7 +30,7 @@ export const STEP_MESSAGES = {
   BEST_TIME_TO_CONTACT_LABEL: 'Best time to contact',
 
   // Optional Details Form Labels
-  ANIMALS_IN_HOME_LABEL: 'Animals in the Home',
+  ANIMALS_IN_HOME_LABEL: 'Animals in the home',
   PET_TYPE_LABEL: 'Pet type?',
 
   // Property Information Form Labels
@@ -40,6 +40,14 @@ export const STEP_MESSAGES = {
   FLOOR_LABEL: 'Floor',
   APPROX_SQ_FT_PROPERTY_LABEL: 'Approx. sq ft',
   AGE_OF_PROPERTY_PROPERTY_LABEL: 'Age of property',
+
+  // Property Information Placeholders
+  SELECT_PROPERTY_TYPE: 'Select property type',
+  SELECT_PROPERTY_TYPE_DETAIL: 'Select property type',
+  SELECT_BHK: 'Select no. of rooms',
+  SELECT_FLOOR: 'Select floor',
+  SELECT_SQUARE_FOOTAGE: 'Select square footage',
+  SELECT_PROPERTY_AGE: 'Select property age',
 
   // Form Placeholders
   ENTER_FULL_NAME: 'Enter your full name',
