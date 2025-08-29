@@ -56,8 +56,8 @@ export const TradeCard: React.FC<TradeCardProps> = ({
   };
   // Get user permissions for trades
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.trades?.edit;
-  const canArchive = userPermissions?.trades?.archive;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canArchive = userPermissions?.catalogue_services?.archive;
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {
@@ -127,8 +127,8 @@ export const TradeCard: React.FC<TradeCardProps> = ({
 
       <ConfirmRetrieveModal
         open={showRetrieve}
-        title="Are you sure you want to retrieve?"
-        subtitle="This will restore the item to active status."
+        title='Are you sure you want to retrieve?'
+        subtitle='This will restore the item to active status.'
         onCancel={() => setShowRetrieve(false)}
         onRetrieve={async () => {
           setShowRetrieve(false);

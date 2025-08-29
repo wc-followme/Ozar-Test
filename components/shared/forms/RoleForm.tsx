@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { ACCESS_CONTROL_ACCORDIONS_DATA } from '@/constants/access-control';
 import { roleIconOptions } from '@/constants/icon-options';
 import type { UserPermissions } from '@/lib/api';
-import { cn } from '@/lib/utils';
+import { cn, getUserPermissionsFromStorage } from '@/lib/utils';
 import { CreateRoleFormData, createRoleSchema } from '@/lib/validations/role';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Loader2 } from 'lucide-react';
@@ -22,10 +22,12 @@ interface RoleFormProps {
   onSubmit: (data: CreateRoleFormData) => Promise<void>;
   isSubmitting: boolean;
   mode: 'create' | 'edit';
+  // If provided, restricts which modules/permissions are visible
+  allowedPermissions?: UserPermissions;
 }
 
 export const RoleForm: React.FC<RoleFormProps> = React.memo(
-  ({ initialValues, onSubmit, isSubmitting, mode }) => {
+  ({ initialValues, onSubmit, isSubmitting, mode, allowedPermissions }) => {
     const router = useRouter();
 
     // Ensure iconOptions is always an array
@@ -96,24 +98,20 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       'roles',
       'users',
       'companies',
-      'categories',
-      'trades',
-      'services',
-      'materials',
-      'tools',
+      'catalogue_services',
       'jobs',
+      'templates',
+      'global_settings',
     ];
     // Map stripe indices to permission keys for each accordion
     const stripeToPermissionMap = [
       ['view', 'edit', 'archive'], // roles
       ['view', 'create', 'customize', 'archive'], // users
       ['view', 'assign_user', 'archive'], // companies
-      ['view', 'edit', 'archive'], // categories
-      ['view', 'edit', 'archive'], // trades
-      ['view', 'edit', 'archive'], // services
-      ['view', 'edit', 'archive'], // materials
-      ['view', 'edit', 'archive', 'history'], // tools
+      ['view', 'edit', 'archive'], // catalogue_services
       ['view', 'edit', 'archive'], // jobs
+      ['view', 'edit', 'archive'], // templates
+      ['view', 'edit'], // global_settings
     ];
 
     // Helper: Convert permissions object to accordions state
@@ -142,12 +140,10 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
         roles: { view: false, edit: false, archive: false },
         users: { view: false, create: false, customize: false, archive: false },
         companies: { view: false, assign_user: false, archive: false },
-        categories: { view: false, edit: false, archive: false },
-        trades: { view: false, edit: false, archive: false },
-        services: { view: false, edit: false, archive: false },
-        materials: { view: false, edit: false, archive: false },
-        tools: { view: false, edit: false, archive: false, history: false },
+        catalogue_services: { view: false, edit: false, archive: false },
         jobs: { view: false, edit: false, archive: false },
+        templates: { view: false, edit: false, archive: false },
+        global_settings: { view: false, edit: false },
       };
       accordions.forEach((accordion, accordionIdx) => {
         const permissionKey = accordionToPermissionMap[accordionIdx];
@@ -241,6 +237,9 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
       return 'Limited Access';
     };
 
+    const effectiveAllowedPermissions =
+      allowedPermissions || getUserPermissionsFromStorage() || undefined;
+
     return (
       <Card className='flex flex-col gap-8 p-4 md:p-6 flex-1 w-full border-1 border-[var(--border-dark)] rounded-[20px] bg-[var(--card-background)]'>
         <form
@@ -325,29 +324,62 @@ export const RoleForm: React.FC<RoleFormProps> = React.memo(
           {/* Permissions Accordions */}
           <div className='flex flex-col gap-4 mt-2 md:mt-4'>
             {accordions.map((accordion, idx) => {
+              const permissionKey = accordionToPermissionMap[idx];
+              const modulePerms = effectiveAllowedPermissions?.[
+                permissionKey as keyof UserPermissions
+              ] as Record<string, boolean> | undefined;
+              const canSeeAccordion =
+                !effectiveAllowedPermissions ||
+                (modulePerms && modulePerms['view']);
+              if (!canSeeAccordion) return null;
+
               const { title, stripes } = accordion;
-              const accessLevel = calculateAccessLevel(stripes);
+
+              // Build visible stripes only if user has that action permission
+              const rawStripes =
+                ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes || [];
+              const visibleStripeItems = rawStripes
+                .map((stripe, sIdx) => {
+                  const permName = stripeToPermissionMap[idx]?.[sIdx];
+                  const canSeeStripe =
+                    !effectiveAllowedPermissions ||
+                    (permName ? modulePerms?.[permName] : true);
+                  if (!canSeeStripe) return null;
+                  return {
+                    title: stripe.title,
+                    description: stripe.description,
+                    checked:
+                      typeof stripes?.[sIdx] === 'boolean'
+                        ? stripes[sIdx]
+                        : false,
+                    onToggle: () => handleToggle(idx, sIdx),
+                  };
+                })
+                .filter(Boolean) as {
+                title: string;
+                description: string;
+                checked: boolean;
+                onToggle: () => void;
+              }[];
+
+              if (visibleStripeItems.length === 0) return null;
+
+              // Calculate access level only on visible stripes
+              const visibleStripesBools = stripes.filter((_, sIdx) => {
+                const permName = stripeToPermissionMap[idx]?.[sIdx];
+                return (
+                  !effectiveAllowedPermissions ||
+                  (permName ? modulePerms?.[permName] : true)
+                );
+              });
+              const accessLevel = calculateAccessLevel(visibleStripesBools);
+
               return (
                 <AccessControlAccordion
                   key={title + idx}
                   title={title}
                   badgeLabel={accessLevel}
-                  stripes={
-                    Array.isArray(stripes) &&
-                    Array.isArray(ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes)
-                      ? ACCESS_CONTROL_ACCORDIONS_DATA[idx]?.stripes.map(
-                          (stripe, sIdx) => ({
-                            title: stripe.title,
-                            description: stripe.description,
-                            checked:
-                              typeof stripes?.[sIdx] === 'boolean'
-                                ? stripes[sIdx]
-                                : false,
-                            onToggle: () => handleToggle(idx, sIdx),
-                          })
-                        )
-                      : []
-                  }
+                  stripes={visibleStripeItems}
                   open={openAccordionIdx === idx}
                   onOpenChange={open => setOpenAccordionIdx(open ? idx : -1)}
                 />

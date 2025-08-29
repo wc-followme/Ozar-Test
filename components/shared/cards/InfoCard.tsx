@@ -28,16 +28,7 @@ interface InfoCardProps {
   onArchive?: (() => Promise<void>) | undefined;
   onEdit?: () => void;
   onDelete?: () => void;
-  module?:
-    | 'categories'
-    | 'roles'
-    | 'users'
-    | 'companies'
-    | 'trades'
-    | 'services'
-    | 'materials'
-    | 'tools'
-    | 'jobs';
+  module?: 'catalogue_services' | 'roles' | 'users' | 'companies' | 'jobs';
 }
 
 export const InfoCard: React.FC<InfoCardProps> = ({
@@ -98,6 +89,8 @@ export const InfoCard: React.FC<InfoCardProps> = ({
         return userPermissions.users.create;
       case 'jobs':
         return userPermissions.jobs.edit;
+      case 'catalogue_services':
+        return userPermissions.catalogue_services.edit;
       default:
         return userPermissions[module]?.edit ?? true;
     }
@@ -175,8 +168,8 @@ export const InfoCard: React.FC<InfoCardProps> = ({
 
       <ConfirmRetrieveModal
         open={showRetrieve}
-        title="Are you sure you want to retrieve?"
-        subtitle="This will restore the item to active status."
+        title='Are you sure you want to retrieve?'
+        subtitle='This will restore the item to active status.'
         onCancel={() => setShowRetrieve(false)}
         onRetrieve={async () => {
           setShowRetrieve(false);

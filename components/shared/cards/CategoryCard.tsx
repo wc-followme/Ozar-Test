@@ -57,8 +57,8 @@ export function CategoryCard({
 
   // Get user permissions for categories
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.categories?.edit;
-  const canArchive = userPermissions?.categories?.archive;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canArchive = userPermissions?.catalogue_services?.archive;
 
   // Filter menu options based on permissions
   const filteredMenuOptions = menuOptions.filter(option => {

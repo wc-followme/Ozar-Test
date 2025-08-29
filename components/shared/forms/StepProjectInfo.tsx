@@ -1,8 +1,13 @@
 import {
   FIVE_BOX_SLUGS,
+  OWNER_PRESENCE_OPTIONS_ARRAY,
   PROJECT_INFORMATION_FIELDS,
+  WEEKEND_WORK_OPTIONS_ARRAY,
 } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
-import { STEP_MESSAGES } from '@/app/(DashboardLayout)/job-management/step-messages';
+import {
+  STEP_MESSAGES,
+  STEP_PROJECT_INFO_CONSTANTS,
+} from '@/app/(DashboardLayout)/job-management/step-messages';
 import { TimePicker } from '@/components/shared/common/TimePicker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -21,7 +26,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { ROLE_IDS } from '@/constants/common';
-import { PROJECT_MESSAGES, SKIP_MESSAGES } from '@/constants/messages';
+import { SKIP_MESSAGES } from '@/constants/messages';
 import { apiService } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -48,41 +53,49 @@ const createProjectInfoSchema = (boxSettings: any) => {
 
   return yup.object({
     projectName: isFieldRequired(PROJECT_INFORMATION_FIELDS.PROJECT_NAME)
-      ? yup.string().required(PROJECT_MESSAGES.PROJECT_NAME_REQUIRED)
+      ? yup.string().required(STEP_PROJECT_INFO_CONSTANTS.PROJECT_NAME_REQUIRED)
       : yup.string().optional(),
     projectStartDate: isFieldRequired(
       PROJECT_INFORMATION_FIELDS.PROJECT_START_DATE
     )
-      ? yup.string().required(PROJECT_MESSAGES.START_DATE_REQUIRED)
+      ? yup.string().required(STEP_PROJECT_INFO_CONSTANTS.START_DATE_REQUIRED)
       : yup.string().optional(),
     projectFinishDate: isFieldRequired(
       PROJECT_INFORMATION_FIELDS.PROJECT_FINISH_DATE
     )
-      ? yup.string().required(PROJECT_MESSAGES.FINISH_DATE_REQUIRED)
+      ? yup.string().required(STEP_PROJECT_INFO_CONSTANTS.FINISH_DATE_REQUIRED)
       : yup.string().optional(),
     ownerPresence: isFieldRequired(PROJECT_INFORMATION_FIELDS.OWNER_PRESENCE)
-      ? yup.string().required(PROJECT_MESSAGES.OWNER_PRESENCE_REQUIRED)
+      ? yup
+          .string()
+          .required(STEP_PROJECT_INFO_CONSTANTS.OWNER_PRESENCE_REQUIRED)
       : yup.string().optional(),
     weekendWork: isFieldRequired(PROJECT_INFORMATION_FIELDS.WEEKEND_WORK)
-      ? yup.string().required(PROJECT_MESSAGES.WEEKEND_WORK_REQUIRED)
+      ? yup.string().required(STEP_PROJECT_INFO_CONSTANTS.WEEKEND_WORK_REQUIRED)
       : yup.string().optional(),
     dailyWorkTimingStart: isFieldRequired(
       PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
     )
-      ? yup.string().required(PROJECT_MESSAGES.DAILY_WORK_TIMING_REQUIRED)
+      ? yup
+          .string()
+          .required(STEP_PROJECT_INFO_CONSTANTS.DAILY_WORK_TIMING_REQUIRED)
       : yup.string().optional(),
     dailyWorkTimingEnd: isFieldRequired(
       PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
     )
-      ? yup.string().required(PROJECT_MESSAGES.DAILY_WORK_TIMING_REQUIRED)
+      ? yup
+          .string()
+          .required(STEP_PROJECT_INFO_CONSTANTS.DAILY_WORK_TIMING_REQUIRED)
       : yup.string().optional(),
     budget: isFieldRequired(PROJECT_INFORMATION_FIELDS.BUDGET)
-      ? yup.string().required(PROJECT_MESSAGES.BUDGET_REQUIRED)
+      ? yup.string().required(STEP_PROJECT_INFO_CONSTANTS.BUDGET_REQUIRED)
       : yup.string().optional(),
     preferredContractor: isFieldRequired(
       PROJECT_INFORMATION_FIELDS.PREFERRED_CONTRACTOR
     )
-      ? yup.string().required(PROJECT_MESSAGES.PREFERRED_CONTRACTOR_REQUIRED)
+      ? yup
+          .string()
+          .required(STEP_PROJECT_INFO_CONSTANTS.PREFERRED_CONTRACTOR_REQUIRED)
       : yup.string().optional(),
   });
 };
@@ -132,7 +145,6 @@ export function StepProjectInfo({
       ...defaultValues,
     },
   });
-
   // State for questions with id, text, and answer
   const [questions, setQuestions] = useState<any[]>([]);
   const [datePickerOpen, setDatePickerOpen] = useState<Record<string, boolean>>(
@@ -254,10 +266,11 @@ export function StepProjectInfo({
       className={`w-full bg-[var(--card-background)] rounded-2xl p-4 flex flex-col items-center`}
     >
       <h2 className='text-xl md:text-2xl xl:text-[30px] font-bold text-center mb-2 text-[var(--text-dark)]'>
-        {formConfig?.title || PROJECT_MESSAGES.FORM_TITLE}
+        {formConfig?.title || STEP_PROJECT_INFO_CONSTANTS.FORM_TITLE}
       </h2>
       <p className='text-[var(--text-secondary)] text-sm md:text-[18px] font-normal text-center mb-6 sm:mb-8 max-w-lg px-2 sm:px-0'>
-        {formConfig?.description || PROJECT_MESSAGES.FORM_DESCRIPTION}
+        {formConfig?.description ||
+          STEP_PROJECT_INFO_CONSTANTS.FORM_DESCRIPTION}
       </p>
       <Form {...form}>
         <form
@@ -278,7 +291,7 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.PROJECT_NAME_LABEL}
+                              {STEP_PROJECT_INFO_CONSTANTS.PROJECT_NAME_LABEL}
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.PROJECT_NAME
                               ) && <span className='text-red-500'>*</span>}
@@ -286,7 +299,7 @@ export function StepProjectInfo({
                             <FormControl>
                               <Input
                                 placeholder={
-                                  PROJECT_MESSAGES.PROJECT_NAME_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.PROJECT_NAME_PLACEHOLDER
                                 }
                                 className='input-field'
                                 {...field}
@@ -310,7 +323,9 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.PROJECT_START_DATE_LABEL}
+                              {
+                                STEP_PROJECT_INFO_CONSTANTS.PROJECT_START_DATE_LABEL
+                              }
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.PROJECT_START_DATE
                               ) && <span className='text-red-500'>*</span>}
@@ -340,7 +355,9 @@ export function StepProjectInfo({
                                       format(new Date(field.value), 'PPP')
                                     ) : (
                                       <span className='flex-1'>
-                                        {PROJECT_MESSAGES.SELECT_START_DATE}
+                                        {
+                                          STEP_PROJECT_INFO_CONSTANTS.SELECT_START_DATE
+                                        }
                                       </span>
                                     )}
                                     <IconsaxCalendar
@@ -396,7 +413,9 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.PROJECT_FINISH_DATE_LABEL}
+                              {
+                                STEP_PROJECT_INFO_CONSTANTS.PROJECT_FINISH_DATE_LABEL
+                              }
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.PROJECT_FINISH_DATE
                               ) && <span className='text-red-500'>*</span>}
@@ -426,7 +445,9 @@ export function StepProjectInfo({
                                       format(new Date(field.value), 'PPP')
                                     ) : (
                                       <span className='flex-1'>
-                                        {PROJECT_MESSAGES.SELECT_FINISH_DATE}
+                                        {
+                                          STEP_PROJECT_INFO_CONSTANTS.SELECT_FINISH_DATE
+                                        }
                                       </span>
                                     )}
                                     <IconsaxCalendar
@@ -482,7 +503,7 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.OWNER_PRESENCE_LABEL}
+                              {STEP_PROJECT_INFO_CONSTANTS.OWNER_PRESENCE_LABEL}
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.OWNER_PRESENCE
                               ) && <span className='text-red-500'>*</span>}
@@ -491,18 +512,9 @@ export function StepProjectInfo({
                               <SelectField
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                options={[
-                                  {
-                                    value: 'yes',
-                                    label: PROJECT_MESSAGES.YES_OPTION,
-                                  },
-                                  {
-                                    value: 'no',
-                                    label: PROJECT_MESSAGES.NO_OPTION,
-                                  },
-                                ]}
+                                options={OWNER_PRESENCE_OPTIONS_ARRAY}
                                 placeholder={
-                                  PROJECT_MESSAGES.SELECT_OWNER_PRESENCE
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_OWNER_PRESENCE
                                 }
                                 className=''
                               />
@@ -523,7 +535,7 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.WEEKEND_WORK_LABEL}
+                              {STEP_PROJECT_INFO_CONSTANTS.WEEKEND_WORK_LABEL}
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.WEEKEND_WORK
                               ) && <span className='text-red-500'>*</span>}
@@ -532,18 +544,9 @@ export function StepProjectInfo({
                               <SelectField
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                options={[
-                                  {
-                                    value: 'yes',
-                                    label: PROJECT_MESSAGES.YES_OPTION,
-                                  },
-                                  {
-                                    value: 'no',
-                                    label: PROJECT_MESSAGES.NO_OPTION,
-                                  },
-                                ]}
+                                options={WEEKEND_WORK_OPTIONS_ARRAY}
                                 placeholder={
-                                  PROJECT_MESSAGES.SELECT_WEEKEND_WORK
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_WEEKEND_WORK
                                 }
                                 className=''
                               />
@@ -561,7 +564,7 @@ export function StepProjectInfo({
                   ) && (
                     <div className='flex flex-col gap-1.5 sm:gap-2'>
                       <FormLabel className='field-label'>
-                        {PROJECT_MESSAGES.DAILY_WORK_TIMING_LABEL}
+                        {STEP_PROJECT_INFO_CONSTANTS.SHIFT_FROM_LABEL}
                         {isFieldRequired(
                           PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
                         ) && <span className='text-red-500'>*</span>}
@@ -576,7 +579,7 @@ export function StepProjectInfo({
                                 value={field.value}
                                 onChange={field.onChange}
                                 placeholder={
-                                  PROJECT_MESSAGES.START_TIME_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_SHIFT_FROM
                                 }
                               />
                             </FormControl>
@@ -592,7 +595,9 @@ export function StepProjectInfo({
                     PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
                   ) && (
                     <div className='flex flex-col gap-1.5 sm:gap-2'>
-                      <FormLabel className='field-label'>&nbsp;</FormLabel>
+                      <FormLabel className='field-label'>
+                        {STEP_PROJECT_INFO_CONSTANTS.SHIFT_TO_LABEL}
+                      </FormLabel>
                       <FormField
                         control={form.control}
                         name='dailyWorkTimingEnd'
@@ -603,7 +608,7 @@ export function StepProjectInfo({
                                 value={field.value}
                                 onChange={field.onChange}
                                 placeholder={
-                                  PROJECT_MESSAGES.END_TIME_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_SHIFT_TO
                                 }
                               />
                             </FormControl>
@@ -623,7 +628,7 @@ export function StepProjectInfo({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className='field-label'>
-                              {PROJECT_MESSAGES.BUDGET_LABEL}
+                              {STEP_PROJECT_INFO_CONSTANTS.BUDGET_LABEL}
                               {isFieldRequired(
                                 PROJECT_INFORMATION_FIELDS.BUDGET
                               ) && <span className='text-red-500'>*</span>}
@@ -631,7 +636,7 @@ export function StepProjectInfo({
                             <FormControl>
                               <Input
                                 placeholder={
-                                  PROJECT_MESSAGES.BUDGET_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.BUDGET_PLACEHOLDER
                                 }
                                 className='input-field'
                                 {...field}
@@ -670,8 +675,8 @@ export function StepProjectInfo({
                                 }))}
                                 placeholder={
                                   isLoadingContractors
-                                    ? STEP_MESSAGES.LOADING_CONTRACTORS
-                                    : STEP_MESSAGES.SELECT_CONTRACTOR
+                                    ? STEP_PROJECT_INFO_CONSTANTS.LOADING_CONTRACTORS
+                                    : STEP_PROJECT_INFO_CONSTANTS.SELECT_CONTRACTOR
                                 }
                                 className=''
                               />
@@ -707,7 +712,7 @@ export function StepProjectInfo({
                           {text}
                         </h3>
                         <textarea
-                          placeholder='Type your answer here...'
+                          placeholder={STEP_MESSAGES.ENTER_ANSWER_HERE}
                           value={question.answer || ''}
                           onChange={e => {
                             updateQuestionAnswer(id, e.target.value);

@@ -1,10 +1,15 @@
-import { sidebarItems } from '@/constants/sidebar-items';
-import type { UserPermissions } from '@/lib/api';
-import { cn, getUserPermissionsFromStorage } from '@/lib/utils';
+import {
+  PERMISSION_ACTIONS,
+  PERMISSION_CATEGORIES,
+  SIDEBAR_TITLES,
+  sidebarItems,
+} from '@/constants/sidebar-items';
+import { usePermissions } from '@/lib/permission-context';
+import { cn } from '@/lib/utils';
 import { ArrowLeft2, ArrowRight2 } from 'iconsax-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '../ui/sheet';
 
 interface SidebarMobileProps {
@@ -13,46 +18,81 @@ interface SidebarMobileProps {
 }
 
 export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
-  const [userPermissions, setUserPermissions] =
-    useState<UserPermissions | null>(null);
-  const [isHydrated, setIsHydrated] = useState(false);
+  const { permissions, isLoading, hasPermission } = usePermissions();
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const pathname = usePathname();
 
-  // Handle hydration and permissions loading
-  useEffect(() => {
-    setIsHydrated(true);
-    const permissions = getUserPermissionsFromStorage();
-    setUserPermissions(permissions);
-  }, []);
+  // Show loading state while permissions are loading
+  if (isLoading) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side='left'
+          className='p-0 w-[320px] max-w-full bg-[var(--card-background)] px-4 border-0 overflow-hidden shadow-2xl'
+        >
+          <SheetTitle className='hidden'></SheetTitle>
+          <div className='flex items-center justify-center h-full'>
+            <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   // Filter sidebar items based on permissions
-  const filteredSidebarItems = sidebarItems.filter(item => {
-    // During SSR or before hydration, show all items to prevent mismatch
-    if (!isHydrated) {
-      return true;
+  const filteredSidebarItems = sidebarItems.filter(menu_item => {
+    // If no permissions loaded, show only home
+    if (!permissions) {
+      return menu_item.title === SIDEBAR_TITLES.HOME;
     }
 
-    switch (item.title) {
-      case 'Category Management':
-        return userPermissions?.categories?.view;
-      case 'Role Management':
-        return userPermissions?.roles?.view;
-      case 'User Management':
-        return userPermissions?.users?.view;
-      case 'Company Management':
-        return userPermissions?.companies?.view;
-      case 'Trade Management':
-        return userPermissions?.trades?.view;
-      case 'Service Management':
-        return userPermissions?.services?.view;
-      case 'Material Management':
-        return userPermissions?.materials?.view;
-      case 'Tools Management':
-        return userPermissions?.tools?.view;
-      case 'Jobs':
-        return userPermissions?.jobs?.edit;
-      case 'Home':
+    switch (menu_item.title) {
+      case SIDEBAR_TITLES.CATALOGUE_MANAGEMENT:
+      case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
+      case SIDEBAR_TITLES.TRADE_MANAGEMENT:
+      case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
+      case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
+      case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.CATALOGUE_SERVICES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.ROLE_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.ROLES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.STAFF_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.USERS,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.ROLES_ACCOUNTS:
+        return (
+          hasPermission(PERMISSION_CATEGORIES.ROLES, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.USERS, PERMISSION_ACTIONS.VIEW)
+        );
+      case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.COMPANIES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.TEMPLATES_MANAGEMENT:
+        return hasPermission(
+          PERMISSION_CATEGORIES.TEMPLATES,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.SETTINGS:
+        return hasPermission(
+          PERMISSION_CATEGORIES.GLOBAL_SETTINGS,
+          PERMISSION_ACTIONS.VIEW
+        );
+      case SIDEBAR_TITLES.PROJECTS:
+        return (
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.JOBS, PERMISSION_ACTIONS.EDIT)
+        );
+      case SIDEBAR_TITLES.HOME:
         return true; // Always show home
       default:
         return true; // Show other items by default
@@ -64,21 +104,26 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
     if (!submenu) return [];
     return submenu.filter(subItem => {
       switch (subItem.title) {
-        case 'Role Management':
-          return userPermissions?.roles?.view;
-        case 'User Management':
+        case SIDEBAR_TITLES.ROLE_MANAGEMENT:
+          return hasPermission(
+            PERMISSION_CATEGORIES.ROLES,
+            PERMISSION_ACTIONS.VIEW
+          );
+        case SIDEBAR_TITLES.STAFF_MANAGEMENT:
         case 'Portal Users':
-          return userPermissions?.users?.view;
-        case 'Category Management':
-          return userPermissions?.categories?.view;
-        case 'Trade Management':
-          return userPermissions?.trades?.view;
-        case 'Service Management':
-          return userPermissions?.services?.view;
-        case 'Material Management':
-          return userPermissions?.materials?.view;
-        case 'Tools Management':
-          return userPermissions?.tools?.view;
+          return hasPermission(
+            PERMISSION_CATEGORIES.USERS,
+            PERMISSION_ACTIONS.VIEW
+          );
+        case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
+        case SIDEBAR_TITLES.TRADE_MANAGEMENT:
+        case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
+        case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
+        case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
+          return hasPermission(
+            PERMISSION_CATEGORIES.CATALOGUE_SERVICES,
+            PERMISSION_ACTIONS.VIEW
+          );
         default:
           return true;
       }
@@ -126,6 +171,9 @@ export function SidebarMobile({ open, onOpenChange }: SidebarMobileProps) {
                   : [];
                 const isActive =
                   pathname === item.href ||
+                  (item.menu_id === 'projects' &&
+                    item.href &&
+                    pathname?.startsWith(item.href)) ||
                   (hasSubmenu &&
                     filteredSubmenu.some(subItem => pathname === subItem.href));
 

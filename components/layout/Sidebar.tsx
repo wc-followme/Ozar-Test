@@ -40,9 +40,14 @@ export function Sidebar() {
     }
 
     switch (menu_item.title) {
+      case SIDEBAR_TITLES.CATALOGUE_MANAGEMENT:
       case SIDEBAR_TITLES.CATEGORY_MANAGEMENT:
+      case SIDEBAR_TITLES.TRADE_MANAGEMENT:
+      case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
+      case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
+      case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
         return hasPermission(
-          PERMISSION_CATEGORIES.CATEGORIES,
+          PERMISSION_CATEGORIES.CATALOGUE_SERVICES,
           PERMISSION_ACTIONS.VIEW
         );
       case SIDEBAR_TITLES.ROLE_MANAGEMENT:
@@ -55,29 +60,24 @@ export function Sidebar() {
           PERMISSION_CATEGORIES.USERS,
           PERMISSION_ACTIONS.VIEW
         );
+      case SIDEBAR_TITLES.ROLES_ACCOUNTS:
+        return (
+          hasPermission(PERMISSION_CATEGORIES.ROLES, PERMISSION_ACTIONS.VIEW) ||
+          hasPermission(PERMISSION_CATEGORIES.USERS, PERMISSION_ACTIONS.VIEW)
+        );
       case SIDEBAR_TITLES.COMPANY_MANAGEMENT:
         return hasPermission(
           PERMISSION_CATEGORIES.COMPANIES,
           PERMISSION_ACTIONS.VIEW
         );
-      case SIDEBAR_TITLES.TRADE_MANAGEMENT:
+      case SIDEBAR_TITLES.TEMPLATES_MANAGEMENT:
         return hasPermission(
-          PERMISSION_CATEGORIES.TRADES,
+          PERMISSION_CATEGORIES.TEMPLATES,
           PERMISSION_ACTIONS.VIEW
         );
-      case SIDEBAR_TITLES.SERVICE_MANAGEMENT:
+      case SIDEBAR_TITLES.SETTINGS:
         return hasPermission(
-          PERMISSION_CATEGORIES.SERVICES,
-          PERMISSION_ACTIONS.VIEW
-        );
-      case SIDEBAR_TITLES.MATERIAL_MANAGEMENT:
-        return hasPermission(
-          PERMISSION_CATEGORIES.MATERIALS,
-          PERMISSION_ACTIONS.VIEW
-        );
-      case SIDEBAR_TITLES.TOOLS_MANAGEMENT:
-        return hasPermission(
-          PERMISSION_CATEGORIES.TOOLS,
+          PERMISSION_CATEGORIES.GLOBAL_SETTINGS,
           PERMISSION_ACTIONS.VIEW
         );
       case SIDEBAR_TITLES.PROJECTS:
@@ -140,7 +140,7 @@ export function Sidebar() {
                           href={href || '#'}
                           className={cn(
                             'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                            pathname === href &&
+                            (pathname === href || (menu_id === 'projects' && href && pathname?.startsWith(href))) &&
                               'bg-[var(--primary)] text-white'
                           )}
                         >
@@ -159,7 +159,7 @@ export function Sidebar() {
                               href={href || '#'}
                               className={cn(
                                 'flex items-center flex-nowrap w-full px-[18px] rounded-[16px] h-[60px] text-[var(--text-dark)] transition-colors hover:bg-[var(--primary)] group',
-                                pathname === href &&
+                                (pathname === href || (menu_id === 'projects' && href && pathname?.startsWith(href))) &&
                                   'bg-[var(--primary)] text-white'
                               )}
                             >

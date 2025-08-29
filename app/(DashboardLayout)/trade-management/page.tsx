@@ -73,8 +73,8 @@ export default function TradeManagementPage() {
 
   // Get user permissions for trades
   const userPermissions = getUserPermissionsFromStorage();
-  const canEdit = userPermissions?.trades?.edit;
-  const canViewTrades = userPermissions?.trades?.view;
+  const canEdit = userPermissions?.catalogue_services?.edit;
+  const canViewTrades = userPermissions?.catalogue_services?.view;
 
   const fetchTrades = useCallback(
     async (targetPage = 1, append = false) => {

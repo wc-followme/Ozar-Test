@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Calendar as IconsaxCalendar } from 'iconsax-react';
 import { useState } from 'react';
+import { STEP_PROJECT_INFO_CONSTANTS } from '../../../app/(DashboardLayout)/job-management/step-messages';
 
 export interface FormFieldOption {
   value: string;
@@ -245,14 +246,11 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                 {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
             )}
-            <Input
-              id={name}
-              type='time'
-              placeholder={placeholder}
+            <TimePicker
               value={formData[name] || ''}
-              onChange={e => handleInputChange(name, e.target.value)}
-              className={`mt-1 input-field ${hasError ? 'border-red-500' : ''}`}
-              required={required}
+              onChange={value => handleInputChange(name, value)}
+              placeholder={placeholder}
+              error={hasError}
             />
           </div>
         ) : type === 'category-selector' ? (
@@ -310,14 +308,12 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
             )}
           </div>
         ) : type === 'timerange' ? (
-          <div>
-            {label && (
+          <div className='w-full grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+            <div>
               <Label className='text-sm font-medium'>
-                {label}
+                {STEP_PROJECT_INFO_CONSTANTS.SHIFT_FROM_LABEL}
                 {required && <span className='text-red-500 ml-1'>*</span>}
               </Label>
-            )}
-            <div className='flex gap-3 mt-2'>
               <div className='flex-1'>
                 <TimePicker
                   value={formData[validation?.startTime || ''] || ''}
@@ -328,13 +324,18 @@ export const DynamicForm: React.FC<DynamicFormProps> = ({
                   error={hasError}
                 />
               </div>
+            </div>
+            <div className=''>
+              <Label className='text-sm font-medium'>
+                {STEP_PROJECT_INFO_CONSTANTS.SHIFT_TO_LABEL}
+              </Label>
               <div className='flex-1'>
                 <TimePicker
                   value={formData[validation?.endTime || ''] || ''}
                   onChange={value =>
                     handleInputChange(validation?.endTime || '', value)
                   }
-                  placeholder='End Time'
+                  placeholder={STEP_PROJECT_INFO_CONSTANTS.SELECT_SHIFT_TO}
                   error={hasError}
                 />
               </div>
