@@ -1,6 +1,8 @@
 import {
   FIVE_BOX_SLUGS,
+  OWNER_PRESENCE_OPTIONS_ARRAY,
   PROJECT_INFORMATION_FIELDS,
+  WEEKEND_WORK_OPTIONS_ARRAY,
 } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import {
   STEP_MESSAGES,
@@ -143,7 +145,6 @@ export function StepProjectInfo({
       ...defaultValues,
     },
   });
-  console.log('form', defaultValues);
   // State for questions with id, text, and answer
   const [questions, setQuestions] = useState<any[]>([]);
   const [datePickerOpen, setDatePickerOpen] = useState<Record<string, boolean>>(
@@ -511,18 +512,7 @@ export function StepProjectInfo({
                               <SelectField
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                options={[
-                                  {
-                                    value: 'yes',
-                                    label:
-                                      STEP_PROJECT_INFO_CONSTANTS.YES_OPTION,
-                                  },
-                                  {
-                                    value: 'no',
-                                    label:
-                                      STEP_PROJECT_INFO_CONSTANTS.NO_OPTION,
-                                  },
-                                ]}
+                                options={OWNER_PRESENCE_OPTIONS_ARRAY}
                                 placeholder={
                                   STEP_PROJECT_INFO_CONSTANTS.SELECT_OWNER_PRESENCE
                                 }
@@ -554,18 +544,7 @@ export function StepProjectInfo({
                               <SelectField
                                 value={field.value}
                                 onValueChange={field.onChange}
-                                options={[
-                                  {
-                                    value: 'yes',
-                                    label:
-                                      STEP_PROJECT_INFO_CONSTANTS.YES_OPTION,
-                                  },
-                                  {
-                                    value: 'no',
-                                    label:
-                                      STEP_PROJECT_INFO_CONSTANTS.NO_OPTION,
-                                  },
-                                ]}
+                                options={WEEKEND_WORK_OPTIONS_ARRAY}
                                 placeholder={
                                   STEP_PROJECT_INFO_CONSTANTS.SELECT_WEEKEND_WORK
                                 }
@@ -585,7 +564,7 @@ export function StepProjectInfo({
                   ) && (
                     <div className='flex flex-col gap-1.5 sm:gap-2'>
                       <FormLabel className='field-label'>
-                        {STEP_PROJECT_INFO_CONSTANTS.DAILY_WORK_TIMING_LABEL}
+                        {STEP_PROJECT_INFO_CONSTANTS.SHIFT_FROM_LABEL}
                         {isFieldRequired(
                           PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
                         ) && <span className='text-red-500'>*</span>}
@@ -600,7 +579,7 @@ export function StepProjectInfo({
                                 value={field.value}
                                 onChange={field.onChange}
                                 placeholder={
-                                  STEP_PROJECT_INFO_CONSTANTS.START_TIME_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_SHIFT_FROM
                                 }
                               />
                             </FormControl>
@@ -616,7 +595,9 @@ export function StepProjectInfo({
                     PROJECT_INFORMATION_FIELDS.DAILY_WORK_TIMING
                   ) && (
                     <div className='flex flex-col gap-1.5 sm:gap-2'>
-                      <FormLabel className='field-label'>&nbsp;</FormLabel>
+                      <FormLabel className='field-label'>
+                        {STEP_PROJECT_INFO_CONSTANTS.SHIFT_TO_LABEL}
+                      </FormLabel>
                       <FormField
                         control={form.control}
                         name='dailyWorkTimingEnd'
@@ -627,7 +608,7 @@ export function StepProjectInfo({
                                 value={field.value}
                                 onChange={field.onChange}
                                 placeholder={
-                                  STEP_PROJECT_INFO_CONSTANTS.END_TIME_PLACEHOLDER
+                                  STEP_PROJECT_INFO_CONSTANTS.SELECT_SHIFT_TO
                                 }
                               />
                             </FormControl>
@@ -694,8 +675,8 @@ export function StepProjectInfo({
                                 }))}
                                 placeholder={
                                   isLoadingContractors
-                                    ? STEP_MESSAGES.LOADING_CONTRACTORS
-                                    : STEP_MESSAGES.SELECT_CONTRACTOR
+                                    ? STEP_PROJECT_INFO_CONSTANTS.LOADING_CONTRACTORS
+                                    : STEP_PROJECT_INFO_CONSTANTS.SELECT_CONTRACTOR
                                 }
                                 className=''
                               />
@@ -731,7 +712,7 @@ export function StepProjectInfo({
                           {text}
                         </h3>
                         <textarea
-                          placeholder='Type your answer here...'
+                          placeholder={STEP_MESSAGES.ENTER_ANSWER_HERE}
                           value={question.answer || ''}
                           onChange={e => {
                             updateQuestionAnswer(id, e.target.value);
