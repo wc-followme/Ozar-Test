@@ -1,6 +1,11 @@
 'use client';
 
-import { FIVE_BOX_SLUGS } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
+import {
+  ANIMALS_VALUES,
+  FIVE_BOX_SLUGS,
+  OWNER_PRESENCE_VALUES,
+  WEEKEND_WORK_VALUES,
+} from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import { HomeOwnerHeader } from '@/components/layout/HomeOwnerHeader';
 import LoadingComponent from '@/components/shared/common/LoadingComponent';
 import { ThankYouComponent } from '@/components/shared/common/ThankYouComponent';
@@ -190,7 +195,7 @@ export default function HomeOwnerWizardPage() {
             contactStartTime: contact_start_time
               ? convert24To12Hour(contact_start_time)
               : '',
-            animals: has_animals ? 'Yes' : 'No',
+            animals: has_animals ? ANIMALS_VALUES.YES : ANIMALS_VALUES.NO,
             petType: pet_type || '',
           });
 
@@ -213,8 +218,12 @@ export default function HomeOwnerWizardPage() {
             projectFinishDate: project_finish_date
               ? new Date(project_finish_date).toISOString()
               : '',
-            ownerPresence: owner_present_need ? 'yes' : 'no',
-            weekendWork: weekend_work ? 'yes' : 'no',
+            ownerPresence: owner_present_need
+              ? OWNER_PRESENCE_VALUES.YES
+              : OWNER_PRESENCE_VALUES.NO,
+            weekendWork: weekend_work
+              ? WEEKEND_WORK_VALUES.YES
+              : WEEKEND_WORK_VALUES.NO,
             dailyWorkTimingStart: daily_work_start_time
               ? convert24To12Hour(daily_work_start_time)
               : '',
@@ -605,7 +614,7 @@ export default function HomeOwnerWizardPage() {
         if (address && address.trim() !== '') {
           payload.client_address = address;
         }
-        payload.has_animals = animals === 'Yes';
+        payload.has_animals = animals === ANIMALS_VALUES.YES;
         if (petType && petType.trim() !== '') {
           payload.pet_type = petType;
         }
@@ -683,8 +692,9 @@ export default function HomeOwnerWizardPage() {
           }
         }
 
-        payload.owner_present_need = ownerPresence === 'yes';
-        payload.weekend_work = weekendWork === 'yes';
+        payload.owner_present_need =
+          ownerPresence === OWNER_PRESENCE_VALUES.YES;
+        payload.weekend_work = weekendWork === WEEKEND_WORK_VALUES.YES;
 
         if (dailyWorkTimingStart && dailyWorkTimingStart.trim() !== '') {
           payload.daily_work_start_time =

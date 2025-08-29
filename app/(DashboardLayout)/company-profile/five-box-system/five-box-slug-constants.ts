@@ -14,6 +14,33 @@ export const PET_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
+export const ANIMALS_VALUES = {
+  YES: 'yes',
+  NO: 'no',
+};
+export const ANIMALS_IN_HOME_OPTIONS_ARRAY = [
+  { value: ANIMALS_VALUES.YES, label: 'Yes' },
+  { value: ANIMALS_VALUES.NO, label: 'No' },
+];
+
+export const OWNER_PRESENCE_VALUES = {
+  YES: 'yes',
+  NO: 'no',
+};
+export const OWNER_PRESENCE_OPTIONS_ARRAY = [
+  { value: OWNER_PRESENCE_VALUES.YES, label: 'Yes' },
+  { value: OWNER_PRESENCE_VALUES.NO, label: 'No' },
+];
+
+export const WEEKEND_WORK_VALUES = {
+  YES: 'yes',
+  NO: 'no',
+};
+export const WEEKEND_WORK_OPTIONS_ARRAY = [
+  { value: WEEKEND_WORK_VALUES.YES, label: 'Yes' },
+  { value: WEEKEND_WORK_VALUES.NO, label: 'No' },
+];
+
 export const CONTACT_METHOD_OPTIONS_ARRAY = [
   { value: 'email', label: 'Email' },
   { value: 'phone', label: 'Phone' },
