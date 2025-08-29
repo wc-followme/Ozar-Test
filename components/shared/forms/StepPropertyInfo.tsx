@@ -248,7 +248,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={PROPERTY_TYPE_ARRAY}
-                                placeholder={STEP_MESSAGES.SELECT_PROPERTY_TYPE}
+                                placeholder={STEP_MESSAGES.SELECT_PROPERTY}
                                 className=''
                               />
                             </FormControl>
@@ -280,9 +280,7 @@ export function StepPropertyInfo({
                                 value={field.value}
                                 onValueChange={field.onChange}
                                 options={getPropertyTypeOptions()}
-                                placeholder={
-                                  STEP_MESSAGES.SELECT_PROPERTY_TYPE_DETAIL
-                                }
+                                placeholder={STEP_MESSAGES.SELECT_PROPERTY_TYPE}
                                 className=''
                               />
                             </FormControl>
@@ -441,7 +439,7 @@ export function StepPropertyInfo({
                           {text}
                         </h3>
                         <Textarea
-                          placeholder='Type your answer here...'
+                          placeholder={STEP_MESSAGES.ENTER_ANSWER_HERE}
                           value={question.answer || ''}
                           onChange={e => {
                             updateQuestionAnswer(id, e.target.value);

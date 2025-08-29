@@ -1,4 +1,6 @@
 import {
+  ANIMALS_IN_HOME_OPTIONS_ARRAY,
+  ANIMALS_VALUES,
   CONTACT_METHOD_OPTIONS_ARRAY,
   FIVE_BOX_SLUGS,
   GENERAL_INFORMATION_FIELDS,
@@ -52,11 +54,11 @@ const createGeneralInfoSchema = (boxSettings: any) => {
     phone: isFieldRequired(GENERAL_INFORMATION_FIELDS.PHONE_NUMBER)
       ? yup
           .string()
-          .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+          .matches(/^[0-9]+$/, STEP_MESSAGES.PHONE_NUMBER_REQUIRED)
           .required(STEP_MESSAGES.PHONE_REQUIRED)
       : yup
           .string()
-          .matches(/^[0-9]+$/, 'Phone number must contain only numbers')
+          .matches(/^[0-9]+$/, STEP_MESSAGES.PHONE_NUMBER_REQUIRED)
           .optional(),
     address: isFieldRequired(GENERAL_INFORMATION_FIELDS.ADDRESS)
       ? yup.string().required(STEP_MESSAGES.ADDRESS_REQUIRED)
@@ -75,7 +77,7 @@ const createGeneralInfoSchema = (boxSettings: any) => {
       ? yup.string().required(STEP_MESSAGES.ANIMALS_REQUIRED)
       : yup.string().optional(),
     petType: yup.string().when('animals', {
-      is: 'Yes',
+      is: ANIMALS_VALUES.YES,
       then: schema =>
         isFieldRequired(GENERAL_INFORMATION_FIELDS.PET_TYPE)
           ? schema.required(STEP_MESSAGES.PET_TYPE_REQUIRED)
@@ -418,7 +420,9 @@ export function StepGeneralInfo({
                                 <TimePicker
                                   value={field.value}
                                   onChange={field.onChange}
-                                  placeholder={STEP_MESSAGES.SELECT_START_TIME}
+                                  placeholder={
+                                    STEP_MESSAGES.SELECT_BEST_TIME_TO_CONTACT
+                                  }
                                   error={
                                     !!form.formState.errors['contactStartTime']
                                   }
@@ -450,11 +454,10 @@ export function StepGeneralInfo({
                                 <SelectField
                                   value={field.value}
                                   onValueChange={field.onChange}
-                                  options={[
-                                    { value: 'Yes', label: STEP_MESSAGES.YES },
-                                    { value: 'No', label: STEP_MESSAGES.NO },
-                                  ]}
-                                  placeholder={STEP_MESSAGES.YES}
+                                  options={ANIMALS_IN_HOME_OPTIONS_ARRAY}
+                                  placeholder={
+                                    STEP_MESSAGES.SELECT_ANIMALS_IN_HOME
+                                  }
                                   className=''
                                 />
                               </FormControl>
@@ -520,7 +523,7 @@ export function StepGeneralInfo({
                           {text}
                         </h3>
                         <Textarea
-                          placeholder='Type your answer here...'
+                          placeholder={STEP_MESSAGES.ENTER_ANSWER_HERE}
                           value={question.answer || ''}
                           onChange={e => {
                             updateQuestionAnswer(id, e.target.value);
