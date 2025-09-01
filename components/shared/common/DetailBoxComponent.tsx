@@ -25,6 +25,10 @@ interface DetailBoxProps {
     listeners?: any;
     attributes?: any;
   };
+  isActive?: boolean;
+  isPollPlanningStarted?: boolean;
+  onActivate?: () => void;
+  cardIndex?: number;
 }
 
 export function DetailBoxComponent({
@@ -37,37 +41,25 @@ export function DetailBoxComponent({
   showAddButton = true,
   showDragHandle = false,
   dragHandleProps,
+  isActive = false,
+  isPollPlanningStarted = false,
+  onActivate,
+  cardIndex = 0,
 }: DetailBoxProps) {
-  const [sideSheetOpen, setSideSheetOpen] = useState(false);
   const [respondSideSheetOpen, setRespondSideSheetOpen] = useState(false);
+  const [addEmployeeSideSheetOpen, setAddEmployeeSideSheetOpen] =
+    useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Mock employee data - in real app, this would come from props or API
-  const availableEmployees = [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      role: 'Project Manager',
-      profilePicture: '/images/user-img-placeholder.png',
-    },
-    {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      role: 'Developer',
-      profilePicture: '/images/user-img-placeholder.png',
-    },
-    {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike.johnson@example.com',
-      role: 'Designer',
-      profilePicture: '/images/user-img-placeholder.png',
-    },
-  ];
+  const handleRespondCancel = () => {
+    setRespondSideSheetOpen(false);
+  };
 
-  const handleAddToPoll = async (pollData: {
+  const handleAddEmployeeCancel = () => {
+    setAddEmployeeSideSheetOpen(false);
+  };
+
+  const handleAddEmployee = async (employeeData: {
     room: string;
     trade: string;
     service: string;
@@ -75,31 +67,23 @@ export function DetailBoxComponent({
   }) => {
     setIsSubmitting(true);
     try {
-      // Here you would typically make an API call to save the poll data
-      console.log('Creating poll with data:', pollData);
+      // Here you would typically make an API call to save the employee data
+      console.log('Adding employee with data:', employeeData);
 
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Close the sidesheet after successful submission
-      setSideSheetOpen(false);
+      setAddEmployeeSideSheetOpen(false);
 
       // You might want to show a success toast here
-      console.log('Poll created successfully!');
+      console.log('Employee added successfully!');
     } catch (error) {
-      console.error('Error creating poll:', error);
+      console.error('Error adding employee:', error);
       // You might want to show an error toast here
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    setSideSheetOpen(false);
-  };
-
-  const handleRespondCancel = () => {
-    setRespondSideSheetOpen(false);
   };
 
   const handleAddRespond = async (respondData: {
@@ -133,42 +117,74 @@ export function DetailBoxComponent({
   return (
     <>
       <div
-        className={`rounded-[10px] p-4 border flex border-[var(--border-dark)] ${className}`}
+        className={`rounded-[10px] p-4 border-2 flex ${className} min-h-[140px] h-full w-full ${
+          isPollPlanningStarted
+            ? cardIndex === 0
+              ? 'bg-[var(--white-background)] border-[var(--border-dark)]'
+              : cardIndex === 1
+                ? 'bg-[var(--secondary-15)] border-[var(--secondary)]'
+                : 'bg-[var(--background)] border-[var(--border-dark)]'
+            : 'border-[var(--border-dark)]'
+        } ${isPollPlanningStarted && cardIndex === 1 ? 'cursor-pointer' : ''}`}
+        style={{
+          minWidth: '100%',
+          maxWidth: '100%',
+        }}
+        onClick={
+          isPollPlanningStarted && cardIndex === 1 ? onActivate : undefined
+        }
       >
         {/* Drag Handle - 6 dots icon (only shown when showDragHandle is true) */}
-        {showDragHandle && (
-          <div
-            className='flex flex-col space-y-1 mr-3 cursor-grab active:cursor-grabbing'
-            {...dragHandleProps?.listeners}
-            {...dragHandleProps?.attributes}
-          >
-            <IconGripVertical size={20} color='var(--text-secondary)' />
-          </div>
-        )}
 
         {/* Content Section */}
         <div className='flex-1 flex flex-col'>
           {/* Top Section - Service Name and Add Button */}
           <div className='w-full flex items-center justify-between mb-4'>
+            {showDragHandle && (
+              <div
+                className='flex flex-col space-y-1 mr-5 cursor-grab active:cursor-grabbing w-4 flex-shrink-0'
+                data-drag-handle='true'
+                {...dragHandleProps?.listeners}
+                {...dragHandleProps?.attributes}
+              >
+                <IconGripVertical size={28} color='#C0C6CD' />
+              </div>
+            )}
             {/* Left Section - Text Content */}
             <div className='flex-1 min-w-0'>
-              <p className='text-sm text-[var(--text-secondary)] font-medium mb-1'>
-                {label}
-              </p>
-              <p className='text-[var(--text-dark)] text-base font-medium truncate'>
-                {value}
-              </p>
+              <p className={`text-sm font-medium mb-1 `}>{label}</p>
+              <p className={`text-base font-medium truncate`}>{value}</p>
             </div>
 
-            {/* Right Section - Add Button */}
-            {showAddButton && (
-              <button
-                className='w-[30px] h-[30px] rounded-full flex items-center justify-center transition-colors'
-                onClick={() => setSideSheetOpen(true)}
-              >
-                <AddCircle size='30' color='#34AD44' />
-              </button>
-            )}
+            {/* Right Section - Buttons */}
+            {isPollPlanningStarted && cardIndex < 2 ? (
+              <div className='flex gap-2'>
+                {cardIndex === 0 ? (
+                  <button
+                    className='btn-secondary !px-12 !py-2'
+                    onClick={() => console.log('Edit clicked for:', value)}
+                  >
+                    Edit
+                  </button>
+                ) : (
+                  <button
+                    className='btn-primary !px-8 !py-2 !bg-[#34AD4426] hover:!bg-[#34AD4426] !text-[var(--secondary)]'
+                    onClick={() => setRespondSideSheetOpen(true)}
+                  >
+                    Add Respond
+                  </button>
+                )}
+              </div>
+            ) : !isPollPlanningStarted && showAddButton ? (
+              <div className='flex gap-2'>
+                <button
+                  className='w-8 h-8 '
+                  onClick={() => setAddEmployeeSideSheetOpen(true)}
+                >
+                  <AddCircle size='32' color='var(--secondary)' />
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {/* Middle Section - Assigned Users */}
@@ -184,9 +200,7 @@ export function DetailBoxComponent({
                       height={26}
                       className='flex-shrink-0 rounded-full text-xs'
                     />
-                    <span className='text-[var(--text-dark)] text-xs font-medium'>
-                      {user.name}
-                    </span>
+                    <span className={`text-xs font-medium`}>{user.name}</span>
                   </div>
                 ))}
               </div>
@@ -197,43 +211,18 @@ export function DetailBoxComponent({
           <div className='flex items-center justify-between mt-auto'>
             {/* Start Date */}
             <div className='flex-1 min-w-0'>
-              <p className='text-sm text-[var(--text-secondary)] font-medium mb-1'>
-                Start Date
-              </p>
-              <p className='text-[var(--text-dark)] text-base font-medium'>
-                {startDate || '-'}
-              </p>
+              <p className={`text-sm font-medium mb-1`}>Start Date</p>
+              <p className={`text-base font-medium`}>{startDate || '-'}</p>
             </div>
 
             {/* Due Date */}
             <div className='flex-1 min-w-0 text-right'>
-              <p className='text-sm text-[var(--text-secondary)] font-medium mb-1'>
-                Due Date
-              </p>
-              <p className='text-[var(--text-dark)] text-base font-medium'>
-                {dueDate || '-'}
-              </p>
+              <p className={`text-sm font-medium mb-1`}>Due Date</p>
+              <p className={`text-base font-medium`}>{dueDate || '-'}</p>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Poll Planning SideSheet */}
-      {showAddButton && (
-        <SideSheet
-          title='Add Employee to Poll Planning'
-          open={sideSheetOpen}
-          onOpenChange={setSideSheetOpen}
-          size='600px'
-        >
-          <AddEmployeeToPollPlanning
-            onSave={handleAddToPoll}
-            onCancel={handleCancel}
-            isSubmitting={isSubmitting}
-            availableEmployees={availableEmployees}
-          />
-        </SideSheet>
-      )}
 
       {/* Add Respond to Poll Planning SideSheet */}
       <SideSheet
@@ -246,6 +235,21 @@ export function DetailBoxComponent({
           onSave={handleAddRespond}
           onCancel={handleRespondCancel}
           isSubmitting={isSubmitting}
+        />
+      </SideSheet>
+
+      {/* Add Employee to Poll Planning SideSheet */}
+      <SideSheet
+        title='Add Employee to Poll Planning'
+        open={addEmployeeSideSheetOpen}
+        onOpenChange={setAddEmployeeSideSheetOpen}
+        size='600px'
+      >
+        <AddEmployeeToPollPlanning
+          onSave={handleAddEmployee}
+          onCancel={handleAddEmployeeCancel}
+          isSubmitting={isSubmitting}
+          availableEmployees={[]}
         />
       </SideSheet>
     </>

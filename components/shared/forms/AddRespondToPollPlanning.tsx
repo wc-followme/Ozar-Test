@@ -118,7 +118,7 @@ export function AddRespondToPollPlanning({
               options={roomOptions}
               error={errors['room'] || ''}
               disabled={true}
-              className='bg-[#F5F7FA]'
+              triggerClassName='bg-[var(--background)]'
             />
           </div>
           <div>
@@ -135,7 +135,7 @@ export function AddRespondToPollPlanning({
               options={tradeOptions}
               error={errors['trade'] || ''}
               disabled={true}
-              className='bg-[#F5F7FA]'
+              triggerClassName='bg-[var(--background)]'
             />
           </div>
         </div>
@@ -155,7 +155,7 @@ export function AddRespondToPollPlanning({
             options={serviceOptions}
             error={errors['service'] || ''}
             disabled={true}
-            className='bg-[#F5F7FA]'
+            triggerClassName='bg-[var(--background)]'
           />
         </div>
 

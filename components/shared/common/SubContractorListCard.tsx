@@ -36,7 +36,7 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
 
   return (
     <div
-      className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4 cursor-pointer hover:bg-[var(--card-hover)] transition-colors'
+      className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4 cursor-pointer transition-colors'
       onClick={onClick}
     >
       <div className='flex items-start justify-between gap-4'>

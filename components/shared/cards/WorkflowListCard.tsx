@@ -1,10 +1,10 @@
 'use client';
 
+import { Avatar } from '@/components/shared/common/Avatar';
 import { DetailBoxComponent } from '@/components/shared/common/DetailBoxComponent';
 import { IconGripVertical } from '@tabler/icons-react';
 import { TickCircle } from 'iconsax-react';
 import dynamic from 'next/dynamic';
-import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 // Dynamically import Sortable components to avoid SSR issues
@@ -60,6 +60,9 @@ interface WorkflowListCardProps {
     attributes?: any;
   };
   isDragging?: boolean;
+  isPollPlanningStarted?: boolean;
+  activeServiceId?: string;
+  onServiceActivate?: (serviceId: string) => void;
 }
 
 export function WorkflowListCard({
@@ -72,8 +75,12 @@ export function WorkflowListCard({
   showCardDragHandle = false,
   cardDragHandleProps,
   isDragging = false,
+  isPollPlanningStarted = false,
+  activeServiceId = '',
+  onServiceActivate,
 }: WorkflowListCardProps) {
   const [mounted, setMounted] = useState(false);
+  const [localIsDragging, setLocalIsDragging] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -105,21 +112,37 @@ export function WorkflowListCard({
     }
   };
 
+  const handleServiceDragStart = () => {
+    // Don't set localIsDragging for service-level drags
+    // This prevents the main card from changing during service drag
+  };
+
+  const handleServiceDragEnd = () => {
+    // Don't set localIsDragging for service-level drags
+    // This prevents the main card from changing during service drag
+  };
+
   // Render the non-sortable version (fallback)
   const renderNonSortableServices = () => (
-    <div className='grid grid-cols-4 gap-3'>
-      {workflowItem.subServices?.map(service => (
-        <DetailBoxComponent
-          key={`${workflowItem.id}-${service.id}`}
-          label='Service'
-          value={service.name}
-          assignedUsers={service.assignedUsers}
-          startDate={workflowItem.startDate}
-          dueDate={workflowItem.endDate}
-          showAddButton={showAddButton}
-          showDragHandle={false}
-        />
-      ))}
+    <div className='overflow-x-auto'>
+      <div className='grid grid-cols-autofit-sm sm:grid-cols-autofit md:grid-cols-autofit-md xl:grid-cols-autofit-xl gap-3 min-h-[200px] min-w-[720px]'>
+        {workflowItem.subServices?.map((service, index) => (
+          <DetailBoxComponent
+            key={`${workflowItem.id}-${service.id}`}
+            label='Service'
+            value={service.name}
+            assignedUsers={service.assignedUsers}
+            startDate={workflowItem.startDate}
+            dueDate={workflowItem.endDate}
+            showAddButton={showAddButton}
+            showDragHandle={false}
+            isActive={isPollPlanningStarted && service.id === activeServiceId}
+            isPollPlanningStarted={isPollPlanningStarted}
+            onActivate={() => onServiceActivate?.(service.id)}
+            cardIndex={index}
+          />
+        ))}
+      </div>
     </div>
   );
 
@@ -138,28 +161,38 @@ export function WorkflowListCard({
         items={workflowItem.subServices}
         onReorder={handleServiceReorder}
         idField='id'
+        onDragStart={handleServiceDragStart}
+        onDragEnd={handleServiceDragEnd}
       >
-        <div className='grid grid-cols-4 gap-3'>
-          {workflowItem.subServices.map(service => (
-            <SortableItem
-              key={`${workflowItem.id}-${service.id}`}
-              id={service.id}
-            >
-              {(dragHandleProps: any) => (
-                <DetailBoxComponent
-                  key={`${workflowItem.id}-${service.id}`}
-                  label='Service'
-                  value={service.name}
-                  assignedUsers={service.assignedUsers}
-                  startDate={workflowItem.startDate}
-                  dueDate={workflowItem.endDate}
-                  showAddButton={showAddButton}
-                  showDragHandle={showDragHandle}
-                  dragHandleProps={dragHandleProps}
-                />
-              )}
-            </SortableItem>
-          ))}
+        <div className='overflow-x-auto'>
+          <div className='grid grid-cols-autofit-sm sm:grid-cols-autofit md:grid-cols-autofit-md xl:grid-cols-autofit-xl gap-3 min-h-[200px] min-w-[720px]'>
+            {workflowItem.subServices.map((service, index) => (
+              <SortableItem
+                key={`${workflowItem.id}-${service.id}`}
+                id={service.id}
+              >
+                {(dragHandleProps: any) => (
+                  <DetailBoxComponent
+                    key={`${workflowItem.id}-${service.id}`}
+                    label='Service'
+                    value={service.name}
+                    assignedUsers={service.assignedUsers}
+                    startDate={workflowItem.startDate}
+                    dueDate={workflowItem.endDate}
+                    showAddButton={showAddButton}
+                    showDragHandle={showDragHandle}
+                    dragHandleProps={dragHandleProps}
+                    isActive={
+                      isPollPlanningStarted && service.id === activeServiceId
+                    }
+                    isPollPlanningStarted={isPollPlanningStarted}
+                    onActivate={() => onServiceActivate?.(service.id)}
+                    cardIndex={index}
+                  />
+                )}
+              </SortableItem>
+            ))}
+          </div>
         </div>
       </Sortable>
     );
@@ -167,22 +200,32 @@ export function WorkflowListCard({
 
   return (
     <div
-      className={`border border-[var(--border-dark)] p-4 rounded-[10px] ${className}`}
+      className={`border border-[var(--border-dark)] p-4 rounded-[10px] transition-all duration-200 ${className} ${
+        isDragging ? 'shadow-lg transform-none' : ''
+      }`}
+      style={{
+        transform: isDragging ? 'none' : undefined,
+        width: isDragging ? '100%' : undefined,
+        height: isDragging ? '86px' : undefined,
+        minHeight: isDragging ? '86px' : undefined,
+        maxHeight: isDragging ? '86px' : undefined,
+      }}
     >
       {/* Column Headers */}
-      <div className='flex items-center space-x-6'>
+      <div className='flex items-center space-x-6 overflow-x-auto'>
         {/* Card Drag Handle - 6 dots icon (only shown when showCardDragHandle is true) */}
         {showCardDragHandle && (
           <div
-            className='flex flex-col space-y-1 cursor-grab active:cursor-grabbing flex-shrink-0'
+            className='flex flex-col space-y-1 cursor-grab active:cursor-grabbing flex-shrink-0 w-6'
+            data-drag-handle='true'
             {...cardDragHandleProps?.listeners}
             {...cardDragHandleProps?.attributes}
           >
-            <IconGripVertical size={20} color='#9CA3AF' />
+            <IconGripVertical size={28} color='#C0C6CD' />
           </div>
         )}
 
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-[120px]'>
           <h3 className='text-sm font-medium text-[var(--text-secondary)] capitalize tracking-wide mb-1'>
             Room name
           </h3>
@@ -190,7 +233,7 @@ export function WorkflowListCard({
             {workflowItem.roomName}
           </h4>
         </div>
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-[100px]'>
           <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
             Trade
           </h3>
@@ -198,7 +241,7 @@ export function WorkflowListCard({
             {workflowItem.trade}
           </p>
         </div>
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-[100px]'>
           <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
             Start Date
           </h3>
@@ -206,7 +249,7 @@ export function WorkflowListCard({
             {workflowItem.startDate}
           </p>
         </div>
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-[100px]'>
           <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
             End Date
           </h3>
@@ -214,7 +257,7 @@ export function WorkflowListCard({
             {workflowItem.endDate}
           </p>
         </div>
-        <div className='flex-1 min-w-0'>
+        <div className='flex-1 min-w-[80px]'>
           <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
             Status
           </h3>
@@ -224,7 +267,7 @@ export function WorkflowListCard({
             </p>
           </div>
         </div>
-        <div className='flex-1 min-w-0 text-center'>
+        <div className='flex-1 min-w-[80px] text-center'>
           <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
             Services
           </h3>
@@ -232,23 +275,25 @@ export function WorkflowListCard({
             {workflowItem.servicesCount.toString().padStart(2, '0')}
           </span>
         </div>
-        <div className='flex-1 min-w-0 flex justify-end'>
+        <div className='flex-1 min-w-[120px] flex justify-end'>
           <div className='text-right'>
             <h3 className='text-xs font-medium text-gray-500 uppercase tracking-wide mb-1'>
               Assigned
             </h3>
             <div className='flex items-center -space-x-2 justify-end'>
               {workflowItem.assignedUsers.slice(0, 3).map((user, index) => (
-                <Image
-                  src={'/images/img-placeholder-sm.png'}
-                  alt={user.name}
+                <Avatar
+                  name={user.name}
+                  image={user.image}
                   width={30}
                   height={30}
-                  className='w-[30px] h-[30px] rounded-full object-cover border-2 border-white'
+                  className='w-[30px] h-[30px] rounded-full border-2 border-[var(--card-background)] text-xs '
                   key={user.id}
+                  swapColors
+                  autoTextColor
                 />
               ))}
-              <div className='w-[30px] h-[30px] rounded-full bg-[#F5F7FA] border-2 border-white flex items-center justify-center'>
+              <div className='w-[30px] h-[30px] rounded-full bg-[var(--background)] relative border-2 border-[var(--white-background)] flex items-center justify-center'>
                 <span className='text-[var(--text-dark)] text-sm font-medium'>
                   +2
                 </span>
@@ -259,15 +304,29 @@ export function WorkflowListCard({
       </div>
 
       {/* Expand/Collapse for Sub-services */}
-      {workflowItem.subServices &&
-        workflowItem.subServices.length > 0 &&
-        !isDragging && (
-          <div className='mt-4'>
-            {showDragHandle
-              ? renderSortableServices()
-              : renderNonSortableServices()}
-          </div>
-        )}
+      {workflowItem.subServices && workflowItem.subServices.length > 0 && (
+        <div className='mt-4'>
+          {!isDragging ? (
+            showDragHandle ? (
+              renderSortableServices()
+            ) : (
+              renderNonSortableServices()
+            )
+          ) : (
+            <div className='overflow-x-auto'>
+              <div className='grid grid-cols-autofit-sm sm:grid-cols-autofit md:grid-cols-autofit-md xl:grid-cols-autofit-xl gap-3 xl:gap-6 min-h-[200px] min-w-[720px] opacity-0 pointer-events-none'>
+                {/* Placeholder to maintain layout during drag */}
+                {workflowItem.subServices.map(service => (
+                  <div
+                    key={`placeholder-${service.id}`}
+                    className='h-[140px] min-h-[140px] max-h-[140px]'
+                  ></div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

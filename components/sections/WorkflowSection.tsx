@@ -386,7 +386,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
         <div className='flex justify-end'>
           <Dropdown
             trigger={
-              <div className='flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2.5 text-base text-[var(--text-dark)] hover:border-gray-300 hover:shadow-sm cursor-pointer w-auto transition-all duration-200'>
+              <div className='flex items-center gap-2 bg-[var(--white-background)] border border-[var(--border-dark)] rounded-full px-4 py-2.5 text-base text-[var(--text-dark)]  cursor-pointer w-auto transition-all duration-200'>
                 <span className='font-medium'>Quick Actions</span>
                 <ArrowDown2
                   className='w-4 h-4 [&>path]:stroke-2'

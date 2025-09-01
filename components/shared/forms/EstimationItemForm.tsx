@@ -208,7 +208,7 @@ export default function EstimationItemForm({
             disabled={loading || isDisabled || isFromReceivedTrades}
             triggerClassName={
               isDisabled || isFromReceivedTrades
-                ? '!bg-[#F4F5F6] !text-[var(--text-dark)] disabled:opacity-100'
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
                 : ''
             }
           />
@@ -231,7 +231,7 @@ export default function EstimationItemForm({
             disabled={disableVariant || isDisabled || isFromReceivedTrades}
             triggerClassName={
               isDisabled || isFromReceivedTrades
-                ? '!bg-[#F4F5F6] !text-[var(--text-dark)] disabled:opacity-100'
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
                 : ''
             }
           />
@@ -278,7 +278,7 @@ export default function EstimationItemForm({
             style={
               isDisabled || isFromReceivedTrades
                 ? {
-                    backgroundColor: '#F4F5F6',
+                    backgroundColor: 'var(--border-light)',
                     color: 'var(--text-dark)',
                     opacity: 1,
                   }
@@ -302,7 +302,7 @@ export default function EstimationItemForm({
             disabled={isDisabled || isFromReceivedTrades}
             triggerClassName={
               isDisabled || isFromReceivedTrades
-                ? '!bg-[#F4F5F6] !text-[var(--text-dark)] disabled:opacity-100'
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
                 : ''
             }
           />
@@ -370,7 +370,7 @@ export default function EstimationItemForm({
             style={
               isDisabled || isFromReceivedTrades
                 ? {
-                    backgroundColor: '#F4F5F6',
+                    backgroundColor: 'var(--border-light)',
                     color: 'var(--text-dark)',
                     opacity: 1,
                   }
@@ -429,7 +429,7 @@ export default function EstimationItemForm({
               style={
                 isDisabled || isFromReceivedTrades
                   ? {
-                      backgroundColor: '#F4F5F6',
+                      backgroundColor: 'var(--border-light)',
                       color: 'var(--text-dark)',
                       opacity: 1,
                     }
@@ -485,7 +485,7 @@ export default function EstimationItemForm({
               style={
                 isDisabled
                   ? {
-                      backgroundColor: '#F4F5F6',
+                      backgroundColor: 'var(--border-light)',
                       color: 'var(--text-dark)',
                       opacity: 1,
                     }

@@ -2,6 +2,7 @@
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
 import { WorkflowListCard } from '@/components/shared/cards/WorkflowListCard';
+import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { VerticalSortable } from '@/components/ui/vertical-sortable';
 import { useEffect, useState } from 'react';
 
 // Poll Planning Tab Values
@@ -51,6 +53,8 @@ export default function PollPlanning() {
     new Set(['2'])
   ); // Second poll expanded by default
   const [isDragging, setIsDragging] = useState(false);
+  const [isPollPlanningStarted, setIsPollPlanningStarted] = useState(false);
+  const [activeServiceId, setActiveServiceId] = useState<string>('1'); // First service is active by default
 
   // Mock data for poll entries
   const [pollEntries, setPollEntries] = useState<PollEntry[]>([
@@ -414,7 +418,13 @@ export default function PollPlanning() {
 
   const handleStartPollPlanning = () => {
     // Handle start poll planning action
+    setIsPollPlanningStarted(true);
     console.log('Start Poll Planning clicked');
+  };
+
+  const handleSubmitResponse = () => {
+    // Handle submit response action
+    console.log('Submit Response clicked');
   };
 
   const handleEditService = (serviceId: string) => {
@@ -521,16 +531,19 @@ export default function PollPlanning() {
 
   // Global drag state listener
   useEffect(() => {
-    const handleGlobalDragStart = () => {
-      setIsDragging(true);
-      alert('Drag started! DetailBoxComponent sub-services should be hidden.');
+    const handleGlobalDragStart = (event: DragEvent) => {
+      // Check if the drag is starting from our sortable items
+      const target = event.target as HTMLElement;
+      if (
+        target.closest('[data-sortable-item]') ||
+        target.closest('[data-drag-handle]')
+      ) {
+        setIsDragging(true);
+      }
     };
 
     const handleGlobalDragEnd = () => {
       setIsDragging(false);
-      alert(
-        'Drag ended! DetailBoxComponent sub-services should be visible again.'
-      );
     };
 
     // Listen for drag events on the document
@@ -549,10 +562,10 @@ export default function PollPlanning() {
       <Breadcrumb items={breadcrumbData} className='mb-6' />
 
       {/* Main Content Card */}
-      <div className='bg-[var(--white-background)] rounded-xl border border-[var(--border-light)] p-6'>
+      <div className='bg-[var(--card-background)] rounded-xl border border-[var(--border-light)] p-6 overflow-x-auto'>
         {/* Header with Poll Name and Tabs */}
-        <div className='mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
-          <div className='flex-1 max-w-md'>
+        <div className='mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between'>
+          <div className='flex-1 max-w-md w-full'>
             <Label
               htmlFor='pollName'
               className='text-sm font-medium text-[var(--text-dark)] mb-2 block'
@@ -564,37 +577,39 @@ export default function PollPlanning() {
               value={pollName}
               onChange={e => setPollName(e.target.value)}
               placeholder='Enter name'
-              className='input-field border-[var(--border-dark)] focus:border-[var(--primary)] focus:ring-[var(--primary)]'
+              className='input-field'
             />
           </div>
 
           {/* Tabs moved to the right */}
-          <div className='flex-shrink-0'>
+          <div className='flex-shrink-0 w-full sm:w-auto'>
             <Tabs
               value={selectedTab}
               onValueChange={setSelectedTab}
               className='w-full'
             >
-              <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
-                <TabsTrigger
-                  value={POLL_TABS.PENDING_POLL}
-                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span className='text-sm xl:text-base'>Pending Poll</span>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value={POLL_TABS.AWAITING_RESPONSE}
-                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span className='text-sm xl:text-base'>
-                      Awaiting Response
+              <DynamicScrollArea className='w-full'>
+                <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+                  <TabsTrigger
+                    value={POLL_TABS.PENDING_POLL}
+                    className='px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-1.5 sm:gap-2 lg:gap-2'>
+                      <span className='text-sm xl:text-base'>Pending Poll</span>
                     </span>
-                  </span>
-                </TabsTrigger>
-              </TabsList>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value={POLL_TABS.AWAITING_RESPONSE}
+                    className='px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                  >
+                    <span className='flex items-center gap-1.5 sm:gap-2 lg:gap-2'>
+                      <span className='text-sm xl:text-base'>
+                        Awaiting Response
+                      </span>
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+              </DynamicScrollArea>
             </Tabs>
           </div>
         </div>
@@ -615,13 +630,15 @@ export default function PollPlanning() {
                   showButton={false}
                 />
               ) : (
-                <div className='relative'>
-                  <Sortable
+                <div className='relative min-h-[400px]'>
+                  <VerticalSortable
                     items={filteredPollEntries}
                     onReorder={handlePollReorder}
                     idField='id'
+                    onDragStart={() => setIsDragging(true)}
+                    onDragEnd={() => setIsDragging(false)}
                   >
-                    <div className='space-y-4 pl-8'>
+                    <div className='space-y-4 pl-8 min-h-[200px]'>
                       {filteredPollEntries.map((poll, index) => (
                         <SortableItem key={poll.id} id={poll.id}>
                           {(dragHandleProps: any) => (
@@ -659,13 +676,16 @@ export default function PollPlanning() {
                                 showCardDragHandle={true}
                                 cardDragHandleProps={dragHandleProps}
                                 isDragging={isDragging}
+                                isPollPlanningStarted={isPollPlanningStarted}
+                                activeServiceId={activeServiceId}
+                                onServiceActivate={setActiveServiceId}
                               />
                             </div>
                           )}
                         </SortableItem>
                       ))}
                     </div>
-                  </Sortable>
+                  </VerticalSortable>
                 </div>
               )}
             </div>
@@ -680,13 +700,15 @@ export default function PollPlanning() {
                   showButton={false}
                 />
               ) : (
-                <div className='relative'>
+                <div className='relative min-h-[400px]'>
                   <Sortable
                     items={awaitedResponseEntries}
                     onReorder={handleAwaitedPollReorder}
                     idField='id'
+                    onDragStart={() => setIsDragging(true)}
+                    onDragEnd={() => setIsDragging(false)}
                   >
-                    <div className='pl-8'>
+                    <div className='space-y-4 pl-8 min-h-[200px]'>
                       {awaitedResponseEntries.map((poll, index) => (
                         <SortableItem key={poll.id} id={poll.id}>
                           {(dragHandleProps: any) => (
@@ -723,6 +745,7 @@ export default function PollPlanning() {
                                 }
                                 showCardDragHandle={true}
                                 cardDragHandleProps={dragHandleProps}
+                                isDragging={isDragging}
                               />
                             </div>
                           )}
@@ -737,7 +760,7 @@ export default function PollPlanning() {
         </Tabs>
 
         {/* Bottom Action Buttons */}
-        <div className='mt-6 flex justify-end gap-3'>
+        <div className='mt-6 flex flex-col sm:flex-row justify-end gap-3'>
           <Button
             onClick={handleSaveAsDraft}
             className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
@@ -749,6 +772,12 @@ export default function PollPlanning() {
             className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
           >
             Start Poll Planning
+          </Button>
+          <Button
+            onClick={handleSubmitResponse}
+            className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
+          >
+            Submit Response
           </Button>
         </div>
       </div>

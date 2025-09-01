@@ -94,7 +94,7 @@ export default function TradeHeader({
   // If sub contractor is selected, show sub contractor UI with same style as rooms/trades
   if (selectedSubContractor) {
     return (
-      <div className='bg-white border-b border-gray-200 p-4 h-[75px] flex items-center'>
+      <div className='bg-[var(--card-background)] border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
         <div className='flex items-center justify-between w-full'>
           <div className='flex items-center space-x-3'>
             <Avatar
@@ -129,7 +129,7 @@ export default function TradeHeader({
 
   // Original TradeHeader UI for normal cases
   return (
-    <div className='bg-white border-b border-gray-200 p-4 h-[75px] flex items-center'>
+    <div className='bg-[var(--card-background)] border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
       <div className='flex items-center justify-between w-full'>
         <div className='flex items-center space-x-2'>
           {!showAddService ? (
@@ -169,7 +169,7 @@ export default function TradeHeader({
             className='text-gray-600 hover:text-[var] hover:bg-gray-100'
             onClick={onDeleteClick}
           >
-            <Trash className='h-5 w-5' />
+            <Trash className='!h-5 !w-5' color='var(--text-dark)' />
           </Button>
         </div>
       </div>

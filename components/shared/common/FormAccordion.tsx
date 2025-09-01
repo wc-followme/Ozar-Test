@@ -36,7 +36,7 @@ export const FormAccordionItem: React.FC<FormAccordionItemProps> = ({
   return (
     <UIAccordionItem
       value={value}
-      className='bg-[var(--white-background)] overflow-hidden'
+      className='bg-[var(--card-background)] overflow-hidden'
     >
       <UIAccordionTrigger className='py-4 sm:py-5 text-base sm:text-lg font-semibold text-[var(--text-dark)] hover:no-underline flex items-center justify-between gap-3 group [&>svg]:hidden'>
         <span className='text-base font-bold text-[var(--text-dark)]'>
