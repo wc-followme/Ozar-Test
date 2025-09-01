@@ -36,11 +36,11 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
 
   return (
     <div
-      className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4 cursor-pointer transition-colors'
+      className='rounded-[10px] border border-[var(--border-dark)] bg-[var(--white-background)] p-4 cursor-pointer transition-colors min-w-[600px]'
       onClick={onClick}
     >
       <div className='flex items-start justify-between gap-4'>
-        <div>
+        <div className='min-w-[200px] flex-shrink-0'>
           <div className='text-[var(--text-dark)] font-semibold'>
             {name} -{' '}
             <span className='text-[var(--text-secondary)] font-normal'>
@@ -52,8 +52,8 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
             <span>{dateRange || 'Mar 20 - Mar 23 (3D)'}</span>
           </div>
         </div>
-        <div className='grid grid-cols-3 gap-8 min-w-[420px]'>
-          <div>
+        <div className='grid grid-cols-3 gap-8 min-w-[420px] flex-shrink-0'>
+          <div className='min-w-[120px]'>
             <div className='text-[var(--text-dark)] font-semibold mb-1 text-sm'>
               Labor Cost
             </div>
@@ -61,7 +61,7 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
               {formatCurrency(labor)}
             </div>
           </div>
-          <div>
+          <div className='min-w-[120px]'>
             <div className='text-[var(--text-dark)] font-semibold mb-1 text-sm'>
               Material Cost
             </div>
@@ -69,7 +69,7 @@ export const SubContractorListCard: React.FC<SubContractorListCardProps> = ({
               {formatCurrency(material)}
             </div>
           </div>
-          <div>
+          <div className='min-w-[120px]'>
             <div className='text-[var(--text-dark)] font-semibold mb-1 text-sm'>
               Trade Total
             </div>

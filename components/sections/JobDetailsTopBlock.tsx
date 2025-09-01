@@ -1,3 +1,5 @@
+import OtherQuestionComponent from '@/components/shared/common/OtherQuestionComponent';
+import SideSheet from '@/components/shared/common/SideSheet';
 import { Button } from '@/components/ui/button';
 import { ArrowDown2, Edit2 } from 'iconsax-react';
 import Image from 'next/image';
@@ -54,6 +56,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
   onOtherQuestionsClick,
 }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [showOtherQuestions, setShowOtherQuestions] = useState(false);
 
   return (
     <div className='bg-[var(--card-background)] rounded-[20px] p-6 border border-[var(--border-dark)]'>
@@ -326,7 +329,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                 <Button
                   variant='outline'
                   className='btn-secondary'
-                  onClick={onOtherQuestionsClick}
+                  onClick={() => setShowOtherQuestions(true)}
                 >
                   Other Questions
                 </Button>
@@ -358,6 +361,16 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
           />
         </div>
       </div>
+
+      {/* Other Questions SideSheet */}
+      <SideSheet
+        open={showOtherQuestions}
+        onOpenChange={setShowOtherQuestions}
+        title='Other Questions'
+        size='600px'
+      >
+        <OtherQuestionComponent onClose={() => setShowOtherQuestions(false)} />
+      </SideSheet>
     </div>
   );
 };

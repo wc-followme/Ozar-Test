@@ -200,7 +200,7 @@ export function WorkflowListCard({
 
   return (
     <div
-      className={`border border-[var(--border-dark)] p-4 rounded-[10px] transition-all duration-200 ${className} ${
+      className={`border border-[var(--border-dark)] p-4 rounded-[10px] transition-all duration-200 min-w-fit ${className} ${
         isDragging ? 'shadow-lg transform-none' : ''
       }`}
       style={{

@@ -370,7 +370,7 @@ export default function EstimationTradeForm({
                 </PopoverContent>
               </Popover>
             </div>
-            <div className='flex-1 space-y-2'>
+            <div className='flex-1 space-y-2 min-w-[160px]'>
               <Label className='field-label'>Total Markup</Label>
               <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
                 <div className='w-[60px]'>

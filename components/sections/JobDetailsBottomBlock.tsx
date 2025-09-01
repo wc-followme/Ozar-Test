@@ -1,10 +1,16 @@
 'use client';
 
 import ComingSoon from '@/components/shared/common/ComingSoon';
+import { Dropdown } from '@/components/shared/common/Dropdown';
+import SideSheet from '@/components/shared/common/SideSheet';
 import TradeComponent from '@/components/shared/common/TradeComponent';
+import VersionHistoryComponent from '@/components/shared/common/VersionHistoryComponent';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { IconHistory } from '@tabler/icons-react';
+import { ArrowDown2, Edit2, SmsTracking } from 'iconsax-react';
 import { ReactNode, useEffect, useState } from 'react';
+import { AuctionIcon } from '../icons/AuctionIcon';
 import EstimateComponent from '../Templates/EstimateComponent';
 import WorkflowSection from './WorkflowSection';
 
@@ -20,8 +26,9 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
   const [selectedTab, setSelectedTab] = useState<string>(
     initialTab || 'estimate'
   );
-  const isMobile = useIsMobile();
   const [sidebarWidth, setSidebarWidth] = useState<number>(280); // Default to expanded
+  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Function to detect sidebar width
   const detectSidebarWidth = () => {
@@ -34,9 +41,10 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
 
   // Calculate max width based on sidebar state and screen size
   const getMaxWidth = () => {
-    if (isMobile) {
+    const isMobileView = window.innerWidth < 1024; // Use 1024px as breakpoint
+    if (isMobileView) {
       // Mobile: full width minus page padding and margins (64px total)
-      return 'calc(100vw - 64px)';
+      return 'calc(100vw - 85px)';
     } else {
       // Desktop: use detected sidebar width
       // Account for sidebar width, page padding (48px), container padding (24px), and safety margin (16px)
@@ -185,7 +193,7 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
         className='w-full'
       >
         <div
-          className='w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400'
+          className='w-full overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400 rounded-full'
           style={{ maxWidth: getMaxWidth() }}
         >
           <div className='flex flex-row items-center gap-2 w-full'>
@@ -277,6 +285,61 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
 
         <div className='pt-6'>
           <TabsContent value='estimate' className='m-0'>
+            {/* Action Bar */}
+            <div className='flex items-center mb-4'>
+              <Button
+                className='btn-secondary'
+                onClick={() => setShowVersionHistory(true)}
+              >
+                <IconHistory size={18} color='var(--text-dark)' />
+                <span className='font-medium'>Show version history</span>
+              </Button>
+              <div className='flex items-center gap-3 ml-auto'>
+                {/* Quick Actions Dropdown */}
+                <Button className='btn-secondary'>
+                  <Edit2 size={18} color='var(--text-dark)' />
+                  <span className='font-medium'>Edit</span>
+                </Button>
+                <Dropdown
+                  trigger={
+                    <div className='btn-secondary cursor-pointer'>
+                      <span className='font-medium'>Quick Actions</span>
+                      <ArrowDown2
+                        className='w-4 h-4 [&>path]:stroke-2 ml-2'
+                        color='var(--text-dark)'
+                      />
+                    </div>
+                  }
+                  menuOptions={[
+                    {
+                      label: 'Send Via Email',
+                      action: 'send-email',
+                      icon: SmsTracking,
+                    },
+                    {
+                      label: 'Add for Auction Bid',
+                      action: 'auction-bid',
+                      icon: AuctionIcon,
+                    },
+                  ]}
+                  onAction={action => {
+                    setSelectedQuickAction(action);
+                    if (action === 'send-email') {
+                      console.log('Send Via Email clicked');
+                      // Add your email functionality here
+                    } else if (action === 'auction-bid') {
+                      console.log('Add for Auction Bid clicked');
+                      // Add auction bid functionality here
+                    }
+                  }}
+                />
+
+                {/* Edit Button */}
+
+                {/* Version History Button */}
+              </div>
+            </div>
+
             <EstimateComponent onAddRoom={handleAddRoom} />
           </TabsContent>
           <TabsContent value='trade' className='m-0'>
@@ -326,6 +389,16 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Version History SideSheet */}
+      <SideSheet
+        open={showVersionHistory}
+        onOpenChange={setShowVersionHistory}
+        title='Version History'
+        size='600px'
+      >
+        <VersionHistoryComponent onClose={() => setShowVersionHistory(false)} />
+      </SideSheet>
     </div>
   );
 };

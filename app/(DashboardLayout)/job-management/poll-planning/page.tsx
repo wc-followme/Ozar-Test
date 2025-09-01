@@ -589,10 +589,10 @@ export default function PollPlanning() {
               className='w-full'
             >
               <DynamicScrollArea className='w-full'>
-                <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
+                <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full border border-[var(--border-dark)] sm:border-none'>
                   <TabsTrigger
                     value={POLL_TABS.PENDING_POLL}
-                    className='px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    className='px-2 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
                   >
                     <span className='flex items-center gap-1.5 sm:gap-2 lg:gap-2'>
                       <span className='text-sm xl:text-base'>Pending Poll</span>
@@ -600,7 +600,7 @@ export default function PollPlanning() {
                   </TabsTrigger>
                   <TabsTrigger
                     value={POLL_TABS.AWAITING_RESPONSE}
-                    className='px-4 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
+                    className='px-2 sm:px-6 lg:px-8 py-2.5 sm:py-3 lg:py-2 text-sm xl:text-base gap-1.5 sm:gap-2 lg:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[24px] sm:rounded-[28px] lg:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
                   >
                     <span className='flex items-center gap-1.5 sm:gap-2 lg:gap-2'>
                       <span className='text-sm xl:text-base'>
@@ -618,7 +618,7 @@ export default function PollPlanning() {
         <Tabs
           value={selectedTab}
           onValueChange={setSelectedTab}
-          className='w-full'
+          className='w-full max-w-[calc(100vw-97px)] lg:max-w-[calc(100vw-205px)] overflow-auto'
         >
           {/* Tab Content */}
           <TabsContent value={POLL_TABS.PENDING_POLL} className='mt-6'>
@@ -645,11 +645,11 @@ export default function PollPlanning() {
                             <div className='relative'>
                               {/* Sectioned Vertical Green Bar for each poll - hidden for last child */}
                               {index < filteredPollEntries.length - 1 && (
-                                <div className='absolute -left-[34px] top-10 w-2 bg-[#34AD44] h-[calc(100%+10px)]'></div>
+                                <div className='absolute -left-[24px] top-10 w-2 bg-[#34AD44] h-[calc(100%+10px)]'></div>
                               )}
 
                               {/* Bigger Green Circle on the bar */}
-                              <div className='absolute -left-10 top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white shadow-md'></div>
+                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white shadow-md'></div>
 
                               <WorkflowListCard
                                 workflowItem={{
@@ -715,11 +715,11 @@ export default function PollPlanning() {
                             <div className='relative'>
                               {/* Sectioned Vertical Green Bar for each poll - hidden for last child */}
                               {index < awaitedResponseEntries.length - 1 && (
-                                <div className='absolute -left-[34px] top-10 w-2 bg-[#34AD44] h-[calc(100%)]'></div>
+                                <div className='absolute -left-[24px] top-10 w-2 bg-[#34AD44] h-[calc(100%)]'></div>
                               )}
 
                               {/* Bigger Green Circle on the bar */}
-                              <div className='absolute -left-10 top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white'></div>
+                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white'></div>
 
                               <WorkflowListCard
                                 workflowItem={{
@@ -763,19 +763,19 @@ export default function PollPlanning() {
         <div className='mt-6 flex flex-col sm:flex-row justify-end gap-3'>
           <Button
             onClick={handleSaveAsDraft}
-            className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
+            className='btn-secondary flex-1 sm:flex-none !px-4 md:!px-8 hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
           >
             Save as Draft
           </Button>
           <Button
             onClick={handleStartPollPlanning}
-            className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
+            className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
           >
             Start Poll Planning
           </Button>
           <Button
             onClick={handleSubmitResponse}
-            className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
+            className='btn-primary flex-1 sm:flex-none !px-4 md:!px-8 hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100'
           >
             Submit Response
           </Button>

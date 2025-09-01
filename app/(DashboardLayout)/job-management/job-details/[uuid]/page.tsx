@@ -434,7 +434,7 @@ export default function JobDetailsPage() {
 
         {/* Action Buttons */}
         {isClient && (
-          <div className='flex items-center gap-3'>
+          <div className='flex items-center gap-3 ml-auto'>
             {/* Notes Button */}
             <Button
               variant='outline'

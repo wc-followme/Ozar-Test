@@ -383,7 +383,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
         </div>
 
         {/* Quick Actions Dropdown */}
-        <div className='flex justify-end'>
+        <div className='flex justify-end ml-auto'>
           <Dropdown
             trigger={
               <div className='flex items-center gap-2 bg-[var(--white-background)] border border-[var(--border-dark)] rounded-full px-4 py-2.5 text-base text-[var(--text-dark)]  cursor-pointer w-auto transition-all duration-200'>
@@ -421,7 +421,7 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
             </p>
           </Card>
         ) : (
-          <div className='space-y-3'>
+          <div className='space-y-3 max-w-[calc(100vw-113px)] lg:max-w-[calc(100vw-205px)] overflow-x-auto'>
             {filteredWorkflowItems.map(item => (
               <div key={item.id} className='flex items-center gap-4'>
                 {/* Selection Checkbox */}

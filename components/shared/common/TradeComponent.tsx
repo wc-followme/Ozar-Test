@@ -73,7 +73,8 @@ interface Trade {
   uniqueKey: string;
   name: string;
   services: number;
-  dateRange: string;
+  start_date?: string | null;
+  end_date?: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -403,7 +404,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
         ),
         name: ESTIMATION_MESSAGES.DEFAULT_TRADE_NAME,
         services: 0,
-        dateRange: '',
+        start_date: '',
+        end_date: '',
         type: '2D',
         laborCost: 0.0,
         materialCost: 0.0,
@@ -451,7 +453,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
       ),
       name: tradeName,
       services: 0,
-      dateRange: '',
+      start_date: '',
+      end_date: '',
       type: '2D',
       laborCost: 0.0,
       materialCost: 0.0,
@@ -1184,11 +1187,12 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
   // Calculate dynamic width based on sidebar states
   const calculateContentWidth = () => {
     const baseWidth = '100vw';
+    const sidebarWidth = isSidebarCollapsed ? '80px' : '280px';
     const tradeSidebarWidth = '320px'; // Fixed width for trade sidebar
     const padding = '48px'; // 24px on each side
     const margins = '32px'; // 16px on each side
 
-    return `calc(${baseWidth} - ${tradeSidebarWidth} - ${padding} - ${margins})`;
+    return `calc(${baseWidth} - ${sidebarWidth} - ${tradeSidebarWidth} - ${padding} - ${margins})`;
   };
 
   const toggleMainAccordion = () => {
@@ -1373,11 +1377,11 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
 
         {/* Main Content */}
         <div
-          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 min-h-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
-          style={{ maxWidth: 'calc(100vw - 320px - 48px - 32px)' }}
+          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
+          style={{ width: calculateContentWidth() }}
         >
           {/* Content Area */}
-          <div className='flex-1 overflow-hidden bg-[var(--background)] min-h-0'>
+          <div className='flex-1 overflow-hidden bg-[var(--background)]'>
             {/* Header */}
             <TradeHeader
               showAddService={showAddService}
@@ -1398,20 +1402,21 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             />
 
             <div
-              className='flex-1 overflow-y-auto overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300 h-[calc(100vh_-_120px_-_75px)] max-h-[calc(100vh_-_120px_-_75px)]'
+              className='h-full overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300'
               style={{
                 WebkitOverflowScrolling: 'touch',
                 scrollBehavior: 'smooth',
                 touchAction: 'pan-x pan-y',
                 msOverflowStyle: 'auto',
                 scrollbarWidth: 'auto',
-                maxWidth: '100%',
+                overflowX: 'auto',
+                overflowY: 'auto',
               }}
             >
-              <div className='p-6 min-w-[800px] w-full max-w-full'>
+              <div className='p-6 min-w-fit max-w-none w-full'>
                 {selectedSubContractor ? (
                   // Sub Contractor view - rooms with trades list and cost columns
-                  <div className='space-y-8'>
+                  <div className='space-y-8 min-w-[650px]'>
                     {selectedSubContractor.rooms?.map(
                       (room: {
                         id: string;
@@ -1428,7 +1433,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
                       }) => (
                         <div
                           key={room.id}
-                          className='rounded-[10px] bg-[var(--white-background)] p-4'
+                          className='rounded-[10px] bg-[var(--white-background)] p-4 min-w-[650px]'
                         >
                           <h3 className='text-lg font-bold text-[var(--text-dark)] mb-3'>
                             {room.name}
