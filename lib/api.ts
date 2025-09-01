@@ -2901,6 +2901,85 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Warranty Management APIs
+  async createCompanyWarranty(data: {
+    company_id: string | number;
+    name: string;
+    warranties_details: Array<{
+      id: string;
+      category_name: string;
+      duration: string;
+      description: string;
+    }>;
+    status?: string;
+  }): Promise<any> {
+    return this.makeRequest('/companies/warranties', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({
+        ...data,
+        status: data.status || 'ACTIVE',
+      }),
+    });
+  }
+
+  async getCompanyWarranties(params?: {
+    page?: number;
+    limit?: number;
+    company_id?: number | string;
+    name?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    if (params?.name) queryParams.append('name', params.name);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+    const url = queryParams.toString()
+      ? `/companies/warranties?${queryParams.toString()}`
+      : '/companies/warranties';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateCompanyWarranty(
+    uuid: string,
+    data: {
+      name?: string;
+      warranties_details?: Array<{
+        id: string;
+        category_name: string;
+        duration: string;
+        description: string;
+      }>;
+      status?: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/companies/warranties/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCompanyWarranty(uuid: string): Promise<any> {
+    return this.makeRequest(`/companies/warranties/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();
