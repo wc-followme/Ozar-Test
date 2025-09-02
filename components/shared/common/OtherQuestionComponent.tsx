@@ -4,9 +4,7 @@ interface OtherQuestionComponentProps {
   onClose?: () => void;
 }
 
-const OtherQuestionComponent: React.FC<OtherQuestionComponentProps> = ({
-  onClose,
-}) => {
+const OtherQuestionComponent: React.FC<OtherQuestionComponentProps> = () => {
   const questions = [
     {
       question: 'What are your expectations for the project?',

@@ -125,26 +125,26 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.projectName) {
-      newErrors.projectName = 'Please select a project';
+    if (!formData['projectName']) {
+      newErrors['projectName'] = 'Please select a project';
     }
-    if (!formData.room) {
-      newErrors.room = 'Please select a room';
+    if (!formData['room']) {
+      newErrors['room'] = 'Please select a room';
     }
-    if (!formData.trade) {
-      newErrors.trade = 'Please select a trade';
+    if (!formData['trade']) {
+      newErrors['trade'] = 'Please select a trade';
     }
-    if (!formData.service) {
-      newErrors.service = 'Please select a service';
+    if (!formData['service']) {
+      newErrors['service'] = 'Please select a service';
     }
-    if (!formData.startDate) {
-      newErrors.startDate = 'Please select a start date';
+    if (!formData['startDate']) {
+      newErrors['startDate'] = 'Please select a start date';
     }
-    if (!formData.dueDate) {
-      newErrors.dueDate = 'Please select a due date';
+    if (!formData['dueDate']) {
+      newErrors['dueDate'] = 'Please select a due date';
     }
-    if (formData.employeeIds.length === 0) {
-      newErrors.employeeIds = 'Please select at least one employee';
+    if (formData['employeeIds'].length === 0) {
+      newErrors['employeeIds'] = 'Please select at least one employee';
     }
 
     setErrors(newErrors);
@@ -185,7 +185,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
               <SelectTrigger
                 className={cn(
                   'input-field',
-                  errors.projectName
+                  errors['projectName']
                     ? '!border-[var(--warning)]'
                     : 'border-[var(--border-dark)]'
                 )}
@@ -200,9 +200,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            {errors.projectName && (
+            {errors['projectName'] && (
               <span className='text-sm text-[var(--warning)]'>
-                {errors.projectName}
+                {errors['projectName']}
               </span>
             )}
           </div>
@@ -219,7 +219,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
               <SelectTrigger
                 className={cn(
                   'input-field',
-                  errors.room
+                  errors['room']
                     ? '!border-[var(--warning)]'
                     : 'border-[var(--border-dark)]'
                 )}
@@ -234,9 +234,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                 ))}
               </SelectContent>
             </Select>
-            {errors.room && (
+            {errors['room'] && (
               <span className='text-sm text-[var(--warning)]'>
-                {errors.room}
+                {errors['room']}
               </span>
             )}
           </div>
@@ -254,7 +254,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                 <SelectTrigger
                   className={cn(
                     'input-field',
-                    errors.trade
+                    errors['trade']
                       ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
@@ -269,9 +269,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.trade && (
+              {errors['trade'] && (
                 <span className='text-sm text-[var(--warning)]'>
-                  {errors.trade}
+                  {errors['trade']}
                 </span>
               )}
             </div>
@@ -287,7 +287,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                 <SelectTrigger
                   className={cn(
                     'input-field',
-                    errors.service
+                    errors['service']
                       ? '!border-[var(--warning)]'
                       : 'border-[var(--border-dark)]'
                   )}
@@ -302,9 +302,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-              {errors.service && (
+              {errors['service'] && (
                 <span className='text-sm text-[var(--warning)]'>
-                  {errors.service}
+                  {errors['service']}
                 </span>
               )}
             </div>
@@ -326,7 +326,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                     className={cn(
                       'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
                       !formData.startDate && 'text-muted-foreground',
-                      errors.startDate
+                      errors['startDate']
                         ? '!border-[var(--warning)]'
                         : 'border-[var(--border-dark)]'
                     )}
@@ -350,12 +350,10 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                         ? new Date(formData.startDate)
                         : undefined
                     }
-                    onSelect={date => {
+                    onSelect={(date: Date | undefined) => {
                       if (date) {
-                        handleInputChange(
-                          'startDate',
-                          date.toISOString().split('T')[0]
-                        );
+                        const dateString = date.toISOString().split('T')[0];
+                        handleInputChange('startDate', dateString);
                         setStartDatePickerOpen(false);
                       }
                     }}
@@ -363,9 +361,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-              {errors.startDate && (
+              {errors['startDate'] && (
                 <span className='text-sm text-[var(--warning)]'>
-                  {errors.startDate}
+                  {errors['startDate']}
                 </span>
               )}
             </div>
@@ -384,7 +382,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                     className={cn(
                       'h-12 w-full pl-3 text-left font-normal border-2 bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)]',
                       !formData.dueDate && 'text-muted-foreground',
-                      errors.dueDate
+                      errors['dueDate']
                         ? '!border-[var(--warning)]'
                         : 'border-[var(--border-dark)]'
                     )}
@@ -406,12 +404,10 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                     selected={
                       formData.dueDate ? new Date(formData.dueDate) : undefined
                     }
-                    onSelect={date => {
+                    onSelect={(date: Date | undefined) => {
                       if (date) {
-                        handleInputChange(
-                          'dueDate',
-                          date.toISOString().split('T')[0]
-                        );
+                        const dateString = date.toISOString().split('T')[0];
+                        handleInputChange('dueDate', dateString);
                         setDueDatePickerOpen(false);
                       }
                     }}
@@ -419,9 +415,9 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                   />
                 </PopoverContent>
               </Popover>
-              {errors.dueDate && (
+              {errors['dueDate'] && (
                 <span className='text-sm text-[var(--warning)]'>
-                  {errors.dueDate}
+                  {errors['dueDate']}
                 </span>
               )}
             </div>
@@ -437,7 +433,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
               value={formData.employeeIds}
               onChange={value => handleInputChange('employeeIds', value)}
               placeholder='Choose employees'
-              error={errors.employeeIds}
+              error={errors['employeeIds']}
               name='employees'
             />
           </div>

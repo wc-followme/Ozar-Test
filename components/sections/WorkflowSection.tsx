@@ -3,11 +3,10 @@
 import { Search } from '@/components/icons/Search';
 import { WorkflowListCard } from '@/components/shared/cards/WorkflowListCard';
 import { Dropdown } from '@/components/shared/common/Dropdown';
-import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { ArrowDown2, Clock, Play, TickCircle, Warning2 } from 'iconsax-react';
+import { ArrowDown2, Clock } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { DraftIcon } from '../icons/DraftIcon';
@@ -52,31 +51,13 @@ interface WorkflowItem {
 
 interface WorkflowSectionProps {
   workflowSteps: WorkflowStep[];
-  currentStep?: string;
-  onStepClick?: (stepId: string) => void;
-  onAddStep?: () => void;
-  onEditStep?: (stepId: string) => void;
-  onCompleteStep?: (stepId: string) => void;
-  onPauseStep?: (stepId: string) => void;
-  onResumeStep?: (stepId: string) => void;
 }
 
 const WorkflowSection: React.FC<WorkflowSectionProps> = ({
-  workflowSteps,
-  currentStep,
-  onStepClick,
-  onAddStep,
-  onEditStep,
-  onCompleteStep,
-  onPauseStep,
-  onResumeStep,
+  workflowSteps: _workflowSteps,
 }) => {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedWorkflowItems, setSelectedWorkflowItems] = useState<
-    Set<string>
-  >(new Set());
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
   // Mock workflow data based on the image
   const [workflowItems, setWorkflowItems] = useState<WorkflowItem[]>([
@@ -283,63 +264,10 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
     },
   ]);
 
-  const getStatusIcon = (status: WorkflowStep['status']) => {
-    switch (status) {
-      case 'completed':
-        return <TickCircle className='w-5 h-5 text-green-500' />;
-      case 'in-progress':
-        return <Play className='w-5 h-5 text-blue-500' />;
-      case 'pending':
-        return <Clock className='w-5 h-5 text-gray-400' />;
-      case 'blocked':
-        return <Warning2 className='w-5 h-5 text-red-500' />;
-      default:
-        return <Clock className='w-5 h-5 text-gray-400' />;
-    }
-  };
-
-  const getStatusBadge = (status: WorkflowStep['status']) => {
-    const statusConfig = {
-      completed: {
-        label: 'Completed',
-        className: 'bg-green-100 text-green-800',
-      },
-      'in-progress': {
-        label: 'In Progress',
-        className: 'bg-blue-100 text-blue-800',
-      },
-      pending: { label: 'Pending', className: 'bg-gray-100 text-gray-800' },
-      blocked: { label: 'Blocked', className: 'bg-red-100 text-red-800' },
-    };
-
-    const config = statusConfig[status];
-    return (
-      <Badge className={`${config.className} text-xs font-medium`}>
-        {config.label}
-      </Badge>
-    );
-  };
-
-  const getProgressPercentage = () => {
-    if (workflowSteps.length === 0) return 0;
-    const completedSteps = workflowSteps.filter(
-      step => step.status === 'completed'
-    ).length;
-    return Math.round((completedSteps / workflowSteps.length) * 100);
-  };
-
   const handleSelectionChange = (id: string, selected: boolean) => {
     setWorkflowItems(prev =>
       prev.map(item =>
         item.id === id ? { ...item, isSelected: selected } : item
-      )
-    );
-  };
-
-  const handleToggleExpand = (id: string) => {
-    setWorkflowItems(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, isExpanded: !item.isExpanded } : item
       )
     );
   };
@@ -432,16 +360,13 @@ const WorkflowSection: React.FC<WorkflowSectionProps> = ({
                     onCheckedChange={checked =>
                       handleSelectionChange(item.id, checked as boolean)
                     }
-                    className='rounded-full border-2 border-[#90C91D] data-[state=checked]:bg-[#90C91D] data-[state=checked]:border-[#90C91D] data-[state=checked]:text-white text-white w-5 h-5 flex items-center justify-center'
+                    className='rounded-full border-2 border-[var(--success)] data-[state=checked]:bg-[var(--success)] data-[state=checked]:border-[var(--success)] data-[state=checked]:text-white text-white w-5 h-5 flex items-center justify-center'
                   />
                 </div>
 
                 {/* Workflow Card */}
                 <div className='flex-1'>
-                  <WorkflowListCard
-                    workflowItem={item}
-                    onToggleExpand={handleToggleExpand}
-                  />
+                  <WorkflowListCard workflowItem={item} />
                 </div>
               </div>
             ))}

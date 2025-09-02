@@ -41,7 +41,6 @@ export function DetailBoxComponent({
   showAddButton = true,
   showDragHandle = false,
   dragHandleProps,
-  isActive = false,
   isPollPlanningStarted = false,
   onActivate,
   cardIndex = 0,
@@ -168,7 +167,7 @@ export function DetailBoxComponent({
                   </button>
                 ) : (
                   <button
-                    className='btn-primary !px-8 !py-2 !bg-[#34AD4426] hover:!bg-[#34AD4426] !text-[var(--secondary)]'
+                    className='btn-primary !px-8 !py-2 !bg-[var(--secondary-15)] hover:!bg-[var(--secondary-15)] !text-[var(--secondary)]'
                     onClick={() => setRespondSideSheetOpen(true)}
                   >
                     Add Respond

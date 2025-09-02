@@ -56,7 +56,7 @@ export default function JobDetailsPage() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isNoteSheetOpen, setIsNoteSheetOpen] = useState(false);
   const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+  const [_isSubmittingNote, _setIsSubmittingNote] = useState(false);
   const [isAddEmployeeSheetOpen, setIsAddEmployeeSheetOpen] = useState(false);
   const [isSubmittingEmployee, setIsSubmittingEmployee] = useState(false);
   const [isEditJobSheetOpen, setIsEditJobSheetOpen] = useState(false);
@@ -213,13 +213,6 @@ export default function JobDetailsPage() {
       email: 'lisa.davis@company.com',
       role: 'Business Analyst',
     },
-  ];
-
-  // Mock menu options for user dropdown
-  const userMenuOptions = [
-    { label: 'View Profile', action: 'view_profile' },
-    { label: 'Send Message', action: 'send_message' },
-    { label: 'Remove User', action: 'remove_user' },
   ];
 
   const handleUserAction = (action: string) => {
@@ -438,7 +431,7 @@ export default function JobDetailsPage() {
             {/* Notes Button */}
             <Button
               variant='outline'
-              className='bg-[#EBB40233] hover:bg-yellow-200 border-[#EBB402] text-[var(--text-dark)] px-4 py-2 rounded-full flex items-center gap-2'
+              className='bg-[var(--error-20)] hover:bg-[var(--error-light)] border-[var(--error)] text-[var(--text-dark)] px-4 py-2 rounded-full flex items-center gap-2'
               onClick={() => setIsNoteSheetOpen(true)}
             >
               <Note className='!w-5 !h-5' color='var(--text-dark)' />
@@ -449,7 +442,6 @@ export default function JobDetailsPage() {
             <UserDropdownField
               users={mockUsers}
               maxVisible={3}
-              menuOptions={userMenuOptions}
               onAction={handleUserAction}
             />
 
@@ -493,8 +485,6 @@ export default function JobDetailsPage() {
 
       {/* Job Details Card */}
       <JobDetailsTopBlock
-        status={status}
-        jobStatus={job_status}
         isArchived={status === INACTIVE}
         isClosed={job_status === DONE}
         projectId={projectId}
@@ -512,10 +502,6 @@ export default function JobDetailsPage() {
         closedStatusMessage={JOB_MESSAGES.CLOSED_STATUS}
         onEditClick={() => {
           setIsEditJobSheetOpen(true);
-        }}
-        onOtherQuestionsClick={() => {
-          // Handle other questions functionality
-          console.log('Other questions clicked');
         }}
       />
 
@@ -567,7 +553,7 @@ export default function JobDetailsPage() {
           <NoteListForm
             onSave={handleNoteSubmit}
             onCancel={handleNoteSheetClose}
-            isSubmitting={isSubmittingNote}
+            isSubmitting={_isSubmittingNote}
           />
         </div>
       </SideSheet>

@@ -17,10 +17,8 @@ interface TradeSidebarProps {
   onTradeSelect: (trade: any) => void;
   onServiceSelect: (service: any) => void;
   selectedRoomId?: string;
-  selectedTradeId?: string;
   selectedServiceId?: string;
   isAuctionBidMode?: boolean;
-  onExitAuctionBidMode?: () => void;
   onCheckedItemsChange?: (checkedItems: Set<string>) => void;
   onAddToOutSourceTrades?: () => void;
   triggerAddToOutSource?: boolean;
@@ -37,10 +35,8 @@ const TradeSidebar = forwardRef<
       onTradeSelect,
       onServiceSelect,
       selectedRoomId,
-      selectedTradeId,
       selectedServiceId,
       isAuctionBidMode = false,
-      onExitAuctionBidMode,
       onCheckedItemsChange,
       onAddToOutSourceTrades,
       triggerAddToOutSource = false,
@@ -1108,5 +1104,7 @@ const TradeSidebar = forwardRef<
     );
   }
 );
+
+TradeSidebar.displayName = 'TradeSidebar';
 
 export default TradeSidebar;

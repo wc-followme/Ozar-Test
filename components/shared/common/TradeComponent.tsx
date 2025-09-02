@@ -13,7 +13,6 @@ import EstimationServiceForm from '@/components/shared/forms/EstimationServiceFo
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
-import { useToast } from '@/components/ui/use-toast';
 import { CUSTOM_EVENTS, STORAGE_KEYS } from '@/constants/common';
 import { tradeSidebarData } from '@/constants/dummy-data';
 import { ESTIMATION_MESSAGES } from '@/constants/messages';
@@ -123,7 +122,6 @@ const generateUniqueKey = (
 };
 
 export default function TradeComponent(props: Readonly<TradeComponentProps>) {
-  const { showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [editingRoomName, setEditingRoomName] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<string[]>(['0']);
@@ -136,13 +134,12 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
   const [showServiceForm, setShowServiceForm] = useState(false);
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [selectedRoomId, setSelectedRoomId] = useState<string>('room_1');
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isMainAccordionExpanded, setIsMainAccordionExpanded] = useState(true);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteType, setDeleteType] = useState<
     'room' | 'trade' | 'service' | null
   >(null);
-  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+
   const [isAuctionBidMode, setIsAuctionBidMode] = useState(false);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [triggerAddToOutSource, setTriggerAddToOutSource] = useState(false);
@@ -334,63 +331,6 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
     });
   };
 
-  const handleAddRoom = () => {
-    if (rooms.length === 0) {
-      const defaultRoom: Room = {
-        id: '0',
-        uniqueKey: generateUniqueKey('room'),
-        name: 'Home 1',
-        total: 0.0,
-        isExpanded: true,
-        trades: [],
-      };
-
-      setRooms([defaultRoom]);
-      setExpandedRooms(['0']);
-      setSelectedRoomId('0');
-      setSelectedTrade(null);
-      setSelectedTradeUniqueKey(null);
-      setShowAddService(false);
-      setShowServiceForm(false);
-      setSelectedService(null);
-      return;
-    }
-
-    const roomSequenceNumber = rooms.length;
-    const newRoom: Room = {
-      id: roomSequenceNumber.toString(),
-      uniqueKey: generateUniqueKey('room'),
-      name: `Room ${rooms.length + 1}`,
-      total: 0.0,
-      isExpanded: true,
-      trades: [],
-    };
-
-    setRooms(prev => [...prev, newRoom]);
-    setExpandedRooms(prev => [...prev, newRoom.id]);
-
-    setSelectedRoomId(newRoom.id);
-    setSelectedTrade(null);
-    setSelectedTradeUniqueKey(null);
-    setShowAddService(false);
-    setShowServiceForm(false);
-    setSelectedService(null);
-  };
-
-  const handleAccordionChange = (value: string[]) => {
-    if (!isMainAccordionExpanded) {
-      return;
-    }
-    setExpandedRooms(value);
-  };
-
-  const handleTradeAccordionChange = (value: string[]) => {
-    if (!isMainAccordionExpanded) {
-      return;
-    }
-    setExpandedTrades(value);
-  };
-
   const handleAddTrade = () => {
     const defaultTradeOption = tradeOptions[0];
     if (!defaultTradeOption) {
@@ -562,19 +502,6 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
     setShowAddService(true);
     setShowServiceForm(false);
     setSelectedService(null);
-  };
-
-  const handleRoomSelect = (roomId: string) => {
-    setSelectedRoomId(roomId);
-    setSelectedTrade(null);
-    setSelectedTradeUniqueKey(null);
-    setShowAddService(false);
-    setShowServiceForm(false);
-    setSelectedService(null);
-
-    if (!expandedRooms.includes(roomId)) {
-      setExpandedRooms(prev => [...prev, roomId]);
-    }
   };
 
   const handleServiceSelect = (serviceId: string) => {
@@ -1180,42 +1107,15 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
 
   const projectTotal = calculateProjectTotal();
 
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
   // Calculate dynamic width based on sidebar states
   const calculateContentWidth = () => {
     const baseWidth = '100vw';
-    const sidebarWidth = isSidebarCollapsed ? '80px' : '280px';
+    const sidebarWidth = '280px'; // Fixed width for sidebar
     const tradeSidebarWidth = '320px'; // Fixed width for trade sidebar
     const padding = '48px'; // 24px on each side
     const margins = '32px'; // 16px on each side
 
     return `calc(${baseWidth} - ${sidebarWidth} - ${tradeSidebarWidth} - ${padding} - ${margins})`;
-  };
-
-  const toggleMainAccordion = () => {
-    const allRoomIds = rooms.map(room => room.id);
-    const allTradeIds = rooms.flatMap(room =>
-      room.trades.map(trade => trade.uniqueKey)
-    );
-
-    const allRoomsExpanded = allRoomIds.every(id => expandedRooms.includes(id));
-    const allTradesExpanded = allTradeIds.every(id =>
-      expandedTrades.includes(id)
-    );
-    const allExpanded = allRoomsExpanded && allTradesExpanded;
-
-    if (allExpanded) {
-      setExpandedTrades([]);
-      setExpandedRooms([]);
-      setIsMainAccordionExpanded(false);
-    } else {
-      setExpandedTrades(allTradeIds);
-      setExpandedRooms(allRoomIds);
-      setIsMainAccordionExpanded(true);
-    }
   };
 
   // Reorder handlers for drag and drop
@@ -1313,18 +1213,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             },
           ]}
           onAction={action => {
-            setSelectedQuickAction(action);
-            if (action === 'send-email') {
-              console.log('Send Via Email clicked');
-              // Add your email functionality here
-            } else if (action === 'auction-bid') {
-              console.log('Add for Auction Bid clicked');
+            if (action === 'auction-bid') {
               setIsAuctionBidMode(true);
-              // Log the currently checked items for auction bid
-              console.log(
-                'Checked items for auction bid:',
-                Array.from(checkedItems)
-              );
             }
           }}
         />
@@ -1362,10 +1252,8 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
             setIsReceivedTradeService(service.isFromReceivedTrades || false);
           }}
           selectedRoomId={selectedRoomId || ''}
-          selectedTradeId={selectedTrade || ''}
           selectedServiceId={selectedService || ''}
           isAuctionBidMode={isAuctionBidMode}
-          onExitAuctionBidMode={() => setIsAuctionBidMode(false)}
           onCheckedItemsChange={setCheckedItems}
           onAddToOutSourceTrades={() => {
             // This will be called when items are added to out source trades
@@ -1411,16 +1299,9 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
                 msOverflowStyle: 'auto',
                 scrollbarWidth: 'auto',
                 overscrollBehavior: 'contain',
-                '-webkit-overflow-scrolling': 'touch',
-                '-webkit-touch-callout': 'none',
-                '-webkit-user-select': 'none',
-                '-khtml-user-select': 'none',
-                '-moz-user-select': 'none',
-                '-ms-user-select': 'none',
-                'user-select': 'none',
-                'scrollbar-gutter': 'stable',
-                'scroll-padding': '0',
-                'scroll-snap-type': 'y proximity',
+                scrollbarGutter: 'stable',
+                scrollPadding: '0',
+                scrollSnapType: 'y proximity',
               }}
             >
               <div className='p-6 min-w-fit max-w-none w-full'>

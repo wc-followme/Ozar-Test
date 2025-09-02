@@ -1592,7 +1592,6 @@ export default forwardRef<
         {/* Header */}
         <EstimationHeader
           showAddService={showAddService}
-          isEditing={isEditing}
           selectedRoom={selectedRoom}
           showServiceForm={showServiceForm}
           selectedServiceData={selectedServiceData}

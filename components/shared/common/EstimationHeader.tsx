@@ -65,7 +65,6 @@ interface Room {
 
 interface EstimationHeaderProps {
   showAddService: boolean;
-  isEditing: boolean;
   selectedRoom: Room | undefined;
   showServiceForm: boolean;
   selectedServiceData: Service | undefined;
@@ -77,7 +76,6 @@ interface EstimationHeaderProps {
 
 export default function EstimationHeader({
   showAddService,
-  isEditing,
   selectedRoom,
   showServiceForm,
   selectedServiceData,

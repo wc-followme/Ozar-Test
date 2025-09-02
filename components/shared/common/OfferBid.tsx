@@ -71,13 +71,6 @@ const mockSubContractors: SubContractor[] = [
 export default function OfferBid({ onClose, onRequestBid }: OfferBidProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  const handleRequestBid = (selectedIds: string[]) => {
-    const selectedSubContractors = mockSubContractors.filter(sub =>
-      selectedIds.includes(sub.id)
-    );
-    onRequestBid(selectedSubContractors);
-  };
-
   const handleMultiSelectChange = (selectedIds: string[]) => {
     // This function handles the MultiSelect onChange
     setSelectedIds(selectedIds);

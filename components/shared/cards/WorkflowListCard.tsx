@@ -3,7 +3,7 @@
 import { Avatar } from '@/components/shared/common/Avatar';
 import { DetailBoxComponent } from '@/components/shared/common/DetailBoxComponent';
 import { IconGripVertical } from '@tabler/icons-react';
-import { TickCircle } from 'iconsax-react';
+
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 
@@ -49,7 +49,6 @@ interface WorkflowItem {
 
 interface WorkflowListCardProps {
   workflowItem: WorkflowItem;
-  onToggleExpand?: (id: string) => void;
   className?: string;
   showAddButton?: boolean;
   showDragHandle?: boolean;
@@ -67,7 +66,6 @@ interface WorkflowListCardProps {
 
 export function WorkflowListCard({
   workflowItem,
-  onToggleExpand,
   className = '',
   showAddButton = true,
   showDragHandle = false,
@@ -80,31 +78,10 @@ export function WorkflowListCard({
   onServiceActivate,
 }: WorkflowListCardProps) {
   const [mounted, setMounted] = useState(false);
-  const [localIsDragging, setLocalIsDragging] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const getStatusColor = (status: WorkflowItem['status']) => {
-    switch (status) {
-      case 'Done':
-        return 'bg-green-100 text-green-800';
-      case 'InProgress':
-        return 'bg-blue-100 text-blue-800';
-      case 'Pending':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: WorkflowItem['status']) => {
-    if (status === 'Done') {
-      return <TickCircle className='w-4 h-4 text-green-500' />;
-    }
-    return null;
-  };
 
   const handleServiceReorder = (reorderedServices: any[]) => {
     if (onServiceReorder) {
@@ -281,7 +258,7 @@ export function WorkflowListCard({
               Assigned
             </h3>
             <div className='flex items-center -space-x-2 justify-end'>
-              {workflowItem.assignedUsers.slice(0, 3).map((user, index) => (
+              {workflowItem.assignedUsers.slice(0, 3).map(user => (
                 <Avatar
                   name={user.name}
                   image={user.image}

@@ -74,7 +74,7 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
   }, []);
 
   // Sample workflow data
-  const [workflowSteps, setWorkflowSteps] = useState<any[]>([
+  const [workflowSteps] = useState<any[]>([
     {
       id: '1',
       name: 'Project Planning',
@@ -114,67 +114,9 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
     },
   ]);
 
-  const [currentStep, setCurrentStep] = useState<string>('2');
-
-  // Temporary data for EstimateComponent - removed unused breadcrumbData
-
   const handleAddRoom = () => {
     console.log('Add room clicked');
     // TODO: Implement add room functionality
-  };
-
-  // Workflow handlers
-  const handleStepClick = (stepId: string) => {
-    setCurrentStep(stepId);
-    console.log('Step clicked:', stepId);
-  };
-
-  const handleAddStep = () => {
-    const newStep = {
-      id: Date.now().toString(),
-      name: 'New Workflow Step',
-      status: 'pending',
-      description: 'Description for the new workflow step',
-      assignedTo: 'Unassigned',
-      dueDate: '2024-02-15',
-      estimatedDuration: '1 day',
-    };
-    setWorkflowSteps(prev => [...prev, newStep]);
-  };
-
-  const handleEditStep = (stepId: string) => {
-    console.log('Edit step:', stepId);
-    // TODO: Implement edit step functionality
-  };
-
-  const handleCompleteStep = (stepId: string) => {
-    setWorkflowSteps(prev =>
-      prev.map(step =>
-        step.id === stepId
-          ? {
-              ...step,
-              status: 'completed',
-              completedDate: new Date().toISOString().split('T')[0],
-            }
-          : step
-      )
-    );
-  };
-
-  const handlePauseStep = (stepId: string) => {
-    setWorkflowSteps(prev =>
-      prev.map(step =>
-        step.id === stepId ? { ...step, status: 'blocked' } : step
-      )
-    );
-  };
-
-  const handleResumeStep = (stepId: string) => {
-    setWorkflowSteps(prev =>
-      prev.map(step =>
-        step.id === stepId ? { ...step, status: 'in-progress' } : step
-      )
-    );
   };
 
   return (
@@ -288,16 +230,7 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
             <ComingSoon />
           </TabsContent>
           <TabsContent value='workflow' className='m-0'>
-            <WorkflowSection
-              workflowSteps={workflowSteps}
-              currentStep={currentStep}
-              onStepClick={handleStepClick}
-              onAddStep={handleAddStep}
-              onEditStep={handleEditStep}
-              onCompleteStep={handleCompleteStep}
-              onPauseStep={handlePauseStep}
-              onResumeStep={handleResumeStep}
-            />
+            <WorkflowSection workflowSteps={workflowSteps} />
           </TabsContent>
           <TabsContent value='calendar' className='m-0'>
             <ComingSoon />

@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import MultiSelect from '../common/MultiSelect';
 import SelectField from '../common/SelectField';
 
@@ -14,13 +14,15 @@ interface Employee {
   profilePicture?: string;
 }
 
+type FormData = {
+  readonly room: string;
+  readonly trade: string;
+  readonly service: string;
+  readonly employeeIds: string[];
+};
+
 interface AddEmployeeToPollPlanningProps {
-  onSave: (pollData: {
-    room: string;
-    trade: string;
-    service: string;
-    employeeIds: string[];
-  }) => void;
+  onSave: (pollData: FormData) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
   availableEmployees?: Employee[];
@@ -29,12 +31,7 @@ interface AddEmployeeToPollPlanningProps {
 export const AddEmployeeToPollPlanning: React.FC<
   AddEmployeeToPollPlanningProps
 > = ({ onSave, onCancel, isSubmitting = false, availableEmployees = [] }) => {
-  const [formData, setFormData] = useState<{
-    room: string;
-    trade: string;
-    service: string;
-    employeeIds: string[];
-  }>({
+  const [formData, setFormData] = useState<FormData>({
     room: '',
     trade: '',
     service: '',
@@ -72,7 +69,7 @@ export const AddEmployeeToPollPlanning: React.FC<
   ];
 
   const handleInputChange = (
-    field: 'room' | 'trade' | 'service' | 'employeeIds',
+    field: keyof FormData,
     value: string | string[]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -137,7 +134,7 @@ export const AddEmployeeToPollPlanning: React.FC<
               placeholder='Select Room'
               error={errors.room || ''}
               disabled
-              triggerClassName='bg-[#F5F7FA]'
+              triggerClassName='bg-[var(--background)]'
             />
             <SelectField
               label='Trade'
@@ -150,7 +147,7 @@ export const AddEmployeeToPollPlanning: React.FC<
               placeholder='Select Trade'
               error={errors.trade || ''}
               disabled
-              triggerClassName='bg-[#F5F7FA]'
+              triggerClassName='bg-[var(--background)]'
             />
           </div>
 
@@ -166,7 +163,7 @@ export const AddEmployeeToPollPlanning: React.FC<
             placeholder='Select Service'
             error={errors.service || ''}
             disabled
-            triggerClassName='bg-[#F5F7FA]'
+            triggerClassName='bg-[var(--background)]'
           />
 
           {/* Employee Selection */}

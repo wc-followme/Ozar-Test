@@ -7,8 +7,6 @@ import { useState } from 'react';
 
 interface JobDetailsTopBlockProps {
   // Job status props
-  status: string;
-  jobStatus: string;
   isArchived: boolean;
   isClosed: boolean;
 
@@ -31,12 +29,9 @@ interface JobDetailsTopBlockProps {
 
   // Callbacks
   onEditClick?: () => void;
-  onOtherQuestionsClick?: () => void;
 }
 
 const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
-  status,
-  jobStatus,
   isArchived,
   isClosed,
   projectId,
@@ -53,7 +48,6 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
   archivedStatusMessage,
   closedStatusMessage,
   onEditClick,
-  onOtherQuestionsClick,
 }) => {
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [showOtherQuestions, setShowOtherQuestions] = useState(false);
@@ -141,7 +135,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
 
             {/* Right: Status + View More */}
             <div className='flex items-center gap-2 ml-auto absolute top-0 right-0 lg:relative'>
-              <div className='bg-[#D4323226] text-[var(--warning)] px-3 py-1 rounded-full text-sm font-medium animate-pulse'>
+              <div className='bg-[var(--warning-15)] text-[var(--warning)] px-3 py-1 rounded-full text-sm font-medium animate-pulse'>
                 Pending Details
               </div>
               <Button

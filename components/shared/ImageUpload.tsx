@@ -29,10 +29,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       )}
     >
       <div
-        className='w-full h-full border-2 border-dashed border-[#00A8BF] rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer text-center px-4 py-6'
+        className='w-full h-full border-2 border-dashed border-[var(--info)] rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer text-center px-4 py-6'
         onClick={onClick}
       >
-        {icon ?? <GalleryAdd size='32' color='#00A8BF' variant='Outline' />}
+        {icon ?? <GalleryAdd size='32' color='var(--info)' variant='Outline' />}
 
         <p className='text-[var(--text-dark)] mt-2 font-semibold text-xs md:text-[0.875rem]'>
           {label}

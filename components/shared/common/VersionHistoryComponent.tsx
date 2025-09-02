@@ -1,13 +1,7 @@
 import React from 'react';
 import VersionHistoryCard from './VersionHistoryCard';
 
-interface VersionHistoryComponentProps {
-  onClose?: () => void;
-}
-
-const VersionHistoryComponent: React.FC<VersionHistoryComponentProps> = ({
-  onClose,
-}) => {
+const VersionHistoryComponent: React.FC = () => {
   // Sample version history data
   const versionHistoryData = [
     {

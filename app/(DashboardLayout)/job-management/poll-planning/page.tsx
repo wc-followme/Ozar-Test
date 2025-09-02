@@ -49,9 +49,7 @@ export default function PollPlanning() {
     POLL_TABS.PENDING_POLL
   );
   const [pollName, setPollName] = useState<string>('');
-  const [expandedPolls, setExpandedPolls] = useState<Set<string>>(
-    new Set(['2'])
-  ); // Second poll expanded by default
+  const [expandedPolls] = useState<Set<string>>(new Set(['2'])); // Second poll expanded by default
   const [isDragging, setIsDragging] = useState(false);
   const [isPollPlanningStarted, setIsPollPlanningStarted] = useState(false);
   const [activeServiceId, setActiveServiceId] = useState<string>('1'); // First service is active by default
@@ -399,18 +397,6 @@ export default function PollPlanning() {
     },
   ]);
 
-  const togglePollExpansion = (pollId: string) => {
-    setExpandedPolls(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(pollId)) {
-        newSet.delete(pollId);
-      } else {
-        newSet.add(pollId);
-      }
-      return newSet;
-    });
-  };
-
   const handleSaveAsDraft = () => {
     // Handle save as draft action
     console.log('Save as Draft clicked');
@@ -425,16 +411,6 @@ export default function PollPlanning() {
   const handleSubmitResponse = () => {
     // Handle submit response action
     console.log('Submit Response clicked');
-  };
-
-  const handleEditService = (serviceId: string) => {
-    // Handle edit service action
-    console.log('Edit service clicked:', serviceId);
-  };
-
-  const handleApproveService = (serviceId: string) => {
-    // Handle approve service action
-    console.log('Approve service clicked:', serviceId);
   };
 
   const handleServiceReorder = (
@@ -645,11 +621,11 @@ export default function PollPlanning() {
                             <div className='relative'>
                               {/* Sectioned Vertical Green Bar for each poll - hidden for last child */}
                               {index < filteredPollEntries.length - 1 && (
-                                <div className='absolute -left-[24px] top-10 w-2 bg-[#34AD44] h-[calc(100%+10px)]'></div>
+                                <div className='absolute -left-[24px] top-10 w-2 bg-[var(--secondary)] h-[calc(100%+10px)]'></div>
                               )}
 
                               {/* Bigger Green Circle on the bar */}
-                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white shadow-md'></div>
+                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[var(--secondary)] rounded-full border-3 border-white shadow-md'></div>
 
                               <WorkflowListCard
                                 workflowItem={{
@@ -665,7 +641,6 @@ export default function PollPlanning() {
                                   isExpanded: expandedPolls.has(poll.id),
                                   subServices: poll.subServices || [],
                                 }}
-                                onToggleExpand={togglePollExpansion}
                                 showDragHandle={true}
                                 onServiceReorder={reorderedServices =>
                                   handleServiceReorder(
@@ -715,11 +690,11 @@ export default function PollPlanning() {
                             <div className='relative'>
                               {/* Sectioned Vertical Green Bar for each poll - hidden for last child */}
                               {index < awaitedResponseEntries.length - 1 && (
-                                <div className='absolute -left-[24px] top-10 w-2 bg-[#34AD44] h-[calc(100%)]'></div>
+                                <div className='absolute -left-[24px] top-10 w-2 bg-[var(--secondary)] h-[calc(100%)]'></div>
                               )}
 
                               {/* Bigger Green Circle on the bar */}
-                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[#34AD44] rounded-full border-3 border-white'></div>
+                              <div className='absolute -left-[30px] top-6 w-5 h-5 bg-[var(--secondary)] rounded-full border-3 border-white'></div>
 
                               <WorkflowListCard
                                 workflowItem={{
@@ -735,7 +710,6 @@ export default function PollPlanning() {
                                   isExpanded: expandedPolls.has(poll.id),
                                   subServices: poll.subServices || [],
                                 }}
-                                onToggleExpand={togglePollExpansion}
                                 showDragHandle={true}
                                 onServiceReorder={reorderedServices =>
                                   handleAwaitedServiceReorder(

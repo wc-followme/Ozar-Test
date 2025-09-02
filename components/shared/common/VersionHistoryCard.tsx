@@ -93,7 +93,7 @@ const VersionHistoryCard: React.FC<VersionHistoryCardProps> = ({
 
       {/* Content Sections */}
       {isExpanded && (
-        <div className='space-y-3 bg-[var(--card-background)] border-[#E8EAED] rounded-md p-3 mt-4'>
+        <div className='space-y-3 bg-[var(--card-background)] border-[var(--border-dark)] rounded-md p-3 mt-4'>
           <h3>Room Name</h3>
           {sections.map(section => (
             <div
@@ -119,8 +119,8 @@ const VersionHistoryCard: React.FC<VersionHistoryCardProps> = ({
                     key={index}
                     className={`flex items-center gap-3 p-3 ${
                       change.type === 'removed'
-                        ? 'bg-[#D4323226]'
-                        : 'bg-[#34AD4426]'
+                        ? 'bg-[var(--warning-15)]'
+                        : 'bg-[var(--secondary-15)]'
                     }`}
                   >
                     <div

@@ -11,17 +11,10 @@ interface User {
   initials?: string;
 }
 
-interface MenuOption {
-  label: string;
-  action: string;
-  icon?: React.ComponentType<any>;
-}
-
 interface UserDropdownFieldProps {
   users: User[];
   maxVisible?: number;
   className?: string;
-  menuOptions?: MenuOption[];
   onAction?: (action: string) => void;
   align?: 'start' | 'end' | 'center';
 }
@@ -30,7 +23,6 @@ const UserDropdownField: React.FC<UserDropdownFieldProps> = ({
   users,
   maxVisible = 3,
   className = '',
-  menuOptions = [],
   onAction,
   align = 'end',
 }) => {
@@ -71,7 +63,7 @@ const UserDropdownField: React.FC<UserDropdownFieldProps> = ({
       className={`flex items-center gap-2 rounded-full border border-[var(--border-dark)] bg-[var(--white-background)] py-[6px] px-2 ${className}`}
     >
       <div className='flex -space-x-2'>
-        {visibleUsers.map((user, index) => (
+        {visibleUsers.map(user => (
           <Avatar
             key={user.id}
             className='w-8 h-8 border-1 border-white ring-2 ring-[var(--background)]'
@@ -110,9 +102,13 @@ const UserDropdownField: React.FC<UserDropdownFieldProps> = ({
       onAction={action => {
         if (action.startsWith('user_')) {
           const userId = action.replace('user_', '');
-          onAction && onAction(userId);
+          if (onAction) {
+            onAction(userId);
+          }
         } else {
-          onAction && onAction(action);
+          if (onAction) {
+            onAction(action);
+          }
         }
       }}
     />

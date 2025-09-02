@@ -119,10 +119,6 @@ export const Avatar: React.FC<AvatarProps> = ({
       .substring(0, 2); // Limit to 2 characters
   };
 
-  // Determine if we should show the fallback (initials)
-  const shouldShowFallback =
-    !image || imgError || (placeholderImage && placeholderError);
-
   return (
     <RadixAvatar
       className={`rounded-[10px] ${className}`}
