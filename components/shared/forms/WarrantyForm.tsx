@@ -1,11 +1,11 @@
 'use client';
 
 import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
-import SelectField from '@/components/shared/common/SelectField';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface WarrantyFormProps {
   onSubmit: (data: WarrantyFormData) => void;
@@ -21,39 +21,6 @@ export interface WarrantyFormData {
   duration: string;
 }
 
-const warrantyTypeOptions = [
-  { value: 'workmanship', label: 'Workmanship' },
-  { value: 'timeframe', label: 'Timeframe' },
-  { value: 'product', label: 'Product' },
-  { value: 'brand', label: 'Brand' },
-];
-
-const durationOptions = [
-  { value: '1-year', label: '1 Year' },
-  { value: '2-years', label: '2 Years' },
-  { value: '3-years', label: '3 Years' },
-  { value: '5-years', label: '5 Years' },
-  { value: '10-years', label: '10 Years' },
-  { value: '15-years', label: '15 Years' },
-  { value: 'lifetime', label: 'Lifetime' },
-];
-
-const categoryOptions = [
-  { value: 'interior', label: 'Interior' },
-  { value: 'exterior', label: 'Exterior' },
-  { value: 'structural', label: 'Structural' },
-  { value: 'mechanical', label: 'Mechanical' },
-  { value: 'electrical', label: 'Electrical' },
-  { value: 'plumbing', label: 'Plumbing' },
-  { value: 'hvac', label: 'HVAC' },
-  { value: 'appliances', label: 'Appliances' },
-  { value: 'finishing', label: 'Finishing' },
-  { value: 'kitchen', label: 'Kitchen' },
-  { value: 'bathroom', label: 'Bathroom' },
-  { value: 'roofing', label: 'Roofing' },
-  { value: 'foundation', label: 'Foundation' },
-];
-
 export const WarrantyForm = ({
   onSubmit,
   onCancel,
@@ -61,14 +28,27 @@ export const WarrantyForm = ({
   initialData,
 }: WarrantyFormProps) => {
   const [formData, setFormData] = useState<WarrantyFormData>({
-    type: initialData?.type?.toLowerCase() || '',
+    type: initialData?.type || '',
     category: initialData?.category || '',
     description: initialData?.description || '',
-    duration: initialData?.duration?.toLowerCase().replace(' ', '-') || '',
+    duration: initialData?.duration || '',
   });
 
   const [errors, setErrors] = useState<Partial<WarrantyFormData>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Reset form data when initialData changes
+  useEffect(() => {
+    setFormData({
+      type: initialData?.type || '',
+      category: initialData?.category || '',
+      description: initialData?.description || '',
+      duration: initialData?.duration || '',
+    });
+    // Clear errors when form resets
+    setErrors({});
+    setIsSubmitted(false);
+  }, [initialData]);
 
   const validateForm = () => {
     const newErrors: Partial<WarrantyFormData> = {};
@@ -121,14 +101,25 @@ export const WarrantyForm = ({
         <Label htmlFor='type' className='field-label'>
           Type Of Warranty
         </Label>
-        <SelectField
-          options={warrantyTypeOptions}
+        <Input
+          id='type'
+          type='text'
+          placeholder='Enter warranty type (e.g., Workmanship, Product, Brand)'
           value={formData.type}
-          onValueChange={value => handleInputChange('type', value)}
-          placeholder='Select warranty type'
-          triggerClassName={`w-full ${errors.type ? '!border-[var(--warning)]' : ''}`}
+          onChange={e => handleInputChange('type', e.target.value)}
+          disabled={!!initialData} // Disable type field when editing existing warranty
+          className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
+            errors.type
+              ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
+              : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
+          } ${initialData ? 'opacity-60 cursor-not-allowed' : ''}`}
         />
         {errors.type && <FormErrorMessage message={errors.type} />}
+        {initialData && (
+          <p className='text-sm text-[var(--text-secondary)] mt-1'>
+            Type cannot be changed when editing an existing warranty
+          </p>
+        )}
       </div>
 
       {/* Category */}
@@ -136,12 +127,17 @@ export const WarrantyForm = ({
         <Label htmlFor='category' className='field-label'>
           Category
         </Label>
-        <SelectField
-          options={categoryOptions}
+        <Input
+          id='category'
+          type='text'
+          placeholder='Enter category (e.g., Interior, Exterior, Structural)'
           value={formData.category}
-          onValueChange={value => handleInputChange('category', value)}
-          placeholder='eg. interior'
-          triggerClassName={`w-full ${errors.category ? '!border-[var(--warning)]' : ''}`}
+          onChange={e => handleInputChange('category', e.target.value)}
+          className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
+            errors.category
+              ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
+              : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
+          }`}
         />
         {errors.category && <FormErrorMessage message={errors.category} />}
       </div>
@@ -172,12 +168,17 @@ export const WarrantyForm = ({
         <Label htmlFor='duration' className='field-label'>
           Duration
         </Label>
-        <SelectField
-          options={durationOptions}
+        <Input
+          id='duration'
+          type='text'
+          placeholder='Enter duration (e.g., 1 Year, 2 Years, Lifetime)'
           value={formData.duration}
-          onValueChange={value => handleInputChange('duration', value)}
-          placeholder='Select Duration'
-          triggerClassName={`w-full ${errors.duration ? '!border-[var(--warning)]' : ''}`}
+          onChange={e => handleInputChange('duration', e.target.value)}
+          className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
+            errors.duration
+              ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
+              : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
+          }`}
         />
         {errors.duration && <FormErrorMessage message={errors.duration} />}
       </div>
