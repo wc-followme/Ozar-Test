@@ -6,6 +6,7 @@ import {
   AccordionItem,
 } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import * as AccordionPrimitive from '@radix-ui/react-accordion';
 import { IconChevronDown } from '@tabler/icons-react';
 import { Add, SidebarLeft } from 'iconsax-react';
@@ -93,6 +94,9 @@ interface EstimationBoxSidebarProps {
   formatCurrency: (amount: number) => string;
   selectedRoomId: string;
   toggleMainAccordion: () => void;
+  isEditMode: boolean;
+  checkedItems: Set<string>;
+  onCheckedItemsChange: (newCheckedItems: Set<string>) => void;
 }
 
 export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
@@ -112,6 +116,9 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
   formatCurrency,
   selectedRoomId,
   toggleMainAccordion,
+  isEditMode,
+  checkedItems,
+  onCheckedItemsChange,
 }) => {
   return (
     <div
@@ -220,6 +227,7 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                         }`}
                         strokeWidth={2}
                       />
+
                       <span
                         className={`font-medium text-sm truncate ${
                           selectedRoomId === room.id
@@ -234,6 +242,33 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                       >
                         {formatCurrency(room.total)}
                       </span>
+                      {isEditMode && (
+                        <Checkbox
+                          checked={checkedItems.has(room.uniqueKey)}
+                          onCheckedChange={checked => {
+                            const newCheckedItems = new Set(checkedItems);
+                            if (checked) {
+                              newCheckedItems.add(room.uniqueKey);
+                            } else {
+                              newCheckedItems.delete(room.uniqueKey);
+                            }
+                            onCheckedItemsChange(newCheckedItems);
+                          }}
+                          className='
+                            rounded-[6px]
+                            border-2
+                            border-[var(--dark-border-other)]
+                            data-[state=checked]:bg-[--primary]
+                            data-[state=checked]:border-[--primary]
+                            data-[state=checked]:text-white
+                            text-white
+                            w-5 h-5
+                            flex items-center justify-center -mt-0.4
+                            ml-2
+                          '
+                          onClick={e => e.stopPropagation()}
+                        />
+                      )}
                     </div>
                   </AccordionPrimitive.Trigger>
                 </AccordionPrimitive.Header>
@@ -274,6 +309,41 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                   <span className='ml-auto text-xs font-semibold text-[var(--text-dark)]'>
                                     {formatCurrency(trade.tradeTotal)}
                                   </span>
+                                  {isEditMode && (
+                                    <Checkbox
+                                      checked={checkedItems.has(
+                                        `${room.uniqueKey}_${trade.uniqueKey}`
+                                      )}
+                                      onCheckedChange={checked => {
+                                        const newCheckedItems = new Set(
+                                          checkedItems
+                                        );
+                                        if (checked) {
+                                          newCheckedItems.add(
+                                            `${room.uniqueKey}_${trade.uniqueKey}`
+                                          );
+                                        } else {
+                                          newCheckedItems.delete(
+                                            `${room.uniqueKey}_${trade.uniqueKey}`
+                                          );
+                                        }
+                                        onCheckedItemsChange(newCheckedItems);
+                                      }}
+                                      className='
+                                        rounded-[6px]
+                                        border-2
+                                        border-[var(--dark-border-other)]
+                                        data-[state=checked]:bg-[--primary]
+                                        data-[state=checked]:border-[--primary]
+                                        data-[state=checked]:text-white
+                                        text-white
+                                        w-5 h-5
+                                        flex items-center justify-center -mt-0.4
+                                        ml-2
+                                      '
+                                      onClick={e => e.stopPropagation()}
+                                    />
+                                  )}
                                 </div>
                               </AccordionPrimitive.Trigger>
                             </AccordionPrimitive.Header>
@@ -297,20 +367,59 @@ export const EstimationBoxSidebar: React.FC<EstimationBoxSidebarProps> = ({
                                         )
                                       }
                                     >
-                                      <span
-                                        className={`text-sm font-medium group-hover:text-[var(--primary)] ${
-                                          selectedService === service.id &&
-                                          selectedTradeUniqueKey ===
-                                            trade.uniqueKey
-                                            ? 'text-[var(--primary)]'
-                                            : 'text-[var(--text-dark)]'
-                                        }`}
-                                      >
-                                        {service.name}
-                                      </span>
-                                      <span className='text-xs font-semibold text-[var(--text-dark)]'>
+                                      <div className='flex items-center gap-2'>
+                                        <span
+                                          className={`text-sm font-medium group-hover:text-[var(--primary)] ${
+                                            selectedService === service.id &&
+                                            selectedTradeUniqueKey ===
+                                              trade.uniqueKey
+                                              ? 'text-[var(--primary)]'
+                                              : 'text-[var(--text-dark)]'
+                                          }`}
+                                        >
+                                          {service.name}
+                                        </span>
+                                      </div>
+                                      <span className='text-xs font-semibold text-[var(--text-dark)] ml-auto'>
                                         {formatCurrency(service.tradeTotal)}
                                       </span>
+                                      {isEditMode && (
+                                        <Checkbox
+                                          checked={checkedItems.has(
+                                            `${room.uniqueKey}_${trade.uniqueKey}_${service.id}`
+                                          )}
+                                          onCheckedChange={checked => {
+                                            const newCheckedItems = new Set(
+                                              checkedItems
+                                            );
+                                            if (checked) {
+                                              newCheckedItems.add(
+                                                `${room.uniqueKey}_${trade.uniqueKey}_${service.id}`
+                                              );
+                                            } else {
+                                              newCheckedItems.delete(
+                                                `${room.uniqueKey}_${trade.uniqueKey}_${service.id}`
+                                              );
+                                            }
+                                            onCheckedItemsChange(
+                                              newCheckedItems
+                                            );
+                                          }}
+                                          className='
+                                              rounded-[6px]
+                                              border-2
+                                              border-[var(--dark-border-other)]
+                                              data-[state=checked]:bg-[--primary]
+                                              data-[state=checked]:border-[--primary]
+                                              data-[state=checked]:text-white
+                                              text-white
+                                              w-5 h-5
+                                              flex items-center justify-center -mt-0.4
+                                              ml-2
+                                            '
+                                          onClick={e => e.stopPropagation()}
+                                        />
+                                      )}
                                     </div>
                                   ))}
                                 </div>

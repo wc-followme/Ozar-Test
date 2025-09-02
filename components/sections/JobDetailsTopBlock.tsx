@@ -71,7 +71,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
         </div>
       )}
 
-      <div className='flex flex-col lg:flex-row gap-6'>
+      <div className='flex flex-col lg:flex-row gap-6 relative pt-12 lg:pt-0'>
         {/* Left Side - Project Image */}
         <div className='flex-shrink-0'>
           <Image
@@ -84,12 +84,12 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
         </div>
 
         {/* Middle Section - Key Information */}
-        <div className='flex-1 space-y-6'>
+        <div className='flex-1 max-w-full space-y-6 w-full'>
           {/* First Row */}
           <div className='flex items-start gap-6 flex-wrap'>
             {/* Left: Labels/Values group */}
-            <div className='flex flex-wrap gap-6 flex-1'>
-              <div className='flex-1 shrink-0 min-w-[150px]'>
+            <div className='flex flex-wrap gap-6 flex-1 w-min max-w-full'>
+              <div className='flex-1 w-min max-w-full shrink-0 min-w-[150px]'>
                 <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                   Project ID
                 </div>
@@ -98,7 +98,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                 </div>
               </div>
 
-              <div className='flex-1 shrink-0 min-w-[120px]'>
+              <div className='flex-1 w-min max-w-full shrink-0 min-w-[120px]'>
                 <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                   Project Name
                 </div>
@@ -107,7 +107,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                 </div>
               </div>
 
-              <div className='flex-1 shrink-0 min-w-[120px]'>
+              <div className='flex-1 w-min max-w-full shrink-0 min-w-[120px]'>
                 <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                   Job Category
                 </div>
@@ -140,7 +140,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
             </div>
 
             {/* Right: Status + View More */}
-            <div className='flex items-center gap-2 ml-auto'>
+            <div className='flex items-center gap-2 ml-auto absolute top-0 right-0 lg:relative'>
               <div className='bg-[#D4323226] text-[var(--warning)] px-3 py-1 rounded-full text-sm font-medium animate-pulse'>
                 Pending Details
               </div>
@@ -164,7 +164,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
 
           {/* Second Row */}
           <div className='flex items-start gap-6 flex-wrap pt-4 border-t border-[var(--border-dark)]'>
-            <div className='flex-1 shrink-0 min-w-[150px]'>
+            <div className='flex-1 w-min max-w-full shrink-0 min-w-[150px]'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                 Client Name
               </div>
@@ -173,7 +173,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
               </div>
             </div>
 
-            <div className='flex-1 shrink-0 min-w-[150px]'>
+            <div className='flex-1 w-fit max-w-full shrink-0 min-w-fit'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                 Email
               </div>
@@ -182,7 +182,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
               </div>
             </div>
 
-            <div className='flex-1 shrink-0 min-w-[150px]'>
+            <div className='flex-1 w-min max-w-full shrink-0 min-w-[150px]'>
               <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
                 Phone Number
               </div>
@@ -206,7 +206,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
             <div className='space-y-4 transition-all duration-700 ease-in-out transform origin-top animate-in slide-in-from-top-2'>
               {/* Row 3 */}
               <div className='flex items-start gap-6 flex-wrap pt-4 border-t border-[var(--border-dark)]'>
-                <div className='flex-1 shrink-0 min-w-[180px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[180px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Preferred Contact Method
                   </div>
@@ -214,7 +214,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     Phone
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[200px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[200px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Best time to contact
                   </div>
@@ -222,7 +222,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     09:00 AM - 08:00 PM
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[220px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[220px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Another Email
                   </div>
@@ -230,7 +230,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     tanya.03@example.com
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[200px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[200px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Another Phone Number
                   </div>
@@ -238,7 +238,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     (239) 555-0256
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[100px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[100px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Pet
                   </div>
@@ -250,7 +250,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
 
               {/* Row 4 */}
               <div className='flex items-start gap-6 flex-wrap pt-4 border-t border-[var(--border-dark)]'>
-                <div className='flex-1 shrink-0 min-w-[160px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[160px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Property
                   </div>
@@ -258,7 +258,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     Residential
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[160px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[160px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Type of Property
                   </div>
@@ -266,7 +266,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     House/Villa
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[120px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[120px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     BHK
                   </div>
@@ -274,7 +274,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     5 BHK
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[120px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[120px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Floor
                   </div>
@@ -282,7 +282,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     2 Floor
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[160px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[160px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Approx. sq ft
                   </div>
@@ -290,7 +290,7 @@ const JobDetailsTopBlock: React.FC<JobDetailsTopBlockProps> = ({
                     2500 Sq / Ft
                   </div>
                 </div>
-                <div className='flex-1 shrink-0 min-w-[140px]'>
+                <div className='flex-1 w-min max-w-full shrink-0 min-w-[140px]'>
                   <div className='text-sm text-[var(--text-secondary)] mb-1'>
                     Age of Property
                   </div>

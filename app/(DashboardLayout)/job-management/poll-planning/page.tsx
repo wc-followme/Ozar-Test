@@ -618,7 +618,7 @@ export default function PollPlanning() {
         <Tabs
           value={selectedTab}
           onValueChange={setSelectedTab}
-          className='w-full max-w-[calc(100vw-97px)] lg:max-w-[calc(100vw-205px)] overflow-auto'
+          className='w-full max-w-[calc(100vw-114px)] lg:max-w-[calc(100vw-205px)] overflow-auto'
         >
           {/* Tab Content */}
           <TabsContent value={POLL_TABS.PENDING_POLL} className='mt-6'>

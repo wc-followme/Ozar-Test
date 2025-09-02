@@ -1,16 +1,10 @@
 'use client';
 
 import ComingSoon from '@/components/shared/common/ComingSoon';
-import { Dropdown } from '@/components/shared/common/Dropdown';
-import SideSheet from '@/components/shared/common/SideSheet';
 import TradeComponent from '@/components/shared/common/TradeComponent';
-import VersionHistoryComponent from '@/components/shared/common/VersionHistoryComponent';
-import { Button } from '@/components/ui/button';
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { IconHistory } from '@tabler/icons-react';
-import { ArrowDown2, Edit2, SmsTracking } from 'iconsax-react';
 import { ReactNode, useEffect, useState } from 'react';
-import { AuctionIcon } from '../icons/AuctionIcon';
 import EstimateComponent from '../Templates/EstimateComponent';
 import WorkflowSection from './WorkflowSection';
 
@@ -27,8 +21,6 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
     initialTab || 'estimate'
   );
   const [sidebarWidth, setSidebarWidth] = useState<number>(280); // Default to expanded
-  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
-  const [showVersionHistory, setShowVersionHistory] = useState(false);
 
   // Function to detect sidebar width
   const detectSidebarWidth = () => {
@@ -286,59 +278,6 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
         <div className='pt-6'>
           <TabsContent value='estimate' className='m-0'>
             {/* Action Bar */}
-            <div className='flex items-center mb-4'>
-              <Button
-                className='btn-secondary'
-                onClick={() => setShowVersionHistory(true)}
-              >
-                <IconHistory size={18} color='var(--text-dark)' />
-                <span className='font-medium'>Show version history</span>
-              </Button>
-              <div className='flex items-center gap-3 ml-auto'>
-                {/* Quick Actions Dropdown */}
-                <Button className='btn-secondary'>
-                  <Edit2 size={18} color='var(--text-dark)' />
-                  <span className='font-medium'>Edit</span>
-                </Button>
-                <Dropdown
-                  trigger={
-                    <div className='btn-secondary cursor-pointer'>
-                      <span className='font-medium'>Quick Actions</span>
-                      <ArrowDown2
-                        className='w-4 h-4 [&>path]:stroke-2 ml-2'
-                        color='var(--text-dark)'
-                      />
-                    </div>
-                  }
-                  menuOptions={[
-                    {
-                      label: 'Send Via Email',
-                      action: 'send-email',
-                      icon: SmsTracking,
-                    },
-                    {
-                      label: 'Add for Auction Bid',
-                      action: 'auction-bid',
-                      icon: AuctionIcon,
-                    },
-                  ]}
-                  onAction={action => {
-                    setSelectedQuickAction(action);
-                    if (action === 'send-email') {
-                      console.log('Send Via Email clicked');
-                      // Add your email functionality here
-                    } else if (action === 'auction-bid') {
-                      console.log('Add for Auction Bid clicked');
-                      // Add auction bid functionality here
-                    }
-                  }}
-                />
-
-                {/* Edit Button */}
-
-                {/* Version History Button */}
-              </div>
-            </div>
 
             <EstimateComponent onAddRoom={handleAddRoom} />
           </TabsContent>
@@ -391,14 +330,6 @@ const JobDetailsBottomBlock: React.FC<JobDetailsBottomBlockProps> = ({
       </Tabs>
 
       {/* Version History SideSheet */}
-      <SideSheet
-        open={showVersionHistory}
-        onOpenChange={setShowVersionHistory}
-        title='Version History'
-        size='600px'
-      >
-        <VersionHistoryComponent onClose={() => setShowVersionHistory(false)} />
-      </SideSheet>
     </div>
   );
 };

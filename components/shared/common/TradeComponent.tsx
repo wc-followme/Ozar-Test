@@ -1377,11 +1377,11 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
 
         {/* Main Content */}
         <div
-          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out !touch-pan-x !touch-pan-y touch-manipulation'
+          className='flex-1 flex flex-col h-[calc(100vh_-_120px)] min-w-0 overflow-hidden transition-all duration-300 ease-in-out touch-manipulation'
           style={{ width: calculateContentWidth() }}
         >
           {/* Content Area */}
-          <div className='flex-1 overflow-hidden bg-[var(--background)]'>
+          <div className='flex-1 flex flex-col overflow-hidden bg-[var(--background)] touch-pan-y touch-pan-x'>
             {/* Header */}
             <TradeHeader
               showAddService={showAddService}
@@ -1401,16 +1401,26 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
               selectedSubContractor={selectedSubContractor}
             />
 
+            {/* Scrollable Content Container */}
             <div
-              className='h-full overflow-x-auto overscroll-contain touch-pan-x touch-pan-y -webkit-overflow-scrolling-touch touch-manipulation scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300'
+              className='flex-1 overflow-auto min-h-0 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 transition-colors touch-pan-y touch-pan-x overscroll-contain'
               style={{
                 WebkitOverflowScrolling: 'touch',
                 scrollBehavior: 'smooth',
                 touchAction: 'pan-x pan-y',
                 msOverflowStyle: 'auto',
                 scrollbarWidth: 'auto',
-                overflowX: 'auto',
-                overflowY: 'auto',
+                overscrollBehavior: 'contain',
+                '-webkit-overflow-scrolling': 'touch',
+                '-webkit-touch-callout': 'none',
+                '-webkit-user-select': 'none',
+                '-khtml-user-select': 'none',
+                '-moz-user-select': 'none',
+                '-ms-user-select': 'none',
+                'user-select': 'none',
+                'scrollbar-gutter': 'stable',
+                'scroll-padding': '0',
+                'scroll-snap-type': 'y proximity',
               }}
             >
               <div className='p-6 min-w-fit max-w-none w-full'>

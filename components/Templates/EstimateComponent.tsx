@@ -1,13 +1,27 @@
 'use client';
 
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { Dropdown } from '@/components/shared/common/Dropdown';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { TemplateListForm } from '@/components/shared/forms/TemplateListForm';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { IconHistory } from '@tabler/icons-react';
+import {
+  ArrowDown2,
+  ArrowRotateLeft,
+  ArrowRotateRight,
+  Document,
+  DocumentText,
+  Edit2,
+  Link,
+  Save2,
+  Trash,
+} from 'iconsax-react';
+import { useRef, useState } from 'react';
 import { RoomIcon } from '../icons/RoomIcon';
 import { TemplateIcon } from '../icons/TemplateIcon';
+import VersionHistoryComponent from '../shared/common/VersionHistoryComponent';
 import EstimationBox from './EstimationBox';
 
 interface EstimateComponentProps {
@@ -225,8 +239,12 @@ export default function EstimateComponent({
   onSaveError,
   onFormSubmit,
 }: EstimateComponentProps) {
+  const estimationBoxRef = useRef<{ toggleEditMode: () => void }>(null);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [showEstimationBox, setShowEstimationBox] = useState(false);
+  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   const handleAddFromTemplate = () => {
     setIsTemplateSheetOpen(true);
@@ -251,14 +269,152 @@ export default function EstimateComponent({
   // If EstimationBox is shown, render only that
   if (showEstimationBox) {
     return (
-      <EstimationBox
-        _onClose={handleCloseEstimationBox}
-        {...(jobId && { jobId })}
-        {...(categoryId && { categoryId })}
-        {...(onSaveSuccess && { onSaveSuccess })}
-        {...(onSaveError && { onSaveError })}
-        {...(onFormSubmit && { onFormSubmit })}
-      />
+      <>
+        <div className='flex items-center mb-4'>
+          {isEditing ? (
+            // Edit mode header
+            <>
+              <div className='flex items-center gap-1'>
+                <div className='h-10 w-[1px] bg-white'></div>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='text-gray-400 hover:text-gray-300'
+                >
+                  <ArrowRotateLeft
+                    size='32'
+                    color='var(--text-dark)'
+                    className='!h-6 !w-6'
+                  />
+                </Button>
+                <div className='h-8 w-[1px] bg-[var(--border-dark)]'></div>
+                <Button
+                  variant='ghost'
+                  size='sm'
+                  className='text-gray-600 hover:text-gray-500'
+                  disabled
+                >
+                  <ArrowRotateRight
+                    size='32'
+                    color='var(--text-dark)'
+                    className='!h-6 !w-6'
+                  />
+                </Button>
+              </div>
+              <div className='flex items-center ml-auto'>
+                <Button
+                  className='border-2 h-10 w-10 rounded-[10px] border-[var(--border-dark)]'
+                  onClick={() => {
+                    setIsEditing(false);
+                    estimationBoxRef.current?.toggleEditMode();
+                  }}
+                >
+                  <Trash
+                    size={24}
+                    color='var(--text-dark)'
+                    className='!h-5 !w-5'
+                  />
+                </Button>
+              </div>
+            </>
+          ) : (
+            // Normal mode header
+            <>
+              <Button
+                className='btn-secondary'
+                onClick={() => setShowVersionHistory(true)}
+              >
+                <IconHistory size={18} color='var(--text-dark)' />
+                <span className='font-medium'>Show version history</span>
+              </Button>
+              <div className='flex items-center gap-3 ml-auto'>
+                {/* Quick Actions Dropdown */}
+                <Button
+                  className='btn-secondary'
+                  onClick={() => {
+                    setIsEditing(true);
+                    estimationBoxRef.current?.toggleEditMode();
+                  }}
+                >
+                  <Edit2 size={18} color='var(--text-dark)' />
+                  <span className='font-medium'>Edit</span>
+                </Button>
+                <Dropdown
+                  trigger={
+                    <div className='btn-secondary cursor-pointer'>
+                      <span className='font-medium'>Quick Actions</span>
+                      <ArrowDown2
+                        className='w-4 h-4 [&>path]:stroke-2 ml-2'
+                        color='var(--text-dark)'
+                      />
+                    </div>
+                  }
+                  menuOptions={[
+                    {
+                      label: 'Send Material List',
+                      action: 'send-material-list',
+                      icon: DocumentText,
+                    },
+                    {
+                      label: 'Save as Estimate Template',
+                      action: 'save-as-template',
+                      icon: Save2,
+                    },
+                    {
+                      label: 'Send Invite Estimate',
+                      action: 'send-invite-estimate',
+                      icon: Link,
+                    },
+                    {
+                      label: 'Send PDF',
+                      action: 'send-pdf',
+                      icon: Document,
+                    },
+                  ]}
+                  onAction={action => {
+                    setSelectedQuickAction(action);
+                    if (action === 'send-material-list') {
+                      console.log('Send Material List clicked');
+                      // Add material list functionality here
+                    } else if (action === 'save-as-template') {
+                      console.log('Save as Estimate Template clicked');
+                      // Add save template functionality here
+                    } else if (action === 'send-invite-estimate') {
+                      console.log('Send Invite Estimate clicked');
+                      // Add invite estimate functionality here
+                    } else if (action === 'send-pdf') {
+                      console.log('Send PDF clicked');
+                      // Add PDF functionality here
+                    }
+                  }}
+                />
+              </div>
+            </>
+          )}
+        </div>
+        <EstimationBox
+          ref={estimationBoxRef}
+          _onClose={handleCloseEstimationBox}
+          {...(jobId && { jobId })}
+          {...(categoryId && { categoryId })}
+          {...(onSaveSuccess && { onSaveSuccess })}
+          {...(onSaveError && { onSaveError })}
+          {...(onFormSubmit && { onFormSubmit })}
+          onEditModeChange={setIsEditing}
+        />
+
+        {/* Version History Sidesheet */}
+        <SideSheet
+          open={showVersionHistory}
+          onOpenChange={setShowVersionHistory}
+          title='Version History'
+          size='600px'
+        >
+          <VersionHistoryComponent
+            onClose={() => setShowVersionHistory(false)}
+          />
+        </SideSheet>
+      </>
     );
   }
 

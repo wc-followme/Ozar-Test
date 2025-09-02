@@ -1,10 +1,4 @@
-import {
-  ChevronDown,
-  ChevronRight,
-  Minus,
-  MoreVertical,
-  Plus,
-} from 'lucide-react';
+import { Minus, MoreVertical, Plus, RotateCcw } from 'lucide-react';
 import React, { useState } from 'react';
 import { Avatar } from './Avatar';
 import { Dropdown } from './Dropdown';
@@ -49,12 +43,12 @@ const VersionHistoryCard: React.FC<VersionHistoryCardProps> = ({
   };
 
   return (
-    <div className='bg-[#F5F7FA] rounded-[10px] shadow-sm p-4'>
+    <div className='bg-[var(--background)] border border-[var(--border-dark)] rounded-[10px] shadow-sm p-4'>
       {/* Header */}
       <div className='flex items-center justify-between'>
         <button
           onClick={toggleExpanded}
-          className='flex items-center flex-1 gap-3 text-left cursor-pointer hover:bg-gray-50 rounded p-2 -m-2 transition-colors'
+          className='flex items-center flex-1 gap-3 text-left cursor-pointer rounded p-2 -m-2 transition-colors'
         >
           <Avatar
             name={user.name}
@@ -87,19 +81,9 @@ const VersionHistoryCard: React.FC<VersionHistoryCardProps> = ({
             }
             menuOptions={[
               {
-                label: 'View Details',
-                action: 'view-details',
-                icon: ChevronRight,
-              },
-              {
-                label: 'Compare Changes',
-                action: 'compare-changes',
-                icon: ChevronDown,
-              },
-              {
-                label: 'Export',
-                action: 'export',
-                icon: Plus,
+                label: 'Restore this Version',
+                action: 'restore-version',
+                icon: RotateCcw,
               },
             ]}
             onAction={handleDropdownAction}
@@ -110,6 +94,7 @@ const VersionHistoryCard: React.FC<VersionHistoryCardProps> = ({
       {/* Content Sections */}
       {isExpanded && (
         <div className='space-y-3 bg-[var(--card-background)] border-[#E8EAED] rounded-md p-3 mt-4'>
+          <h3>Room Name</h3>
           {sections.map(section => (
             <div
               key={section.id}

@@ -10,6 +10,7 @@ import {
 } from '@/components/shared/forms/estimation-types';
 import EstimationServiceForm from '@/components/shared/forms/EstimationServiceForm';
 import EstimationTradeForm from '@/components/shared/forms/EstimationTradeForm';
+import { Button } from '@/components/ui/button';
 import { Sortable } from '@/components/ui/sortable';
 import { SortableItem } from '@/components/ui/sortable-item';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,7 +25,7 @@ import {
   MARKUP_TYPES,
 } from '@/lib/estimation-calculations';
 import { extractApiErrorMessage } from '@/lib/utils';
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import NoDataFound from '../shared/common/NoDataFound';
 import { updateLocalStorageFromState } from './EstimateComponent';
 
@@ -101,6 +102,7 @@ interface EstimationBoxProps {
   onSaveSuccess?: () => void; // Callback for successful save
   onSaveError?: (error: any) => void; // Callback for save errors
   onFormSubmit?: number; // Trigger value for form submission
+  onEditModeChange?: (isEditing: boolean) => void; // Callback for edit mode changes
 }
 
 // Utility function to generate unique keys
@@ -134,10 +136,13 @@ const getStorageKey = (jobId?: string, templateId?: string): string => {
   }
 };
 
-export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
+export default forwardRef<
+  { toggleEditMode: () => void },
+  Readonly<EstimationBoxProps>
+>(function EstimationBox(props, ref) {
   const { showErrorToast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [editingRoomName, setEditingRoomName] = useState('');
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [expandedRooms, setExpandedRooms] = useState<string[]>(['0']);
   const [expandedTrades, setExpandedTrades] = useState<string[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<string | null>(null);
@@ -220,6 +225,19 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       setTradeOptions([]);
     }
   };
+
+  // Expose toggleEditMode method to parent component
+  useImperativeHandle(ref, () => ({
+    toggleEditMode: () => {
+      const newEditMode = !isEditing;
+      setIsEditing(newEditMode);
+      if (!newEditMode) {
+        setCheckedItems(new Set());
+      }
+      // Notify parent component of edit mode change
+      props.onEditModeChange?.(newEditMode);
+    },
+  }));
 
   // Load trades on mount and when company changes
   useEffect(() => {
@@ -680,34 +698,10 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
   };
 
   const handleEditClick = () => {
-    // Set the editing room name to the current selected room's name
-    setEditingRoomName(selectedRoom?.name || 'Room');
-    setIsEditing(true);
-  };
-
-  const handleNameSave = () => {
-    if (editingRoomName.trim()) {
-      setRooms(prev =>
-        prev.map(room =>
-          room.id === selectedRoomId
-            ? { ...room, name: editingRoomName.trim() }
-            : room
-        )
-      );
-    }
-    setIsEditing(false);
-  };
-
-  const handleNameCancel = () => {
-    setEditingRoomName(selectedRoom?.name || 'Room');
-    setIsEditing(false);
-  };
-
-  const handleRoomNameKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleNameSave();
-    } else if (e.key === 'Escape') {
-      handleNameCancel();
+    // Toggle the general edit mode for checkboxes
+    setIsEditing(!isEditing);
+    if (!isEditing) {
+      setCheckedItems(new Set());
     }
   };
 
@@ -746,6 +740,80 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         updateLocalStorageFromState(roomsData, storageKey);
       }, 0);
     }
+  };
+
+  // Calculate total for checked items
+  const calculateCheckedItemsTotal = () => {
+    let total = 0;
+    checkedItems.forEach(itemKey => {
+      // Parse the item key to determine if it's a room, trade, or service
+      if (itemKey.startsWith('room_')) {
+        const room = rooms.find(r => r.uniqueKey === itemKey);
+        if (room) {
+          total += room.total;
+        }
+      } else if (itemKey.startsWith('trade_')) {
+        const [roomKey, tradeKey] = itemKey.split('_').slice(1);
+        const room = rooms.find(r => r.uniqueKey === roomKey);
+        if (room) {
+          const trade = room.trades.find(t => t.uniqueKey === tradeKey);
+          if (trade) {
+            total += trade.tradeTotal;
+          }
+        }
+      } else if (itemKey.startsWith('service_')) {
+        const [roomKey, tradeKey, serviceKey] = itemKey.split('_').slice(1);
+        const room = rooms.find(r => r.uniqueKey === roomKey);
+        if (room) {
+          const trade = room.trades.find(t => t.uniqueKey === tradeKey);
+          if (trade) {
+            const service = trade.serviceList.find(s => s.id === serviceKey);
+            if (service) {
+              total += service.serviceTotal;
+            }
+          }
+        }
+      }
+    });
+    return total;
+  };
+
+  // Handle deletion of selected items
+  const handleDeleteSelected = () => {
+    if (checkedItems.size === 0) return;
+
+    const newRooms = rooms
+      .map(room => {
+        // Filter out checked trades and services
+        const filteredTrades = room.trades.filter(trade => {
+          const tradeKey = `${room.uniqueKey}_${trade.uniqueKey}`;
+          if (checkedItems.has(tradeKey)) return false;
+
+          // Filter out checked services within this trade
+          const filteredServices = trade.serviceList.filter(service => {
+            const serviceKey = `${room.uniqueKey}_${trade.uniqueKey}_${service.id}`;
+            return !checkedItems.has(serviceKey);
+          });
+
+          return {
+            ...trade,
+            serviceList: filteredServices,
+          };
+        });
+
+        // Filter out checked rooms
+        if (checkedItems.has(room.uniqueKey)) return null;
+
+        return {
+          ...room,
+          trades: filteredTrades,
+        };
+      })
+      .filter(Boolean) as Room[];
+
+    setRooms(newRooms);
+    setCheckedItems(new Set());
+    setIsEditing(false);
   };
 
   // Handle trade replacement when user changes trade from dropdown
@@ -1511,6 +1579,9 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         formatCurrency={formatCurrency}
         selectedRoomId={selectedRoomId}
         toggleMainAccordion={toggleMainAccordion}
+        isEditMode={isEditing}
+        checkedItems={checkedItems}
+        onCheckedItemsChange={setCheckedItems}
       />
 
       {/* Main Content */}
@@ -1522,11 +1593,6 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
         <EstimationHeader
           showAddService={showAddService}
           isEditing={isEditing}
-          editingRoomName={editingRoomName}
-          setEditingRoomName={setEditingRoomName}
-          handleNameSave={handleNameSave}
-          handleRoomNameKeyDown={handleRoomNameKeyDown}
-          handleEditClick={handleEditClick}
           selectedRoom={selectedRoom}
           showServiceForm={showServiceForm}
           selectedServiceData={selectedServiceData}
@@ -1645,20 +1711,54 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
           </div>
         </div>
 
-        {/* Project Total and Submit Buttons */}
+        {/* Project Total and Action Buttons */}
         <div className='p-6 py-3 bg-[var(--card-background)] border-t border-[var(--border-dark)] shadow-sm'>
           <div className='flex justify-between items-center'>
             <div className='flex items-center gap-4'>
               <h3 className='text-base font-semibold text-[var(--text-dark)]'>
-                Project Total:
+                {isEditing ? 'Selected Total:' : 'Project Total:'}
               </h3>
               <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
               <span className='text-xl font-bold text-[var(--primary)]'>
-                {formatCurrency(projectTotal)}
+                {formatCurrency(
+                  isEditing ? calculateCheckedItemsTotal() : projectTotal
+                )}
               </span>
             </div>
             <div className='flex gap-3'>
-              {/* Save button hidden - will be triggered by form submission */}
+              {isEditing ? (
+                <>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='btn-secondary'
+                    onClick={() => {
+                      setCheckedItems(new Set());
+                      setIsEditing(false);
+                      // Notify parent component of edit mode change
+                      props.onEditModeChange?.(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='btn-primary'
+                    onClick={() => {
+                      handleDeleteSelected();
+                      // Exit edit mode after saving changes
+                      setIsEditing(false);
+                      // Notify parent component of edit mode change
+                      props.onEditModeChange?.(false);
+                    }}
+                    disabled={checkedItems.size === 0}
+                  >
+                    Save Changes
+                  </Button>
+                </>
+              ) : /* Save button hidden - will be triggered by form submission */
+              null}
             </div>
           </div>
         </div>
@@ -1687,4 +1787,4 @@ export default function EstimationBox(props: Readonly<EstimationBoxProps>) {
       />
     </div>
   );
-}
+});
