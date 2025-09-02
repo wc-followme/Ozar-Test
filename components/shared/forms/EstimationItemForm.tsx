@@ -47,8 +47,16 @@ export default function EstimationItemForm({
     serviceId: string | null,
     companyUuid: string | null
   ) => {
-    // Early return if required parameters are missing
+    // Early return if required parameters are missing or invalid
     if (!serviceId || !companyUuid || serviceId === '' || companyUuid === '') {
+      setMaterialOptions([]);
+      return;
+    }
+
+    // Ensure serviceId is a UUID; skip if not valid to avoid calls like service_id=default
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(serviceId)) {
       setMaterialOptions([]);
       return;
     }
@@ -98,8 +106,10 @@ export default function EstimationItemForm({
 
   // Load materials when component mounts or when service/company changes
   useEffect(() => {
-    // Clear material options immediately if serviceId is null or undefined
-    if (!serviceId) {
+    // Clear material options immediately if serviceId is null/undefined/invalid
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!serviceId || !uuidRegex.test(serviceId)) {
       setMaterialOptions([]);
       return;
     }

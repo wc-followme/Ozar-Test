@@ -379,7 +379,6 @@ export default function TemplatesPage() {
                     label: 'Service Options Template',
                     action: 'service-option',
                     icon: OptionBidIcon,
-                    disabled: true,
                   },
                   {
                     label: 'Tools Template',

@@ -19,6 +19,8 @@ interface ServiceOptionsHeaderProps {
   handleAddCategory: () => void;
   handleAddServiceOption: () => void;
   onDeleteClick: () => void;
+  onClearLocalStorage?: () => void; // Add this prop
+  onTestUpdateLocalStorage?: () => void; // Add this prop for testing
 }
 
 export default function ServiceOptionsHeader({
@@ -29,26 +31,49 @@ export default function ServiceOptionsHeader({
   handleNameSave: _handleNameSave,
   handleRoomNameKeyDown: _handleRoomNameKeyDown,
   handleEditClick: _handleEditClick,
-  selectedCategory: _selectedCategory,
+  selectedCategory,
   showServiceForm: _showServiceForm,
-  selectedServiceOptionData: _selectedServiceOptionData,
+  selectedServiceOptionData,
   handleAddCategory: _handleAddCategory,
   handleAddServiceOption: _handleAddServiceOption,
   onDeleteClick,
+  onClearLocalStorage,
+  onTestUpdateLocalStorage,
 }: ServiceOptionsHeaderProps) {
   return (
     <div className='bg-white border-b border-gray-200 p-4 h-[75px] flex items-center'>
       <div className='flex items-center justify-between w-full'>
         <div className='flex flex-col items-start'>
           <h1 className='text-xl font-semibold text-gray-900 truncate'>
-            Install Tub
+            {selectedServiceOptionData?.name || 'New Service Option'}
           </h1>
           <p className='text-sm text-gray-500'>
-            Bed room 1 / Plumbing / Install Tub
+            {selectedCategory?.name || 'General Services'} /{' '}
+            {selectedServiceOptionData?.name || 'New Service Option'}
           </p>
         </div>
 
         <div className='flex items-center space-x-2'>
+          {onTestUpdateLocalStorage && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className='border-2 border-blue-500 text-blue-500 h-[42px] px-3 rounded-[10px]'
+              onClick={onTestUpdateLocalStorage}
+            >
+              Test Save
+            </Button>
+          )}
+          {onClearLocalStorage && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className='border-2 border-red-500 text-red-500 h-[42px] px-3 rounded-[10px]'
+              onClick={onClearLocalStorage}
+            >
+              Clear Storage
+            </Button>
+          )}
           <Button
             variant='ghost'
             size='sm'

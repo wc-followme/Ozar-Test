@@ -10,7 +10,9 @@ import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
 import ServiceOptionsBox from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { use, useState } from 'react';
+import { STORAGE_KEYS } from '@/constants/common';
+import { apiService } from '@/lib/api';
+import { use, useEffect, useState } from 'react';
 import { TemplateData } from '../../template-types';
 
 interface CreateTemplatePageProps {
@@ -31,11 +33,201 @@ export default function CreateTemplatePage({
     material: '',
     propertyType: '',
     category: '',
+    trade: '',
     description: '',
     tools: '',
     warranty: '',
     duration: '',
   });
+  const [projectTotal, setProjectTotal] = useState(0);
+
+  // State for dynamic categories
+  const [categories, setCategories] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // State for dynamic trades
+  const [trades, setTrades] = useState<Array<{ value: string; label: string }>>(
+    []
+  );
+  const [loadingTrades, setLoadingTrades] = useState(false);
+
+  // Fetch categories from API
+  const fetchCategories = async () => {
+    if (type !== 'service-option') return;
+
+    setLoadingCategories(true);
+    try {
+      const selectedCompanyRaw =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+          : null;
+      const companyUuid = selectedCompanyRaw
+        ? (() => {
+            try {
+              const parsed: { uuid?: string; id?: string | number } =
+                JSON.parse(selectedCompanyRaw);
+              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+
+      const response = await apiService.fetchCategoriesPublic({
+        page: 1,
+        limit: 50,
+        company_id: companyUuid,
+        status: 'ACTIVE',
+      });
+
+      const categoryOptions =
+        response.data?.data?.map(category => ({
+          value: category.uuid,
+          label: category.name,
+        })) || [];
+
+      setCategories(categoryOptions);
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+      // Fallback to default categories if API fails
+      setCategories([
+        { value: 'Interior', label: 'Interior' },
+        { value: 'Exterior', label: 'Exterior' },
+        { value: 'Plumbing', label: 'Plumbing' },
+        { value: 'Electrical', label: 'Electrical' },
+      ]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Fetch trades from API based on selected category
+  const fetchTrades = async (categoryId: string) => {
+    if (type !== 'service-option' || !categoryId) {
+      setTrades([]);
+      return;
+    }
+
+    setLoadingTrades(true);
+    try {
+      const selectedCompanyRaw =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+          : null;
+      const companyUuid = selectedCompanyRaw
+        ? (() => {
+            try {
+              const parsed: { uuid?: string; id?: string | number } =
+                JSON.parse(selectedCompanyRaw);
+              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+
+      const response = await apiService.fetchTradesPublic({
+        page: 1,
+        limit: 50,
+        company_id: companyUuid,
+        category_id: categoryId,
+      });
+
+      type TradeItem = { id?: string | number; uuid?: string; name?: string };
+      const payload = response as unknown as {
+        data?: TradeItem[] | { data?: TradeItem[] };
+      };
+      const list: TradeItem[] = Array.isArray(payload?.data)
+        ? (payload.data as TradeItem[])
+        : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
+          ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
+          : [];
+
+      const tradeOptions = list
+        .filter(t => !!t?.name)
+        .map(t => ({
+          value: String(t.uuid || t.id || t.name),
+          label: String(t.name),
+        }));
+
+      setTrades(tradeOptions);
+    } catch (error) {
+      console.error('Failed to fetch trades:', error);
+      setTrades([]);
+    } finally {
+      setLoadingTrades(false);
+    }
+  };
+
+  // Fetch categories on mount
+  useEffect(() => {
+    fetchCategories();
+  }, [type]);
+
+  // Recompute Project Total from localStorage whenever the service options change
+  useEffect(() => {
+    const computeTotal = () => {
+      try {
+        const raw = localStorage.getItem('service_options_template');
+        if (!raw) {
+          setProjectTotal(0);
+          return;
+        }
+        const data = JSON.parse(raw) as Array<{
+          rate?: number;
+          qty?: number;
+          materials?: Array<{ qty?: number; rate?: number }>;
+          finishes?: Array<{ qty?: number; rate?: number }>;
+        }>;
+        if (!Array.isArray(data)) {
+          setProjectTotal(0);
+          return;
+        }
+        const total = data.reduce((sum, svc) => {
+          const serviceTotal = (svc.rate || 0) * (svc.qty || 1);
+          const materialsTotal = (svc.materials || []).reduce(
+            (m, i) => m + (i.rate || 0) * (i.qty || 0),
+            0
+          );
+          const finishesTotal = (svc.finishes || []).reduce(
+            (f, i) => f + (i.rate || 0) * (i.qty || 0),
+            0
+          );
+          return sum + serviceTotal + materialsTotal + finishesTotal;
+        }, 0);
+        setProjectTotal(total);
+      } catch {
+        setProjectTotal(0);
+      }
+    };
+
+    // Initial compute
+    computeTotal();
+
+    // Observe localStorage changes (same-tab updates are triggered by our setItem)
+    const originalSetItem = localStorage.setItem;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (localStorage as any).setItem = function (...args: unknown[]) {
+      // @ts-expect-error - forward to original
+      originalSetItem.apply(this, args);
+      if (args[0] === 'service_options_template') computeTotal();
+    };
+
+    // Cross-tab updates
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'service_options_template') computeTotal();
+    };
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      // restore
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (localStorage as any).setItem = originalSetItem;
+    };
+  }, []);
 
   // Mock template data based on type
   const getMockTemplates = (): TemplateData[] => {
@@ -193,6 +385,16 @@ export default function CreateTemplatePage({
       ...prev,
       [field]: value,
     }));
+
+    // If category changes, fetch trades for that category
+    if (field === 'category' && value) {
+      fetchTrades(value);
+      // Clear trade selection when category changes
+      setFormData(prev => ({
+        ...prev,
+        trade: '',
+      }));
+    }
   };
 
   const renderFormFields = () => {
@@ -270,17 +472,34 @@ export default function CreateTemplatePage({
                   <SelectField
                     value={formData.category}
                     onValueChange={val => handleInputChange('category', val)}
-                    options={[
-                      { value: 'Interior', label: 'Interior' },
-                      { value: 'Exterior', label: 'Exterior' },
-                      { value: 'Plumbing', label: 'Plumbing' },
-                      { value: 'Electrical', label: 'Electrical' },
-                    ]}
-                    placeholder='Select Category'
+                    options={categories}
+                    placeholder={
+                      loadingCategories
+                        ? 'Loading categories...'
+                        : 'Select Category'
+                    }
+                    disabled={loadingCategories}
                   />
                 </div>
 
                 <div className='space-y-2'>
+                  <label className='field-label'>Trade</label>
+                  <SelectField
+                    value={formData.trade}
+                    onValueChange={val => handleInputChange('trade', val)}
+                    options={trades}
+                    placeholder={
+                      loadingTrades
+                        ? 'Loading trades...'
+                        : formData.category
+                          ? 'Select Trade'
+                          : 'Select Category First'
+                    }
+                    disabled={loadingTrades || !formData.category}
+                  />
+                </div>
+
+                {/* <div className='space-y-2'>
                   <label className='field-label'>Property Type</label>
                   <SelectField
                     value={formData.propertyType}
@@ -294,11 +513,12 @@ export default function CreateTemplatePage({
                     ]}
                     placeholder='Select Type'
                   />
-                </div>
+                </div> */}
               </div>
               <ServiceOptionsBox
                 _onClose={() => {}}
                 templateId='new-service-option-template'
+                tradeId={formData.trade} // Pass selected trade ID
                 onSaveSuccess={() => {
                   console.log('Service options template saved successfully');
                 }}
@@ -308,6 +528,7 @@ export default function CreateTemplatePage({
                     error
                   );
                 }}
+                // Listen to localStorage changes to recompute project total
               />
               <div className='mt-6'>
                 <div className='flex justify-between items-center'>
@@ -317,7 +538,10 @@ export default function CreateTemplatePage({
                     </h3>
                     <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
                     <span className='text-xl font-bold text-[var(--primary)]'>
-                      $2000
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                      }).format(projectTotal)}
                     </span>
                   </div>
                   <div className='flex gap-3'>

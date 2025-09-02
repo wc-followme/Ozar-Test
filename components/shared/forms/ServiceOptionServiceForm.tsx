@@ -1,8 +1,9 @@
 'use client';
 
 import { SERVICE_MESSAGES } from '@/app/(DashboardLayout)/service-management/service-messages';
+import EstimationItemsAccordion from '@/components/shared/common/EstimationItemsAccordion';
 import SelectField from '@/components/shared/common/SelectField';
-import ServiceOptionAccordion from '@/components/shared/common/ServiceOptionAccordion';
+import ToolsAccordion from '@/components/shared/common/ToolsAccordion';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +40,12 @@ interface ServiceOptionServiceFormProps {
   roomName?: string;
   tradeName?: string;
   tradeId?: string | undefined; // Add trade ID prop
+  onLocalStorageUpdate?: () => void; // Add localStorage update callback
+  onTotalsChange?: (totals: {
+    lineTotal: number;
+    serviceTotal: number;
+    tradeTotal: number;
+  }) => void;
 }
 
 export default function ServiceOptionServiceForm({
@@ -60,6 +67,8 @@ export default function ServiceOptionServiceForm({
   roomName: _roomName = 'Room',
   tradeName: _tradeName = 'Trade',
   tradeId, // Add trade ID prop
+  onLocalStorageUpdate, // Add localStorage update callback
+  onTotalsChange,
 }: ServiceOptionServiceFormProps) {
   const [serviceOptions, setServiceOptions] = useState<
     Array<{ value: string; label: string }>
@@ -73,80 +82,37 @@ export default function ServiceOptionServiceForm({
   const [finishes, setFinishes] = useState<EstimationItem[]>(
     service.finishes || []
   );
+  const [tools, setTools] = useState<Tool[]>(service.tools || []);
 
-  // Seed defaults (as per screenshot) if empty
-  useEffect(() => {
-    if (materials.length === 0) {
-      const seed = (
-        name: string,
-        description: string,
-        qty: number,
-        unit: string,
-        rate: number
-      ): EstimationItem => ({
-        id: `mat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        name,
-        variant: 'Standard',
-        qty,
-        unit,
-        description,
-        rate,
-        markup: 0,
-        lineTotal: qty * rate,
-      });
+  // No default seed; start with empty lists until user adds items
 
-      setMaterials([
-        seed(
-          'Shut off valve',
-          'Inline shut-off valve for isolation',
-          4,
-          'Sq. Feet',
-          25
-        ),
-        seed('Supply line', 'Reinforced water supply line', 4, 'Sq. Feet', 20),
-        seed(
-          'Drain pipe',
-          'Durable PVC or ABS pipe used for drainage',
-          2,
-          'Sq. Feet',
-          25
-        ),
-        seed(
-          'Exhaust',
-          'High-efficiency ceiling or wall exhaust',
-          1,
-          'Sq. Feet',
-          45
-        ),
-      ]);
-    }
-  }, [materials.length]);
-
-  // Calculate current service values using backend logic
+  // Calculate current service values using current local state
   const calculateCurrentServiceValues = () => {
     const lineTotal = calculateLineTotal(service.rate, service.qty);
     const serviceTotal = calculateServiceTotal(service.rate, service.qty);
     const totalMaterialCost = calculateServiceTotalMaterialCost(
-      service.materials,
-      service.finishes
+      materials,
+      finishes
     );
     const tradeTotal = serviceTotal + totalMaterialCost;
 
-    return {
-      lineTotal,
-      serviceTotal,
-      tradeTotal,
-    };
+    return { lineTotal, serviceTotal, tradeTotal };
   };
 
   const currentValues = calculateCurrentServiceValues();
+
+  // Emit totals upward whenever inputs that affect totals change
+  useEffect(() => {
+    const totals = calculateCurrentServiceValues();
+    onTotalsChange?.(totals);
+  }, [materials, finishes, service.qty, service.rate]);
 
   // Fetch services from API based on trade UUID and company UUID
   const fetchServices = async (
     tradeUuid: string | null,
     companyUuid: string | null
   ) => {
-    if (!tradeUuid || !companyUuid) {
+    if (!companyUuid) {
       setServiceOptions([]);
       return;
     }
@@ -157,7 +123,7 @@ export default function ServiceOptionServiceForm({
         page: 1,
         limit: 50,
         company_id: companyUuid,
-        trade_id: tradeUuid,
+        ...(tradeUuid ? { trade_id: tradeUuid } : {}),
       });
 
       type ServiceItem = { id?: string | number; uuid?: string; name?: string };
@@ -170,10 +136,13 @@ export default function ServiceOptionServiceForm({
           ? ((payload.data as { data?: ServiceItem[] }).data as ServiceItem[])
           : [];
 
+      // Only surface services that have a valid UUID; dropdown stores UUID
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const options = list
-        .filter(s => !!s?.name)
+        .filter(s => !!s?.name && !!s?.uuid && uuidRegex.test(String(s.uuid)))
         .map(s => ({
-          value: String(s.uuid || s.id || s.name),
+          value: String(s.uuid),
           label: String(s.name),
         }));
 
@@ -203,9 +172,50 @@ export default function ServiceOptionServiceForm({
           }
         })()
       : '';
-
+    // For Service Options page, show all services for company if no trade selected
     fetchServices(tradeId || null, companyUuid);
   }, [tradeId]);
+
+  // Prefetch materials and tools when a valid service UUID is selected
+  useEffect(() => {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!service.uuid || !uuidRegex.test(service.uuid)) {
+      return;
+    }
+
+    const selectedCompanyRaw =
+      typeof window !== 'undefined'
+        ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+        : null;
+    const companyUuid = selectedCompanyRaw
+      ? (() => {
+          try {
+            const parsed: { uuid?: string; id?: string | number } =
+              JSON.parse(selectedCompanyRaw);
+            return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+          } catch {
+            return '';
+          }
+        })()
+      : '';
+    if (!companyUuid) return;
+
+    // Prefetch materials and tools to warm the dropdowns
+    void apiService.fetchMaterialsPublic({
+      page: 1,
+      limit: 50,
+      company_id: companyUuid,
+      service_id: service.uuid,
+    });
+
+    void apiService.fetchToolsPublic({
+      page: 1,
+      limit: 50,
+      company_id: companyUuid,
+      service_id: service.uuid,
+    });
+  }, [service.uuid]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -218,17 +228,22 @@ export default function ServiceOptionServiceForm({
     <div className='space-y-6 w-full min-w-fit'>
       {/* Service Details Card */}
       <Card className='p-6 rounded-[10px] bg-[var(--card-background)] border-none min-w-max'>
-        <div className='flex gap-6 items-start flex-wrap min-w-fit'>
+        <div className='flex gap-4 items-start flex-wrap min-w-fit'>
           <div className='flex-1 flex items-center gap-4 min-w-0 gap-y-4'>
-            <div className='flex-1 space-y-2 min-w-[280px] overflow-hidden'>
+            <div className='flex-1 space-y-2 min-w-[160px] overflow-hidden'>
               <Label className='field-label'>Service</Label>
               <SelectField
                 value={(() => {
-                  // Find the option that matches the current service name
-                  const matchingOption = serviceOptions.find(
+                  if (service.uuid) {
+                    const byUuid = serviceOptions.find(
+                      option => option.value === service.uuid
+                    );
+                    if (byUuid) return byUuid.value;
+                  }
+                  const byName = serviceOptions.find(
                     option => option.label === service.name
                   );
-                  return matchingOption ? matchingOption.value : service.name;
+                  return byName ? byName.value : '';
                 })()}
                 onValueChange={newValue => {
                   // Find the selected option to get the display name and UUID
@@ -246,19 +261,19 @@ export default function ServiceOptionServiceForm({
                     onServiceNameChange(newName);
                   }
                   if (onServiceUpdate) {
-                    const updatedService = {
+                    const updatedService: Service = {
                       ...service,
                       name: newName,
+                      materials: [],
+                      finishes: [],
+                      tools: [],
+                      ...(serviceUuid ? { uuid: serviceUuid } : {}),
                     };
-
-                    if (serviceUuid) {
-                      (updatedService as any).uuid = serviceUuid;
-                    } else {
-                      delete (updatedService as any).uuid;
-                    }
 
                     onServiceUpdate(updatedService);
                   }
+                  // Update localStorage when service changes
+                  onLocalStorageUpdate?.();
                 }}
                 options={serviceOptions}
                 placeholder={
@@ -270,7 +285,7 @@ export default function ServiceOptionServiceForm({
                 disabled={loading}
               />
             </div>
-            <div className='space-y-2 w-[100px] min-w-[100px] overflow-hidden'>
+            <div className='space-y-2 w-[80px] min-w-[80px] overflow-hidden'>
               <Label className='field-label'>Qty</Label>
               <Input
                 type='text'
@@ -286,6 +301,8 @@ export default function ServiceOptionServiceForm({
                         qty: newQty,
                       });
                     }
+                    // Update localStorage when service changes
+                    onLocalStorageUpdate?.();
                   }
                 }}
                 onKeyDown={e => {
@@ -313,47 +330,54 @@ export default function ServiceOptionServiceForm({
                 className='input-field'
               />
             </div>
-            <div className='space-y-2 w-[160px] min-w-[160px] overflow-hidden'>
+            <div className='space-y-2 w-[120px] min-w-[120px] overflow-hidden'>
               <Label className='field-label'>Rate</Label>
-              <Input
-                type='text'
-                inputMode='decimal'
-                value={service.rate.toString()}
-                onChange={e => {
-                  const raw = e.target.value;
-                  const cleaned = raw.replace(/[^0-9.]/g, '');
-                  const parts = cleaned.split('.');
-                  const next =
-                    parts.length > 2
-                      ? `${parts[0]}.${parts.slice(1).join('')}`
-                      : cleaned;
+              <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+                <div className='w-[40px] flex items-center justify-center font-bold text-[var(--text-dark)] select-none border-none bg-[var(--white-background)] rounded-l-[10px]'>
+                  $
+                </div>
+                <Input
+                  type='text'
+                  inputMode='decimal'
+                  value={service.rate.toString()}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    const cleaned = raw.replace(/[^0-9.]/g, '');
+                    const parts = cleaned.split('.');
+                    const next =
+                      parts.length > 2
+                        ? `${parts[0]}.${parts.slice(1).join('')}`
+                        : cleaned;
 
-                  // Reflect cleaned string in the input without forcing numeric commit yet
-                  (e.target as HTMLInputElement).value = next;
+                    (e.target as HTMLInputElement).value = next;
 
-                  if (next !== '' && !next.endsWith('.')) {
-                    const numeric = parseFloat(next);
+                    if (next !== '' && !next.endsWith('.')) {
+                      const numeric = parseFloat(next);
+                      if (!Number.isNaN(numeric) && onServiceUpdate) {
+                        onServiceUpdate({ ...service, rate: numeric });
+                      }
+                      // Update localStorage when service changes
+                      onLocalStorageUpdate?.();
+                    }
+                  }}
+                  onBlur={e => {
+                    const val = e.currentTarget.value;
+                    const fallback = val === '' || val === '.' ? '0' : val;
+                    e.currentTarget.value = fallback;
+                    const numeric = parseFloat(fallback);
                     if (!Number.isNaN(numeric) && onServiceUpdate) {
                       onServiceUpdate({ ...service, rate: numeric });
                     }
-                  }
-                }}
-                onBlur={e => {
-                  const val = e.currentTarget.value;
-                  const fallback = val === '' || val === '.' ? '0' : val;
-                  e.currentTarget.value = fallback;
-                  const numeric = parseFloat(fallback);
-                  if (!Number.isNaN(numeric) && onServiceUpdate) {
-                    onServiceUpdate({ ...service, rate: numeric });
-                  }
-                }}
-                className='input-field'
-              />
+                  }}
+                  placeholder='0.00'
+                  className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+                />
+              </div>
             </div>
           </div>
           <div className='pt-7 ml-auto flex-shrink-0 min-w-fit'>
             <div className='grid grid-cols-3 min-w-fit'>
-              <div className='px-4 min-w-[160px]'>
+              <div className='px-4 min-w-[100px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Line Total
                 </Label>
@@ -361,7 +385,7 @@ export default function ServiceOptionServiceForm({
                   {formatCurrency(currentValues.lineTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
+              <div className='border-l border-[var(--border-dark)] px-4 min-w-[100px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Service Total
                 </Label>
@@ -369,7 +393,7 @@ export default function ServiceOptionServiceForm({
                   {formatCurrency(currentValues.serviceTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6 min-w-[160px]'>
+              <div className='border-l border-[var(--border-dark)] pl-4 min-w-[100px]'>
                 <Label className='field-label text-xs whitespace-nowrap'>
                   Trade Total
                 </Label>
@@ -391,6 +415,8 @@ export default function ServiceOptionServiceForm({
                   description: e.target.value,
                 });
               }
+              // Update localStorage when service changes
+              onLocalStorageUpdate?.();
             }}
             rows={3}
             className='input-field'
@@ -431,20 +457,18 @@ export default function ServiceOptionServiceForm({
         </div> */}
       </Card>
 
-      {/* Service Options */}
-
-      {/* Materials Accordion */}
-      <ServiceOptionAccordion
+      {/* Materials Accordion (match estimation design) */}
+      <EstimationItemsAccordion
         title='Material'
         items={materials}
         addButtonText='Material'
         onAddItem={() => {
           const newMaterial: EstimationItem = {
-            id: `material-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            id: `material-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: 'New Material',
             variant: 'Standard',
             qty: 1,
-            unit: 'UNIT',
+            unit: 'INCH',
             description: 'New material description',
             rate: 0.0,
             markup: 0.0,
@@ -452,33 +476,41 @@ export default function ServiceOptionServiceForm({
           };
           setMaterials(prev => [...prev, newMaterial]);
           onMaterialAdd?.(newMaterial);
+          // Update localStorage when materials change
+          onLocalStorageUpdate?.();
         }}
         onItemUpdate={(id, updated) => {
           setMaterials(prev => prev.map(m => (m.id === id ? updated : m)));
           _onMaterialUpdate?.(id, updated);
+          // Update localStorage when materials change
+          onLocalStorageUpdate?.();
         }}
         onItemDelete={id => {
           setMaterials(prev => prev.filter(m => m.id !== id));
           _onMaterialDelete?.(id);
+          // Update localStorage when materials change
+          onLocalStorageUpdate?.();
         }}
-        defaultExpanded={true}
-        serviceId={
-          service.name ? service.uuid || service.id || undefined : undefined
-        }
+        defaultExpanded={false}
+        serviceId={service.uuid}
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
       />
 
-      {/* Finishes Accordion */}
-      <ServiceOptionAccordion
+      {/* Finishes Accordion (match estimation design) */}
+      <EstimationItemsAccordion
         title='Finishes'
         items={finishes}
         addButtonText='Finishes'
         onAddItem={() => {
           const newFinish: EstimationItem = {
-            id: `finish-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            id: `finish-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: 'New Finish',
             variant: 'Standard',
             qty: 1,
-            unit: 'UNIT',
+            unit: 'INCH',
             description: 'New finish description',
             rate: 0.0,
             markup: 0.0,
@@ -486,19 +518,59 @@ export default function ServiceOptionServiceForm({
           };
           setFinishes(prev => [...prev, newFinish]);
           onFinishAdd?.(newFinish);
+          // Update localStorage when finishes change
+          onLocalStorageUpdate?.();
         }}
         onItemUpdate={(id, updated) => {
           setFinishes(prev => prev.map(f => (f.id === id ? updated : f)));
           _onFinishUpdate?.(id, updated);
+          // Update localStorage when finishes change
+          onLocalStorageUpdate?.();
         }}
         onItemDelete={id => {
           setFinishes(prev => prev.filter(f => f.id !== id));
           _onFinishDelete?.(id);
+          // Update localStorage when finishes change
+          onLocalStorageUpdate?.();
         }}
-        defaultExpanded={true}
-        serviceId={
-          service.name ? service.uuid || service.id || undefined : undefined
-        }
+        defaultExpanded={false}
+        serviceId={service.uuid}
+        useFixedWidths={true}
+        cardWidthClass='w-full min-w-max'
+        borderClass='border-none'
+        disableVariant={true}
+      />
+
+      {/* Tools Accordion (match estimation design) */}
+      <ToolsAccordion
+        title='Tools'
+        tools={tools}
+        onAddTool={tool => {
+          setTools(prev => [...prev, tool]);
+          // Propagate to parent so categories state persists tools
+          _onAddTool?.(tool);
+          // Update localStorage when tools change
+          onLocalStorageUpdate?.();
+        }}
+        onRemoveTool={toolId => {
+          setTools(prev => prev.filter(t => t.id !== toolId));
+          // Propagate removal to parent
+          _onRemoveTool?.(toolId);
+          // Update localStorage when tools change
+          onLocalStorageUpdate?.();
+        }}
+        onReplaceTools={newTools => {
+          setTools(newTools);
+          // Propagate full replace to parent
+          _onReplaceTools?.(newTools);
+          // Update localStorage when tools change
+          onLocalStorageUpdate?.();
+        }}
+        defaultExpanded={false}
+        roomName={'Room'}
+        tradeName={'Trade'}
+        serviceName={service.name}
+        serviceId={service.uuid}
       />
     </div>
   );

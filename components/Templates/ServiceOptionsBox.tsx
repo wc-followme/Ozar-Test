@@ -1,10 +1,10 @@
 'use client';
 
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
+import ServiceOptionServiceForm from '@/components/shared/forms/ServiceOptionServiceForm';
 import { useToast } from '@/components/ui/use-toast';
 import { extractApiErrorMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
-import ServiceOptionServiceForm from '../shared/forms/ServiceOptionServiceForm';
 import ServiceOptionsHeader from './ServiceOptionsHeader';
 import { ServiceOptionsSidebar } from './ServiceOptionsSidebar';
 import { ServiceCategory, ServiceOption } from './service-options-types';
@@ -13,8 +13,9 @@ interface ServiceOptionsBoxProps {
   _onClose: () => void;
   templateId?: string;
   onSaveSuccess?: () => void;
-  onSaveError?: (error: any) => void;
+  onSaveError?: (error: unknown) => void;
   onFormSubmit?: number;
+  tradeId?: string; // Add trade ID prop for service filtering
 }
 
 // Utility function to generate unique keys
@@ -59,10 +60,13 @@ export default function ServiceOptionsBox(
   const [deleteType, setDeleteType] = useState<
     'category' | 'service-option' | null
   >(null);
+  const [formKey, setFormKey] = useState(0);
+  const [newlyCreatedServiceOption, setNewlyCreatedServiceOption] =
+    useState<ServiceOption | null>(null);
   const [categories, setCategories] = useState<ServiceCategory[]>([
     {
       id: '0',
-      uniqueKey: generateUniqueKey('category'),
+      uniqueKey: generateUniqueKey('category', '0', 0),
       name: 'General Services',
       total: 0.0,
       serviceOptions: [],
@@ -77,11 +81,33 @@ export default function ServiceOptionsBox(
     : categories.find(category => category.id === selectedCategoryId);
 
   const selectedServiceOptionData =
-    selectedServiceOption && selectedCategoryData
+    newlyCreatedServiceOption ||
+    (selectedServiceOption && selectedCategoryData
       ? selectedCategoryData.serviceOptions.find(
           option => option.id === selectedServiceOption
         )
-      : undefined;
+      : undefined);
+
+  // Clear newlyCreatedServiceOption when the service option is properly stored in categories
+  useEffect(() => {
+    if (
+      newlyCreatedServiceOption &&
+      selectedServiceOption &&
+      selectedCategoryData
+    ) {
+      const foundInCategories = selectedCategoryData.serviceOptions.find(
+        option => option.id === selectedServiceOption
+      );
+      if (foundInCategories) {
+        setNewlyCreatedServiceOption(null);
+      }
+    }
+  }, [
+    categories,
+    newlyCreatedServiceOption,
+    selectedServiceOption,
+    selectedCategoryData,
+  ]);
 
   // Function to update calculations for a service option
   const updateServiceOptionCalculations = (
@@ -112,37 +138,243 @@ export default function ServiceOptionsBox(
     };
   };
 
+  // Function to ensure all categories have unique keys
+  const ensureUniqueKeys = (
+    categoriesList: ServiceCategory[]
+  ): ServiceCategory[] => {
+    return categoriesList.map((category, index) => ({
+      ...category,
+      uniqueKey:
+        category.uniqueKey || generateUniqueKey('category', category.id, index),
+    }));
+  };
+
   // Function to update all calculations
   const updateAllCalculations = (): void => {
     setCategories(prevCategories => {
       const updatedCategories = prevCategories.map(updateCategoryCalculations);
-      return updatedCategories;
+      return ensureUniqueKeys(updatedCategories);
     });
   };
 
-  const saveCurrentState = () => {
-    // Save to localStorage or API
-    const categoriesData = categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      serviceOptions: category.serviceOptions || [],
-    }));
+  // Centralized localStorage management function - this is the ONLY function that should update localStorage
+  const updateLocalStorage = (sourceCategories?: ServiceCategory[]) => {
+    try {
+      console.log('=== updateLocalStorage called ===');
+      const dataSource = sourceCategories || categories;
+      console.log('Current categories state:', dataSource);
+      console.log('Categories length:', dataSource.length);
 
-    if (props.templateId) {
-      localStorage.setItem(
-        `service_options_${props.templateId}`,
-        JSON.stringify(categoriesData)
+      // Transform the data to match the estimation template service format
+      const serviceOptionsData = dataSource.flatMap(category => {
+        const mapItemsWithUuidAsId = (items: unknown): unknown[] => {
+          if (!Array.isArray(items)) return [];
+          return items.map((item: any) => ({
+            ...item,
+            id: item?.uuid || item?.id,
+          }));
+        };
+        console.log(
+          'Processing category:',
+          category.name,
+          'with',
+          category.serviceOptions.length,
+          'services'
+        );
+        return category.serviceOptions.map(serviceOption => {
+          console.log('Processing service option:', {
+            id: serviceOption.id,
+            name: serviceOption.name,
+            materials: serviceOption.materials?.length || 0,
+            finishes: serviceOption.finishes?.length || 0,
+            tools: serviceOption.tools?.length || 0,
+          });
+          return {
+            service_id: serviceOption.uuid || serviceOption.id,
+            description: serviceOption.description || serviceOption.name,
+            qty: 1, // Default quantity for service options
+            rate: serviceOption.price,
+            materials: mapItemsWithUuidAsId(serviceOption.materials),
+            finishes: mapItemsWithUuidAsId(serviceOption.finishes),
+            tools: mapItemsWithUuidAsId(serviceOption.tools),
+          };
+        });
+      });
+
+      console.log(
+        'Final transformed data for localStorage:',
+        serviceOptionsData
       );
+      console.log('Total services to save:', serviceOptionsData.length);
+
+      // Save ONLY to the single key 'service_options_template' as requested
+      localStorage.setItem(
+        'service_options_template',
+        JSON.stringify(serviceOptionsData)
+      );
+
+      console.log(
+        'LocalStorage updated successfully with key: service_options_template'
+      );
+      console.log(
+        'Current localStorage content:',
+        localStorage.getItem('service_options_template')
+      );
+    } catch (error) {
+      console.error('Error updating localStorage:', error);
     }
   };
 
-  // Save state whenever categories change
+  // Legacy function for backward compatibility - now just calls the centralized function
+  const saveCurrentState = () => {
+    // This function is kept for backward compatibility but now does nothing
+    // All localStorage updates go through updateLocalStorage() directly
+  };
+
+  // Function to update localStorage immediately when materials, finishes, or tools change
+  // This is now handled by the main updateLocalStorage function below
+
+  // Load data from localStorage on mount
   useEffect(() => {
-    if (categories.length > 0) {
-      // Save to localStorage or API
-      saveCurrentState();
+    try {
+      // Load ONLY from the single key 'service_options_template'
+      const generalData = localStorage.getItem('service_options_template');
+      if (generalData) {
+        const parsedGeneralData = JSON.parse(generalData);
+        if (Array.isArray(parsedGeneralData) && parsedGeneralData.length > 0) {
+          console.log('Loading data from localStorage:', parsedGeneralData);
+
+          // Transform the general format back to categories format
+          const transformedCategories: ServiceCategory[] = [
+            {
+              id: '0',
+              uniqueKey: generateUniqueKey('category', '0', 0),
+              name: 'General Services',
+              total: 0.0,
+              serviceOptions: parsedGeneralData.map(
+                (service: any, index: number) => ({
+                  id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  uuid: service.service_id,
+                  name: service.description,
+                  description: service.description,
+                  price: service.rate,
+                  duration: '',
+                  category: 'General Services',
+                  materials: (service.materials || []).map(
+                    (material: any, index: number) => ({
+                      ...material,
+                      id:
+                        material.id ||
+                        material.uuid ||
+                        `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                    })
+                  ),
+                  finishes: (service.finishes || []).map(
+                    (finish: any, index: number) => ({
+                      ...finish,
+                      id:
+                        finish.id ||
+                        finish.uuid ||
+                        `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                    })
+                  ),
+                  tools: (service.tools || []).map(
+                    (tool: any, index: number) => ({
+                      ...tool,
+                      id:
+                        tool.id ||
+                        tool.uuid ||
+                        `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                    })
+                  ),
+                })
+              ),
+              isExpanded: true,
+            },
+          ];
+          setCategories(transformedCategories);
+          // Auto-select the loaded category and first service option to avoid creating duplicates
+          setSelectedCategoryId('0');
+          setSelectedCategory('0');
+          setSelectedCategoryUniqueKey(transformedCategories[0]!.uniqueKey);
+          const firstLoaded = transformedCategories[0]!.serviceOptions[0];
+          if (firstLoaded) {
+            setSelectedServiceOption(firstLoaded.id);
+            setShowServiceForm(true);
+          }
+        } else {
+          // If no data in localStorage, create initial empty state and save it
+          console.log('No data in localStorage, creating initial empty state');
+          const initialCategory: ServiceCategory = {
+            id: '0',
+            uniqueKey: generateUniqueKey('category', '0', 0),
+            name: 'General Services',
+            total: 0.0,
+            serviceOptions: [],
+            isExpanded: true,
+          };
+          setCategories([initialCategory]);
+
+          // Save initial empty state to localStorage
+          setTimeout(() => {
+            console.log('Saving initial empty state to localStorage');
+            updateLocalStorage();
+          }, 0);
+        }
+      } else {
+        // If localStorage key doesn't exist, create initial empty state and save it
+        console.log(
+          'LocalStorage key does not exist, creating initial empty state'
+        );
+        const initialCategory: ServiceCategory = {
+          id: '0',
+          uniqueKey: generateUniqueKey('category', '0', 0),
+          name: 'General Services',
+          total: 0.0,
+          serviceOptions: [],
+          isExpanded: true,
+        };
+        setCategories([initialCategory]);
+        setSelectedCategoryId('0');
+        setSelectedCategory('0');
+        setSelectedCategoryUniqueKey(initialCategory.uniqueKey);
+
+        // Save initial empty state to localStorage
+        setTimeout(() => {
+          console.log('Saving initial empty state to localStorage');
+          updateLocalStorage();
+        }, 0);
+      }
+    } catch (error) {
+      console.error('Error loading service options from localStorage:', error);
+
+      // If there's an error, create initial empty state and save it
+      console.log(
+        'Error loading from localStorage, creating initial empty state'
+      );
+      const initialCategory: ServiceCategory = {
+        id: '0',
+        uniqueKey: generateUniqueKey('category', '0', 0),
+        name: 'General Services',
+        total: 0.0,
+        serviceOptions: [],
+        isExpanded: true,
+      };
+      setCategories([initialCategory]);
+      setSelectedCategoryId('0');
+      setSelectedCategory('0');
+      setSelectedCategoryUniqueKey(initialCategory.uniqueKey);
+
+      // Save initial empty state to localStorage
+      setTimeout(() => {
+        console.log('Saving initial empty state to localStorage after error');
+        updateLocalStorage();
+      }, 0);
     }
-  }, [categories]);
+  }, []);
+
+  // Save state whenever categories change - REMOVED to prevent infinite loop
+  // localStorage is now updated only when explicitly needed (add/update/delete operations)
 
   // Update calculations on mount
   useEffect(() => {
@@ -162,14 +394,21 @@ export default function ServiceOptionsBox(
     if (categories.length === 0) {
       const defaultCategory: ServiceCategory = {
         id: '0',
-        uniqueKey: generateUniqueKey('category'),
+        uniqueKey: generateUniqueKey('category', '0', 0),
         name: 'General Services',
         total: 0.0,
         isExpanded: true,
         serviceOptions: [],
       };
 
-      setCategories([defaultCategory]);
+      setCategories(prev => {
+        const updatedCategories = ensureUniqueKeys([defaultCategory]);
+
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => updateLocalStorage(), 0);
+
+        return updatedCategories;
+      });
       setExpandedCategories(['0']);
       setSelectedCategoryId('0');
       setSelectedCategory(null);
@@ -183,14 +422,25 @@ export default function ServiceOptionsBox(
     const categorySequenceNumber = categories.length;
     const newCategory: ServiceCategory = {
       id: categorySequenceNumber.toString(),
-      uniqueKey: generateUniqueKey('category'),
+      uniqueKey: generateUniqueKey(
+        'category',
+        categorySequenceNumber.toString(),
+        categorySequenceNumber
+      ),
       name: `Category ${categories.length + 1}`,
       total: 0.0,
       isExpanded: true,
       serviceOptions: [],
     };
 
-    setCategories(prev => [...prev, newCategory]);
+    setCategories(prev => {
+      const updatedCategories = ensureUniqueKeys([...prev, newCategory]);
+
+      // Update localStorage from within the callback to ensure state is updated
+      setTimeout(() => updateLocalStorage(), 0);
+
+      return updatedCategories;
+    });
     setExpandedCategories(prev => [...prev, newCategory.id]);
 
     setSelectedCategoryId(newCategory.id);
@@ -224,20 +474,29 @@ export default function ServiceOptionsBox(
       category: selectedCategoryData?.name || 'General',
     };
 
-    setCategories(prev =>
-      prev.map(category =>
-        category.id === selectedCategoryId
-          ? {
-              ...category,
-              serviceOptions: [...category.serviceOptions, newServiceOption],
-            }
-          : category
-      )
-    );
+    setCategories(prev => {
+      const updatedCategories = ensureUniqueKeys(
+        prev.map(category =>
+          category.id === selectedCategoryId
+            ? {
+                ...category,
+                serviceOptions: [...category.serviceOptions, newServiceOption],
+              }
+            : category
+        )
+      );
 
-    setTimeout(() => updateAllCalculations(), 0);
+      // Update localStorage from within the callback to ensure state is updated
+      setTimeout(() => {
+        updateAllCalculations();
+        updateLocalStorage(); // Update localStorage when adding new service option
+      }, 0);
+
+      return updatedCategories;
+    });
     setSelectedServiceOption(newServiceOption.id);
     setShowServiceForm(true);
+    setNewlyCreatedServiceOption(null); // Clear any previously created service option
   };
 
   const handleCategorySelect = (categoryUniqueKey: string) => {
@@ -266,14 +525,16 @@ export default function ServiceOptionsBox(
   };
 
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
-    if (
-      selectedCategory &&
-      selectedServiceOption &&
-      selectedCategoryUniqueKey
-    ) {
+    console.log('handleServiceOptionUpdate called with:', updatedServiceOption);
+    if (selectedServiceOption) {
       setCategories(prev => {
+        console.log('Previous categories state:', prev);
         const updatedCategories = prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
+          (
+            selectedCategoryUniqueKey
+              ? category.uniqueKey === selectedCategoryUniqueKey
+              : category.id === selectedCategoryId
+          )
             ? {
                 ...category,
                 serviceOptions: category.serviceOptions.map(option =>
@@ -284,29 +545,45 @@ export default function ServiceOptionsBox(
               }
             : category
         );
-        return updatedCategories;
+        console.log('Updated categories state:', updatedCategories);
+        const ensured = ensureUniqueKeys(updatedCategories);
+        // Update localStorage after state update with latest snapshot
+        setTimeout(() => {
+          console.log(
+            'Calling updateLocalStorage from handleServiceOptionUpdate'
+          );
+          updateLocalStorage(ensured);
+          updateAllCalculations();
+        }, 0);
+        return ensured;
       });
-
-      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
   const handleServiceOptionDelete = (serviceOptionId: string) => {
     if (selectedCategory && selectedCategoryUniqueKey) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
-            ? {
-                ...category,
-                serviceOptions: category.serviceOptions.filter(
-                  option => option.id !== serviceOptionId
-                ),
-              }
-            : category
-        )
-      );
+      setCategories(prev => {
+        const updatedCategories = ensureUniqueKeys(
+          prev.map(category =>
+            category.uniqueKey === selectedCategoryUniqueKey
+              ? {
+                  ...category,
+                  serviceOptions: category.serviceOptions.filter(
+                    option => option.id !== serviceOptionId
+                  ),
+                }
+              : category
+          )
+        );
 
-      setTimeout(() => updateAllCalculations(), 0);
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => {
+          updateAllCalculations();
+          updateLocalStorage(); // Update localStorage when deleting service option
+        }, 0);
+
+        return updatedCategories;
+      });
     }
   };
 
@@ -317,13 +594,20 @@ export default function ServiceOptionsBox(
 
   const handleNameSave = () => {
     if (editingCategoryName.trim()) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.id === selectedCategoryId
-            ? { ...category, name: editingCategoryName.trim() }
-            : category
-        )
-      );
+      setCategories(prev => {
+        const updatedCategories = ensureUniqueKeys(
+          prev.map(category =>
+            category.id === selectedCategoryId
+              ? { ...category, name: editingCategoryName.trim() }
+              : category
+          )
+        );
+
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => updateLocalStorage(), 0);
+
+        return updatedCategories;
+      });
     }
     setIsEditing(false);
   };
@@ -364,19 +648,27 @@ export default function ServiceOptionsBox(
         if (filteredCategories.length === 0) {
           const defaultCategory: ServiceCategory = {
             id: '0',
-            uniqueKey: generateUniqueKey('category'),
+            uniqueKey: generateUniqueKey('category', '0', 0),
             name: 'General Services',
             total: 0.0,
             serviceOptions: [],
             isExpanded: true,
           };
           setSelectedCategoryId('0');
-          return [defaultCategory];
+
+          // Update localStorage from within the callback to ensure state is updated
+          setTimeout(() => updateLocalStorage(), 0);
+
+          return ensureUniqueKeys([defaultCategory]);
         } else {
           if (filteredCategories.length > 0) {
             setSelectedCategoryId(filteredCategories[0]!.id);
           }
-          return filteredCategories;
+
+          // Update localStorage from within the callback to ensure state is updated
+          setTimeout(() => updateLocalStorage(), 0);
+
+          return ensureUniqueKeys(filteredCategories);
         }
       });
       setSelectedCategory(null);
@@ -394,6 +686,7 @@ export default function ServiceOptionsBox(
       setSelectedServiceOption(null);
       setShowServiceForm(false);
     }
+
     setShowDeleteModal(false);
     setDeleteType(null);
   };
@@ -412,13 +705,12 @@ export default function ServiceOptionsBox(
 
   const handleSave = async () => {
     try {
-      saveCurrentState();
+      updateLocalStorage();
 
       if (props.onSaveSuccess) {
         props.onSaveSuccess();
       }
     } catch (error) {
-      console.error('Error saving service options:', error);
       showErrorToast(
         extractApiErrorMessage(
           error,
@@ -430,6 +722,21 @@ export default function ServiceOptionsBox(
         props.onSaveError(error);
       }
     }
+  };
+
+  // Temporary function to clear localStorage for testing
+  const clearLocalStorage = () => {
+    localStorage.removeItem('service_options_template');
+    console.log('LocalStorage cleared for testing');
+    // Reload the page to start fresh
+    window.location.reload();
+  };
+
+  // Temporary function to manually test updateLocalStorage
+  const testUpdateLocalStorage = () => {
+    console.log('Manually testing updateLocalStorage');
+    console.log('Current categories:', categories);
+    updateLocalStorage();
   };
 
   const toggleSidebar = () => {
@@ -476,6 +783,7 @@ export default function ServiceOptionsBox(
         formatCurrency={formatCurrency}
         selectedCategoryId={selectedCategoryId}
         toggleMainAccordion={toggleMainAccordion}
+        selectedServiceOptionData={selectedServiceOptionData}
       />
 
       {/* Main Content */}
@@ -498,6 +806,8 @@ export default function ServiceOptionsBox(
           handleAddCategory={handleAddCategory}
           handleAddServiceOption={handleAddServiceOption}
           onDeleteClick={handleDeleteClick}
+          onClearLocalStorage={clearLocalStorage}
+          onTestUpdateLocalStorage={testUpdateLocalStorage}
         />
 
         {/* Content Area (match EstimationBox scroll behavior) */}
@@ -517,32 +827,371 @@ export default function ServiceOptionsBox(
             <div className='p-6 min-w-[800px] max-w-none w-full'>
               {/* Service Form */}
               <ServiceOptionServiceForm
+                key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
+                tradeId={props.tradeId} // Pass trade ID for service filtering
+                onTotalsChange={({ lineTotal, serviceTotal, tradeTotal }) => {
+                  // Keep the three purple totals in the header in sync with form
+                  // We persist line/service total on the selected service option
+                  if (selectedServiceOption) {
+                    setCategories(prev => {
+                      const updated = prev.map(category =>
+                        (
+                          selectedCategoryUniqueKey
+                            ? category.uniqueKey === selectedCategoryUniqueKey
+                            : category.id === selectedCategoryId
+                        )
+                          ? {
+                              ...category,
+                              serviceOptions: category.serviceOptions.map(
+                                opt =>
+                                  opt.id === selectedServiceOption
+                                    ? { ...opt, price: serviceTotal }
+                                    : opt
+                              ),
+                              total: category.serviceOptions.reduce(
+                                (sum, opt) =>
+                                  sum +
+                                  (opt.id === selectedServiceOption
+                                    ? serviceTotal
+                                    : opt.price),
+                                0
+                              ),
+                            }
+                          : category
+                      );
+                      setTimeout(() => updateLocalStorage(updated), 0);
+                      return ensureUniqueKeys(updated);
+                    });
+                  }
+                }}
                 service={{
-                  id: selectedServiceOptionData?.id || 'default',
-                  name: selectedServiceOptionData?.name || 'New Service Option',
-                  description: selectedServiceOptionData?.description || '',
+                  id:
+                    newlyCreatedServiceOption?.uuid ||
+                    newlyCreatedServiceOption?.id ||
+                    selectedServiceOptionData?.uuid ||
+                    selectedServiceOptionData?.id ||
+                    'default',
+                  name:
+                    newlyCreatedServiceOption?.name ||
+                    selectedServiceOptionData?.name ||
+                    'New Service Option',
+                  description:
+                    newlyCreatedServiceOption?.description ||
+                    selectedServiceOptionData?.description ||
+                    '',
                   qty: 1,
-                  rate: selectedServiceOptionData?.price || 0,
-                  lineTotal: selectedServiceOptionData?.price || 0,
-                  serviceTotal: selectedServiceOptionData?.price || 0,
-                  tradeTotal: selectedServiceOptionData?.price || 0,
-                  materials: [],
-                  finishes: [],
-                  tools: [],
+                  rate:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  lineTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  serviceTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  tradeTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  materials: (
+                    newlyCreatedServiceOption?.materials ||
+                    selectedServiceOptionData?.materials ||
+                    []
+                  ).map((material: any) => ({
+                    ...material,
+                    id:
+                      material.id ||
+                      material.uuid ||
+                      `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
+                  finishes: (
+                    newlyCreatedServiceOption?.finishes ||
+                    selectedServiceOptionData?.finishes ||
+                    []
+                  ).map((finish: any) => ({
+                    ...finish,
+                    id:
+                      finish.id ||
+                      finish.uuid ||
+                      `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
+                  tools: (
+                    newlyCreatedServiceOption?.tools ||
+                    selectedServiceOptionData?.tools ||
+                    []
+                  ).map((tool: any) => ({
+                    ...tool,
+                    id:
+                      tool.id ||
+                      tool.uuid ||
+                      `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
                   serviceOptions: [],
+                  ...(newlyCreatedServiceOption?.uuid
+                    ? { uuid: newlyCreatedServiceOption.uuid }
+                    : selectedServiceOptionData?.uuid
+                      ? { uuid: selectedServiceOptionData.uuid }
+                      : {}),
+                }}
+                onMaterialAdd={newMaterial => {
+                  // Update the selected service option with the new material
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: [...(baseOption.materials || []), newMaterial],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishAdd={newFinish => {
+                  // Update the selected service option with the new finish
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: [...(baseOption.finishes || []), newFinish],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onAddTool={newTool => {
+                  // Update the selected service option with the new tool
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: [...(baseOption.tools || []), newTool],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onMaterialUpdate={(materialId, updatedMaterial) => {
+                  // Update the specific material in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: (baseOption.materials || []).map(m =>
+                        (m as unknown as { id?: string }).id === materialId
+                          ? updatedMaterial
+                          : m
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onMaterialDelete={materialId => {
+                  // Remove the specific material from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: (baseOption.materials || []).filter(
+                        m => (m as unknown as { id?: string }).id !== materialId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishUpdate={(finishId, updatedFinish) => {
+                  // Update the specific finish in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: (baseOption.finishes || []).map(f =>
+                        (f as unknown as { id?: string }).id === finishId
+                          ? updatedFinish
+                          : f
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishDelete={finishId => {
+                  // Remove the specific finish from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: (baseOption.finishes || []).filter(
+                        f => (f as unknown as { id?: string }).id !== finishId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onRemoveTool={toolId => {
+                  // Remove the specific tool from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: (baseOption.tools || []).filter(
+                        t => (t as unknown as { id?: string }).id !== toolId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onReplaceTools={newTools => {
+                  // Replace all tools in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: newTools,
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
                 }}
                 onServiceUpdate={updatedService => {
                   if (selectedServiceOptionData) {
+                    // Get the current service data from categories state to ensure we have the latest materials, finishes, and tools
+                    const currentServiceData = categories
+                      .find(cat =>
+                        selectedCategoryUniqueKey
+                          ? cat.uniqueKey === selectedCategoryUniqueKey
+                          : cat.id === selectedCategoryId
+                      )
+                      ?.serviceOptions.find(
+                        opt => opt.id === selectedServiceOption
+                      );
+
+                    // Update existing service option - preserve materials, finishes, and tools
                     const updatedServiceOption: ServiceOption = {
-                      id: updatedService.id,
+                      ...(currentServiceData || selectedServiceOptionData), // Use current state data if available
                       name: updatedService.name,
                       description: updatedService.description,
                       price: updatedService.rate,
-                      duration: selectedServiceOptionData.duration,
-                      category: selectedServiceOptionData.category,
-                      is_hidden: selectedServiceOptionData.is_hidden ?? false,
+                      // Explicitly preserve materials, finishes, and tools from current state
+                      materials:
+                        currentServiceData?.materials ||
+                        selectedServiceOptionData?.materials ||
+                        [],
+                      finishes:
+                        currentServiceData?.finishes ||
+                        selectedServiceOptionData?.finishes ||
+                        [],
+                      tools:
+                        currentServiceData?.tools ||
+                        selectedServiceOptionData?.tools ||
+                        [],
                     };
+                    if (updatedService.uuid) {
+                      (
+                        updatedServiceOption as unknown as { uuid?: string }
+                      ).uuid = updatedService.uuid;
+                    }
                     handleServiceOptionUpdate(updatedServiceOption);
+                  } else {
+                    // Create new service option
+                    const uniqueId = `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+                    const newServiceOption: ServiceOption = {
+                      id: uniqueId,
+                      name: updatedService.name,
+                      description: updatedService.description,
+                      price: updatedService.rate,
+                      duration: '',
+                      category: selectedCategoryData?.name || 'General',
+                    };
+                    if (updatedService.uuid) {
+                      (newServiceOption as unknown as { uuid?: string }).uuid =
+                        updatedService.uuid;
+                    }
+
+                    // Add to categories and update localStorage from within the callback
+                    setCategories(prev => {
+                      const updatedCategories = ensureUniqueKeys(
+                        prev.map(category =>
+                          category.id === selectedCategoryId
+                            ? {
+                                ...category,
+                                // Replace instead of append to ensure only one service option exists
+                                serviceOptions: [newServiceOption],
+                              }
+                            : category
+                        )
+                      );
+
+                      // Update localStorage from within the callback to ensure state is updated
+                      setTimeout(() => {
+                        console.log(
+                          'Calling updateLocalStorage for new service option from setCategories callback'
+                        );
+                        updateLocalStorage(updatedCategories);
+                      }, 0);
+
+                      return updatedCategories;
+                    });
+
+                    // Set as selected
+                    setSelectedServiceOption(newServiceOption.id);
+                    setTimeout(() => updateAllCalculations(), 0);
+
+                    // Force re-render by updating the form key
+                    setFormKey(prev => prev + 1);
+
+                    // Store the new service option data for immediate use
+                    setNewlyCreatedServiceOption(newServiceOption);
                   }
                 }}
               />

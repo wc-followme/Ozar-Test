@@ -51,23 +51,30 @@ export default function EstimationItemsAccordion({
   const getStableItemKey = (
     item: EstimationItem,
     listTitle: string,
-    svcId?: string
+    svcId?: string,
+    index?: number
   ): string => {
     const baseId =
       item.uuid ||
       (item as unknown as { material_id?: string }).material_id ||
       item.id;
+
+    // Always include the item's unique id first, then add additional uniqueness
+    const itemId = item.id || `item_${index || 0}`;
+
     if (baseId) {
-      return `${svcId || 'service'}_${listTitle}_${baseId}`;
+      return `${svcId || 'service'}_${listTitle}_${baseId}_${itemId}`;
     }
-    const payload = `${svcId || 'service'}_${listTitle}_${JSON.stringify(item)}`;
+
+    // Fallback to JSON-based hash with item id for uniqueness
+    const payload = `${svcId || 'service'}_${listTitle}_${itemId}_${JSON.stringify(item)}`;
     let hash = 0;
     for (let i = 0; i < payload.length; i++) {
       // simple deterministic hash
       hash = (hash << 5) - hash + payload.charCodeAt(i);
       hash |= 0;
     }
-    return `${svcId || 'service'}_${listTitle}_${Math.abs(hash)}`;
+    return `${svcId || 'service'}_${listTitle}_${itemId}_${Math.abs(hash)}`;
   };
 
   const handleItemUpdate = (itemId: string, updatedItem: EstimationItem) => {
@@ -124,9 +131,9 @@ export default function EstimationItemsAccordion({
           <AccordionContent className='border-t-2 border-[var(--border-dark)] mt-3'>
             {items.length > 0 ? (
               <div className='space-y-4 mt-4'>
-                {items.map(item => (
+                {items.map((item, index) => (
                   <EstimationItemForm
-                    key={getStableItemKey(item, title, serviceId)}
+                    key={getStableItemKey(item, title, serviceId, index)}
                     item={item}
                     onItemUpdate={updatedItem =>
                       handleItemUpdate(item.id, updatedItem)
