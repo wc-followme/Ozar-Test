@@ -159,6 +159,42 @@ export const sidebarItems: SidebarMenuItem[] = [
     href: '/company-profile/five-box-system',
     icon: Setting3,
   },
+  {
+    menu_id: 'settings',
+    title: 'Time Management',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+  {
+    menu_id: 'settings',
+    title: 'Finance',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+  {
+    menu_id: 'settings',
+    title: 'Organization',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+  {
+    menu_id: 'settings',
+    title: 'Calendar',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+  {
+    menu_id: 'settings',
+    title: 'Message',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
+  {
+    menu_id: 'settings',
+    title: 'Training',
+    href: '/company-profile/five-box-system',
+    icon: Setting3,
+  },
 ];
 
 export const catIconOptions = [
