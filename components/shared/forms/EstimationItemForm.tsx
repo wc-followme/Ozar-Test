@@ -46,6 +46,12 @@ export default function EstimationItemForm({
   >([]);
   const [loading, setLoading] = useState(false);
 
+  // Define currency options for markup type
+  const currencyOptions = [
+    { value: '$', label: '$' },
+    { value: '%', label: '%' },
+  ];
+
   // Fetch materials from API based on service ID and company UUID
   const fetchMaterials = async (
     serviceId: string | null,
@@ -498,7 +504,70 @@ export default function EstimationItemForm({
               }
             />
           </div>
-        ) : null}
+        ) : (
+          <div className={`space-y-2 ${useFixedWidths ? 'min-w-[100px]' : ''}`}>
+            <Label className='field-label text-sm'>Markup </Label>
+            <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
+              <div className='w-[60px]'>
+                <SelectField
+                  value={selectedCurrency}
+                  onValueChange={value => {
+                    setSelectedCurrency(value);
+                    // Update the item's markup_type when currency changes
+                    if (onItemUpdate) {
+                      onItemUpdate({
+                        ...item,
+                        markup_type:
+                          value === '%' ? 'PERCENTAGE' : 'FLAT_AMOUNT',
+                      });
+                    }
+                  }}
+                  options={currencyOptions}
+                  placeholder='$'
+                  className='mb-0'
+                  triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-11 border-none bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
+                />
+              </div>
+              <Input
+                type='text'
+                inputMode='decimal'
+                defaultValue={item.markup.toString()}
+                onChange={e => {
+                  const raw = e.target.value;
+                  const cleaned = raw.replace(/[^0-9.]/g, '');
+                  const parts = cleaned.split('.');
+                  const next =
+                    parts.length > 2
+                      ? `${parts[0]}.${parts.slice(1).join('')}`
+                      : cleaned;
+                  (e.target as HTMLInputElement).value = next;
+                  if (next !== '' && !next.endsWith('.')) {
+                    const numeric = parseFloat(next);
+                    if (!Number.isNaN(numeric)) {
+                      handleInputChange('markup', numeric);
+                    }
+                  }
+                }}
+                onFocus={e => {
+                  const v = e.currentTarget.value.trim();
+                  if (v === '0' || v === '0.0' || v === '0.00') {
+                    e.currentTarget.value = '';
+                  }
+                }}
+                onBlur={e => {
+                  const val = e.currentTarget.value;
+                  const fallback = val === '' || val === '.' ? '0' : val;
+                  e.currentTarget.value = fallback;
+                  const numeric = parseFloat(fallback);
+                  if (!Number.isNaN(numeric)) {
+                    handleInputChange('markup', numeric);
+                  }
+                }}
+                className='flex-1 rounded-l-none text-right !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
+              />
+            </div>
+          </div>
+        )}
         <div
           className={`ml-4 space-y-1 pt-7 whitespace-nowrap ${useFixedWidths ? 'min-w-[150px] flex-shrink-0' : ''}`}
         >

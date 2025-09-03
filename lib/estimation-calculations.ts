@@ -11,7 +11,7 @@ export type MarkupType = (typeof MARKUP_TYPES)[keyof typeof MARKUP_TYPES];
 // Utility function to safely convert values to numbers
 export const safeNumber = (value: any): number => {
   const num = Number(value);
-  return isNaN(num) ? 0 : num;
+  return isNaN(num) || !isFinite(num) ? 0 : num;
 };
 
 // Check if item should be included in calculations

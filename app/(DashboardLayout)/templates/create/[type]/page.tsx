@@ -16,7 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { getCompanyId } from '@/lib/utils';
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import LoadingComponent from '../../../../../components/shared/common/LoadingComponent';
 import { TemplateApiData, TemplateData } from '../../template-types';
 
@@ -75,76 +75,81 @@ export default function CreateTemplatePage({
   };
 
   // Fetch tool templates from API with pagination
-  const fetchToolTemplates = async (pageNum = 1, append = false) => {
-    if (type !== 'tools') return;
+  const fetchToolTemplates = useCallback(
+    async (pageNum = 1, append = false) => {
+      if (type !== 'tools') return;
 
-    if (append) {
-      setLoadingMoreTemplates(true);
-    } else {
-      setLoadingToolTemplates(true);
-      setCurrentPage(1);
-    }
-
-    try {
-      const companyId = getCompanyId();
-      if (!companyId) {
-        console.error('Company ID not found');
-        return;
-      }
-
-      // Build API parameters
-      const apiParams: any = {
-        page: pageNum,
-        limit: 12, // Smaller limit for better UX
-        company_id: companyId,
-        status: 'ACTIVE',
-      };
-
-      // Add service filter if service is selected
-      if (formData.service) {
-        apiParams.service_id = formData.service;
-      }
-
-      const response = await apiService.fetchTemplates(apiParams);
-
-      if (response.statusCode === 200 && response.data) {
-        const { data: templatesData, totalPages } = response.data;
-        // Filter only tool templates
-        const toolTemplatesData = templatesData.filter(
-          (template: TemplateApiData) =>
-            template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
-        );
-
-        setToolTemplates(prev => {
-          if (append) {
-            // Filter out duplicates when appending
-            const existingUuids = new Set(prev.map(template => template.uuid));
-            const uniqueNewTemplates = toolTemplatesData.filter(
-              (template: TemplateApiData) => !existingUuids.has(template.uuid)
-            );
-            return [...prev, ...uniqueNewTemplates];
-          } else {
-            return toolTemplatesData;
-          }
-        });
-
-        setHasMoreTemplates(pageNum < totalPages);
-        setCurrentPage(pageNum);
-      }
-    } catch (error) {
-      console.error('Failed to fetch tool templates:', error);
-      if (!append) {
-        setToolTemplates([]);
-      }
-      setHasMoreTemplates(false);
-    } finally {
       if (append) {
-        setLoadingMoreTemplates(false);
+        setLoadingMoreTemplates(true);
       } else {
-        setLoadingToolTemplates(false);
+        setLoadingToolTemplates(true);
+        setCurrentPage(1);
       }
-    }
-  };
+
+      try {
+        const companyId = getCompanyId();
+        if (!companyId) {
+          console.error('Company ID not found');
+          return;
+        }
+
+        // Build API parameters
+        const apiParams: any = {
+          page: pageNum,
+          limit: 12, // Smaller limit for better UX
+          company_id: companyId,
+          status: 'ACTIVE',
+        };
+
+        // Add service filter if service is selected
+        if (formData.service) {
+          apiParams.service_id = formData.service;
+        }
+
+        const response = await apiService.fetchTemplates(apiParams);
+
+        if (response.statusCode === 200 && response.data) {
+          const { data: templatesData, totalPages } = response.data;
+          // Filter only tool templates
+          const toolTemplatesData = templatesData.filter(
+            (template: TemplateApiData) =>
+              template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
+          );
+
+          setToolTemplates(prev => {
+            if (append) {
+              // Filter out duplicates when appending
+              const existingUuids = new Set(
+                prev.map(template => template.uuid)
+              );
+              const uniqueNewTemplates = toolTemplatesData.filter(
+                (template: TemplateApiData) => !existingUuids.has(template.uuid)
+              );
+              return [...prev, ...uniqueNewTemplates];
+            } else {
+              return toolTemplatesData;
+            }
+          });
+
+          setHasMoreTemplates(pageNum < totalPages);
+          setCurrentPage(pageNum);
+        }
+      } catch (error) {
+        console.error('Failed to fetch tool templates:', error);
+        if (!append) {
+          setToolTemplates([]);
+        }
+        setHasMoreTemplates(false);
+      } finally {
+        if (append) {
+          setLoadingMoreTemplates(false);
+        } else {
+          setLoadingToolTemplates(false);
+        }
+      }
+    },
+    [type]
+  );
 
   // Load more templates for infinite scroll
   const loadMoreTemplates = () => {
@@ -163,7 +168,7 @@ export default function CreateTemplatePage({
   };
 
   // Fetch categories from API
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     if (type !== 'service-option') return;
 
     setLoadingCategories(true);
@@ -210,65 +215,68 @@ export default function CreateTemplatePage({
     } finally {
       setLoadingCategories(false);
     }
-  };
+  }, [type]);
 
   // Fetch trades from API based on selected category
-  const fetchTrades = async (categoryId: string) => {
-    if (type !== 'service-option' || !categoryId) {
-      setTrades([]);
-      return;
-    }
+  const fetchTrades = useCallback(
+    async (categoryId: string) => {
+      if (type !== 'service-option' || !categoryId) {
+        setTrades([]);
+        return;
+      }
 
-    setLoadingTrades(true);
-    try {
-      const selectedCompanyRaw =
-        typeof window !== 'undefined'
-          ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
-          : null;
-      const companyUuid = selectedCompanyRaw
-        ? (() => {
-            try {
-              const parsed: { uuid?: string; id?: string | number } =
-                JSON.parse(selectedCompanyRaw);
-              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
-            } catch {
-              return '';
-            }
-          })()
-        : '';
+      setLoadingTrades(true);
+      try {
+        const selectedCompanyRaw =
+          typeof window !== 'undefined'
+            ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+            : null;
+        const companyUuid = selectedCompanyRaw
+          ? (() => {
+              try {
+                const parsed: { uuid?: string; id?: string | number } =
+                  JSON.parse(selectedCompanyRaw);
+                return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+              } catch {
+                return '';
+              }
+            })()
+          : '';
 
-      const response = await apiService.fetchTradesPublic({
-        page: 1,
-        limit: 50,
-        company_id: companyUuid,
-        category_id: categoryId,
-      });
+        const response = await apiService.fetchTradesPublic({
+          page: 1,
+          limit: 50,
+          company_id: companyUuid,
+          category_id: categoryId,
+        });
 
-      type TradeItem = { id?: string | number; uuid?: string; name?: string };
-      const payload = response as unknown as {
-        data?: TradeItem[] | { data?: TradeItem[] };
-      };
-      const list: TradeItem[] = Array.isArray(payload?.data)
-        ? (payload.data as TradeItem[])
-        : Array.isArray((payload.data as { data?: TradeItem[] })?.data)
-          ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
-          : [];
+        type TradeItem = { id?: string | number; uuid?: string; name?: string };
+        const payload = response as unknown as {
+          data?: TradeItem[] | { data?: TradeItem[] };
+        };
+        const list: TradeItem[] = Array.isArray(payload?.data)
+          ? (payload.data as TradeItem[])
+          : Array.isArray((payload.data as { data?: TradeItem[] })?.data)
+            ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
+            : [];
 
-      const tradeOptions = list
-        .filter(t => !!t?.name)
-        .map(t => ({
-          value: String(t.uuid || t.id || t.name),
-          label: String(t.name),
-        }));
+        const tradeOptions = list
+          .filter(t => !!t?.name)
+          .map(t => ({
+            value: String(t.uuid || t.id || t.name),
+            label: String(t.name),
+          }));
 
-      setTrades(tradeOptions);
-    } catch (error) {
-      console.error('Failed to fetch trades:', error);
-      setTrades([]);
-    } finally {
-      setLoadingTrades(false);
-    }
-  };
+        setTrades(tradeOptions);
+      } catch (error) {
+        console.error('Failed to fetch trades:', error);
+        setTrades([]);
+      } finally {
+        setLoadingTrades(false);
+      }
+    },
+    [type]
+  );
 
   // Save template function with proper UUID handling
   const handleSaveTemplate = async (formData: {
@@ -402,7 +410,7 @@ export default function CreateTemplatePage({
     } else if (type === 'tools') {
       fetchToolTemplates();
     }
-  }, [type, formData.service]); // Add formData.service as dependency
+  }, [type, fetchCategories, fetchToolTemplates]);
 
   // Recompute Project Total from localStorage whenever the service options change
   useEffect(() => {
@@ -423,17 +431,10 @@ export default function CreateTemplatePage({
           setProjectTotal(0);
           return;
         }
+        // The rate field already contains the calculated tradeTotal (service + materials + finishes)
+        // So we just need to sum all the rates
         const total = data.reduce((sum, svc) => {
-          const serviceTotal = (svc.rate || 0) * (svc.qty || 1);
-          const materialsTotal = (svc.materials || []).reduce(
-            (m, i) => m + (i.rate || 0) * (i.qty || 0),
-            0
-          );
-          const finishesTotal = (svc.finishes || []).reduce(
-            (f, i) => f + (i.rate || 0) * (i.qty || 0),
-            0
-          );
-          return sum + serviceTotal + materialsTotal + finishesTotal;
+          return sum + (svc.rate || 0);
         }, 0);
         setProjectTotal(total);
       } catch {
@@ -602,20 +603,17 @@ export default function CreateTemplatePage({
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
 
-    // If category changes, fetch trades for that category
-    if (field === 'category' && value) {
-      fetchTrades(value);
-      // Clear trade selection when category changes
-      setFormData(prev => ({
-        ...prev,
-        trade: '',
-      }));
-    }
+      // If category changes, clear trade selection and fetch trades
+      if (field === 'category' && value) {
+        next.trade = '';
+        fetchTrades(value);
+      }
+
+      return next;
+    });
   };
 
   const renderFormFields = () => {

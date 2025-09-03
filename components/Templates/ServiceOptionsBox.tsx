@@ -808,11 +808,29 @@ export default function ServiceOptionsBox(
               <ServiceOptionServiceForm
                 key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
                 tradeId={props.tradeId} // Pass trade ID for service filtering
-                onTotalsChange={({ serviceTotal }) => {
+                onTotalsChange={({ tradeTotal }) => {
                   // Keep the three purple totals in the header in sync with form
-                  // We persist line/service total on the selected service option
+                  // We persist trade total (including materials and finishes) on the selected service option
                   if (selectedServiceOption) {
                     setCategories(prev => {
+                      // Check if the price actually needs to be updated
+                      const targetCategory = prev.find(category =>
+                        selectedCategoryUniqueKey
+                          ? category.uniqueKey === selectedCategoryUniqueKey
+                          : category.id === selectedCategoryId
+                      );
+
+                      if (!targetCategory) return prev;
+
+                      const targetService = targetCategory.serviceOptions.find(
+                        opt => opt.id === selectedServiceOption
+                      );
+
+                      // If price hasn't changed, don't update state
+                      if (targetService && targetService.price === tradeTotal) {
+                        return prev;
+                      }
+
                       const updated = prev.map(category =>
                         (
                           selectedCategoryUniqueKey
@@ -824,14 +842,14 @@ export default function ServiceOptionsBox(
                               serviceOptions: category.serviceOptions.map(
                                 opt =>
                                   opt.id === selectedServiceOption
-                                    ? { ...opt, price: serviceTotal }
+                                    ? { ...opt, price: tradeTotal }
                                     : opt
                               ),
                               total: category.serviceOptions.reduce(
                                 (sum, opt) =>
                                   sum +
                                   (opt.id === selectedServiceOption
-                                    ? serviceTotal
+                                    ? tradeTotal
                                     : opt.price),
                                 0
                               ),
@@ -863,9 +881,13 @@ export default function ServiceOptionsBox(
                     selectedServiceOptionData?.qty ||
                     1,
                   rate:
-                    newlyCreatedServiceOption?.price ||
-                    selectedServiceOptionData?.price ||
-                    0,
+                    newlyCreatedServiceOption?.rate ||
+                    selectedServiceOptionData?.rate ||
+                    (selectedServiceOptionData?.qty &&
+                    selectedServiceOptionData?.price
+                      ? selectedServiceOptionData.price /
+                        selectedServiceOptionData.qty
+                      : 0),
                   lineTotal:
                     newlyCreatedServiceOption?.price ||
                     selectedServiceOptionData?.price ||
@@ -1103,7 +1125,8 @@ export default function ServiceOptionsBox(
                       ...(currentServiceData || selectedServiceOptionData), // Use current state data if available
                       name: updatedService.name,
                       description: updatedService.description,
-                      price: updatedService.rate,
+                      rate: updatedService.rate,
+                      price: updatedService.serviceTotal, // Store the calculated service total as price
                       qty:
                         updatedService.qty ??
                         (currentServiceData?.qty ||
@@ -1136,7 +1159,8 @@ export default function ServiceOptionsBox(
                       id: uniqueId,
                       name: updatedService.name,
                       description: updatedService.description,
-                      price: updatedService.rate,
+                      rate: updatedService.rate,
+                      price: updatedService.serviceTotal, // Store the calculated service total as price
                       qty: updatedService.qty ?? 1,
                       duration: '',
                       category: selectedCategoryData?.name || 'General',

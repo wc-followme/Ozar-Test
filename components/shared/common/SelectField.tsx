@@ -47,6 +47,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
 }) => {
   const handleValueChange = (newValue: string) => {
     if (disabled) return; // Prevent changes when disabled
+    if (newValue === value) return; // Prevent redundant updates
     onValueChange(newValue);
   };
 
@@ -54,7 +55,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     <div className={`sm:space-y-2 space-y-1 ${className}`}>
       {label && <Label className='field-label'>{label}</Label>}
       <Select
-        value={value}
+        value={value === '' ? undefined : value}
         onValueChange={handleValueChange}
         disabled={disabled}
       >

@@ -4,6 +4,7 @@ export interface ServiceOption {
   name: string;
   description: string;
   qty?: number; // Quantity for the service
+  rate?: number; // Rate per unit for the service
   price: number;
   duration: string;
   category: string;

@@ -15,7 +15,7 @@ import {
   calculateServiceTotal,
   calculateServiceTotalMaterialCost,
 } from '@/lib/estimation-calculations';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { EstimationItem, Service, Tool } from './estimation-types';
 
 interface ServiceOptionServiceFormProps {
@@ -84,76 +84,205 @@ export default function ServiceOptionServiceForm({
   );
   const [tools, setTools] = useState<Tool[]>(service.tools || []);
 
+  // Track previous service values to prevent unnecessary updates
+  const prevServiceRef = useRef<{
+    uuid?: string;
+    name?: string;
+    rate?: number;
+    qty?: number;
+  }>({});
+
+  // Debounce timer for updates
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Flag to prevent updates during initialization
+  const isInitialized = useRef(false);
+
+  // Debounced update function to prevent rapid updates
+  const debouncedUpdate = useCallback(
+    (updatedService: Service) => {
+      // Skip if not initialized to prevent initial update loops
+      if (!isInitialized.current) {
+        return;
+      }
+
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+
+      updateTimeoutRef.current = setTimeout(() => {
+        if (onServiceUpdate) {
+          onServiceUpdate(updatedService);
+          onLocalStorageUpdate?.();
+        }
+      }, 100); // 100ms debounce
+    },
+    [] // Remove dependencies to prevent recreation
+  );
+
+  // Initialize prevServiceRef with current service values on mount
+  useEffect(() => {
+    prevServiceRef.current = {
+      uuid: service.uuid,
+      name: service.name,
+      rate: service.rate,
+      qty: service.qty,
+    };
+    // Mark as initialized after a short delay to allow all effects to settle
+    setTimeout(() => {
+      isInitialized.current = true;
+    }, 100);
+  }, []); // Only run on mount
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Helper function to update service only if it actually changed
+  const updateServiceIfChanged = useCallback((updatedService: Service) => {
+    const prev = prevServiceRef.current;
+    const hasChanged =
+      prev.uuid !== updatedService.uuid ||
+      prev.name !== updatedService.name ||
+      prev.rate !== updatedService.rate ||
+      prev.qty !== updatedService.qty;
+
+    if (hasChanged && onServiceUpdate) {
+      prevServiceRef.current = {
+        uuid: updatedService.uuid,
+        name: updatedService.name,
+        rate: updatedService.rate,
+        qty: updatedService.qty,
+      };
+      onServiceUpdate(updatedService);
+      onLocalStorageUpdate?.();
+    }
+  }, []); // Don't include onServiceUpdate and onLocalStorageUpdate as dependencies
+
   // No default seed; start with empty lists until user adds items
 
   // Calculate current service values using current local state
-  const calculateCurrentServiceValues = () => {
-    const lineTotal = calculateLineTotal(service.rate, service.qty);
-    const serviceTotal = calculateServiceTotal(service.rate, service.qty);
+  const calculateCurrentServiceValues = useCallback(() => {
+    // Ensure rate and qty are finite numbers with additional safety checks
+    const safeRate =
+      Number.isFinite(service.rate) && service.rate >= 0 ? service.rate : 0;
+    const safeQty =
+      Number.isFinite(service.qty) && service.qty >= 0 ? service.qty : 0;
+
+    // Additional safety check to prevent Infinity
+    const clampedRate = Math.min(safeRate, 999999999); // Cap at reasonable maximum
+    const clampedQty = Math.min(safeQty, 999999999); // Cap at reasonable maximum
+
+    const lineTotal = calculateLineTotal(clampedRate, clampedQty);
+    const serviceTotal = calculateServiceTotal(clampedRate, clampedQty);
     const totalMaterialCost = calculateServiceTotalMaterialCost(
       materials,
       finishes
     );
     const tradeTotal = serviceTotal + totalMaterialCost;
 
-    return { lineTotal, serviceTotal, tradeTotal };
-  };
+    // Final safety check to ensure no Infinity values
+    const safeLineTotal = Number.isFinite(lineTotal) ? lineTotal : 0;
+    const safeServiceTotal = Number.isFinite(serviceTotal) ? serviceTotal : 0;
+    const safeTradeTotal = Number.isFinite(tradeTotal) ? tradeTotal : 0;
+
+    return {
+      lineTotal: safeLineTotal,
+      serviceTotal: safeServiceTotal,
+      tradeTotal: safeTradeTotal,
+    };
+  }, [service.rate, service.qty, materials, finishes]);
 
   const currentValues = calculateCurrentServiceValues();
 
-  // Emit totals upward whenever inputs that affect totals change
-  useEffect(() => {
-    const totals = calculateCurrentServiceValues();
-    onTotalsChange?.(totals);
-  }, [materials, finishes, service.qty, service.rate]);
+  // Emit totals upward only when they actually change to avoid update loops
+  const lastTotalsRef = useRef<{
+    lineTotal: number;
+    serviceTotal: number;
+    tradeTotal: number;
+  } | null>(null);
 
-  // Fetch services from API based on trade UUID and company UUID
-  const fetchServices = async (
-    tradeUuid: string | null,
-    companyUuid: string | null
-  ) => {
-    if (!companyUuid) {
-      setServiceOptions([]);
+  useEffect(() => {
+    // Skip if not initialized to prevent initial update loops
+    if (!isInitialized.current) {
       return;
     }
 
-    setLoading(true);
-    try {
-      const response = await apiService.fetchServicesPublic({
-        page: 1,
-        limit: 50,
-        company_id: companyUuid,
-        ...(tradeUuid ? { trade_id: tradeUuid } : {}),
-      });
+    const totals = calculateCurrentServiceValues();
+    const last = lastTotalsRef.current;
 
-      type ServiceItem = { id?: string | number; uuid?: string; name?: string };
-      const payload = response as unknown as {
-        data?: ServiceItem[] | { data?: ServiceItem[] };
-      };
-      const list: ServiceItem[] = Array.isArray(payload?.data)
-        ? (payload.data as ServiceItem[])
-        : Array.isArray((payload?.data as { data?: ServiceItem[] })?.data)
-          ? ((payload.data as { data?: ServiceItem[] }).data as ServiceItem[])
-          : [];
+    // More robust comparison with tolerance for floating point differences
+    const hasChanged =
+      !last ||
+      Math.abs(last.lineTotal - totals.lineTotal) > 0.01 ||
+      Math.abs(last.serviceTotal - totals.serviceTotal) > 0.01 ||
+      Math.abs(last.tradeTotal - totals.tradeTotal) > 0.01;
 
-      // Only surface services that have a valid UUID; dropdown stores UUID
-      const uuidRegex =
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const options = list
-        .filter(s => !!s?.name && !!s?.uuid && uuidRegex.test(String(s.uuid)))
-        .map(s => ({
-          value: String(s.uuid),
-          label: String(s.name),
-        }));
-
-      setServiceOptions(options);
-    } catch (_error) {
-      // Gracefully degrade to empty options when API fails or returns no data
-      setServiceOptions([]);
-    } finally {
-      setLoading(false);
+    if (hasChanged) {
+      lastTotalsRef.current = totals;
+      // Use setTimeout to defer the callback and prevent immediate re-renders
+      setTimeout(() => {
+        onTotalsChange?.(totals);
+      }, 0);
     }
-  };
+  }, [materials, finishes, service.qty, service.rate]); // Remove onTotalsChange from dependencies
+
+  // Fetch services from API based on trade UUID and company UUID
+  const fetchServices = useCallback(
+    async (tradeUuid: string | null, companyUuid: string | null) => {
+      if (!companyUuid) {
+        setServiceOptions([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await apiService.fetchServicesPublic({
+          page: 1,
+          limit: 50,
+          company_id: companyUuid,
+          ...(tradeUuid ? { trade_id: tradeUuid } : {}),
+        });
+
+        type ServiceItem = {
+          id?: string | number;
+          uuid?: string;
+          name?: string;
+        };
+        const payload = response as unknown as {
+          data?: ServiceItem[] | { data?: ServiceItem[] };
+        };
+        const list: ServiceItem[] = Array.isArray(payload?.data)
+          ? (payload.data as ServiceItem[])
+          : Array.isArray((payload?.data as { data?: ServiceItem[] })?.data)
+            ? ((payload.data as { data?: ServiceItem[] }).data as ServiceItem[])
+            : [];
+
+        // Only surface services that have a valid UUID; dropdown stores UUID
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const options = list
+          .filter(s => !!s?.name && !!s?.uuid && uuidRegex.test(String(s.uuid)))
+          .map(s => ({
+            value: String(s.uuid),
+            label: String(s.name),
+          }));
+
+        setServiceOptions(options);
+      } catch (_error) {
+        // Gracefully degrade to empty options when API fails or returns no data
+        setServiceOptions([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   // Load services when component mounts or when trade/company changes
   useEffect(() => {
@@ -174,7 +303,7 @@ export default function ServiceOptionServiceForm({
       : '';
     // For Service Options page, show all services for company if no trade selected
     fetchServices(tradeId || null, companyUuid);
-  }, [tradeId]);
+  }, [tradeId, fetchServices]);
 
   // Prefetch materials and tools when a valid service UUID is selected
   useEffect(() => {
@@ -245,6 +374,7 @@ export default function ServiceOptionServiceForm({
                   );
                   return byName ? byName.value : '';
                 })()}
+                key={`service-select-${service.uuid || service.name || 'default'}`}
                 onValueChange={newValue => {
                   // Find the selected option to get the display name and UUID
                   const selectedOption = serviceOptions.find(
@@ -260,6 +390,7 @@ export default function ServiceOptionServiceForm({
                   if (onServiceNameChange) {
                     onServiceNameChange(newName);
                   }
+
                   if (onServiceUpdate) {
                     const updatedService: Service = {
                       ...service,
@@ -270,10 +401,10 @@ export default function ServiceOptionServiceForm({
                       ...(serviceUuid ? { uuid: serviceUuid } : {}),
                     };
 
+                    // Direct update without going through the helper function
                     onServiceUpdate(updatedService);
+                    onLocalStorageUpdate?.();
                   }
-                  // Update localStorage when service changes
-                  onLocalStorageUpdate?.();
                 }}
                 options={serviceOptions}
                 placeholder={
@@ -289,20 +420,23 @@ export default function ServiceOptionServiceForm({
               <Label className='field-label'>Qty</Label>
               <Input
                 type='text'
-                value={service.qty.toString()}
+                value={
+                  Number.isFinite(service.qty) ? service.qty.toString() : '0'
+                }
                 onChange={e => {
                   const value = e.target.value;
                   // Only allow numbers
                   if (/^\d*$/.test(value)) {
                     const newQty = value === '' ? 0 : parseInt(value) || 0;
-                    if (onServiceUpdate) {
-                      onServiceUpdate({
+                    // Additional safety checks to prevent very large numbers
+                    const safeQty = Math.min(newQty, 999999999); // Cap at reasonable maximum
+                    // Only update if the quantity actually changed
+                    if (service.qty !== safeQty) {
+                      debouncedUpdate({
                         ...service,
-                        qty: newQty,
+                        qty: safeQty,
                       });
                     }
-                    // Update localStorage when service changes
-                    onLocalStorageUpdate?.();
                   }
                 }}
                 onKeyDown={e => {
@@ -339,7 +473,11 @@ export default function ServiceOptionServiceForm({
                 <Input
                   type='text'
                   inputMode='decimal'
-                  value={service.rate.toString()}
+                  value={
+                    Number.isFinite(service.rate)
+                      ? service.rate.toString()
+                      : '0'
+                  }
                   onChange={e => {
                     const raw = e.target.value;
                     const cleaned = raw.replace(/[^0-9.]/g, '');
@@ -349,24 +487,40 @@ export default function ServiceOptionServiceForm({
                         ? `${parts[0]}.${parts.slice(1).join('')}`
                         : cleaned;
 
-                    (e.target as HTMLInputElement).value = next;
-
+                    // Don't directly modify the input value, let React handle it
+                    // Only update if the value is valid and different
                     if (next !== '' && !next.endsWith('.')) {
                       const numeric = parseFloat(next);
-                      if (!Number.isNaN(numeric) && onServiceUpdate) {
-                        onServiceUpdate({ ...service, rate: numeric });
+                      // Additional safety checks to prevent Infinity and very large numbers
+                      if (
+                        !Number.isNaN(numeric) &&
+                        Number.isFinite(numeric) &&
+                        numeric >= 0 &&
+                        numeric <= 999999999 &&
+                        service.rate !== numeric
+                      ) {
+                        debouncedUpdate({ ...service, rate: numeric });
                       }
-                      // Update localStorage when service changes
-                      onLocalStorageUpdate?.();
+                    } else if (next === '') {
+                      // Handle empty input
+                      if (service.rate !== 0) {
+                        debouncedUpdate({ ...service, rate: 0 });
+                      }
                     }
                   }}
                   onBlur={e => {
                     const val = e.currentTarget.value;
                     const fallback = val === '' || val === '.' ? '0' : val;
-                    e.currentTarget.value = fallback;
                     const numeric = parseFloat(fallback);
-                    if (!Number.isNaN(numeric) && onServiceUpdate) {
-                      onServiceUpdate({ ...service, rate: numeric });
+                    // Additional safety checks to prevent Infinity and very large numbers
+                    if (
+                      !Number.isNaN(numeric) &&
+                      Number.isFinite(numeric) &&
+                      numeric >= 0 &&
+                      numeric <= 999999999 &&
+                      service.rate !== numeric
+                    ) {
+                      debouncedUpdate({ ...service, rate: numeric });
                     }
                   }}
                   placeholder='0.00'
