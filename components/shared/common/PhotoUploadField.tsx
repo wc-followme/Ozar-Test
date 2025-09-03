@@ -66,7 +66,7 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({
       <div className='mb-2 h-full w-full'>
         <div
           className={cn(
-            'w-full h-full px-4 rounded-xl border-2 border-dashed border-cyanwave-main bg-cyanwave-light flex flex-col items-center justify-center cursor-pointer relative py-10',
+            'w-full h-full rounded-xl border-2 border-dashed border-cyanwave-main bg-cyanwave-light flex flex-col items-center justify-center cursor-pointer relative',
             cardHeight || 'min-h-[9.375rem]'
           )}
           onClick={handleClick}
@@ -76,26 +76,26 @@ const PhotoUploadField: React.FC<PhotoUploadFieldProps> = ({
               <Image
                 src={URL.createObjectURL(photo)}
                 alt='Preview'
-                className='rounded-lg max-w-full max-h-32 object-cover'
-                width={120}
-                height={120}
+                className='rounded-lg max-w-full max-h-full object-contain'
+                width={600}
+                height={600}
               />
-              <div className='mt-2 text-sm text-center text-[var(--text-dark)]'>
+              {/* <div className='mt-2 text-sm text-center text-[var(--text-dark)]'>
                 {photo.name}
-              </div>
+              </div> */}
             </div>
           ) : existingImageUrl ? (
             <div className='w-full h-full flex flex-col items-center justify-center'>
               <Image
                 src={existingImageUrl}
                 alt='Current Image'
-                className='rounded-lg max-w-full max-h-32 object-cover'
-                width={120}
-                height={120}
+                className='rounded-lg max-w-full max-h-full object-contain'
+                width={600}
+                height={600}
               />
-              <div className='mt-2 text-sm text-center text-[var(--text-dark)]'>
+              {/* <div className='mt-2 text-sm text-center text-[var(--text-dark)]'>
                 Current Image
-              </div>
+              </div> */}
             </div>
           ) : (
             <>

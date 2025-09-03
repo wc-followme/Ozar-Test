@@ -1,3 +1,5 @@
+import { Avatar } from '@/components/shared/common/Avatar';
+import FormErrorMessage from '@/components/shared/common/FormErrorMessage';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -11,13 +13,12 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Trash } from 'iconsax-react';
 import { ChevronDown, Search } from 'lucide-react';
-import Image from 'next/image';
 import { useState } from 'react';
-import FormErrorMessage from './FormErrorMessage';
 
 export interface MultiSelectOption {
   value: string;
   label: string;
+  subLabel?: string;
   image?: string;
 }
 
@@ -30,6 +31,7 @@ interface MultiSelectProps<OptionType = MultiSelectOption> {
   error?: string;
   name?: string;
   getOptionLabel?: (option: OptionType) => string;
+  getOptionSubLabel?: (option: OptionType) => string | undefined;
   getOptionValue?: (option: OptionType) => string;
   getOptionImage?: (option: OptionType) => string | undefined;
   maxHeight?: number;
@@ -46,6 +48,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   error,
   name,
   getOptionLabel = (option: any) => option.label,
+  getOptionSubLabel = (option: any) => option.subLabel,
   getOptionValue = (option: any) => option.value,
   getOptionImage = (option: any) => option.image,
   disabled = false, // Add disabled prop with default
@@ -113,22 +116,29 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
               {displayTags.map(tag => {
                 const opt = options.find(o => getOptionValue(o) === tag);
                 const imageUrl = opt ? getOptionImage(opt) : undefined;
+                const label = opt ? getOptionLabel(opt) : tag;
                 return (
                   <span
                     key={tag}
                     className={`bg-cyanwave-light text-[var(--text-dark)] rounded-full ${imageUrl ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
                   >
-                    {imageUrl && (
-                      <Image
-                        src={imageUrl}
-                        alt={opt ? getOptionLabel(opt) : tag}
-                        width={20}
+                    {imageUrl ? (
+                      <Avatar
+                        name={label}
+                        image={imageUrl}
                         height={20}
-                        className='w-5 h-5 rounded-full object-cover'
-                        unoptimized
+                        width={20}
+                        className='w-5 h-5'
+                      />
+                    ) : (
+                      <Avatar
+                        name={label}
+                        height={20}
+                        width={20}
+                        className='w-5 h-5'
                       />
                     )}
-                    {opt ? getOptionLabel(opt) : tag}
+                    {label}
                   </span>
                 );
               })}
@@ -184,18 +194,23 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                     className='flex items-center justify-between py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base font-medium border-b border-[var(--border-light)] last-of-type:border-b-0 hover:bg-[var(--card-hover)]'
                   >
                     <div className='flex items-center gap-3'>
-                      {getOptionImage(opt) && (
-                        <Image
-                          src={getOptionImage(opt) as string}
-                          alt={getOptionLabel(opt)}
-                          width={24}
-                          height={24}
-                          className='w-6 h-6 rounded-full object-cover'
-                          style={{ width: 24, height: 24 }}
-                          unoptimized
-                        />
-                      )}
-                      <span>{getOptionLabel(opt)}</span>
+                      <Avatar
+                        name={getOptionLabel(opt)}
+                        image={getOptionImage(opt) as string}
+                        height={24}
+                        width={24}
+                        className='w-6 h-6'
+                      />
+                      <div className='flex flex-col'>
+                        <span className='font-medium'>
+                          {getOptionLabel(opt)}
+                        </span>
+                        {getOptionSubLabel(opt) && (
+                          <span className='text-sm text-gray-500'>
+                            {getOptionSubLabel(opt)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <Checkbox
                       checked={(value || []).includes(optionValue)}

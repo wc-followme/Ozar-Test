@@ -23,6 +23,8 @@ interface EstimationItemFormProps {
   useFixedWidths?: boolean; // New prop to control fixed widths
   containerWidthClass?: string; // New prop to control container width
   disableVariant?: boolean; // Disable the variant SelectField (e.g., for Materials)
+  isDisabled?: boolean; // New prop to disable all form fields
+  isFromReceivedTrades?: boolean; // New prop to indicate if the item is from received trades
 }
 
 export default function EstimationItemForm({
@@ -33,6 +35,8 @@ export default function EstimationItemForm({
   useFixedWidths = true, // Default to true to maintain current behavior
   containerWidthClass = 'w-full min-w-fit', // Default to responsive width
   disableVariant = false,
+  isDisabled = false,
+  isFromReceivedTrades = false,
 }: EstimationItemFormProps) {
   const [selectedCurrency, setSelectedCurrency] = useState(
     item.markup_type === 'PERCENTAGE' ? '%' : '$'
@@ -140,11 +144,6 @@ export default function EstimationItemForm({
     }).format(amount);
   };
 
-  const currencyOptions = [
-    { value: '$', label: '$' },
-    { value: '%', label: '%' },
-  ];
-
   const handleInputChange = (
     field: keyof EstimationItem,
     value: string | number
@@ -183,6 +182,7 @@ export default function EstimationItemForm({
               return byName ? byName.value : item.name;
             })()}
             onValueChange={newValue => {
+              if (isDisabled || isFromReceivedTrades) return;
               // Find the selected option to get the display name and UUID
               const selectedOption = materialOptions.find(
                 option => option.value === newValue
@@ -210,7 +210,12 @@ export default function EstimationItemForm({
                 : 'Select material'
             }
             className='mb-0'
-            disabled={loading}
+            disabled={loading || isDisabled || isFromReceivedTrades}
+            triggerClassName={
+              isDisabled || isFromReceivedTrades
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
+                : ''
+            }
           />
         </div>
         <div
@@ -219,13 +224,21 @@ export default function EstimationItemForm({
           <Label className='field-label text-sm'>Variant</Label>
           <SelectField
             value={item.variant}
-            onValueChange={value => handleInputChange('variant', value)}
+            onValueChange={value => {
+              if (isDisabled || isFromReceivedTrades) return;
+              handleInputChange('variant', value);
+            }}
             options={
               item.variant ? [{ value: item.variant, label: item.variant }] : []
             }
             placeholder='Select variant'
             className='mb-0'
-            disabled={disableVariant}
+            disabled={disableVariant || isDisabled || isFromReceivedTrades}
+            triggerClassName={
+              isDisabled || isFromReceivedTrades
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
+                : ''
+            }
           />
         </div>
         <div className={`space-y-2 w-[100px] min-w-[100px]`}>
@@ -234,6 +247,7 @@ export default function EstimationItemForm({
             type='text'
             value={item.qty.toString()}
             onChange={e => {
+              if (isDisabled || isFromReceivedTrades) return;
               const value = e.target.value;
               // Only allow numbers
               if (/^\d*$/.test(value)) {
@@ -242,6 +256,7 @@ export default function EstimationItemForm({
               }
             }}
             onKeyDown={e => {
+              if (isDisabled || isFromReceivedTrades) return;
               // Allow: backspace, delete, tab, escape, enter, and numbers
               const allowedKeys = [
                 'Backspace',
@@ -264,6 +279,16 @@ export default function EstimationItemForm({
               e.preventDefault();
             }}
             className='input-field'
+            disabled={isDisabled || isFromReceivedTrades}
+            style={
+              isDisabled || isFromReceivedTrades
+                ? {
+                    backgroundColor: 'var(--border-light)',
+                    color: 'var(--text-dark)',
+                    opacity: 1,
+                  }
+                : {}
+            }
           />
         </div>
         <div
@@ -272,10 +297,19 @@ export default function EstimationItemForm({
           <Label className='field-label text-sm'>Unit</Label>
           <SelectField
             value={item.unit}
-            onValueChange={value => handleInputChange('unit', value)}
+            onValueChange={value => {
+              if (isDisabled || isFromReceivedTrades) return;
+              handleInputChange('unit', value);
+            }}
             options={item.unit ? [{ value: item.unit, label: item.unit }] : []}
             placeholder='Select unit'
             className='mb-0'
+            disabled={isDisabled || isFromReceivedTrades}
+            triggerClassName={
+              isDisabled || isFromReceivedTrades
+                ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
+                : ''
+            }
           />
         </div>
         <div className='self-center pt-8'>
@@ -298,6 +332,7 @@ export default function EstimationItemForm({
               },
             ]}
             onAction={action => {
+              if (isDisabled || isFromReceivedTrades) return;
               switch (action) {
                 case 'hide':
                   // Handle hide line item
@@ -330,9 +365,22 @@ export default function EstimationItemForm({
           <Label className='field-label text-sm'>Description</Label>
           <Textarea
             value={item.description}
-            onChange={e => handleInputChange('description', e.target.value)}
+            onChange={e => {
+              if (isDisabled || isFromReceivedTrades) return;
+              handleInputChange('description', e.target.value);
+            }}
             rows={1}
             className='input-field min-h-12'
+            disabled={isDisabled || isFromReceivedTrades}
+            style={
+              isDisabled || isFromReceivedTrades
+                ? {
+                    backgroundColor: 'var(--border-light)',
+                    color: 'var(--text-dark)',
+                    opacity: 1,
+                  }
+                : {}
+            }
           />
         </div>
         <div className={`space-y-2 ${useFixedWidths ? 'min-w-[150px]' : ''}`}>
@@ -346,6 +394,7 @@ export default function EstimationItemForm({
               inputMode='decimal'
               defaultValue={item.rate.toString()}
               onChange={e => {
+                if (isDisabled || isFromReceivedTrades) return;
                 const raw = e.target.value;
                 const cleaned = raw.replace(/[^0-9.]/g, '');
                 const parts = cleaned.split('.');
@@ -363,12 +412,14 @@ export default function EstimationItemForm({
                 }
               }}
               onFocus={e => {
+                if (isDisabled || isFromReceivedTrades) return;
                 const v = e.currentTarget.value.trim();
                 if (v === '0' || v === '0.0' || v === '0.00') {
                   e.currentTarget.value = '';
                 }
               }}
               onBlur={e => {
+                if (isDisabled || isFromReceivedTrades) return;
                 const val = e.currentTarget.value;
                 const fallback = val === '' || val === '.' ? '0' : val;
                 e.currentTarget.value = fallback;
@@ -379,36 +430,29 @@ export default function EstimationItemForm({
               }}
               placeholder='0.00'
               className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+              disabled={isDisabled || isFromReceivedTrades}
+              style={
+                isDisabled || isFromReceivedTrades
+                  ? {
+                      backgroundColor: 'var(--border-light)',
+                      color: 'var(--text-dark)',
+                      opacity: 1,
+                    }
+                  : {}
+              }
             />
           </div>
         </div>
-        <div className={`space-y-2 ${useFixedWidths ? 'min-w-[200px]' : ''}`}>
-          <Label className='field-label text-sm'>Markup </Label>
-          <div className='flex border-2 border-[var(--border-dark)] focus-within:border-[var(--secondary)] rounded-xl'>
-            <div className='w-[60px]'>
-              <SelectField
-                value={selectedCurrency}
-                onValueChange={value => {
-                  setSelectedCurrency(value);
-                  // Update the item's markup_type when currency changes
-                  if (onItemUpdate) {
-                    onItemUpdate({
-                      ...item,
-                      markup_type: value === '%' ? 'PERCENTAGE' : 'FLAT_AMOUNT',
-                    });
-                  }
-                }}
-                options={currencyOptions}
-                placeholder='$'
-                className='mb-0'
-                triggerClassName='rounded-l-[10px] font-bold !border-r-0 !rounded-r-none h-11 border-none bg-[var(--white-background)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
-              />
-            </div>
+        {isFromReceivedTrades ? (
+          // Show Offer Rate field for received trades
+          <div className={`space-y-2 ${useFixedWidths ? 'min-w-[200px]' : ''}`}>
+            <Label className='field-label text-sm'>Offer Rate</Label>
             <Input
               type='text'
               inputMode='decimal'
               defaultValue={item.markup.toString()}
               onChange={e => {
+                if (isDisabled) return;
                 const raw = e.target.value;
                 const cleaned = raw.replace(/[^0-9.]/g, '');
                 const parts = cleaned.split('.');
@@ -425,12 +469,14 @@ export default function EstimationItemForm({
                 }
               }}
               onFocus={e => {
+                if (isDisabled) return;
                 const v = e.currentTarget.value.trim();
                 if (v === '0' || v === '0.0' || v === '0.00') {
                   e.currentTarget.value = '';
                 }
               }}
               onBlur={e => {
+                if (isDisabled) return;
                 const val = e.currentTarget.value;
                 const fallback = val === '' || val === '.' ? '0' : val;
                 e.currentTarget.value = fallback;
@@ -439,10 +485,20 @@ export default function EstimationItemForm({
                   handleInputChange('markup', numeric);
                 }
               }}
-              className='flex-1 rounded-l-none text-right !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] focus:border-[var(--secondary)] focus:ring-[var(--secondary)] focus-within:border-[var(--secondary)]'
+              className='w-full border-2 border-orange-500 focus-within:border-orange-600 rounded-xl h-11 px-3 bg-[var(--white-background)] focus:border-orange-600 focus:ring-orange-600 focus-within:border-orange-600'
+              disabled={isDisabled}
+              style={
+                isDisabled
+                  ? {
+                      backgroundColor: 'var(--border-light)',
+                      color: 'var(--text-dark)',
+                      opacity: 1,
+                    }
+                  : {}
+              }
             />
           </div>
-        </div>
+        ) : null}
         <div
           className={`ml-4 space-y-1 pt-7 whitespace-nowrap ${useFixedWidths ? 'min-w-[150px] flex-shrink-0' : ''}`}
         >

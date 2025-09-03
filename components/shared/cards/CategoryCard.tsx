@@ -115,10 +115,16 @@ export function CategoryCard({
               // Heuristic: local icons expect className, external expect size/color
               const isLocalIcon = iconSrc && iconSrc.length === 1;
               if (isLocalIcon) {
-                return React.createElement(iconSrc as any, {
-                  className: '!w-[32px] !h-[32px]',
-                  style: { color: iconColor || '#000000' },
-                });
+                return React.createElement(
+                  iconSrc as React.ComponentType<{
+                    className?: string;
+                    style?: React.CSSProperties;
+                  }>,
+                  {
+                    className: '!w-[32px] !h-[32px]',
+                    style: { color: iconColor || '#000000' },
+                  }
+                );
               } else {
                 return React.createElement(iconSrc, {
                   size: 32,
@@ -156,8 +162,9 @@ export function CategoryCard({
                         onClick={() => handleMenuAction(action)}
                         className={cn(
                           'text-base p-[10px] rounded-md cursor-pointer transition-colors flex font-medium items-center gap-2 hover:!bg-[var(--select-option)]',
-                          index !== filteredMenuOptions.length - 1 &&
-                            'border-b border-[var(--border-dark)]'
+                          index !== filteredMenuOptions.length - 1
+                            ? 'border-b border-[var(--border-dark)]'
+                            : ''
                         )}
                       >
                         <IconComponent

@@ -110,11 +110,13 @@ export const Avatar: React.FC<AvatarProps> = ({
   );
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') return '?';
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
-      .toUpperCase();
+      .toUpperCase()
+      .substring(0, 2); // Limit to 2 characters
   };
 
   return (
@@ -144,17 +146,18 @@ export const Avatar: React.FC<AvatarProps> = ({
           }}
           onError={() => setPlaceholderError(true)}
         />
-      ) : (
-        <AvatarFallback
-          className='rounded-[10px] object-cover text-6 font-bold'
-          style={{
-            backgroundColor: color.bg ?? '#ccc',
-            color: color.color ?? '#222',
-          }}
-        >
-          {getInitials(name)}
-        </AvatarFallback>
-      )}
+      ) : null}
+
+      {/* Always render fallback, it will show when image fails or doesn't exist */}
+      <AvatarFallback
+        className='rounded-[10px] object-cover text-6 font-bold'
+        style={{
+          backgroundColor: color.bg ?? '#ccc',
+          color: color.color ?? '#222',
+        }}
+      >
+        {getInitials(name)}
+      </AvatarFallback>
     </RadixAvatar>
   );
 };
