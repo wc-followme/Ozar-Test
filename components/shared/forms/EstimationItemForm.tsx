@@ -134,11 +134,6 @@ export default function EstimationItemForm({
     }).format(amount);
   };
 
-  const currencyOptions = [
-    { value: '$', label: '$' },
-    { value: '%', label: '%' },
-  ];
-
   const handleInputChange = (
     field: keyof EstimationItem,
     value: string | number

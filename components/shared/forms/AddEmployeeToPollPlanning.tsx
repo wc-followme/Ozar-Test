@@ -82,17 +82,17 @@ export const AddEmployeeToPollPlanning: React.FC<
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    if (!formData.room) {
-      newErrors.room = 'Please select a room';
+    if (!formData['room']) {
+      newErrors['room'] = 'Please select a room';
     }
-    if (!formData.trade) {
-      newErrors.trade = 'Please select a trade';
+    if (!formData['trade']) {
+      newErrors['trade'] = 'Please select a trade';
     }
-    if (!formData.service) {
-      newErrors.service = 'Please select a service';
+    if (!formData['service']) {
+      newErrors['service'] = 'Please select a service';
     }
-    if (formData.employeeIds.length === 0) {
-      newErrors.employeeIds = 'Please select at least one employee';
+    if (formData['employeeIds'].length === 0) {
+      newErrors['employeeIds'] = 'Please select at least one employee';
     }
 
     setErrors(newErrors);
@@ -132,7 +132,7 @@ export const AddEmployeeToPollPlanning: React.FC<
                 label: room.name,
               }))}
               placeholder='Select Room'
-              error={errors.room || ''}
+              error={errors['room'] || ''}
               disabled
               triggerClassName='bg-[var(--background)]'
             />
@@ -145,7 +145,7 @@ export const AddEmployeeToPollPlanning: React.FC<
                 label: trade.name,
               }))}
               placeholder='Select Trade'
-              error={errors.trade || ''}
+              error={errors['trade'] || ''}
               disabled
               triggerClassName='bg-[var(--background)]'
             />
@@ -161,7 +161,7 @@ export const AddEmployeeToPollPlanning: React.FC<
               label: service.name,
             }))}
             placeholder='Select Service'
-            error={errors.service || ''}
+            error={errors['service'] || ''}
             disabled
             triggerClassName='bg-[var(--background)]'
           />
@@ -176,7 +176,7 @@ export const AddEmployeeToPollPlanning: React.FC<
               value={formData.employeeIds}
               onChange={value => handleInputChange('employeeIds', value)}
               placeholder='Choose employees'
-              error={errors.employeeIds || ''}
+              error={errors['employeeIds'] || ''}
               name='employees'
             />
           </div>

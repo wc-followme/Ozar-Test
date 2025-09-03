@@ -5,7 +5,7 @@ import {
   FLOOR_OPTIONS_ARRAY,
   PROPERTY_AGE_OPTIONS_ARRAY,
   PROPERTY_TYPE_ARRAY,
-  PROPERTY_TYPE_OPTIONS_ARRAY,
+  RESIDENTIAL_PROPERTY_TYPE_OPTIONS,
   SQUARE_FOOTAGE_OPTIONS_ARRAY,
 } from '@/app/(DashboardLayout)/company-profile/five-box-system/five-box-slug-constants';
 import SelectField from '@/components/shared/common/SelectField';
@@ -43,7 +43,7 @@ export const EditJobPropertyInfoForm: React.FC<
           label='Type of Property'
           value={data.propertyType}
           onValueChange={val => onChange('propertyType', val)}
-          options={PROPERTY_TYPE_OPTIONS_ARRAY}
+          options={RESIDENTIAL_PROPERTY_TYPE_OPTIONS}
           placeholder='Select property type'
         />
       </div>

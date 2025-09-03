@@ -6,19 +6,17 @@ import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { TemplateListForm } from '@/components/shared/forms/TemplateListForm';
 import { Button } from '@/components/ui/button';
-import { IconHistory } from '@tabler/icons-react';
+import { IconClipboardText, IconHistory } from '@tabler/icons-react';
 import {
   ArrowDown2,
   ArrowRotateLeft,
   ArrowRotateRight,
-  Document,
   DocumentText,
   Edit2,
-  Link,
-  Save2,
   Trash,
 } from 'iconsax-react';
 import { useRef, useState } from 'react';
+import { ChainIcon } from '../icons/ChainIcon';
 import { RoomIcon } from '../icons/RoomIcon';
 import { TemplateIcon } from '../icons/TemplateIcon';
 import VersionHistoryComponent from '../shared/common/VersionHistoryComponent';
@@ -242,7 +240,7 @@ export default function EstimateComponent({
   const estimationBoxRef = useRef<{ toggleEditMode: () => void }>(null);
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [showEstimationBox, setShowEstimationBox] = useState(false);
-  const [selectedQuickAction, setSelectedQuickAction] = useState<string>('');
+
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -275,7 +273,6 @@ export default function EstimateComponent({
             // Edit mode header
             <>
               <div className='flex items-center gap-1'>
-                <div className='h-10 w-[1px] bg-white'></div>
                 <Button
                   variant='ghost'
                   size='sm'
@@ -353,26 +350,25 @@ export default function EstimateComponent({
                     {
                       label: 'Send Material List',
                       action: 'send-material-list',
-                      icon: DocumentText,
+                      icon: IconClipboardText,
                     },
                     {
                       label: 'Save as Estimate Template',
                       action: 'save-as-template',
-                      icon: Save2,
+                      icon: TemplateIcon,
                     },
                     {
                       label: 'Send Invite Estimate',
                       action: 'send-invite-estimate',
-                      icon: Link,
+                      icon: ChainIcon,
                     },
                     {
                       label: 'Send PDF',
                       action: 'send-pdf',
-                      icon: Document,
+                      icon: DocumentText,
                     },
                   ]}
                   onAction={action => {
-                    setSelectedQuickAction(action);
                     if (action === 'send-material-list') {
                       console.log('Send Material List clicked');
                       // Add material list functionality here
@@ -410,9 +406,7 @@ export default function EstimateComponent({
           title='Version History'
           size='600px'
         >
-          <VersionHistoryComponent
-            onClose={() => setShowVersionHistory(false)}
-          />
+          <VersionHistoryComponent />
         </SideSheet>
       </>
     );

@@ -350,13 +350,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                         ? new Date(formData.startDate)
                         : undefined
                     }
-                    onSelect={(date: Date | undefined) => {
-                      if (date) {
-                        const dateString = date.toISOString().split('T')[0];
-                        handleInputChange('startDate', dateString);
-                        setStartDatePickerOpen(false);
-                      }
-                    }}
+                    onSelect={() => {}}
                     initialFocus
                   />
                 </PopoverContent>
@@ -404,13 +398,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
                     selected={
                       formData.dueDate ? new Date(formData.dueDate) : undefined
                     }
-                    onSelect={(date: Date | undefined) => {
-                      if (date) {
-                        const dateString = date.toISOString().split('T')[0];
-                        handleInputChange('dueDate', dateString);
-                        setDueDatePickerOpen(false);
-                      }
-                    }}
+                    onSelect={() => {}}
                     initialFocus
                   />
                 </PopoverContent>
@@ -433,7 +421,7 @@ export const AddEmployeeToJobForm: React.FC<AddEmployeeToJobFormProps> = ({
               value={formData.employeeIds}
               onChange={value => handleInputChange('employeeIds', value)}
               placeholder='Choose employees'
-              error={errors['employeeIds']}
+              error={errors['employeeIds'] || ''}
               name='employees'
             />
           </div>

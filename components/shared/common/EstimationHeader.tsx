@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Add, Trash } from 'iconsax-react';
+import { Add, Edit2, Trash } from 'iconsax-react';
 
 interface Tool {
   id: string;
@@ -44,19 +44,25 @@ interface Service {
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange?: string;
+  dateRange: string;
   type: string;
   laborCost: number;
   materialCost: number;
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface Room {
   id: string;
+  uniqueKey: string;
   name: string;
   total: number;
   trades: Trade[];
@@ -65,6 +71,12 @@ interface Room {
 
 interface EstimationHeaderProps {
   showAddService: boolean;
+  isEditing: boolean;
+  editingRoomName: string;
+  setEditingRoomName: (name: string) => void;
+  handleNameSave: () => void;
+  handleRoomNameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  handleEditClick: () => void;
   selectedRoom: Room | undefined;
   showServiceForm: boolean;
   selectedServiceData: Service | undefined;
@@ -72,10 +84,17 @@ interface EstimationHeaderProps {
   handleAddTrade: () => void;
   handleAddService: () => void;
   onDeleteClick: () => void;
+  isSelectionMode?: boolean;
 }
 
 export default function EstimationHeader({
   showAddService,
+  isEditing,
+  editingRoomName,
+  setEditingRoomName,
+  handleNameSave,
+  handleRoomNameKeyDown,
+  handleEditClick,
   selectedRoom,
   showServiceForm,
   selectedServiceData,
@@ -83,18 +102,37 @@ export default function EstimationHeader({
   handleAddTrade,
   handleAddService,
   onDeleteClick,
+  isSelectionMode = false,
 }: EstimationHeaderProps) {
   return (
     <div className='bg-[var(--card-background)] border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
       <div className='flex items-center justify-between w-full'>
         <div className='flex items-center space-x-2'>
           {!showAddService ? (
-            // Room view (no room name editing)
-            <div className='flex items-center gap-2'>
-              <h1 className='text-xl font-semibold truncate'>
-                {selectedRoom?.name}
-              </h1>
-            </div>
+            // Room view
+            isEditing && !isSelectionMode ? (
+              <input
+                type='text'
+                value={editingRoomName}
+                onChange={e => setEditingRoomName(e.target.value)}
+                onBlur={handleNameSave}
+                onKeyDown={handleRoomNameKeyDown}
+                className='text-xl font-semibold bg-transparent border-b-0 border-[var(--primary)] focus:outline-none focus:border-[var(--primary)] px-1'
+                autoFocus
+              />
+            ) : (
+              <div className='flex items-center gap-2'>
+                <h1 className='text-xl font-semibold'>{selectedRoom?.name}</h1>
+                {!isSelectionMode && (
+                  <Edit2
+                    size={14}
+                    color='var(--text-secondary)'
+                    className='cursor-pointer hover:text-[var(--primary)] transition-colors duration-200'
+                    onClick={handleEditClick}
+                  />
+                )}
+              </div>
+            )
           ) : showServiceForm && selectedServiceData ? (
             // Service view
             <div>
@@ -127,7 +165,17 @@ export default function EstimationHeader({
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
               Add Trade
             </Button>
-          ) : showServiceForm && selectedServiceData ? null : ( // </Button> //   Option Template //   <Add size='24' color='var(--secondary)' className='!h-6 !w-6' /> // > //   }} //     // Handle option template logic here //   onClick={() => { //   className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]' // <Button
+          ) : showServiceForm && selectedServiceData ? (
+            <Button
+              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
+              onClick={() => {
+                // Handle option template logic here
+              }}
+            >
+              <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
+              Option Template
+            </Button>
+          ) : (
             <Button
               className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={handleAddService}
@@ -136,14 +184,16 @@ export default function EstimationHeader({
               Add Service
             </Button>
           )}
-          <Button
-            variant='ghost'
-            size='sm'
-            className=''
-            onClick={onDeleteClick}
-          >
-            <Trash className='!h-5 !w-5' size={24} color='var(--text-dark)' />
-          </Button>
+          {!isSelectionMode && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className=''
+              onClick={onDeleteClick}
+            >
+              <Trash className='!h-5 !w-5' size={24} color='var(--text-dark)' />
+            </Button>
+          )}
         </div>
       </div>
     </div>
