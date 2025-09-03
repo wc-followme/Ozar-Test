@@ -44,19 +44,26 @@ interface Service {
 
 interface Trade {
   id: string;
+  uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange?: string;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
   tradeTotal: number;
   serviceList: Service[];
   isExpanded: boolean;
+  startDate?: Date;
+  endDate?: Date;
+  markup?: number;
+  markup_type?: 'PERCENTAGE' | 'FLAT_AMOUNT';
 }
 
 interface Room {
   id: string;
+  uniqueKey: string;
   name: string;
   total: number;
   trades: Trade[];
@@ -69,7 +76,7 @@ interface EstimationHeaderProps {
   editingRoomName: string;
   setEditingRoomName: (name: string) => void;
   handleNameSave: () => void;
-  handleRoomNameKeyDown: (e: React.KeyboardEvent) => void;
+  handleRoomNameKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   handleEditClick: () => void;
   selectedRoom: Room | undefined;
   showServiceForm: boolean;
@@ -78,6 +85,7 @@ interface EstimationHeaderProps {
   handleAddTrade: () => void;
   handleAddService: () => void;
   onDeleteClick: () => void;
+  isSelectionMode?: boolean;
 }
 
 export default function EstimationHeader({
@@ -95,6 +103,7 @@ export default function EstimationHeader({
   handleAddTrade,
   handleAddService,
   onDeleteClick,
+  isSelectionMode = false,
 }: EstimationHeaderProps) {
   return (
     <div className='bg-[var(--card-background)] border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
@@ -102,7 +111,7 @@ export default function EstimationHeader({
         <div className='flex items-center space-x-2'>
           {!showAddService ? (
             // Room view
-            isEditing ? (
+            isEditing && !isSelectionMode ? (
               <input
                 type='text'
                 value={editingRoomName}
@@ -114,15 +123,15 @@ export default function EstimationHeader({
               />
             ) : (
               <div className='flex items-center gap-2'>
-                <h1 className='text-xl font-semibold truncate'>
-                  {selectedRoom?.name}
-                </h1>
-                <Edit2
-                  size={14}
-                  color='var(--text-secondary)'
-                  className='cursor-pointer hover:text-[var(--primary)] transition-colors duration-200'
-                  onClick={handleEditClick}
-                />
+                <h1 className='text-xl font-semibold'>{selectedRoom?.name}</h1>
+                {!isSelectionMode && (
+                  <Edit2
+                    size={14}
+                    color='var(--text-secondary)'
+                    className='cursor-pointer hover:text-[var(--primary)] transition-colors duration-200'
+                    onClick={handleEditClick}
+                  />
+                )}
               </div>
             )
           ) : showServiceForm && selectedServiceData ? (
@@ -157,14 +166,17 @@ export default function EstimationHeader({
               <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
               Add Trade
             </Button>
-          ) : showServiceForm && selectedServiceData ? //   onClick={() => { //   className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]' // <Button
-          //     // Handle option template logic here
-          //   }}
-          // >
-          //   <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
-          //   Option Template
-          // </Button>
-          null : (
+          ) : showServiceForm && selectedServiceData ? (
+            <Button
+              className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
+              onClick={() => {
+                // Handle option template logic here
+              }}
+            >
+              <Add size='24' color='var(--secondary)' className='!h-6 !w-6' />
+              Option Template
+            </Button>
+          ) : (
             <Button
               className='btn-primary !pl-3 !pr-5 !gap-1 text-base !font-medium !bg-greenaccent-100 !h-9 hover:!bg-greenaccent-100 !text-[var(--secondary)]'
               onClick={handleAddService}
@@ -173,14 +185,16 @@ export default function EstimationHeader({
               Add Service
             </Button>
           )}
-          <Button
-            variant='ghost'
-            size='sm'
-            className=''
-            onClick={onDeleteClick}
-          >
-            <Trash className='!h-5 !w-5' size={24} color='var(--text-dark)' />
-          </Button>
+          {!isSelectionMode && (
+            <Button
+              variant='ghost'
+              size='sm'
+              className=''
+              onClick={onDeleteClick}
+            >
+              <Trash className='!h-5 !w-5' size={24} color='var(--text-dark)' />
+            </Button>
+          )}
         </div>
       </div>
     </div>

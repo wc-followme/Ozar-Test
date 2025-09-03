@@ -477,7 +477,7 @@ export const TodoComponent = forwardRef<TodoComponentRef, TodoComponentProps>(
                         className={`
                           rounded-[6px] 
                           border-2 
-                          border-[#BFBFBF]
+                          border-[var(--dark-border-other)]
                           data-[state=checked]:bg-[--primary]
                           data-[state=checked]:border-[var(--primary)]
                           data-[state=checked]:text-white

@@ -7,7 +7,7 @@ import Image from 'next/image';
 
 export function CustomerSection() {
   return (
-    <div className='bg-[#F5F7FA] rounded-[30px] p-5 w-full shrink-0'>
+    <div className='bg-[var(--background)] rounded-[30px] p-5 w-full shrink-0'>
       <div className='flex items-center justify-between'>
         <div className='flex items-center space-x-4'>
           <div className='flex -space-x-2'>

@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import {
   arrayMove,
   rectSortingStrategy,
@@ -17,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { ReactNode } from 'react';
 
-interface SortableProps {
+interface VerticalSortableProps {
   items: any[];
   onReorder: (items: any[]) => void;
   children: ReactNode;
@@ -26,14 +27,14 @@ interface SortableProps {
   onDragEnd?: () => void;
 }
 
-export function Sortable({
+export function VerticalSortable({
   items,
   onReorder,
   children,
   idField = 'id',
   onDragStart,
   onDragEnd,
-}: SortableProps) {
+}: VerticalSortableProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -69,7 +70,7 @@ export function Sortable({
       collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      modifiers={[]}
+      modifiers={[restrictToVerticalAxis]}
     >
       <SortableContext
         items={items.map(item => item[idField])}

@@ -62,8 +62,8 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  start_date?: string | null;
-  end_date?: string | null;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -1277,6 +1277,9 @@ export default function EstimationBoxEdit({
           }).format(amount)
         }
         selectedRoomId={selectedRoomId}
+        isEditMode={false}
+        checkedItems={new Set()}
+        onCheckedItemsChange={() => {}}
         toggleMainAccordion={() => {
           const allRoomIds = rooms.map(room => room.id);
           const allTradeIds = rooms.flatMap(room =>
