@@ -25,8 +25,8 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  start_date?: string | null;
-  end_date?: string | null;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;

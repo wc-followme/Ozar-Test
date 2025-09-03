@@ -4,7 +4,6 @@ import {
   closestCenter,
   DndContext,
   DragEndEvent,
-  DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -43,7 +42,7 @@ export function VerticalSortable({
     })
   );
 
-  function handleDragStart(event: DragStartEvent) {
+  function handleDragStart() {
     if (onDragStart) {
       onDragStart();
     }

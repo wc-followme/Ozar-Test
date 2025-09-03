@@ -52,7 +52,8 @@ interface Trade {
   id: string;
   name: string;
   services: number;
-  dateRange: string;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -158,13 +159,13 @@ export default function TradeHeader({
   // Original TradeHeader UI for normal cases
   return (
     <>
-      <div className='bg-white border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
+      <div className='bg-[var(--card-background)] border-b border-[var(--border-dark)] p-4 h-[75px] flex items-center'>
         <div className='flex items-center justify-between w-full'>
           <div className='flex items-center space-x-2'>
             {!showAddService ? (
               // Room view - show room name only
               <div>
-                <h1 className='text-xl font-semibold text-gray-800'>
+                <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                   {selectedRoom?.name || 'Bed Room 1'}
                 </h1>
               </div>
@@ -174,7 +175,7 @@ export default function TradeHeader({
                 <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                   {selectedServiceData.name}
                 </h1>
-                <p className='text-sm text-gray-500'>
+                <p className='text-sm text-[var(--text-secondary)]'>
                   {selectedRoom?.name} / {selectedTradeData?.name} /{' '}
                   {selectedServiceData.name}
                 </p>
@@ -186,7 +187,7 @@ export default function TradeHeader({
                   <h1 className='text-xl font-semibold text-[var(--text-dark)]'>
                     {selectedTradeData.name}
                   </h1>
-                  <p className='text-sm text-gray-500'>
+                  <p className='text-sm text-[var(--text-secondary)]'>
                     in {selectedRoom?.name}
                   </p>
                 </div>
@@ -207,7 +208,7 @@ export default function TradeHeader({
               <Button
                 variant='ghost'
                 size='sm'
-                className='text-gray-600 hover:text-[var] hover:bg-gray-100'
+                className='text-[var(--text-dark)] hover:text-[var]'
                 onClick={onDeleteClick}
               >
                 <Trash className='!h-5 !w-5' color='var(--text-dark)' />

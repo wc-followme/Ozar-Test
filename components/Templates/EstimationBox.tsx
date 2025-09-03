@@ -70,7 +70,8 @@ interface Trade {
   uniqueKey: string; // Add unique generated key
   name: string;
   services: number;
-  dateRange: string;
+  start_date: string | null;
+  end_date: string | null;
   type: string;
   laborCost: number;
   materialCost: number;
@@ -440,7 +441,8 @@ export default forwardRef<{ toggleEditMode: () => void }, EstimationBoxProps>(
           ),
           name: ESTIMATION_MESSAGES.DEFAULT_TRADE_NAME,
           services: 0,
-          dateRange: '',
+          start_date: null,
+          end_date: null,
           type: '2D',
           laborCost: 0.0,
           materialCost: 0.0,
@@ -488,7 +490,8 @@ export default forwardRef<{ toggleEditMode: () => void }, EstimationBoxProps>(
         ),
         name: tradeName,
         services: 0,
-        dateRange: '',
+        start_date: null,
+        end_date: null,
         type: '2D',
         laborCost: 0.0,
         materialCost: 0.0,

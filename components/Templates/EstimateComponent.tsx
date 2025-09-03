@@ -396,7 +396,6 @@ export default function EstimateComponent({
           {...(onSaveSuccess && { onSaveSuccess })}
           {...(onSaveError && { onSaveError })}
           {...(onFormSubmit && { onFormSubmit })}
-          onEditModeChange={setIsEditing}
         />
 
         {/* Version History Sidesheet */}
