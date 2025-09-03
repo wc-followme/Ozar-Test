@@ -1,7 +1,6 @@
 'use client';
 
 import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
-import ComingSoon from '@/components/shared/common/ComingSoon';
 import { Dropdown } from '@/components/shared/common/Dropdown';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Badge } from '@/components/ui/badge';
@@ -278,6 +277,9 @@ export default function TemplatesPage() {
   const toolsTemplates = getTemplatesByType(TEMPLATE_TYPES.TOOL_TEMPLATES);
   const disclaimersTemplates = getTemplatesByType(
     TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
+  );
+  const serviceOptionTemplates = getTemplatesByType(
+    TEMPLATE_TYPES.OPTION_BID_TEMPLATES
   );
   const archiveTemplates = templates.filter(
     template => template.status === 'INACTIVE'
@@ -557,15 +559,15 @@ export default function TemplatesPage() {
 
           {/* Service Options (Option Bid) Tab Content */}
           <TabsContent value='service-option' className='mt-6'>
-            <ComingSoon message="We're actively building this feature to make your experience even better. Got ideas or feedback? We'd love to hear them!" />
+            {/* <ComingSoon message="We're actively building this feature to make your experience even better. Got ideas or feedback? We'd love to hear them!" /> */}
 
             {/* Original dynamic code - commented out for now */}
-            {/*
+
             {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
-            ) : _serviceOptionTemplates.length === 0 ? (
+            ) : serviceOptionTemplates.length === 0 ? (
               <NoDataFound
                 title='No service option templates found'
                 description='Create a service option template to manage options quickly.'
@@ -575,7 +577,7 @@ export default function TemplatesPage() {
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {_serviceOptionTemplates.map(template => (
+                  {serviceOptionTemplates.map(template => (
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(
@@ -589,7 +591,6 @@ export default function TemplatesPage() {
                 </div>
               </>
             )}
-            */}
           </TabsContent>
 
           {/* Tools Tab Content */}

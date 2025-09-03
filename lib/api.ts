@@ -2901,6 +2901,26 @@ class ApiService {
       headers: this.getRoleHeaders(),
     });
   }
+
+  // Create template
+  async createTemplate(templateData: {
+    name: string;
+    template_type: string;
+    service_id?: string;
+    trade_id?: string;
+    category_id?: string;
+    company_id: string;
+    service_options_template?: any;
+  }): Promise<any> {
+    return this.makeRequest(`/templates`, {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(templateData),
+    });
+  }
 }
 
 export const apiService = new ApiService();

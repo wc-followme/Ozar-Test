@@ -6,11 +6,14 @@ import SelectField from '@/components/shared/common/SelectField';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { DisclaimerForm } from '@/components/shared/forms/DisclaimerForm';
 import EstimationTemplateForm from '@/components/shared/forms/EstimationTemplateForm';
+
 import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
 import ServiceOptionsBox from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { STORAGE_KEYS } from '@/constants/common';
+
+import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { use, useEffect, useState } from 'react';
 import { TemplateData } from '../../template-types';
@@ -25,6 +28,7 @@ export default function CreateTemplatePage({
   params,
 }: CreateTemplatePageProps) {
   const { type } = use(params);
+  const { showErrorToast, showSuccessToast } = useToast();
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
   const [formData, setFormData] = useState({
@@ -34,12 +38,12 @@ export default function CreateTemplatePage({
     propertyType: '',
     category: '',
     trade: '',
-    description: '',
     tools: '',
     warranty: '',
     duration: '',
   });
   const [projectTotal, setProjectTotal] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // State for dynamic categories
   const [categories, setCategories] = useState<
@@ -158,6 +162,131 @@ export default function CreateTemplatePage({
       setTrades([]);
     } finally {
       setLoadingTrades(false);
+    }
+  };
+
+  // Save template function with proper UUID handling
+  const handleSaveTemplate = async (formData: {
+    templateName: string;
+    category: string;
+    trade: string;
+  }) => {
+    if (type !== 'service-option') return;
+
+    setIsSubmitting(true);
+    try {
+      // Get selected company
+      const selectedCompanyRaw = localStorage.getItem(
+        STORAGE_KEYS.SELECTED_COMPANY
+      );
+      const companyUuid = selectedCompanyRaw
+        ? (() => {
+            try {
+              const parsed: { uuid?: string; id?: string | number } =
+                JSON.parse(selectedCompanyRaw);
+              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+
+      if (!companyUuid) {
+        throw new Error('No company selected');
+      }
+
+      // Validate required form fields
+      if (!formData.templateName.trim()) {
+        throw new Error('Template name is required');
+      }
+      if (!formData.category) {
+        throw new Error('Category is required');
+      }
+      if (!formData.trade) {
+        throw new Error('Trade is required');
+      }
+
+      // Get service options data from localStorage
+      const serviceOptionsData = localStorage.getItem(
+        'service_options_template'
+      );
+      if (!serviceOptionsData) {
+        throw new Error('No service options data found');
+      }
+
+      const parsedServiceOptions = JSON.parse(serviceOptionsData);
+
+      // Validate that we have service options
+      if (
+        !Array.isArray(parsedServiceOptions) ||
+        parsedServiceOptions.length === 0
+      ) {
+        throw new Error(
+          'No service options found. Please add at least one service option before saving.'
+        );
+      }
+
+      // Extract service_id from the first service option if available
+      const firstServiceOption = parsedServiceOptions[0];
+      const serviceId = firstServiceOption?.service_id || null;
+
+      // Validate UUID format for trade_id and category_id
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+      if (formData.trade && !uuidRegex.test(formData.trade)) {
+        throw new Error('Trade ID must be a valid UUID');
+      }
+
+      if (formData.category && !uuidRegex.test(formData.category)) {
+        throw new Error('Category ID must be a valid UUID');
+      }
+
+      // Prepare template data with UUIDs
+      const templateData = {
+        name: formData.templateName,
+        template_type: TEMPLATE_TYPES.OPTION_BID_TEMPLATES,
+        company_id: companyUuid,
+        service_id: serviceId, // This should already be a UUID from service options
+        trade_id: formData.trade, // UUID from form
+        category_id: formData.category, // UUID from form
+        service_options_template: {
+          trade_id: formData.trade, // UUID from form
+          category_id: formData.category, // UUID from form
+          service_options: parsedServiceOptions.map((service: any) => ({
+            service_name: service.description || service.service_id,
+            description: service.description || '',
+            price: service.rate || 0,
+            duration: 'Custom',
+            materials: service.materials || [],
+            finishes: service.finishes || [],
+            tools: service.tools || [],
+            qty: service.qty || 1,
+          })),
+        },
+      };
+
+      // Call API to create template
+      const response = await apiService.makeGenericRequest('/templates', {
+        method: 'POST',
+        body: JSON.stringify(templateData),
+      });
+
+      const { statusCode, message } = response || {};
+
+      if (statusCode === 200 || statusCode === 201) {
+        showSuccessToast(message || 'Template created successfully');
+        // Redirect to templates page
+        window.location.href = '/templates';
+      } else {
+        throw new Error(message || 'Failed to create template');
+      }
+    } catch (error: any) {
+      showErrorToast(
+        error?.message || 'Failed to save template. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -451,8 +580,6 @@ export default function CreateTemplatePage({
             </div>
 
             {/* Template Meta Fields */}
-
-            {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
                 <div className='space-y-2 col-span-2'>
@@ -498,23 +625,11 @@ export default function CreateTemplatePage({
                     disabled={loadingTrades || !formData.category}
                   />
                 </div>
-
-                {/* <div className='space-y-2'>
-                  <label className='field-label'>Property Type</label>
-                  <SelectField
-                    value={formData.propertyType}
-                    onValueChange={val =>
-                      handleInputChange('propertyType', val)
-                    }
-                    options={[
-                      { value: 'Residential', label: 'Residential' },
-                      { value: 'Commercial', label: 'Commercial' },
-                      { value: 'Industrial', label: 'Industrial' },
-                    ]}
-                    placeholder='Select Type'
-                  />
-                </div> */}
               </div>
+            </div>
+
+            {/* Template Details Section */}
+            <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
               <ServiceOptionsBox
                 _onClose={() => {}}
                 templateId='new-service-option-template'
@@ -545,7 +660,19 @@ export default function CreateTemplatePage({
                     </span>
                   </div>
                   <div className='flex gap-3'>
-                    <Button className='btn-primary'>Save Template</Button>
+                    <Button
+                      className='btn-primary'
+                      onClick={() =>
+                        handleSaveTemplate({
+                          templateName: formData.templateName,
+                          category: formData.category,
+                          trade: formData.trade,
+                        })
+                      }
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Saving...' : 'Save Template'}
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -617,7 +744,6 @@ export default function CreateTemplatePage({
                   templateName: formData.templateName,
                   service: formData.service,
                   warranty: formData.warranty,
-                  description: formData.description,
                   duration: formData.duration,
                 }}
               />

@@ -192,7 +192,7 @@ export default function ServiceOptionsBox(
           return {
             service_id: serviceOption.uuid || serviceOption.id,
             description: serviceOption.description || serviceOption.name,
-            qty: 1, // Default quantity for service options
+            qty: serviceOption.qty ?? 1,
             rate: serviceOption.price,
             materials: mapItemsWithUuidAsId(serviceOption.materials),
             finishes: mapItemsWithUuidAsId(serviceOption.finishes),
@@ -258,6 +258,7 @@ export default function ServiceOptionsBox(
                   name: service.description,
                   description: service.description,
                   price: service.rate,
+                  qty: service.qty ?? 1,
                   duration: '',
                   category: 'General Services',
                   materials: (service.materials || []).map(
@@ -553,7 +554,6 @@ export default function ServiceOptionsBox(
             'Calling updateLocalStorage from handleServiceOptionUpdate'
           );
           updateLocalStorage(ensured);
-          updateAllCalculations();
         }, 0);
         return ensured;
       });
@@ -724,21 +724,6 @@ export default function ServiceOptionsBox(
     }
   };
 
-  // Temporary function to clear localStorage for testing
-  const clearLocalStorage = () => {
-    localStorage.removeItem('service_options_template');
-    console.log('LocalStorage cleared for testing');
-    // Reload the page to start fresh
-    window.location.reload();
-  };
-
-  // Temporary function to manually test updateLocalStorage
-  const testUpdateLocalStorage = () => {
-    console.log('Manually testing updateLocalStorage');
-    console.log('Current categories:', categories);
-    updateLocalStorage();
-  };
-
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
@@ -806,8 +791,6 @@ export default function ServiceOptionsBox(
           handleAddCategory={handleAddCategory}
           handleAddServiceOption={handleAddServiceOption}
           onDeleteClick={handleDeleteClick}
-          onClearLocalStorage={clearLocalStorage}
-          onTestUpdateLocalStorage={testUpdateLocalStorage}
         />
 
         {/* Content Area (match EstimationBox scroll behavior) */}
@@ -879,7 +862,10 @@ export default function ServiceOptionsBox(
                     newlyCreatedServiceOption?.description ||
                     selectedServiceOptionData?.description ||
                     '',
-                  qty: 1,
+                  qty:
+                    newlyCreatedServiceOption?.qty ||
+                    selectedServiceOptionData?.qty ||
+                    1,
                   rate:
                     newlyCreatedServiceOption?.price ||
                     selectedServiceOptionData?.price ||
@@ -1122,6 +1108,11 @@ export default function ServiceOptionsBox(
                       name: updatedService.name,
                       description: updatedService.description,
                       price: updatedService.rate,
+                      qty:
+                        updatedService.qty ??
+                        (currentServiceData?.qty ||
+                          selectedServiceOptionData?.qty ||
+                          1),
                       // Explicitly preserve materials, finishes, and tools from current state
                       materials:
                         currentServiceData?.materials ||
@@ -1150,6 +1141,7 @@ export default function ServiceOptionsBox(
                       name: updatedService.name,
                       description: updatedService.description,
                       price: updatedService.rate,
+                      qty: updatedService.qty ?? 1,
                       duration: '',
                       category: selectedCategoryData?.name || 'General',
                     };
@@ -1185,7 +1177,6 @@ export default function ServiceOptionsBox(
 
                     // Set as selected
                     setSelectedServiceOption(newServiceOption.id);
-                    setTimeout(() => updateAllCalculations(), 0);
 
                     // Force re-render by updating the form key
                     setFormKey(prev => prev + 1);

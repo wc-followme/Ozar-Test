@@ -3,6 +3,7 @@ export interface ServiceOption {
   uuid?: string; // Selected service UUID for API interactions
   name: string;
   description: string;
+  qty?: number; // Quantity for the service
   price: number;
   duration: string;
   category: string;

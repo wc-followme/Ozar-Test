@@ -19,8 +19,6 @@ interface ServiceOptionsHeaderProps {
   handleAddCategory: () => void;
   handleAddServiceOption: () => void;
   onDeleteClick: () => void;
-  onClearLocalStorage?: () => void; // Add this prop
-  onTestUpdateLocalStorage?: () => void; // Add this prop for testing
 }
 
 export default function ServiceOptionsHeader({
@@ -37,8 +35,6 @@ export default function ServiceOptionsHeader({
   handleAddCategory: _handleAddCategory,
   handleAddServiceOption: _handleAddServiceOption,
   onDeleteClick,
-  onClearLocalStorage,
-  onTestUpdateLocalStorage,
 }: ServiceOptionsHeaderProps) {
   return (
     <div className='bg-white border-b border-gray-200 p-4 h-[75px] flex items-center'>
@@ -54,26 +50,6 @@ export default function ServiceOptionsHeader({
         </div>
 
         <div className='flex items-center space-x-2'>
-          {onTestUpdateLocalStorage && (
-            <Button
-              variant='ghost'
-              size='sm'
-              className='border-2 border-blue-500 text-blue-500 h-[42px] px-3 rounded-[10px]'
-              onClick={onTestUpdateLocalStorage}
-            >
-              Test Save
-            </Button>
-          )}
-          {onClearLocalStorage && (
-            <Button
-              variant='ghost'
-              size='sm'
-              className='border-2 border-red-500 text-red-500 h-[42px] px-3 rounded-[10px]'
-              onClick={onClearLocalStorage}
-            >
-              Clear Storage
-            </Button>
-          )}
           <Button
             variant='ghost'
             size='sm'
