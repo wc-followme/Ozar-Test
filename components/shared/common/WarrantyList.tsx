@@ -11,8 +11,8 @@ interface WarrantyListProps {
   title: string;
   duration: string;
   description: string;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
+  onEdit?: ((id: string) => void) | undefined;
+  onDelete?: ((id: string) => void) | undefined;
 }
 
 export const WarrantyList = ({
@@ -72,28 +72,34 @@ export const WarrantyList = ({
           </div>
         </div>
 
-        {/* 3-dots Menu */}
-        <div className='flex-shrink-0 ml-2 lg:self-center'>
-          <Dropdown
-            menuOptions={menuOptions}
-            onAction={handleMenuAction}
-            trigger={
-              <Button
-                variant='ghost'
-                size='icon'
-                className='h-8 w-8 p-0'
-                onClick={e => e.stopPropagation()}
-              >
-                <MoreVertical
-                  size={20}
-                  className='text-[var(--text-dark) !h-6 !w-6'
-                  color='var(--text-dark)'
-                />
-              </Button>
-            }
-            align='end'
-          />
-        </div>
+        {/* 3-dots Menu - Only show if edit or delete actions are available */}
+        {(onEdit || onDelete) && (
+          <div className='flex-shrink-0 ml-2 lg:self-center'>
+            <Dropdown
+              menuOptions={menuOptions.filter(option => {
+                if (option.action === 'edit') return !!onEdit;
+                if (option.action === 'delete') return !!onDelete;
+                return true;
+              })}
+              onAction={handleMenuAction}
+              trigger={
+                <Button
+                  variant='ghost'
+                  size='icon'
+                  className='h-8 w-8 p-0'
+                  onClick={e => e.stopPropagation()}
+                >
+                  <MoreVertical
+                    size={20}
+                    className='text-[var(--text-dark) !h-6 !w-6'
+                    color='var(--text-dark)'
+                  />
+                </Button>
+              }
+              align='end'
+            />
+          </div>
+        )}
       </div>
     </div>
   );

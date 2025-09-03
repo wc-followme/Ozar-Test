@@ -226,10 +226,6 @@ export default function ServiceOptionsBox(
   };
 
   // Legacy function for backward compatibility - now just calls the centralized function
-  const saveCurrentState = () => {
-    // This function is kept for backward compatibility but now does nothing
-    // All localStorage updates go through updateLocalStorage() directly
-  };
 
   // Function to update localStorage immediately when materials, finishes, or tools change
   // This is now handled by the main updateLocalStorage function below
@@ -402,7 +398,7 @@ export default function ServiceOptionsBox(
         serviceOptions: [],
       };
 
-      setCategories(prev => {
+      setCategories(_prev => {
         const updatedCategories = ensureUniqueKeys([defaultCategory]);
 
         // Update localStorage from within the callback to ensure state is updated
@@ -812,7 +808,7 @@ export default function ServiceOptionsBox(
               <ServiceOptionServiceForm
                 key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
                 tradeId={props.tradeId} // Pass trade ID for service filtering
-                onTotalsChange={({ lineTotal, serviceTotal, tradeTotal }) => {
+                onTotalsChange={({ serviceTotal }) => {
                   // Keep the three purple totals in the header in sync with form
                   // We persist line/service total on the selected service option
                   if (selectedServiceOption) {

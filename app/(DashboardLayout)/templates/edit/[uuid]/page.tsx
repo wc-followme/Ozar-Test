@@ -454,6 +454,13 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                   })(),
                 }}
                 templateId={template.uuid}
+                onServiceChange={serviceId => {
+                  // Update form data when service changes
+                  setFormData(prev => ({
+                    ...prev,
+                    service: serviceId || '',
+                  }));
+                }}
               />
             </div>
           </div>

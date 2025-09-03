@@ -26,6 +26,7 @@ interface TemplateToolFormProps {
   onSubmit?: (data: TemplateToolFormData) => void;
   initialData?: Partial<TemplateToolFormData>;
   templateId?: string; // when provided, use PATCH /templates/:id
+  onServiceChange?: (serviceId: string | null) => void; // New callback for service changes
 }
 
 type Option = { value: string; label: string };
@@ -34,6 +35,7 @@ export function TemplateToolForm({
   onSubmit,
   initialData,
   templateId,
+  onServiceChange,
 }: TemplateToolFormProps) {
   // Validation schema (match estimate form style)
   const toolTemplateSchema = yup.object({
@@ -70,7 +72,6 @@ export function TemplateToolForm({
   const toolsValue = watch('tools');
   const { toast } = useToast();
   const router = useRouter();
-
   // Dynamic options state
   const [serviceOptions, setServiceOptions] = useState<Option[]>([]);
   const [toolOptions, setToolOptions] = useState<Option[]>([]);
@@ -101,6 +102,11 @@ export function TemplateToolForm({
   };
 
   const handleToolSelectionChange = (selectedIds: string[]) => {
+    // Prevent tool selection if no service is selected
+    if (!serviceValue) {
+      return;
+    }
+
     setSelectedToolIds(selectedIds);
     // Update selectedTools based on selected IDs
     const newSelectedTools = selectedIds.map(toolId => {
@@ -312,6 +318,9 @@ export function TemplateToolForm({
               setSelectedTools([]);
               setToolOptions([]);
               handleInputChange('tools', []);
+              if (onServiceChange) {
+                onServiceChange(value);
+              }
             }}
             options={serviceOptions}
             placeholder='Select Service'
@@ -327,9 +336,15 @@ export function TemplateToolForm({
             options={toolOptions}
             value={selectedToolIds}
             onChange={handleToolSelectionChange}
-            placeholder='Select Tools'
+            placeholder={serviceValue ? 'Select Tools' : 'Select Service First'}
+            disabled={!serviceValue}
           />
-          {errors.tools && (
+          {!serviceValue && (
+            <p className='text-sm text-[var(--text-secondary)]'>
+              Please select a service first to choose tools
+            </p>
+          )}
+          {errors.tools && serviceValue && (
             <p className='text-red-500 text-sm'>
               {Array.isArray(errors.tools)
                 ? 'Select at least one tool'

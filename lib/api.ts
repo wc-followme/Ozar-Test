@@ -2868,17 +2868,24 @@ class ApiService {
     limit = 10,
     company_id,
     status = 'ACTIVE',
+    service_id,
   }: {
     page?: number;
     limit?: number;
     company_id: string | number;
     status?: string;
+    service_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
     params.append('limit', String(limit));
     params.append('company_id', String(company_id));
     params.append('status', status);
+
+    // Add service_id parameter if provided
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
 
     return this.makeRequest(`/templates?${params.toString()}`, {
       method: 'GET',
@@ -2902,7 +2909,85 @@ class ApiService {
     });
   }
 
-  // Create template
+  // Warranty Management APIs
+  async createCompanyWarranty(data: {
+    company_id: string | number;
+    name: string;
+    warranties_details: Array<{
+      id: string;
+      category_name: string;
+      duration: string;
+      description: string;
+    }>;
+    status?: string;
+  }): Promise<any> {
+    return this.makeRequest('/companies/warranties', {
+      method: 'POST',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify({
+        ...data,
+        status: data.status || 'ACTIVE',
+      }),
+    });
+  }
+
+  async getCompanyWarranties(params?: {
+    page?: number;
+    limit?: number;
+    company_id?: number | string;
+    name?: string;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'ASC' | 'DESC';
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.company_id)
+      queryParams.append('company_id', params.company_id.toString());
+    if (params?.name) queryParams.append('name', params.name);
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+    const url = queryParams.toString()
+      ? `/companies/warranties?${queryParams.toString()}`
+      : '/companies/warranties';
+
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async updateCompanyWarranty(
+    uuid: string,
+    data: {
+      name?: string;
+      warranties_details?: Array<{
+        id: string;
+        category_name: string;
+        duration: string;
+        description: string;
+      }>;
+      status?: string;
+    }
+  ): Promise<any> {
+    return this.makeRequest(`/companies/warranties/${uuid}`, {
+      method: 'PATCH',
+      headers: this.getRoleHeaders(),
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCompanyWarranty(uuid: string): Promise<any> {
+    return this.makeRequest(`/companies/warranties/${uuid}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
   async createTemplate(templateData: {
     name: string;
     template_type: string;
