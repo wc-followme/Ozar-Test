@@ -389,6 +389,10 @@ export default function CreateTemplatePage({
 
       if (statusCode === 200 || statusCode === 201) {
         showSuccessToast(message || 'Template created successfully');
+
+        // Clear service options template from localStorage after successful submission
+        localStorage.removeItem('service_options_template');
+
         // Redirect to templates page
         window.location.href = '/templates';
       } else {
