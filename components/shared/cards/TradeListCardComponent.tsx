@@ -71,10 +71,10 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
       className={`p-4 bg-[var(--white-background)] rounded-[10px] border-0 cursor-pointer hover:shadow-md transition-shadow ${className}`}
       onClick={onClick}
     >
-      <div className='flex items-center'>
+      <div className='flex items-center min-w-[750px]'>
         {/* Drag Handle - Only this area is draggable */}
         <div
-          className='flex flex-col space-y-1 mr-4 cursor-grab active:cursor-grabbing'
+          className='flex flex-col space-y-1 mr-4 cursor-grab active:cursor-grabbing flex-shrink-0'
           {...dragHandleProps?.listeners}
           {...dragHandleProps?.attributes}
         >
@@ -82,24 +82,24 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
         </div>
 
         {/* Content Information - Clickable for navigation */}
-        <div className='flex-1'>
+        <div className='flex-1 min-w-[160px]'>
           <div className='flex items-center space-x-4'>
-            <div>
-              <div className='flex items-center space-x-1 mb-1'>
+            <div className='min-w-[250px]'>
+              <div className='flex items-center space-x-1 mb-1 min-w-[150px]'>
                 <h3 className='font-semibold text-[var(--text-dark)]'>
                   {isService ? service!.name : trade!.name}
                 </h3>
                 {isTrade && (
-                  <p className='text-[var(--text-secondary)]'>
+                  <p className='text-[var(--text-secondary)] flex-shrink-0'>
                     - {trade!.services} services
                   </p>
                 )}
               </div>
 
               {isTrade ? (
-                <div className='flex items-center space-x-1 text-sm text-[var(--text-dark)]'>
+                <div className='flex items-center space-x-1 text-sm text-[var(--text-dark)] min-w-[200px]'>
                   <Calendar size={20} color='var(--text-secondary)' />
-                  <span>
+                  <span className='min-w-[150px]'>
                     {trade!.start_date && trade!.end_date
                       ? `${new Date(trade!.start_date).toLocaleDateString()} - ${new Date(trade!.end_date).toLocaleDateString()}`
                       : trade!.startDate && trade!.endDate
@@ -109,7 +109,7 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
                   </span>
                 </div>
               ) : (
-                <p className='text-sm text-[var(--text-secondary)]'>
+                <p className='text-sm text-[var(--text-secondary)] min-w-[200px]'>
                   {service!.description}
                 </p>
               )}
@@ -117,22 +117,22 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
           </div>
         </div>
 
-        <div className='grid grid-cols-3'>
+        <div className='grid grid-cols-3 min-w-[400px] flex-shrink-0'>
           {isTrade ? (
             <>
-              <div className='px-4'>
+              <div className='px-4 min-w-[120px]'>
                 <Label className='field-label text-xs'>Labor Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.laborCost)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[120px]'>
                 <Label className='field-label text-xs'>Material Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.materialCost)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[120px]'>
                 <Label className='field-label text-xs'>Trade Total</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(trade!.tradeTotal)}
@@ -141,19 +141,19 @@ export const TradeListCardComponent: React.FC<TradeListCardComponentProps> = ({
             </>
           ) : (
             <>
-              <div className='px-4'>
+              <div className='px-4 min-w-[120px]'>
                 <Label className='field-label text-xs'>Labor Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.lineTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[120px]'>
                 <Label className='field-label text-xs'>Material Cost</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.serviceTotal)}
                 </p>
               </div>
-              <div className='border-l border-[var(--border-dark)] px-6'>
+              <div className='border-l border-[var(--border-dark)] px-6 min-w-[120px]'>
                 <Label className='field-label text-xs'>Trade Total</Label>
                 <p className='text-lg font-semibold text-[var(--primary)]'>
                   {formatCurrency(service!.tradeTotal)}

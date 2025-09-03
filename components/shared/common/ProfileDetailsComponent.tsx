@@ -33,7 +33,7 @@ export const ProfileDetailsComponent = ({
         </div>
 
         {/* Right Section - Video Thumbnail */}
-        <div className='min-w-[232px] h-[156px] relative rounded-2xl bg-[var(--border-dark)] flex items-center justify-center'>
+        <div className='min-w-[232px] h-[156px] relative rounded-2xl bg-[var(--border-dark)] flex items-center justify-center overflow-hidden'>
           <Video
             src='https://www.w3schools.com/html/mov_bbb.mp4'
             poster='https://www.w3schools.com/html/mov_bbb.mp4'
