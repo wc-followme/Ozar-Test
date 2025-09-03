@@ -1,4 +1,13 @@
-import { Home, SecurityUser, Setting3 } from 'iconsax-react';
+import {
+  Briefcase,
+  Calendar,
+  DollarSquare,
+  Home,
+  Message,
+  SecurityUser,
+  Setting3,
+  User,
+} from 'iconsax-react';
 import { ComponentType } from 'react';
 import { Category } from './../components/icons/Category';
 import { Company } from './../components/icons/Company';
@@ -19,6 +28,7 @@ import { CircleUsersStarIcon } from '../components/icons/CircleUsersStarIcon';
 import { HelmetIcon } from '../components/icons/HelmetIcon';
 import { PeopleGroupIcon } from '../components/icons/PeopleGroupIcon';
 import { Service } from '../components/icons/Service';
+import { TutorialIcon } from '../components/icons/TutorialIcon';
 import { UserCardIcon } from '../components/icons/UserCardIcon';
 
 // Sidebar title constants
@@ -160,40 +170,40 @@ export const sidebarItems: SidebarMenuItem[] = [
     icon: Setting3,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'time-management',
     title: 'Time Management',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/time-management',
+    icon: User,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'finance',
     title: 'Finance',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/finance',
+    icon: DollarSquare,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'organization',
     title: 'Organization',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/organization',
+    icon: Briefcase,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'calendar',
     title: 'Calendar',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/calendar',
+    icon: Calendar,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'message',
     title: 'Message',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/message',
+    icon: Message,
   },
   {
-    menu_id: 'settings',
+    menu_id: 'training',
     title: 'Training',
-    href: '/company-profile/five-box-system',
-    icon: Setting3,
+    href: '/training',
+    icon: TutorialIcon,
   },
 ];
 
