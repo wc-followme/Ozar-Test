@@ -10,10 +10,12 @@ import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
 import ServiceOptionsBox from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { STORAGE_KEYS } from '@/constants/common';
+import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
+import { getCompanyId } from '@/lib/utils';
 import { use, useEffect, useState } from 'react';
-import { TemplateData } from '../../template-types';
+import LoadingComponent from '../../../../../components/shared/common/LoadingComponent';
+import { TemplateApiData, TemplateData } from '../../template-types';
 
 interface CreateTemplatePageProps {
   params: Promise<{
@@ -40,6 +42,7 @@ export default function CreateTemplatePage({
     duration: '',
   });
   const [projectTotal, setProjectTotal] = useState(0);
+  console.log('-------------------', { selectedTemplates });
 
   // State for dynamic categories
   const [categories, setCategories] = useState<
@@ -52,6 +55,109 @@ export default function CreateTemplatePage({
     []
   );
   const [loadingTrades, setLoadingTrades] = useState(false);
+
+  // State for tool templates from API
+  const [toolTemplates, setToolTemplates] = useState<TemplateApiData[]>([]);
+  const [loadingToolTemplates, setLoadingToolTemplates] = useState(false);
+  const [loadingMoreTemplates, setLoadingMoreTemplates] = useState(false);
+  const [hasMoreTemplates, setHasMoreTemplates] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Handle service selection changes
+  const handleServiceChange = (serviceId: string | null) => {
+    setFormData(prev => ({
+      ...prev,
+      service: serviceId || '',
+    }));
+  };
+
+  // Fetch tool templates from API with pagination
+  const fetchToolTemplates = async (pageNum = 1, append = false) => {
+    if (type !== 'tools') return;
+
+    if (append) {
+      setLoadingMoreTemplates(true);
+    } else {
+      setLoadingToolTemplates(true);
+      setCurrentPage(1);
+    }
+
+    try {
+      const companyId = getCompanyId();
+      if (!companyId) {
+        console.error('Company ID not found');
+        return;
+      }
+
+      // Build API parameters
+      const apiParams: any = {
+        page: pageNum,
+        limit: 12, // Smaller limit for better UX
+        company_id: companyId,
+        status: 'ACTIVE',
+      };
+
+      // Add service filter if service is selected
+      if (formData.service) {
+        apiParams.service_id = formData.service;
+      }
+
+      const response = await apiService.fetchTemplates(apiParams);
+
+      if (response.statusCode === 200 && response.data) {
+        const { data: templatesData, totalPages } = response.data;
+        // Filter only tool templates
+        const toolTemplatesData = templatesData.filter(
+          (template: TemplateApiData) =>
+            template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
+        );
+
+        setToolTemplates(prev => {
+          if (append) {
+            // Filter out duplicates when appending
+            const existingUuids = new Set(prev.map(template => template.uuid));
+            const uniqueNewTemplates = toolTemplatesData.filter(
+              (template: TemplateApiData) => !existingUuids.has(template.uuid)
+            );
+            return [...prev, ...uniqueNewTemplates];
+          } else {
+            return toolTemplatesData;
+          }
+        });
+
+        setHasMoreTemplates(pageNum < totalPages);
+        setCurrentPage(pageNum);
+      }
+    } catch (error) {
+      console.error('Failed to fetch tool templates:', error);
+      if (!append) {
+        setToolTemplates([]);
+      }
+      setHasMoreTemplates(false);
+    } finally {
+      if (append) {
+        setLoadingMoreTemplates(false);
+      } else {
+        setLoadingToolTemplates(false);
+      }
+    }
+  };
+
+  // Load more templates for infinite scroll
+  const loadMoreTemplates = () => {
+    if (!loadingMoreTemplates && hasMoreTemplates) {
+      fetchToolTemplates(currentPage + 1, true);
+    }
+  };
+
+  // Handle scroll in the template sheet for infinite loading
+  const handleTemplateSheetScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    // Load more when user scrolls to bottom (with 50px threshold)
+    if (scrollHeight - scrollTop <= clientHeight + 50) {
+      loadMoreTemplates();
+    }
+  };
 
   // Fetch categories from API
   const fetchCategories = async () => {
@@ -141,7 +247,7 @@ export default function CreateTemplatePage({
       };
       const list: TradeItem[] = Array.isArray(payload?.data)
         ? (payload.data as TradeItem[])
-        : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
+        : Array.isArray((payload.data as { data?: TradeItem[] })?.data)
           ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
           : [];
 
@@ -161,10 +267,14 @@ export default function CreateTemplatePage({
     }
   };
 
-  // Fetch categories on mount
+  // Fetch data on mount based on type
   useEffect(() => {
-    fetchCategories();
-  }, [type]);
+    if (type === 'service-option') {
+      fetchCategories();
+    } else if (type === 'tools') {
+      fetchToolTemplates();
+    }
+  }, [type, formData.service]); // Add formData.service as dependency
 
   // Recompute Project Total from localStorage whenever the service options change
   useEffect(() => {
@@ -229,8 +339,8 @@ export default function CreateTemplatePage({
     };
   }, []);
 
-  // Mock template data based on type
-  const getMockTemplates = (): TemplateData[] => {
+  // Get templates based on type - now uses API data for tools
+  const getTemplates = (): TemplateData[] => {
     switch (type) {
       case 'estimate':
         return [
@@ -272,32 +382,17 @@ export default function CreateTemplatePage({
           },
         ];
       case 'tools':
-        return [
-          {
-            id: '1',
-            type: 'tools',
-            templateName: 'Basic Tool Set',
-            createdDate: '30/12/2024',
-            service: 'Carpentry',
-            material: 'Wood',
-          },
-          {
-            id: '2',
-            type: 'tools',
-            templateName: 'Electrical Tools',
-            createdDate: '29/12/2024',
-            service: 'Electrical',
-            material: 'Copper',
-          },
-          {
-            id: '3',
-            type: 'tools',
-            templateName: 'Plumbing Tools',
-            createdDate: '28/12/2024',
-            service: 'Plumbing',
-            material: 'PVC',
-          },
-        ];
+        // Transform API data to TemplateData format
+        return toolTemplates.map(template => ({
+          id: template.uuid,
+          type: 'tools' as const,
+          templateName: template.name,
+          createdDate: new Date(template.created_at).toLocaleDateString(
+            'en-GB'
+          ),
+          service: template.service?.name || 'Unknown Service',
+          material: 'Default Material', // Default value since API doesn't provide this
+        }));
       case 'disclaimers':
         return [
           {
@@ -377,8 +472,6 @@ export default function CreateTemplatePage({
         return 'Template';
     }
   };
-
-  // Get template type icon
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -564,12 +657,13 @@ export default function CreateTemplatePage({
                   { name: 'Tools Template' },
                 ]}
               />
-              {/* <Button
+              <Button
                 className='btn-primary'
                 onClick={() => setIsTemplateSheetOpen(true)}
+                disabled={loadingToolTemplates || !formData.service}
               >
-                Add From Templates
-              </Button> */}
+                {loadingToolTemplates ? 'Loading...' : 'Add From Templates'}
+              </Button>
             </div>
 
             {/* Template Details Section */}
@@ -583,6 +677,7 @@ export default function CreateTemplatePage({
                   service: formData.service,
                   tools: [],
                 }}
+                onServiceChange={handleServiceChange}
               />
             </div>
           </div>
@@ -647,36 +742,66 @@ export default function CreateTemplatePage({
         size='718px'
       >
         <div className='space-y-4'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto'>
-            {getMockTemplates().map(({ id, ...template }) => (
-              <TemplateListCard
-                key={id}
-                template={{ id, ...template }}
-                isSelectionMode={true}
-                isSelected={selectedTemplates.includes(id)}
-                onSelectionChange={handleTemplateSelectionChange}
-                onEdit={() => handleTemplateSelect({ id, ...template })}
-                className='hover:shadow-md transition-shadow'
-              />
-            ))}
-          </div>
+          {loadingToolTemplates && type === 'tools' ? (
+            <div className='flex justify-center items-center py-8'>
+              <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
+            </div>
+          ) : (
+            <>
+              <div
+                className='grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[80vh] overflow-y-auto'
+                onScroll={
+                  type === 'tools' ? handleTemplateSheetScroll : undefined
+                }
+              >
+                {getTemplates().map(({ id, ...template }) => (
+                  <TemplateListCard
+                    key={id}
+                    template={{ id, ...template }}
+                    isSelectionMode={true}
+                    isSelected={selectedTemplates.includes(id)}
+                    onSelectionChange={handleTemplateSelectionChange}
+                    onEdit={() => handleTemplateSelect({ id, ...template })}
+                    className='hover:shadow-md transition-shadow'
+                  />
+                ))}
 
-          <div className='flex gap-3 items-center pt-4'>
-            <Button
-              variant='outline'
-              onClick={() => setIsTemplateSheetOpen(false)}
-              className='btn-secondary'
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddSelectedTemplates}
-              disabled={selectedTemplates.length === 0}
-              className='btn-primary'
-            >
-              Add Selected ({selectedTemplates.length})
-            </Button>
-          </div>
+                {/* Loading indicators for infinite scroll */}
+                {type === 'tools' && loadingMoreTemplates && (
+                  <LoadingComponent variant='inline' size='md' text='' />
+                )}
+
+                {type === 'tools' &&
+                  !loadingToolTemplates &&
+                  toolTemplates.length === 0 && (
+                    <div className='col-span-full text-center py-4'>
+                      <p className='text-sm text-[var(--text-secondary)]'>
+                        {formData.service
+                          ? `No tool templates found for the selected service`
+                          : 'No tool templates found'}
+                      </p>
+                    </div>
+                  )}
+              </div>
+
+              <div className='flex gap-3 items-center pt-4'>
+                <Button
+                  variant='outline'
+                  onClick={() => setIsTemplateSheetOpen(false)}
+                  className='btn-secondary'
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddSelectedTemplates}
+                  disabled={selectedTemplates.length === 0}
+                  className='btn-primary'
+                >
+                  Add Selected ({selectedTemplates.length})
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </SideSheet>
     </div>

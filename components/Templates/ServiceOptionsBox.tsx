@@ -226,10 +226,6 @@ export default function ServiceOptionsBox(
   };
 
   // Legacy function for backward compatibility - now just calls the centralized function
-  const saveCurrentState = () => {
-    // This function is kept for backward compatibility but now does nothing
-    // All localStorage updates go through updateLocalStorage() directly
-  };
 
   // Function to update localStorage immediately when materials, finishes, or tools change
   // This is now handled by the main updateLocalStorage function below
@@ -251,44 +247,36 @@ export default function ServiceOptionsBox(
               uniqueKey: generateUniqueKey('category', '0', 0),
               name: 'General Services',
               total: 0.0,
-              serviceOptions: parsedGeneralData.map(
-                (service: any, index: number) => ({
-                  id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                  uuid: service.service_id,
-                  name: service.description,
-                  description: service.description,
-                  price: service.rate,
-                  duration: '',
-                  category: 'General Services',
-                  materials: (service.materials || []).map(
-                    (material: any, index: number) => ({
-                      ...material,
-                      id:
-                        material.id ||
-                        material.uuid ||
-                        `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                  finishes: (service.finishes || []).map(
-                    (finish: any, index: number) => ({
-                      ...finish,
-                      id:
-                        finish.id ||
-                        finish.uuid ||
-                        `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                  tools: (service.tools || []).map(
-                    (tool: any, index: number) => ({
-                      ...tool,
-                      id:
-                        tool.id ||
-                        tool.uuid ||
-                        `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                })
-              ),
+              serviceOptions: parsedGeneralData.map((service: any) => ({
+                id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                uuid: service.service_id,
+                name: service.description,
+                description: service.description,
+                price: service.rate,
+                duration: '',
+                category: 'General Services',
+                materials: (service.materials || []).map((material: any) => ({
+                  ...material,
+                  id:
+                    material.id ||
+                    material.uuid ||
+                    `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                })),
+                finishes: (service.finishes || []).map((finish: any) => ({
+                  ...finish,
+                  id:
+                    finish.id ||
+                    finish.uuid ||
+                    `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                })),
+                tools: (service.tools || []).map((tool: any) => ({
+                  ...tool,
+                  id:
+                    tool.id ||
+                    tool.uuid ||
+                    `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                })),
+              })),
               isExpanded: true,
             },
           ];
@@ -401,7 +389,7 @@ export default function ServiceOptionsBox(
         serviceOptions: [],
       };
 
-      setCategories(prev => {
+      setCategories(_prev => {
         const updatedCategories = ensureUniqueKeys([defaultCategory]);
 
         // Update localStorage from within the callback to ensure state is updated
@@ -829,7 +817,7 @@ export default function ServiceOptionsBox(
               <ServiceOptionServiceForm
                 key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
                 tradeId={props.tradeId} // Pass trade ID for service filtering
-                onTotalsChange={({ lineTotal, serviceTotal, tradeTotal }) => {
+                onTotalsChange={({ serviceTotal }) => {
                   // Keep the three purple totals in the header in sync with form
                   // We persist line/service total on the selected service option
                   if (selectedServiceOption) {

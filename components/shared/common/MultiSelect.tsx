@@ -34,6 +34,7 @@ interface MultiSelectProps<OptionType = MultiSelectOption> {
   getOptionImage?: (option: OptionType) => string | undefined;
   maxHeight?: number;
   maxSelectedItems?: number;
+  disabled?: boolean; // Add disabled prop
 }
 
 const MultiSelect = <OptionType = MultiSelectOption,>({
@@ -47,6 +48,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   getOptionLabel = (option: any) => option.label,
   getOptionValue = (option: any) => option.value,
   getOptionImage = (option: any) => option.image,
+  disabled = false, // Add disabled prop with default
 }: MultiSelectProps<OptionType>) => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -66,6 +68,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
 
   // Handle popover open/close
   const handlePopoverChange = (open: boolean) => {
+    if (disabled) return; // Prevent opening when disabled
     setPopoverOpen(open);
     if (!open) {
       setSearchTerm(''); // Reset search when popover closes
@@ -98,8 +101,10 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
             type='button'
             className={cn(
               'min-h-12 w-full flex items-center justify-between border-2 bg-[var(--white-background)] hover:bg-[var(--white-background)] rounded-[10px] !placeholder-[var(--text-placeholder)] px-3 py-2 h-auto shadow-none focus:border-[var(--secondary)] focus:ring-[var(--secondary)]',
-              error ? 'border-[var(--warning)]' : 'border-[var(--border-dark)]'
+              error ? 'border-[var(--warning)]' : 'border-[var(--border-dark)]',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
+            disabled={disabled}
           >
             <div className='flex flex-wrap gap-2 text-left'>
               {(value || []).length === 0 && (

@@ -2868,17 +2868,24 @@ class ApiService {
     limit = 10,
     company_id,
     status = 'ACTIVE',
+    service_id,
   }: {
     page?: number;
     limit?: number;
     company_id: string | number;
     status?: string;
+    service_id?: string | number;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
     params.append('limit', String(limit));
     params.append('company_id', String(company_id));
     params.append('status', status);
+
+    // Add service_id parameter if provided
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
 
     return this.makeRequest(`/templates?${params.toString()}`, {
       method: 'GET',
