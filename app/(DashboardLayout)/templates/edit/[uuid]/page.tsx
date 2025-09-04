@@ -198,9 +198,45 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                 description: service.description || service.service_name,
                 qty: service.qty || 1,
                 rate: service.rate || service.price || 0,
-                materials: service.materials || [],
-                finishes: service.finishes || [],
-                tools: service.tools || [],
+                materials: (service.materials || []).map(
+                  (material: any, index: number) => ({
+                    ...material,
+                    id:
+                      material.id ||
+                      material.uuid ||
+                      `material-${service.service_id}-${index}-${Date.now()}`,
+                    uuid:
+                      material.uuid ||
+                      material.id ||
+                      `material-${service.service_id}-${index}-${Date.now()}`,
+                  })
+                ),
+                finishes: (service.finishes || []).map(
+                  (finish: any, index: number) => ({
+                    ...finish,
+                    id:
+                      finish.id ||
+                      finish.uuid ||
+                      `finish-${service.service_id}-${index}-${Date.now()}`,
+                    uuid:
+                      finish.uuid ||
+                      finish.id ||
+                      `finish-${service.service_id}-${index}-${Date.now()}`,
+                  })
+                ),
+                tools: (service.tools || []).map(
+                  (tool: any, index: number) => ({
+                    ...tool,
+                    id:
+                      tool.id ||
+                      tool.uuid ||
+                      `tool-${service.service_id}-${index}-${Date.now()}`,
+                    uuid:
+                      tool.uuid ||
+                      tool.id ||
+                      `tool-${service.service_id}-${index}-${Date.now()}`,
+                  })
+                ),
               })
             );
 

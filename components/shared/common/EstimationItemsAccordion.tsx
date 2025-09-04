@@ -67,18 +67,19 @@ export default function EstimationItemsAccordion({
     const itemId = item.id || `item_${index || 0}`;
 
     if (baseId) {
-      return `${svcId || 'service'}_${listTitle}_${baseId}_${itemId}`;
+      // Include index to ensure uniqueness even with duplicate IDs
+      return `${svcId || 'service'}_${listTitle}_${baseId}_${itemId}_${index || 0}`;
     }
 
     // Fallback to JSON-based hash with item id for uniqueness
-    const payload = `${svcId || 'service'}_${listTitle}_${itemId}_${JSON.stringify(item)}`;
+    const payload = `${svcId || 'service'}_${listTitle}_${itemId}_${index || 0}_${JSON.stringify(item)}`;
     let hash = 0;
     for (let i = 0; i < payload.length; i++) {
       // simple deterministic hash
       hash = (hash << 5) - hash + payload.charCodeAt(i);
       hash |= 0;
     }
-    return `${svcId || 'service'}_${listTitle}_${itemId}_${Math.abs(hash)}`;
+    return `${svcId || 'service'}_${listTitle}_${itemId}_${index || 0}_${Math.abs(hash)}`;
   };
 
   const handleItemUpdate = (itemId: string, updatedItem: EstimationItem) => {
