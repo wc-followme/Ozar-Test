@@ -51,18 +51,19 @@ export default function OrganizationPage() {
             </TabsList>
           </DynamicScrollArea>
         </div>
+        <div className='bg-[var(--card-background)] rounded-2xl p-6 mt-6'>
+          <TabsContent value='promotion' className=''>
+            <PromotionTab />
+          </TabsContent>
 
-        <TabsContent value='promotion' className='pt-4 sm:pt-8'>
-          <PromotionTab />
-        </TabsContent>
+          <TabsContent value='document' className=''>
+            <DocumentTab />
+          </TabsContent>
 
-        <TabsContent value='document' className='pt-4 sm:pt-8'>
-          <DocumentTab />
-        </TabsContent>
-
-        <TabsContent value='disciplinary' className='pt-4 sm:pt-8'>
-          <DisciplinaryTab />
-        </TabsContent>
+          <TabsContent value='disciplinary' className=''>
+            <DisciplinaryTab />
+          </TabsContent>
+        </div>
       </Tabs>
     </div>
   );

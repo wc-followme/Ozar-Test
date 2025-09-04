@@ -1,10 +1,19 @@
+import { PortfolioBox } from '@/components/shared/common/PortfolioBox';
+import SideSheet from '@/components/shared/common/SideSheet';
+import { DocumentUploadForm } from '@/components/shared/forms/DocumentUploadForm';
 import { Button } from '@/components/ui/button';
-import { Download, Eye, FileText } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
 export const DocumentTab = () => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isUploadSheetOpen, setIsUploadSheetOpen] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+
   const documents = [
     {
-      id: 1,
+      id: '1',
       title: 'Employee Handbook',
       type: 'PDF',
       size: '2.4 MB',
@@ -12,7 +21,7 @@ export const DocumentTab = () => {
       status: 'Active',
     },
     {
-      id: 2,
+      id: '2',
       title: 'Safety Guidelines',
       type: 'DOCX',
       size: '1.8 MB',
@@ -20,7 +29,7 @@ export const DocumentTab = () => {
       status: 'Active',
     },
     {
-      id: 3,
+      id: '3',
       title: 'Training Manual',
       type: 'PDF',
       size: '3.2 MB',
@@ -28,7 +37,7 @@ export const DocumentTab = () => {
       status: 'Active',
     },
     {
-      id: 4,
+      id: '4',
       title: 'Company Policies',
       type: 'PDF',
       size: '1.5 MB',
@@ -36,7 +45,7 @@ export const DocumentTab = () => {
       status: 'Active',
     },
     {
-      id: 5,
+      id: '5',
       title: 'Work Procedures',
       type: 'DOCX',
       size: '2.1 MB',
@@ -44,7 +53,7 @@ export const DocumentTab = () => {
       status: 'Active',
     },
     {
-      id: 6,
+      id: '6',
       title: 'Quality Standards',
       type: 'PDF',
       size: '2.8 MB',
@@ -53,61 +62,94 @@ export const DocumentTab = () => {
     },
   ];
 
+  const handleView = () => {
+    // Handle view action
+  };
+
+  const handleEdit = (id: string) => {
+    // Handle edit action
+  };
+
+  const handleDelete = (id: string) => {
+    // Handle delete action
+  };
+
+  const handleUploadDocument = async (data: {
+    name: string;
+    file: File | null;
+  }) => {
+    if (!data.file) return;
+
+    setIsUploading(true);
+    try {
+      // TODO: Implement file upload logic here
+      console.log('Uploading document:', data.name, data.file);
+
+      // Simulate upload delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Close sheet after successful upload
+      setIsUploadSheetOpen(false);
+      // TODO: Refresh documents list or add new document to the list
+    } catch (error) {
+      console.error('Upload failed:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCancelUpload = () => {
+    setIsUploadSheetOpen(false);
+  };
+
   return (
     <div className='space-y-6'>
-      <div className='flex justify-between items-center'>
-        <h2 className='text-lg font-semibold text-[var(--text-dark)]'>
-          Documents
-        </h2>
-        <Button className='bg-blue-600 hover:bg-blue-700 text-white'>
+      <div className='flex md:flex-row flex-col items-center gap-4'>
+        <div className='relative w-full sm:max-w-[360px]'>
+          <Search className='absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--text-secondary)]' />
+          <Input
+            placeholder='Search here...'
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className='pl-10 pr-4 w-full h-[42px] border-2 border-[var(--border-dark)] rounded-[30px]'
+          />
+        </div>
+        <Button
+          className='btn-primary ml-auto'
+          onClick={() => setIsUploadSheetOpen(true)}
+        >
           Upload Document
         </Button>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+      <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
         {documents.map(doc => (
-          <div
+          <PortfolioBox
             key={doc.id}
-            className='bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition-shadow'
-          >
-            <div className='flex items-start justify-between mb-3'>
-              <div className='flex items-center gap-3'>
-                <div className='p-2 bg-blue-100 rounded-lg'>
-                  <FileText className='w-6 h-6 text-blue-600' />
-                </div>
-                <div>
-                  <h3 className='font-medium text-[var(--text-dark)] text-sm'>
-                    {doc.title}
-                  </h3>
-                  <p className='text-xs text-gray-500'>
-                    {doc.type} • {doc.size}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className='space-y-2 mb-4'>
-              <p className='text-xs text-gray-500'>
-                Last modified: {doc.lastModified}
-              </p>
-              <span className='inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full'>
-                {doc.status}
-              </span>
-            </div>
-
-            <div className='flex gap-2'>
-              <Button variant='outline' size='sm' className='flex-1'>
-                <Eye className='w-4 h-4 mr-2' />
-                View
-              </Button>
-              <Button variant='outline' size='sm' className='flex-1'>
-                <Download className='w-4 h-4 mr-2' />
-                Download
-              </Button>
-            </div>
-          </div>
+            id={doc.id}
+            title={doc.title}
+            onView={handleView}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            showEditMenu={true}
+            showDeleteOnly={true}
+          />
         ))}
       </div>
+
+      {/* Document Upload Side Sheet */}
+      <SideSheet
+        open={isUploadSheetOpen}
+        onOpenChange={setIsUploadSheetOpen}
+        title='Add Documents'
+        size='600px'
+      >
+        <DocumentUploadForm
+          onSubmit={handleUploadDocument}
+          onCancel={handleCancelUpload}
+          isSubmitting={isUploading}
+        />
+      </SideSheet>
     </div>
   );
 };
