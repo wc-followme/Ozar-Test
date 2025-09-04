@@ -552,28 +552,18 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
       const templateData = {
         name: formData.templateName,
         category_id: formData.category,
+        template_type: 'OPTION_BID_TEMPLATES',
+        service_id: parsedServiceOptions[0]?.service_id || formData.category, // Use first service's service_id
         trade_id: formData.trade,
-        service_options_template: {
-          trade_id: formData.trade,
-          category_id: formData.category,
-          service_options: parsedServiceOptions.map((service: any) => ({
-            service_name: service.description || service.service_id,
-            description: service.description || '',
-            price: service.rate || 0,
-            duration: 'Custom',
-            materials: service.materials || [],
-            finishes: service.finishes || [],
-            tools: service.tools || [],
-            qty: service.qty || 1,
-          })),
-        },
+        company_id: companyUuid,
+        service_options_template: parsedServiceOptions, // Use localStorage data directly
       };
 
       // Call API to update template
       const response = await apiService.makeGenericRequest(
         `/templates/${uuid}`,
         {
-          method: 'PUT',
+          method: 'PATCH',
           body: JSON.stringify(templateData),
         }
       );
