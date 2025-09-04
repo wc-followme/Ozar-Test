@@ -2869,12 +2869,14 @@ class ApiService {
     company_id,
     status = 'ACTIVE',
     service_id,
+    template_type,
   }: {
     page?: number;
     limit?: number;
     company_id: string | number;
     status?: string;
     service_id?: string | number;
+    template_type?: string;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
@@ -2885,6 +2887,11 @@ class ApiService {
     // Add service_id parameter if provided
     if (service_id) {
       params.append('service_id', String(service_id));
+    }
+
+    // Add template_type parameter if provided
+    if (template_type) {
+      params.append('template_type', String(template_type));
     }
 
     return this.makeRequest(`/templates?${params.toString()}`, {
