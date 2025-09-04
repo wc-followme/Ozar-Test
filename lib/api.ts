@@ -72,6 +72,63 @@ interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+// Signup interfaces
+interface CreateUserDto {
+  email: string;
+  password: string;
+  name?: string | undefined;
+  phone_number?: string | undefined;
+  company_id?: string | undefined;
+  role_id?: number;
+  device_token?: string | undefined;
+  app_type?: string | undefined;
+}
+
+interface SignupResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+    user: {
+      id: number;
+      uuid: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone_number: string | null;
+      profile_image: string | null;
+      status: string;
+      created_at: string;
+      updated_at: string;
+      created_by: number | null;
+      updated_by: number | null;
+      role: {
+        id: number;
+        uuid: string;
+        name: string;
+      };
+      company: {
+        uuid: string;
+        name: string;
+      };
+    };
+  };
+}
+
+// Forgot password interfaces
+interface ForgotPasswordDto {
+  email: string;
+}
+
+interface ForgotPasswordResponse {
+  statusCode: number;
+  message: string;
+  data: null;
+}
+
 // Role management interfaces
 interface CreateRoleRequest {
   name: string;
@@ -908,6 +965,24 @@ class ApiService {
     return this.makeRequest<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(loginData),
+    });
+  }
+
+  async signup(userData: CreateUserDto): Promise<SignupResponse> {
+    return this.makeRequest<SignupResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const forgotPasswordData: ForgotPasswordDto = {
+      email,
+    };
+
+    return this.makeRequest<ForgotPasswordResponse>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(forgotPasswordData),
     });
   }
 

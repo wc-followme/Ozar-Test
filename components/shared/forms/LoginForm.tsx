@@ -4,6 +4,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { LOGIN_MESSAGES } from '@/constants/messages';
 import { Eye, EyeSlash, Lock, Sms } from 'iconsax-react';
 import { AlertCircle } from 'lucide-react';
 import React, { useState } from 'react';
@@ -41,21 +42,21 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
   // Frontend validation
   const validateEmail = (email: string): string | undefined => {
     if (!email) {
-      return 'Email is required';
+      return LOGIN_MESSAGES.VALIDATION.EMAIL_REQUIRED;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return 'Please enter a valid email address';
+      return LOGIN_MESSAGES.VALIDATION.EMAIL_INVALID;
     }
     return undefined;
   };
 
   const validatePassword = (password: string): string | undefined => {
     if (!password) {
-      return 'Password is required';
+      return LOGIN_MESSAGES.VALIDATION.PASSWORD_REQUIRED;
     }
     if (password.length < 6) {
-      return 'Password must be at least 6 characters long';
+      return LOGIN_MESSAGES.VALIDATION.PASSWORD_MIN_LENGTH;
     }
     return undefined;
   };
@@ -156,7 +157,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
             htmlFor='email'
             className='text-[14px] font-[600] text-[#2D2D2D]'
           >
-            Email *
+            {LOGIN_MESSAGES.LABELS.EMAIL}
           </Label>
           <div className='relative flex items-center'>
             <Sms
@@ -168,7 +169,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
             <Input
               id='email'
               type='email'
-              placeholder='Enter your email'
+              placeholder={LOGIN_MESSAGES.PLACEHOLDERS.EMAIL}
               value={email}
               onChange={handleEmailChange}
               onBlur={() => handleBlur('email')}
@@ -193,7 +194,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
             htmlFor='password'
             className='text-[14px] font-[600] text-[#2D2D2D]'
           >
-            Password *
+            {LOGIN_MESSAGES.LABELS.PASSWORD}
           </Label>
           <div className='relative flex items-center'>
             <Lock
@@ -205,7 +206,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
             <Input
               id='password'
               type={showPassword ? 'text' : 'password'}
-              placeholder='Enter your password'
+              placeholder={LOGIN_MESSAGES.PLACEHOLDERS.PASSWORD}
               value={password}
               onChange={handlePasswordChange}
               onBlur={() => handleBlur('password')}
@@ -240,11 +241,10 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
       {/* Forgot Password Link */}
       <div className='text-right'>
         <a
-          href='#'
+          href='/auth/forgot-password'
           className='text-sm md:text-base text-[#2d2d2d] hover:text-green-600 transition-colors'
-          onClick={e => e.preventDefault()}
         >
-          Forgot Password?
+          {LOGIN_MESSAGES.FORM.FORGOT_PASSWORD_LINK}
         </a>
       </div>
 
@@ -257,10 +257,10 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
         {isLoading ? (
           <div className='flex items-center justify-center'>
             <div className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2'></div>
-            Logging in...
+            {LOGIN_MESSAGES.FORM.BUTTON_LOADING}
           </div>
         ) : (
-          'Login'
+          LOGIN_MESSAGES.FORM.BUTTON
         )}
       </Button>
     </form>

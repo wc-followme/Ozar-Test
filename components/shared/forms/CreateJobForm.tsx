@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { JOB_TYPE, JobType, ROLE_IDS } from '@/constants/common';
 import { useDebounce } from '@/hooks/use-debounce';
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { cn } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -50,6 +51,11 @@ export function CreateJobForm({
   generatedLink,
   boxDefaults,
 }: CreateJobFormProps) {
+  const { user } = useAuth();
+
+  // Common variable to check if user is a homeowner
+  const isUserHomeowner = user?.role?.id === ROLE_IDS.HOMEOWNER;
+
   const {
     control,
     handleSubmit,
@@ -85,6 +91,7 @@ export function CreateJobForm({
   const debouncedName = useDebounce(clientNameValue, 400);
   // Track if a user was selected from dropdown
   const [userSelected, setUserSelected] = useState(false);
+  const [isPhoneNumberDisabled, setIsPhoneNumberDisabled] = useState(false);
   const suppressNextSearch = useRef(false);
   const { showSuccessToast } = useToast();
 
@@ -113,10 +120,40 @@ export function CreateJobForm({
       if (defaultSteps.length > 0) {
         setValue('job_boxes_step', defaultSteps);
       }
+    } else {
+      setValue(
+        'job_boxes_step',
+        FIVE_BOX_DATA.map(box => box.step)
+      );
     }
   }, [boxDefaults, setValue]);
 
+  // Auto-populate form with user data if they are a homeowner
   useEffect(() => {
+    if (user?.role?.id === ROLE_IDS.HOMEOWNER) {
+      // Populate form with current user's data
+      const { name, email, phone_number, id } = user;
+      setValue('client_name', name || '');
+      setValue('client_email', email || '');
+      setValue('client_phone_number', phone_number || '');
+      setValue('client_id', String(id));
+
+      // Mark as user selected to disable email and phone editing
+      setUserSelected(true);
+      if (phone_number) {
+        setIsPhoneNumberDisabled(true);
+      }
+    }
+  }, [user, setValue]);
+
+  useEffect(() => {
+    // Don't call API if user is a homeowner
+    if (isUserHomeowner) {
+      setUserOptions([]);
+      setShowDropdown(false);
+      return;
+    }
+
     if (suppressNextSearch.current) {
       suppressNextSearch.current = false;
       return;
@@ -156,7 +193,7 @@ export function CreateJobForm({
         setUserLoading(false);
       }
     })();
-  }, [debouncedName]);
+  }, [debouncedName, user?.role?.id]);
 
   // Handle selecting a user from dropdown
   const handleSelectUser = (user: UserOption) => {
@@ -167,6 +204,7 @@ export function CreateJobForm({
     if (phone_number) setValue('client_phone_number', phone_number);
     if (id) setValue('client_id', String(id));
     setShowDropdown(false);
+    if (phone_number) setIsPhoneNumberDisabled(true);
     setUserSelected(true);
     suppressNextSearch.current = true;
     clearErrors(['client_name', 'client_email', 'client_phone_number']);
@@ -210,6 +248,7 @@ export function CreateJobForm({
                 control={control}
                 render={({ field }) => (
                   <Input
+                    disabled={isUserHomeowner}
                     {...field}
                     id='client_name'
                     placeholder={JOB_MESSAGES.ENTER_JOB_NAME}
@@ -237,8 +276,8 @@ export function CreateJobForm({
                   {errors.client_name.message}
                 </span>
               )}
-              {/* Dropdown */}
-              {userOptions.length > 0 && showDropdown && (
+              {/* Dropdown - Only show for non-homeowners */}
+              {!isUserHomeowner && userOptions.length > 0 && showDropdown && (
                 <div className='absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded shadow mt-1 max-h-56 overflow-auto'>
                   {userLoading && (
                     <div className='p-2 text-gray-500 text-sm'>Loading...</div>
@@ -318,7 +357,7 @@ export function CreateJobForm({
                         ? '!border-[var(--warning)]'
                         : 'border-[var(--border-dark)]'
                     )}
-                    disabled={userSelected}
+                    disabled={isPhoneNumberDisabled && userSelected}
                     onKeyDown={e => {
                       // Only allow numbers, backspace, delete, tab, escape, enter
                       const allowedKeys = [
