@@ -10,11 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
-import {
-  calculateLineTotal,
-  calculateServiceTotal,
-  calculateServiceTotalMaterialCost,
-} from '@/lib/estimation-calculations';
+// Removed unused imports - now using centralized calculation function
+import { calculateServiceOptionTotals } from '@/components/Templates/ServiceOptionsBox';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EstimationItem, Service, Tool } from './estimation-types';
 
@@ -112,6 +109,13 @@ export default function ServiceOptionServiceForm({
 
       updateTimeoutRef.current = setTimeout(() => {
         if (onServiceUpdate) {
+          console.log(
+            'debouncedUpdate calling onServiceUpdate with:',
+            updatedService
+          );
+          console.log('Materials in updatedService:', updatedService.materials);
+          console.log('Finishes in updatedService:', updatedService.finishes);
+          console.log('Tools in updatedService:', updatedService.tools);
           onServiceUpdate(updatedService);
           onLocalStorageUpdate?.();
         }
@@ -166,30 +170,26 @@ export default function ServiceOptionServiceForm({
 
   // No default seed; start with empty lists until user adds items
 
-  // Calculate current service values using current local state
+  // Calculate current service values using centralized calculation function
   const calculateCurrentServiceValues = useCallback(() => {
-    // Ensure rate and qty are finite numbers with additional safety checks
-    const safeRate =
-      Number.isFinite(service.rate) && service.rate >= 0 ? service.rate : 0;
-    const safeQty =
-      Number.isFinite(service.qty) && service.qty >= 0 ? service.qty : 0;
+    // Use the centralized calculation function
+    const totals = calculateServiceOptionTotals({
+      rate: service.rate,
+      qty: service.qty,
+      materials: materials,
+      finishes: finishes,
+    });
 
-    // Additional safety check to prevent Infinity
-    const clampedRate = Math.min(safeRate, 999999999); // Cap at reasonable maximum
-    const clampedQty = Math.min(safeQty, 999999999); // Cap at reasonable maximum
-
-    const lineTotal = calculateLineTotal(clampedRate, clampedQty);
-    const serviceTotal = calculateServiceTotal(clampedRate, clampedQty);
-    const totalMaterialCost = calculateServiceTotalMaterialCost(
-      materials,
-      finishes
-    );
-    const tradeTotal = serviceTotal + totalMaterialCost;
-
-    // Final safety check to ensure no Infinity values
-    const safeLineTotal = Number.isFinite(lineTotal) ? lineTotal : 0;
-    const safeServiceTotal = Number.isFinite(serviceTotal) ? serviceTotal : 0;
-    const safeTradeTotal = Number.isFinite(tradeTotal) ? tradeTotal : 0;
+    // Safety checks to prevent invalid calculations
+    const safeLineTotal = Number.isFinite(totals.lineTotal)
+      ? totals.lineTotal
+      : 0;
+    const safeServiceTotal = Number.isFinite(totals.serviceTotal)
+      ? totals.serviceTotal
+      : 0;
+    const safeTradeTotal = Number.isFinite(totals.tradeTotal)
+      ? totals.tradeTotal
+      : 0;
 
     return {
       lineTotal: safeLineTotal,
@@ -395,9 +395,7 @@ export default function ServiceOptionServiceForm({
                     const updatedService: Service = {
                       ...service,
                       name: newName,
-                      materials: [],
-                      finishes: [],
-                      tools: [],
+                      // Don't clear materials, finishes, and tools - preserve them
                       ...(serviceUuid ? { uuid: serviceUuid } : {}),
                     };
 

@@ -3,6 +3,11 @@
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import ServiceOptionServiceForm from '@/components/shared/forms/ServiceOptionServiceForm';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+  formatCurrency,
+} from '@/lib/estimation-calculations';
 import { extractApiErrorMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import ServiceOptionsHeader from './ServiceOptionsHeader';
@@ -35,6 +40,96 @@ const generateUniqueKey = (
   const timestamp = Date.now();
   const random = Math.random().toString(36).substring(2, 15);
   return `${prefix}_${timestamp}_${random}`;
+};
+
+// 🎯 CENTRALIZED CALCULATION FUNCTION
+// This function handles ALL calculations for service options and should be used everywhere
+export const calculateServiceOptionTotals = (serviceOption: {
+  rate?: number;
+  qty?: number;
+  materials?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+  }>;
+  finishes?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+  }>;
+}) => {
+  const rate = serviceOption.rate || 0;
+  const qty = serviceOption.qty || 1;
+  const materials = (serviceOption.materials || []).map(m => ({
+    rate: m.rate || 0,
+    qty: m.qty || 0,
+    is_hidden: m.is_hidden || false,
+    markup: m.markup || 0,
+    markup_type:
+      (m.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+  }));
+  const finishes = (serviceOption.finishes || []).map(f => ({
+    rate: f.rate || 0,
+    qty: f.qty || 0,
+    is_hidden: f.is_hidden || false,
+    markup: f.markup || 0,
+    markup_type:
+      (f.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+  }));
+
+  // Calculate service total (rate * qty)
+  const serviceTotal = calculateServiceTotal(rate, qty);
+
+  // Calculate material cost (materials + finishes)
+  const materialCost = calculateServiceTotalMaterialCost(materials, finishes);
+
+  // Calculate trade total (service total + material cost)
+  const tradeTotal = serviceTotal + materialCost;
+
+  return {
+    lineTotal: serviceTotal,
+    serviceTotal: serviceTotal,
+    tradeTotal: tradeTotal,
+    materialCost: materialCost,
+    // Formatted versions for display
+    formattedLineTotal: formatCurrency(serviceTotal),
+    formattedServiceTotal: formatCurrency(serviceTotal),
+    formattedTradeTotal: formatCurrency(tradeTotal),
+    formattedMaterialCost: formatCurrency(materialCost),
+  };
+};
+
+// 🎯 SIMPLIFIED CALCULATION FUNCTION FOR PROJECT TOTAL
+// This function is used when the rate field already contains the final trade total
+export const getServiceOptionTradeTotal = (serviceOption: {
+  rate?: number;
+  qty?: number;
+  materials?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+  finishes?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+}) => {
+  // For localStorage data, we need to recalculate because the stored lineTotal values might be wrong
+  // Always use the centralized calculation function to ensure accuracy
+  const totals = calculateServiceOptionTotals(serviceOption);
+  console.log('Calculated trade total:', totals.tradeTotal);
+  return totals.tradeTotal;
 };
 
 export default function ServiceOptionsBox(
@@ -123,7 +218,7 @@ export default function ServiceOptionsBox(
   const updateCategoryCalculations = (
     category: ServiceCategory
   ): ServiceCategory => {
-    const updatedServiceOptions = category.serviceOptions.map(
+    const updatedServiceOptions = (category.serviceOptions || []).map(
       updateServiceOptionCalculations
     );
     const categoryTotal = updatedServiceOptions.reduce(
@@ -166,7 +261,7 @@ export default function ServiceOptionsBox(
       console.log('Categories length:', dataSource.length);
 
       // Transform the data to match the estimation template service format
-      const serviceOptionsData = dataSource.flatMap(category => {
+      const serviceOptionsData = (dataSource || []).flatMap(category => {
         const mapItemsWithUuidAsId = (items: unknown): unknown[] => {
           if (!Array.isArray(items)) return [];
           return items.map((item: any) => ({
@@ -181,7 +276,7 @@ export default function ServiceOptionsBox(
           category.serviceOptions.length,
           'services'
         );
-        return category.serviceOptions.map(serviceOption => {
+        return (category.serviceOptions || []).map(serviceOption => {
           console.log('Processing service option:', {
             id: serviceOption.id,
             name: serviceOption.name,
@@ -189,15 +284,31 @@ export default function ServiceOptionsBox(
             finishes: serviceOption.finishes?.length || 0,
             tools: serviceOption.tools?.length || 0,
           });
-          return {
+          // Debug: Check what materials, finishes, and tools contain
+          console.log('serviceOption.materials:', serviceOption.materials);
+          console.log('serviceOption.finishes:', serviceOption.finishes);
+          console.log('serviceOption.tools:', serviceOption.tools);
+
+          const serviceData = {
             service_id: serviceOption.uuid || serviceOption.id,
             description: serviceOption.description || serviceOption.name,
             qty: serviceOption.qty ?? 1,
-            rate: serviceOption.price,
+            rate: serviceOption.rate, // Use the user's input rate, not the calculated price
             materials: mapItemsWithUuidAsId(serviceOption.materials),
             finishes: mapItemsWithUuidAsId(serviceOption.finishes),
             tools: mapItemsWithUuidAsId(serviceOption.tools),
           };
+          console.log('Storing service data:', {
+            description: serviceData.description,
+            qty: serviceData.qty,
+            rate: serviceData.rate,
+            price: serviceOption.price,
+            materials: serviceData.materials?.length || 0,
+            finishes: serviceData.finishes?.length || 0,
+          });
+          console.log('Materials being stored:', serviceData.materials);
+          console.log('Finishes being stored:', serviceData.finishes);
+          return serviceData;
         });
       });
 
@@ -212,6 +323,9 @@ export default function ServiceOptionsBox(
         'service_options_template',
         JSON.stringify(serviceOptionsData)
       );
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('customStorageChange'));
 
       console.log(
         'LocalStorage updated successfully with key: service_options_template'
@@ -247,46 +361,59 @@ export default function ServiceOptionsBox(
               uniqueKey: generateUniqueKey('category', '0', 0),
               name: 'General Services',
               total: 0.0,
-              serviceOptions: parsedGeneralData.map(
-                (service: any, index: number) => ({
-                  id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                  uuid: service.service_id,
-                  name: service.description,
-                  description: service.description,
-                  price: service.rate,
-                  qty: service.qty ?? 1,
-                  duration: '',
-                  category: 'General Services',
-                  materials: (service.materials || []).map(
-                    (material: any, index: number) => ({
-                      ...material,
-                      id:
-                        material.id ||
-                        material.uuid ||
-                        `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                  finishes: (service.finishes || []).map(
-                    (finish: any, index: number) => ({
-                      ...finish,
-                      id:
-                        finish.id ||
-                        finish.uuid ||
-                        `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                  tools: (service.tools || []).map(
-                    (tool: any, index: number) => ({
-                      ...tool,
-                      id:
-                        tool.id ||
-                        tool.uuid ||
-                        `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
-                    })
-                  ),
-                })
-              ),
               isExpanded: true,
+              serviceOptions: parsedGeneralData
+                .filter(service => service && typeof service === 'object')
+                .map((service: any, index: number) => {
+                  // Calculate the proper trade total for the price field
+                  const totals = calculateServiceOptionTotals({
+                    rate: service.rate,
+                    qty: service.qty ?? 1,
+                    materials: service.materials || [],
+                    finishes: service.finishes || [],
+                  });
+
+                  return {
+                    id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                    uuid: service.service_id,
+                    name: service.description,
+                    description: service.description,
+                    rate: service.rate, // User input rate
+                    price: totals.tradeTotal, // Calculated trade total for sidebar
+                    qty: service.qty ?? 1,
+                    duration: '',
+                    category: 'General Services',
+                    materials: Array.isArray(service.materials)
+                      ? service.materials.map(
+                          (material: any, index: number) => ({
+                            ...material,
+                            id:
+                              material.id ||
+                              material.uuid ||
+                              `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                          })
+                        )
+                      : [],
+                    finishes: Array.isArray(service.finishes)
+                      ? service.finishes.map((finish: any, index: number) => ({
+                          ...finish,
+                          id:
+                            finish.id ||
+                            finish.uuid ||
+                            `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                        }))
+                      : [],
+                    tools: Array.isArray(service.tools)
+                      ? service.tools.map((tool: any, index: number) => ({
+                          ...tool,
+                          id:
+                            tool.id ||
+                            tool.uuid ||
+                            `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                        }))
+                      : [],
+                  };
+                }),
             },
           ];
           setCategories(transformedCategories);
@@ -523,6 +650,9 @@ export default function ServiceOptionsBox(
 
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
     console.log('handleServiceOptionUpdate called with:', updatedServiceOption);
+    console.log('Materials in update:', updatedServiceOption.materials);
+    console.log('Finishes in update:', updatedServiceOption.finishes);
+    console.log('Tools in update:', updatedServiceOption.tools);
     if (selectedServiceOption) {
       setCategories(prev => {
         console.log('Previous categories state:', prev);
@@ -811,6 +941,10 @@ export default function ServiceOptionsBox(
                 onTotalsChange={({ tradeTotal }) => {
                   // Keep the three purple totals in the header in sync with form
                   // We persist trade total (including materials and finishes) on the selected service option
+                  console.log(
+                    'onTotalsChange called with tradeTotal:',
+                    tradeTotal
+                  );
                   if (selectedServiceOption) {
                     setCategories(prev => {
                       // Check if the price actually needs to be updated
@@ -842,7 +976,15 @@ export default function ServiceOptionsBox(
                               serviceOptions: category.serviceOptions.map(
                                 opt =>
                                   opt.id === selectedServiceOption
-                                    ? { ...opt, price: tradeTotal }
+                                    ? {
+                                        ...opt,
+                                        price: tradeTotal,
+                                        // Debug log
+                                        _debug: {
+                                          oldPrice: opt.price,
+                                          newPrice: tradeTotal,
+                                        },
+                                      }
                                     : opt
                               ),
                               total: category.serviceOptions.reduce(
@@ -855,6 +997,10 @@ export default function ServiceOptionsBox(
                               ),
                             }
                           : category
+                      );
+                      console.log(
+                        'Updated categories with new price:',
+                        updated
                       );
                       setTimeout(() => updateLocalStorage(updated), 0);
                       return ensureUniqueKeys(updated);
@@ -941,6 +1087,7 @@ export default function ServiceOptionsBox(
                       : {}),
                 }}
                 onMaterialAdd={newMaterial => {
+                  console.log('onMaterialAdd called with:', newMaterial);
                   // Update the selected service option with the new material
                   const baseOption =
                     selectedServiceOptionData ||
@@ -949,11 +1096,16 @@ export default function ServiceOptionsBox(
                           opt => opt.id === selectedServiceOption
                         ) || null
                       : null);
+                  console.log('baseOption for material add:', baseOption);
                   if (baseOption) {
                     const updatedServiceOption = {
                       ...baseOption,
                       materials: [...(baseOption.materials || []), newMaterial],
                     } as ServiceOption;
+                    console.log(
+                      'Updated service option with new material:',
+                      updatedServiceOption
+                    );
                     handleServiceOptionUpdate(updatedServiceOption);
                   }
                 }}
@@ -1108,6 +1260,7 @@ export default function ServiceOptionsBox(
                   }
                 }}
                 onServiceUpdate={updatedService => {
+                  console.log('onServiceUpdate called with:', updatedService);
                   if (selectedServiceOptionData) {
                     // Get the current service data from categories state to ensure we have the latest materials, finishes, and tools
                     const currentServiceData = categories
@@ -1120,7 +1273,21 @@ export default function ServiceOptionsBox(
                         opt => opt.id === selectedServiceOption
                       );
 
-                    // Update existing service option - preserve materials, finishes, and tools
+                    console.log('currentServiceData:', currentServiceData);
+                    console.log(
+                      'selectedServiceOptionData:',
+                      selectedServiceOptionData
+                    );
+                    console.log(
+                      'currentServiceData materials:',
+                      currentServiceData?.materials
+                    );
+                    console.log(
+                      'selectedServiceOptionData materials:',
+                      selectedServiceOptionData?.materials
+                    );
+
+                    // Update existing service option - preserve materials, finishes, and tools from form
                     const updatedServiceOption: ServiceOption = {
                       ...(currentServiceData || selectedServiceOptionData), // Use current state data if available
                       name: updatedService.name,
@@ -1132,20 +1299,15 @@ export default function ServiceOptionsBox(
                         (currentServiceData?.qty ||
                           selectedServiceOptionData?.qty ||
                           1),
-                      // Explicitly preserve materials, finishes, and tools from current state
-                      materials:
-                        currentServiceData?.materials ||
-                        selectedServiceOptionData?.materials ||
-                        [],
-                      finishes:
-                        currentServiceData?.finishes ||
-                        selectedServiceOptionData?.finishes ||
-                        [],
-                      tools:
-                        currentServiceData?.tools ||
-                        selectedServiceOptionData?.tools ||
-                        [],
+                      // Use materials, finishes, and tools from the form's updatedService
+                      materials: updatedService.materials || [],
+                      finishes: updatedService.finishes || [],
+                      tools: updatedService.tools || [],
                     };
+                    console.log(
+                      'updatedServiceOption materials:',
+                      updatedServiceOption.materials
+                    );
                     if (updatedService.uuid) {
                       (
                         updatedServiceOption as unknown as { uuid?: string }

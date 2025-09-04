@@ -8,10 +8,11 @@ import { DisclaimerForm } from '@/components/shared/forms/DisclaimerForm';
 import EstimationTemplateForm from '@/components/shared/forms/EstimationTemplateForm';
 
 import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
-import ServiceOptionsBox from '@/components/Templates/ServiceOptionsBox';
+import ServiceOptionsBox, {
+  getServiceOptionTradeTotal,
+} from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
 import { useToast } from '@/components/ui/use-toast';
 import { STORAGE_KEYS, TEMPLATE_TYPES } from '@/constants/common';
 import { apiService } from '@/lib/api';
@@ -428,18 +429,57 @@ export default function CreateTemplatePage({
         const data = JSON.parse(raw) as Array<{
           rate?: number;
           qty?: number;
-          materials?: Array<{ qty?: number; rate?: number }>;
-          finishes?: Array<{ qty?: number; rate?: number }>;
+          description?: string;
+          materials?: Array<{
+            qty?: number;
+            rate?: number;
+            is_hidden?: boolean;
+            markup?: number;
+            markup_type?: string;
+          }>;
+          finishes?: Array<{
+            qty?: number;
+            rate?: number;
+            is_hidden?: boolean;
+            markup?: number;
+            markup_type?: string;
+          }>;
         }>;
         if (!Array.isArray(data)) {
           setProjectTotal(0);
           return;
         }
-        // The rate field already contains the calculated tradeTotal (service + materials + finishes)
-        // So we just need to sum all the rates
-        const total = data.reduce((sum, svc) => {
-          return sum + (svc.rate || 0);
+        // Use centralized calculation function to ensure consistency
+        console.log('Computing Project Total from localStorage data:', data);
+        console.log('Number of service options in localStorage:', data.length);
+
+        const total = data.reduce((sum, svc, index) => {
+          // Use the simplified function that handles both cases
+          const tradeTotal = getServiceOptionTradeTotal({
+            rate: svc.rate || 0,
+            qty: svc.qty || 1,
+            materials: svc.materials || [],
+            finishes: svc.finishes || [],
+          });
+          console.log(
+            `Service ${index + 1}:`,
+            svc.description || 'Unknown',
+            'Rate:',
+            svc.rate,
+            'Qty:',
+            svc.qty,
+            'Materials:',
+            svc.materials?.length || 0,
+            'Finishes:',
+            svc.finishes?.length || 0,
+            'Trade Total:',
+            tradeTotal,
+            'Running Sum:',
+            sum + tradeTotal
+          );
+          return sum + tradeTotal;
         }, 0);
+        console.log('Final Project Total:', total);
         setProjectTotal(total);
       } catch {
         setProjectTotal(0);
@@ -449,26 +489,25 @@ export default function CreateTemplatePage({
     // Initial compute
     computeTotal();
 
-    // Observe localStorage changes (same-tab updates are triggered by our setItem)
-    const originalSetItem = localStorage.setItem;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (localStorage as any).setItem = function (...args: unknown[]) {
-      // @ts-expect-error - forward to original
-      originalSetItem.apply(this, args);
-      if (args[0] === 'service_options_template') computeTotal();
-    };
-
-    // Cross-tab updates
+    // Monitor localStorage changes
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'service_options_template') computeTotal();
+      if (e.key === 'service_options_template') {
+        console.log('localStorage changed, recomputing Project Total');
+        computeTotal();
+      }
     };
     window.addEventListener('storage', onStorage);
 
+    // Also monitor for same-tab changes using a custom event
+    const onCustomStorageChange = () => {
+      console.log('Custom storage change event, recomputing Project Total');
+      computeTotal();
+    };
+    window.addEventListener('customStorageChange', onCustomStorageChange);
+
     return () => {
       window.removeEventListener('storage', onStorage);
-      // restore
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (localStorage as any).setItem = originalSetItem;
+      window.removeEventListener('customStorageChange', onCustomStorageChange);
     };
   }, []);
 
