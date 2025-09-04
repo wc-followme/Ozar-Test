@@ -67,14 +67,6 @@ export default function CreateTemplatePage({
   const [hasMoreTemplates, setHasMoreTemplates] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Handle service selection changes
-  const handleServiceChange = (serviceId: string | null) => {
-    setFormData(prev => ({
-      ...prev,
-      service: serviceId || '',
-    }));
-  };
-
   // Fetch tool templates from API with pagination
   const fetchToolTemplates = useCallback(
     async (pageNum = 1, append = false) => {
@@ -100,6 +92,7 @@ export default function CreateTemplatePage({
           limit: 12, // Smaller limit for better UX
           company_id: companyId,
           status: 'ACTIVE',
+          template_type: TEMPLATE_TYPES.TOOL_TEMPLATES, // Always filter for tool templates
         };
 
         // Add service filter if service is selected
@@ -111,11 +104,7 @@ export default function CreateTemplatePage({
 
         if (response.statusCode === 200 && response.data) {
           const { data: templatesData, totalPages } = response.data;
-          // Filter only tool templates
-          const toolTemplatesData = templatesData.filter(
-            (template: TemplateApiData) =>
-              template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
-          );
+          // No need to filter since we're filtering on the server side with template_type
 
           setToolTemplates(prev => {
             if (append) {
@@ -123,12 +112,12 @@ export default function CreateTemplatePage({
               const existingUuids = new Set(
                 prev.map(template => template.uuid)
               );
-              const uniqueNewTemplates = toolTemplatesData.filter(
+              const uniqueNewTemplates = templatesData.filter(
                 (template: TemplateApiData) => !existingUuids.has(template.uuid)
               );
               return [...prev, ...uniqueNewTemplates];
             } else {
-              return toolTemplatesData;
+              return templatesData;
             }
           });
 
@@ -150,6 +139,22 @@ export default function CreateTemplatePage({
       }
     },
     [type]
+  );
+
+  // Handle service selection changes
+  const handleServiceChange = useCallback(
+    (serviceId: string | null) => {
+      setFormData(prev => ({
+        ...prev,
+        service: serviceId || '',
+      }));
+
+      // For tools template, fetch templates when service is selected
+      if (type === 'tools' && serviceId) {
+        fetchToolTemplates(1, false);
+      }
+    },
+    [type, fetchToolTemplates]
   );
 
   // Load more templates for infinite scroll
@@ -412,10 +417,9 @@ export default function CreateTemplatePage({
   useEffect(() => {
     if (type === 'service-option') {
       fetchCategories();
-    } else if (type === 'tools') {
-      fetchToolTemplates();
     }
-  }, [type, fetchCategories, fetchToolTemplates]);
+    // Note: fetchToolTemplates is now only called when a service is selected
+  }, [type, fetchCategories]);
 
   // Recompute Project Total from localStorage whenever the service options change
   useEffect(() => {
