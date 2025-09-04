@@ -127,10 +127,10 @@ export default function ServiceOptionServiceForm({
   // Initialize prevServiceRef with current service values on mount
   useEffect(() => {
     prevServiceRef.current = {
-      uuid: service.uuid,
-      name: service.name,
-      rate: service.rate,
-      qty: service.qty,
+      ...(service.uuid && { uuid: service.uuid }),
+      ...(service.name && { name: service.name }),
+      ...(service.rate !== undefined && { rate: service.rate }),
+      ...(service.qty !== undefined && { qty: service.qty }),
     };
     // Mark as initialized after a short delay to allow all effects to settle
     setTimeout(() => {
@@ -147,26 +147,6 @@ export default function ServiceOptionServiceForm({
     };
   }, []);
 
-  // Helper function to update service only if it actually changed
-  const updateServiceIfChanged = useCallback((updatedService: Service) => {
-    const prev = prevServiceRef.current;
-    const hasChanged =
-      prev.uuid !== updatedService.uuid ||
-      prev.name !== updatedService.name ||
-      prev.rate !== updatedService.rate ||
-      prev.qty !== updatedService.qty;
-
-    if (hasChanged && onServiceUpdate) {
-      prevServiceRef.current = {
-        uuid: updatedService.uuid,
-        name: updatedService.name,
-        rate: updatedService.rate,
-        qty: updatedService.qty,
-      };
-      onServiceUpdate(updatedService);
-      onLocalStorageUpdate?.();
-    }
-  }, []); // Don't include onServiceUpdate and onLocalStorageUpdate as dependencies
 
   // No default seed; start with empty lists until user adds items
 

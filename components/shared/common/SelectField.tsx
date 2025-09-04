@@ -55,7 +55,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     <div className={`sm:space-y-2 space-y-1 ${className}`}>
       {label && <Label className='field-label'>{label}</Label>}
       <Select
-        value={value === '' ? undefined : value}
+        {...(value && value !== '' ? { value } : {})}
         onValueChange={handleValueChange}
         disabled={disabled}
       >

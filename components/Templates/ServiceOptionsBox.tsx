@@ -364,7 +364,7 @@ export default function ServiceOptionsBox(
               isExpanded: true,
               serviceOptions: parsedGeneralData
                 .filter(service => service && typeof service === 'object')
-                .map((service: any, index: number) => {
+                .map((service: any, _index: number) => {
                   // Calculate the proper trade total for the price field
                   const totals = calculateServiceOptionTotals({
                     rate: service.rate,
@@ -385,7 +385,7 @@ export default function ServiceOptionsBox(
                     category: 'General Services',
                     materials: Array.isArray(service.materials)
                       ? service.materials.map(
-                          (material: any, index: number) => ({
+                          (material: any, _index: number) => ({
                             ...material,
                             id:
                               material.id ||
@@ -395,7 +395,7 @@ export default function ServiceOptionsBox(
                         )
                       : [],
                     finishes: Array.isArray(service.finishes)
-                      ? service.finishes.map((finish: any, index: number) => ({
+                      ? service.finishes.map((finish: any, _index: number) => ({
                           ...finish,
                           id:
                             finish.id ||
@@ -404,7 +404,7 @@ export default function ServiceOptionsBox(
                         }))
                       : [],
                     tools: Array.isArray(service.tools)
-                      ? service.tools.map((tool: any, index: number) => ({
+                      ? service.tools.map((tool: any, _index: number) => ({
                           ...tool,
                           id:
                             tool.id ||
@@ -1300,8 +1300,16 @@ export default function ServiceOptionsBox(
                           selectedServiceOptionData?.qty ||
                           1),
                       // Use materials, finishes, and tools from the form's updatedService
-                      materials: updatedService.materials || [],
-                      finishes: updatedService.finishes || [],
+                      materials: (updatedService.materials || []).map(
+                        material => ({
+                          ...material,
+                          markup_type: material.markup_type || 'FLAT_AMOUNT',
+                        })
+                      ),
+                      finishes: (updatedService.finishes || []).map(finish => ({
+                        ...finish,
+                        markup_type: finish.markup_type || 'FLAT_AMOUNT',
+                      })),
                       tools: updatedService.tools || [],
                     };
                     console.log(
