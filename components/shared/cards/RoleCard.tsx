@@ -94,10 +94,16 @@ export const RoleCard: React.FC<RoleCardProps> = ({
             // Heuristic: local icons expect className, external expect size/color
             const isLocalIcon = iconSrc && iconSrc.length === 1;
             if (isLocalIcon) {
-              return React.createElement(iconSrc as any, {
-                className: '!w-[32px] !h-[32px]',
-                style: { color: iconColor || '#000000' },
-              });
+              return React.createElement(
+                iconSrc as React.ComponentType<{
+                  className?: string;
+                  style?: React.CSSProperties;
+                }>,
+                {
+                  className: '!w-[32px] !h-[32px]',
+                  style: { color: iconColor || '#000000' },
+                }
+              );
             } else {
               return React.createElement(iconSrc, {
                 size: 36,
@@ -149,7 +155,6 @@ export const RoleCard: React.FC<RoleCardProps> = ({
           </span>
         </div>
       </CardContent>
-
 
       <ConfirmDeleteModal
         open={showDelete}

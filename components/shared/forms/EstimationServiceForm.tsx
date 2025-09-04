@@ -42,6 +42,8 @@ interface EstimationServiceFormProps {
   roomName?: string;
   tradeName?: string;
   tradeId?: string | undefined; // Add trade ID prop
+  isDisabled?: boolean; // Add disabled state prop
+  isFromReceivedTrades?: boolean; // Add prop to show Offer Rate instead of Markup
 }
 
 export default function EstimationServiceForm({
@@ -63,6 +65,8 @@ export default function EstimationServiceForm({
   roomName = 'Room',
   tradeName = 'Trade',
   tradeId, // Add trade ID prop
+  isDisabled = false, // Add disabled state prop
+  isFromReceivedTrades = false, // Add prop to show Offer Rate instead of Markup
 }: EstimationServiceFormProps) {
   const [serviceOptions, setServiceOptions] = useState<
     Array<{ value: string; label: string }>
@@ -226,6 +230,7 @@ export default function EstimationServiceForm({
                   return byName ? byName.value : '';
                 })()}
                 onValueChange={newValue => {
+                  if (isDisabled || isFromReceivedTrades) return;
                   // Find the selected option to get the display name and UUID
                   const selectedOption = serviceOptions.find(
                     option => option.value === newValue
@@ -268,7 +273,12 @@ export default function EstimationServiceForm({
                     : 'Select a service'
                 }
                 className='mb-0'
-                disabled={loading}
+                disabled={loading || isDisabled || isFromReceivedTrades}
+                triggerClassName={
+                  isDisabled || isFromReceivedTrades
+                    ? '!bg-[var(--border-light)] !text-[var(--text-dark)] disabled:opacity-100'
+                    : ''
+                }
               />
             </div>
             <div className='space-y-2 w-[80px] min-w-[80px] overflow-hidden'>
@@ -277,6 +287,7 @@ export default function EstimationServiceForm({
                 type='text'
                 value={service.qty.toString()}
                 onChange={e => {
+                  if (isDisabled || isFromReceivedTrades) return;
                   const value = e.target.value;
                   // Only allow numbers
                   if (/^\d*$/.test(value)) {
@@ -290,6 +301,7 @@ export default function EstimationServiceForm({
                   }
                 }}
                 onKeyDown={e => {
+                  if (isDisabled || isFromReceivedTrades) return;
                   // Allow: backspace, delete, tab, escape, enter, and numbers
                   const allowedKeys = [
                     'Backspace',
@@ -311,7 +323,21 @@ export default function EstimationServiceForm({
 
                   e.preventDefault();
                 }}
-                className='input-field'
+                className={`input-field ${
+                  isDisabled || isFromReceivedTrades
+                    ? '!text-[var(--text-dark)] disabled:opacity-100'
+                    : ''
+                }`}
+                disabled={isDisabled || isFromReceivedTrades}
+                style={
+                  isDisabled || isFromReceivedTrades
+                    ? {
+                        backgroundColor: 'var(--border-light)',
+                        color: 'var(--text-dark)',
+                        opacity: 1,
+                      }
+                    : {}
+                }
               />
             </div>
             <div className='space-y-2 w-[120px] min-w-[120px] overflow-hidden'>
@@ -325,6 +351,7 @@ export default function EstimationServiceForm({
                   inputMode='decimal'
                   value={rateInput}
                   onChange={e => {
+                    if (isDisabled || isFromReceivedTrades) return;
                     const raw = e.target.value;
                     const cleaned = raw.replace(/[^0-9.]/g, '');
                     const parts = cleaned.split('.');
@@ -343,6 +370,7 @@ export default function EstimationServiceForm({
                     }
                   }}
                   onFocus={e => {
+                    if (isDisabled || isFromReceivedTrades) return;
                     if (
                       e.currentTarget.value === '0' ||
                       e.currentTarget.value === '0.0' ||
@@ -353,6 +381,7 @@ export default function EstimationServiceForm({
                     }
                   }}
                   onBlur={() => {
+                    if (isDisabled || isFromReceivedTrades) return;
                     const normalized =
                       rateInput === '' || rateInput === '.' ? '0' : rateInput;
                     setRateInput(normalized);
@@ -362,7 +391,21 @@ export default function EstimationServiceForm({
                     }
                   }}
                   placeholder='0.00'
-                  className='flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)]'
+                  className={`flex-1 rounded-l-none text-left !border-l-0 h-11 border-none bg-[var(--white-background)] rounded-r-[10px] !placeholder-[var(--text-placeholder)] ${
+                    isDisabled || isFromReceivedTrades
+                      ? '!text-[var(--text-dark)] disabled:opacity-100'
+                      : ''
+                  }`}
+                  disabled={isDisabled || isFromReceivedTrades}
+                  style={
+                    isDisabled || isFromReceivedTrades
+                      ? {
+                          backgroundColor: 'var(--border-light)',
+                          color: 'var(--text-dark)',
+                          opacity: 1,
+                        }
+                      : {}
+                  }
                 />
               </div>
             </div>
@@ -401,6 +444,7 @@ export default function EstimationServiceForm({
           <Textarea
             value={service.description}
             onChange={e => {
+              if (isDisabled || isFromReceivedTrades) return;
               if (onServiceUpdate) {
                 onServiceUpdate({
                   ...service,
@@ -409,7 +453,21 @@ export default function EstimationServiceForm({
               }
             }}
             rows={3}
-            className='input-field'
+            className={`input-field ${
+              isDisabled || isFromReceivedTrades
+                ? '!text-[var(--text-dark)] disabled:opacity-100'
+                : ''
+            }`}
+            disabled={isDisabled || isFromReceivedTrades}
+            style={
+              isDisabled || isFromReceivedTrades
+                ? {
+                    backgroundColor: 'var(--border-light)',
+                    color: 'var(--text-dark)',
+                    opacity: 1,
+                  }
+                : {}
+            }
           />
         </div>
         {/* TODO: commented temporarily to remove service options from the service form */}
@@ -443,6 +501,7 @@ export default function EstimationServiceForm({
         items={service.materials}
         addButtonText='Material'
         onAddItem={() => {
+          if (isDisabled || isFromReceivedTrades) return;
           if (onMaterialAdd) {
             const newMaterial: EstimationItem = {
               id: `material-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -470,6 +529,8 @@ export default function EstimationServiceForm({
         cardWidthClass='w-full min-w-max'
         borderClass='border-none'
         disableVariant={true}
+        isDisabled={isDisabled || isFromReceivedTrades}
+        isFromReceivedTrades={isFromReceivedTrades}
       />
 
       {/* Finishes Accordion */}
@@ -478,6 +539,7 @@ export default function EstimationServiceForm({
         items={service.finishes}
         addButtonText='Finishes'
         onAddItem={() => {
+          if (isDisabled || isFromReceivedTrades) return;
           if (onFinishAdd) {
             const newFinish: EstimationItem = {
               id: `finish-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -505,15 +567,29 @@ export default function EstimationServiceForm({
         cardWidthClass='w-full min-w-max'
         borderClass='border-none'
         disableVariant={true}
+        isDisabled={isDisabled || isFromReceivedTrades}
+        isFromReceivedTrades={isFromReceivedTrades}
       />
 
       {/* Tools Accordion */}
       <ToolsAccordion
         title='Tools'
         tools={tools}
-        onAddTool={onAddTool || (() => {})}
-        onRemoveTool={onRemoveTool || (() => {})}
-        onReplaceTools={onReplaceTools || (() => {})}
+        onAddTool={
+          isDisabled || isFromReceivedTrades
+            ? () => {}
+            : onAddTool || (() => {})
+        }
+        onRemoveTool={
+          isDisabled || isFromReceivedTrades
+            ? () => {}
+            : onRemoveTool || (() => {})
+        }
+        onReplaceTools={
+          isDisabled || isFromReceivedTrades
+            ? () => {}
+            : onReplaceTools || (() => {})
+        }
         defaultExpanded={false}
         roomName={roomName}
         tradeName={tradeName}
