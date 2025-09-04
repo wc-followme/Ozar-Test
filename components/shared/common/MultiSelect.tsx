@@ -112,12 +112,14 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                 const opt = options.find(o => getOptionValue(o) === tag);
                 const imageUrl = opt ? getOptionImage(opt) : undefined;
                 const label = opt ? getOptionLabel(opt) : tag;
+                const hasImage = imageUrl && imageUrl !== '';
+
                 return (
                   <span
                     key={tag}
-                    className={`bg-cyanwave-light text-[var(--text-dark)] rounded-full ${imageUrl ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
+                    className={`bg-cyanwave-light text-[var(--text-dark)] rounded-full ${hasImage ? 'pl-1' : 'pl-3'} pr-3 py-1 text-sm font-medium flex items-center gap-2`}
                   >
-                    {imageUrl ? (
+                    {hasImage ? (
                       <Avatar
                         name={label}
                         image={imageUrl}
@@ -125,14 +127,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                         width={20}
                         className='w-5 h-5'
                       />
-                    ) : (
-                      <Avatar
-                        name={label}
-                        height={20}
-                        width={20}
-                        className='w-5 h-5'
-                      />
-                    )}
+                    ) : null}
                     {label}
                   </span>
                 );
@@ -187,15 +182,18 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
                   <label
                     key={optionValue}
                     className='flex items-center justify-between py-2 px-2 cursor-pointer text-[var(--text-dark)] text-base font-medium border-b border-[var(--border-light)] last-of-type:border-b-0 hover:bg-[var(--card-hover)]'
+                    onClick={() => handleToggle(optionValue)}
                   >
                     <div className='flex items-center gap-3'>
-                      <Avatar
-                        name={getOptionLabel(opt)}
-                        image={getOptionImage(opt) as string}
-                        height={24}
-                        width={24}
-                        className='w-6 h-6'
-                      />
+                      {getOptionImage(opt) && getOptionImage(opt) !== '' ? (
+                        <Avatar
+                          name={getOptionLabel(opt)}
+                          image={getOptionImage(opt) as string}
+                          height={24}
+                          width={24}
+                          className='w-6 h-5'
+                        />
+                      ) : null}
                       <div className='flex flex-col'>
                         <span className='font-medium'>
                           {getOptionLabel(opt)}
