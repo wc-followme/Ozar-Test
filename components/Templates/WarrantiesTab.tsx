@@ -13,10 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 // Removed static import - using only API data
 import { apiService } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { SearchNormal1 } from 'iconsax-react';
 import { useEffect, useMemo, useState } from 'react';
 import LoadingComponent from '../shared/common/LoadingComponent';
 import NoDataFound from '../shared/common/NoDataFound';
+import { showErrorToast, showSuccessToast } from '../ui/use-toast';
 
 // Type definitions
 interface WarrantyDetail {
@@ -49,6 +51,7 @@ export const WarrantiesTab = ({
   companyId,
   canEditCompany = false,
 }: WarrantiesTabProps) => {
+  const { handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -106,6 +109,7 @@ export const WarrantiesTab = ({
           setWarrantiesData([]);
         }
       } catch (error) {
+        if (handleAuthError(error)) return;
         setWarrantiesData([]);
       } finally {
         setIsLoadingWarranties(false);
@@ -133,7 +137,6 @@ export const WarrantiesTab = ({
     }));
     return [{ id: 'all', value: 'all', label: 'All Warranties' }, ...tabs];
   }, [warrantiesData]);
-
   // Flatten warranties with group for rendering and search
   const flatWarranties = useMemo((): FlatWarranty[] => {
     const groups = warrantiesData || [];
@@ -169,7 +172,6 @@ export const WarrantiesTab = ({
     // id is in form "group:detailId"
     const [groupKey, detailId] = id.split(':');
     if (!groupKey || !detailId) {
-      console.error('Invalid warranty ID format:', id);
       return;
     }
 
@@ -222,15 +224,30 @@ export const WarrantiesTab = ({
         if (!warrantyGroup?.uuid) {
           throw new Error('Warranty UUID not found');
         }
-
+        let response: any = {};
         if (updatedWarrantiesDetails.length === 0) {
           // If no warranties left, delete the entire group
-          await apiService.deleteCompanyWarranty(warrantyGroup.uuid);
+          try {
+            response = await apiService.deleteCompanyWarranty(
+              warrantyGroup.uuid
+            );
+          } catch (error) {
+            if (handleAuthError(error)) return;
+            throw error; // Re-throw to be caught by outer catch
+          }
         } else {
           // Update the group with remaining warranties
-          await apiService.updateCompanyWarranty(warrantyGroup.uuid, {
-            warranties_details: updatedWarrantiesDetails,
-          });
+          try {
+            response = await apiService.updateCompanyWarranty(
+              warrantyGroup.uuid,
+              {
+                warranties_details: updatedWarrantiesDetails,
+              }
+            );
+          } catch (error) {
+            if (handleAuthError(error)) return;
+            throw error; // Re-throw to be caught by outer catch
+          }
         }
 
         // Update local state
@@ -248,7 +265,20 @@ export const WarrantiesTab = ({
               })
               .filter(group => group.warranties_details.length > 0) // Remove empty groups
         );
+
+        // If the last warranty was deleted and the current tab is that group, reset to "all"
+        if (updatedWarrantiesDetails.length === 0 && selectedTab === groupKey) {
+          setSelectedTab('all');
+        }
+        if (response?.statusCode === 200) {
+          showSuccessToast(
+            response?.message || 'Warranty deleted successfully'
+          );
+        } else {
+          showErrorToast(response?.message || 'Failed to delete warranty');
+        }
       } catch (error) {
+        if (handleAuthError(error)) return;
         // Handle error silently
       }
     }
@@ -269,7 +299,6 @@ export const WarrantiesTab = ({
 
   const handleWarrantySubmit = async (data: WarrantyFormData) => {
     setIsSubmitting(true);
-
     try {
       if (editingWarranty) {
         // Parse the composite ID
@@ -305,11 +334,21 @@ export const WarrantiesTab = ({
         if (!warrantyGroup?.uuid) {
           throw new Error('Warranty UUID not found');
         }
-
+        const { type: name } = data;
         // Call API to update warranty
-        await apiService.updateCompanyWarranty(warrantyGroup.uuid, {
-          warranties_details: updatedWarrantiesDetails,
-        });
+        let response: any = {};
+        try {
+          response = await apiService.updateCompanyWarranty(
+            warrantyGroup.uuid,
+            {
+              name,
+              warranties_details: updatedWarrantiesDetails,
+            }
+          );
+        } catch (error) {
+          if (handleAuthError(error)) return;
+          throw error; // Re-throw to be caught by outer catch
+        }
 
         // Update local state
         setWarrantiesData(prevData =>
@@ -317,12 +356,23 @@ export const WarrantiesTab = ({
             if (group.warranties === groupKey) {
               return {
                 ...group,
+                warranties: name,
                 warranties_details: updatedWarrantiesDetails,
               };
             }
             return group;
           })
         );
+        if (selectedTab !== 'all' && selectedTab === groupKey) {
+          setSelectedTab(name);
+        }
+
+        // Show success message for update
+        if (response?.statusCode === 200) {
+          showSuccessToast(
+            response?.message || 'Warranty updated successfully'
+          );
+        }
       } else {
         // Generate new ID
         const newId = Date.now().toString();
@@ -354,9 +404,18 @@ export const WarrantiesTab = ({
           ];
 
           // Call API to update existing warranty group
-          await apiService.updateCompanyWarranty(existingGroup.uuid || '', {
-            warranties_details: updatedWarrantiesDetails,
-          });
+          let response: any = {};
+          try {
+            response = await apiService.updateCompanyWarranty(
+              existingGroup.uuid || '',
+              {
+                warranties_details: updatedWarrantiesDetails,
+              }
+            );
+          } catch (error) {
+            if (handleAuthError(error)) return;
+            throw error; // Re-throw to be caught by outer catch
+          }
 
           // Update local state
           setWarrantiesData(prevData => {
@@ -370,26 +429,52 @@ export const WarrantiesTab = ({
             }
             return newData;
           });
+          if (selectedTab !== 'all') {
+            setSelectedTab(warrantyTypeLower);
+          }
+
+          // Show success message for adding to existing group
+          if (response?.statusCode === 200) {
+            showSuccessToast(
+              response?.message || 'Warranty added successfully'
+            );
+          }
         } else {
           // Create new warranty group
           if (!companyId) return;
 
-          const apiResponse = await apiService.createCompanyWarranty({
-            company_id: companyId,
-            name: warrantyTypeLower, // Save name in lowercase
-            warranties_details: [newWarranty],
-            status: 'ACTIVE',
-          });
+          let apiResponse;
+          try {
+            apiResponse = await apiService.createCompanyWarranty({
+              company_id: companyId,
+              name: warrantyTypeLower, // Save name in lowercase
+              warranties_details: [newWarranty],
+              status: 'ACTIVE',
+            });
+          } catch (error) {
+            if (handleAuthError(error)) return;
+            throw error; // Re-throw to be caught by outer catch
+          }
 
           // Update local state with new group
           setWarrantiesData(prevData => [
-            ...prevData,
             {
               warranties: warrantyTypeLower, // Store in lowercase for consistency
               warranties_details: [newWarranty],
               uuid: apiResponse.data?.uuid,
             },
+            ...prevData,
           ]);
+          if (selectedTab !== 'all') {
+            setSelectedTab(warrantyTypeLower);
+          }
+
+          // Show success message for creating new group
+          if (apiResponse?.data?.statusCode === 200) {
+            showSuccessToast(
+              apiResponse?.data?.message || 'Warranty created successfully'
+            );
+          }
         }
       }
 
@@ -398,6 +483,7 @@ export const WarrantiesTab = ({
       setEditingWarranty(null);
       setIsSubmitting(false);
     } catch (error) {
+      if (handleAuthError(error)) return;
       setIsSubmitting(false);
     }
   };
