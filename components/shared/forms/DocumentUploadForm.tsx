@@ -34,13 +34,7 @@ export const DocumentUploadForm = ({
 
   const handleRemoveFile = (index: number) => {
     setSelectedFile(null);
-  };
-
-  const getImageSrc = () => {
-    if (selectedFile) {
-      return URL.createObjectURL(selectedFile);
-    }
-    return '/images/img-placeholder-md.png';
+    console.log('Remove file', index);
   };
 
   return (

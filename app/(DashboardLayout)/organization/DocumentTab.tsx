@@ -13,15 +13,15 @@ export const DocumentTab = () => {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleView = () => {
-    // Handle view action
+    console.log('View action');
   };
 
   const handleEdit = (id: string) => {
-    // Handle edit action
+    console.log('Edit action', id);
   };
 
   const handleDelete = (id: string) => {
-    // Handle delete action
+    console.log('Delete action', id);
   };
 
   const handleUploadDocument = async (data: {
