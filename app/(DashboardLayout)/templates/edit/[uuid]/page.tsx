@@ -204,11 +204,11 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                     id:
                       material.id ||
                       material.uuid ||
-                      `material-${service.service_id}-${index}-${Date.now()}`,
+                      `material-${service.service_id}-${index + 1}`,
                     uuid:
                       material.uuid ||
                       material.id ||
-                      `material-${service.service_id}-${index}-${Date.now()}`,
+                      `material-${service.service_id}-${index + 1}`,
                   })
                 ),
                 finishes: (service.finishes || []).map(
@@ -217,11 +217,11 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                     id:
                       finish.id ||
                       finish.uuid ||
-                      `finish-${service.service_id}-${index}-${Date.now()}`,
+                      `finish-${service.service_id}-${index + 1}`,
                     uuid:
                       finish.uuid ||
                       finish.id ||
-                      `finish-${service.service_id}-${index}-${Date.now()}`,
+                      `finish-${service.service_id}-${index + 1}`,
                   })
                 ),
                 tools: (service.tools || []).map(
@@ -230,11 +230,11 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                     id:
                       tool.id ||
                       tool.uuid ||
-                      `tool-${service.service_id}-${index}-${Date.now()}`,
+                      `tool-${service.service_id}-${index + 1}`,
                     uuid:
                       tool.uuid ||
                       tool.id ||
-                      `tool-${service.service_id}-${index}-${Date.now()}`,
+                      `tool-${service.service_id}-${index + 1}`,
                   })
                 ),
               })

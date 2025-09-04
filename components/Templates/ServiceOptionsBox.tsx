@@ -385,31 +385,31 @@ export default function ServiceOptionsBox(
                     category: 'General Services',
                     materials: Array.isArray(service.materials)
                       ? service.materials.map(
-                          (material: any, _index: number) => ({
+                          (material: any, index: number) => ({
                             ...material,
                             id:
                               material.id ||
                               material.uuid ||
-                              `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                              `material-${service.service_id}-${index + 1}`,
                           })
                         )
                       : [],
                     finishes: Array.isArray(service.finishes)
-                      ? service.finishes.map((finish: any, _index: number) => ({
+                      ? service.finishes.map((finish: any, index: number) => ({
                           ...finish,
                           id:
                             finish.id ||
                             finish.uuid ||
-                            `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                            `finish-${service.service_id}-${index + 1}`,
                         }))
                       : [],
                     tools: Array.isArray(service.tools)
-                      ? service.tools.map((tool: any, _index: number) => ({
+                      ? service.tools.map((tool: any, index: number) => ({
                           ...tool,
                           id:
                             tool.id ||
                             tool.uuid ||
-                            `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                            `tool-${service.service_id}-${index + 1}`,
                         }))
                       : [],
                   };
