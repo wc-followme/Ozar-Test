@@ -3,6 +3,7 @@ import SideSheet from '@/components/shared/common/SideSheet';
 import { DocumentUploadForm } from '@/components/shared/forms/DocumentUploadForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { documents } from '@/constants/dummy-data';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
 
@@ -10,57 +11,6 @@ export const DocumentTab = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploadSheetOpen, setIsUploadSheetOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  const documents = [
-    {
-      id: '1',
-      title: 'Employee Handbook',
-      type: 'PDF',
-      size: '2.4 MB',
-      lastModified: '2024-01-15',
-      status: 'Active',
-    },
-    {
-      id: '2',
-      title: 'Safety Guidelines',
-      type: 'DOCX',
-      size: '1.8 MB',
-      lastModified: '2024-01-10',
-      status: 'Active',
-    },
-    {
-      id: '3',
-      title: 'Training Manual',
-      type: 'PDF',
-      size: '3.2 MB',
-      lastModified: '2024-01-08',
-      status: 'Active',
-    },
-    {
-      id: '4',
-      title: 'Company Policies',
-      type: 'PDF',
-      size: '1.5 MB',
-      lastModified: '2024-01-05',
-      status: 'Active',
-    },
-    {
-      id: '5',
-      title: 'Work Procedures',
-      type: 'DOCX',
-      size: '2.1 MB',
-      lastModified: '2024-01-03',
-      status: 'Active',
-    },
-    {
-      id: '6',
-      title: 'Quality Standards',
-      type: 'PDF',
-      size: '2.8 MB',
-      lastModified: '2024-01-01',
-      status: 'Active',
-    },
-  ];
 
   const handleView = () => {
     // Handle view action
