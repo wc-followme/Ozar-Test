@@ -67,6 +67,7 @@ interface DynamicTableProps {
     borderColor?: string;
     hoverColor?: string;
   };
+  rowClassName?: (row: any, index: number) => string; // Function to generate custom row classes
 }
 
 export const DynamicTable: React.FC<DynamicTableProps> = ({
@@ -78,6 +79,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
   showRowNumbers = true,
   rowNumberLabel = 'NO.',
   tableConfig = {},
+  rowClassName,
 }) => {
   const allColumns = showRowNumbers
     ? [
@@ -292,7 +294,8 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
               <TableRow
                 key={row.id || index}
                 className={cn(
-                  `border-b ${borderColor} last:border-b-0 ${hoverColor} transition-colors`
+                  `border-b ${borderColor} last:border-b-0 ${hoverColor} transition-colors`,
+                  rowClassName?.(row, index)
                 )}
               >
                 {allColumns.map(column => (
