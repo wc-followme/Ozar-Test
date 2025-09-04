@@ -68,19 +68,15 @@ export const LeaveTab = () => {
           }
           menuOptions={[
             { label: 'Edit', action: 'edit' },
-            { label: 'Approve', action: 'approve' },
-            { label: 'Reject', action: 'reject' },
+            { label: 'Cancel', action: 'cancel' },
           ]}
           onAction={(action: string) => {
             switch (action) {
               case 'edit':
                 console.log('Edit clicked');
                 break;
-              case 'approve':
+              case 'cancel':
                 console.log('Approve clicked');
-                break;
-              case 'reject':
-                console.log('Reject clicked');
                 break;
             }
           }}
