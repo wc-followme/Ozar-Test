@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Trash } from 'iconsax-react';
 import ShieldPlusIcon from '../icons/ShieldPlusIcon';
-import { ServiceCategory, ServiceOption } from './service-options-types';
+import { ServiceOption } from './service-options-types';
 
 interface ServiceOptionsHeaderProps {
   showAddServiceOption: boolean;
@@ -13,7 +13,6 @@ interface ServiceOptionsHeaderProps {
   handleNameSave: () => void;
   handleRoomNameKeyDown: (e: React.KeyboardEvent) => void;
   handleEditClick: () => void;
-  selectedCategory: ServiceCategory | undefined;
   showServiceForm: boolean;
   selectedServiceOptionData: ServiceOption | undefined;
   handleAddCategory: () => void;
@@ -29,7 +28,6 @@ export default function ServiceOptionsHeader({
   handleNameSave: _handleNameSave,
   handleRoomNameKeyDown: _handleRoomNameKeyDown,
   handleEditClick: _handleEditClick,
-  selectedCategory,
   showServiceForm: _showServiceForm,
   selectedServiceOptionData,
   handleAddCategory: _handleAddCategory,

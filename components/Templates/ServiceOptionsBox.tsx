@@ -930,7 +930,6 @@ export default function ServiceOptionsBox(
           handleNameSave={handleNameSave}
           handleRoomNameKeyDown={handleRoomNameKeyDown}
           handleEditClick={handleEditClick}
-          selectedCategory={selectedCategoryData}
           showServiceForm={showServiceForm}
           selectedServiceOptionData={selectedServiceOptionData}
           handleAddCategory={handleAddCategory}
