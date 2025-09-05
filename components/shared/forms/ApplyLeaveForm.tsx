@@ -159,16 +159,6 @@ export const ApplyLeaveForm = ({ onCancel, onSubmit }: ApplyLeaveFormProps) => {
     onSubmit(formData);
   };
 
-  const getDateRangeText = () => {
-    if (!formData.fromDate || !formData.toDate) return '';
-
-    if (isSameDay(formData.fromDate, formData.toDate)) {
-      return `Single day: ${format(formData.fromDate, 'dd/MM/yyyy')}`;
-    } else {
-      return `${totalDays} days: ${format(formData.fromDate, 'dd/MM/yyyy')} to ${format(formData.toDate, 'dd/MM/yyyy')}`;
-    }
-  };
-
   const calculateLeaveDays = () => {
     if (!formData.fromDate || !formData.toDate) return 0;
 
