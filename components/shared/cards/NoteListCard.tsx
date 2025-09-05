@@ -66,7 +66,7 @@ export const NoteListCard: React.FC<NoteListCardProps> = ({
   ];
 
   return (
-    <Card className='border-none bg-[#EBB40226] hover:shadow-md transition-shadow'>
+    <Card className='border-none bg-[var(--error-15)] hover:shadow-md transition-shadow'>
       <CardContent className='p-4'>
         <div className='space-y-3'>
           {/* Note Header */}

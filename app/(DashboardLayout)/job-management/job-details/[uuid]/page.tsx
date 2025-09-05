@@ -27,7 +27,7 @@ import {
 } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
 import { ClipboardClose, Note, Setting2, UserAdd } from 'iconsax-react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JOB_MESSAGES } from '../../job-messages';
 import { Job } from '../../types';
@@ -45,6 +45,7 @@ export default function JobDetailsPage() {
   const { JOB_MANAGEMENT } = ROUTES;
 
   const params = useParams();
+  const router = useRouter();
   const uuid = params['uuid'] as string;
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
@@ -122,6 +123,8 @@ export default function JobDetailsPage() {
       // Update the local job state to reflect the change
       setJob(prev => (prev ? { ...prev, status: INACTIVE } : null));
       setShowArchiveConfirm(false);
+      // Redirect to job listing page after successful archive
+      router.push(JOB_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -147,6 +150,8 @@ export default function JobDetailsPage() {
       // Update the local job state to reflect the change
       setJob(prev => (prev ? { ...prev, job_status: DONE } : null));
       setShowCloseConfirm(false);
+      // Redirect to job listing page after successful close
+      router.push(JOB_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -523,6 +528,7 @@ export default function JobDetailsPage() {
         title={JOB_MESSAGES.CLOSE_JOB_TITLE}
         subtitle={JOB_MESSAGES.CLOSE_JOB_SUBTITLE}
         onCancel={() => setShowCloseConfirm(false)}
+        archiveButtonText='Close Job'
         onDelete={closeJob}
       />
 

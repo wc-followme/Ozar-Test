@@ -261,6 +261,7 @@ body {
     --info-10: #00a8bf1a;
     --info-15: #00a8bf26;
     --error-10: #ebb4021a;
+    --error-15: #ebb40226;
     --error-20: #ebb40233;
     --error-light: #fef3c7;
     --warning-15: #d4323226;
@@ -322,6 +323,7 @@ body {
     --info-10: #00a8bf1a;
     --info-15: #00a8bf26;
     --error-10: #ebb4021a;
+    --error-15: #d79c3626;
     --error-20: #d79c3652;
     --error-light: #fef3c7;
     --warning-15: #d4323226;

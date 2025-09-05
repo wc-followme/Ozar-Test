@@ -59,6 +59,7 @@ interface DynamicTableProps {
   data: any[];
   actions?: TableAction[];
   className?: string;
+  style?: React.CSSProperties;
   emptyMessage?: string;
   showRowNumbers?: boolean;
   rowNumberLabel?: string;
@@ -67,6 +68,7 @@ interface DynamicTableProps {
     borderColor?: string;
     hoverColor?: string;
   };
+  rowClassName?: (row: any, index: number) => string; // Function to generate custom row classes
 }
 
 export const DynamicTable: React.FC<DynamicTableProps> = ({
@@ -74,10 +76,12 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
   data,
   actions = [],
   className = '',
+  style,
   emptyMessage = 'No data available',
   showRowNumbers = true,
   rowNumberLabel = 'NO.',
   tableConfig = {},
+  rowClassName,
 }) => {
   const allColumns = showRowNumbers
     ? [
@@ -267,6 +271,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
         'relative block w-full overflow-x-auto overflow-y-hidden overscroll-x-auto',
         className
       )}
+      style={style}
     >
       <Table className='w-full'>
         <TableHeader className={headerBgColor}>
@@ -292,7 +297,8 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
               <TableRow
                 key={row.id || index}
                 className={cn(
-                  `border-b ${borderColor} last:border-b-0 ${hoverColor} transition-colors`
+                  `border-b ${borderColor} last:border-b-0 ${hoverColor} transition-colors`,
+                  rowClassName?.(row, index)
                 )}
               >
                 {allColumns.map(column => (

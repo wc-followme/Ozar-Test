@@ -626,7 +626,6 @@ export default function TemplatesPage() {
                 title='No estimate templates found'
                 description='Create your first estimate template to get started.'
                 showButton={false}
-                height='min-h-[30vh]'
               />
             ) : (
               <>
@@ -659,7 +658,7 @@ export default function TemplatesPage() {
                 title='No service option templates found'
                 description='Create a service option template to manage options quickly.'
                 showButton={false}
-                height='min-h-[30vh]'
+                
               />
             ) : (
               <>
@@ -691,7 +690,6 @@ export default function TemplatesPage() {
                 title='No tools templates found'
                 description='Create a tools template to reuse tool lists across templates.'
                 showButton={false}
-                height='min-h-[30vh]'
               />
             ) : (
               <>
@@ -720,7 +718,6 @@ export default function TemplatesPage() {
                 title='No disclaimer templates found'
                 description='Create a disclaimer template to standardize your disclaimers.'
                 showButton={false}
-                height='min-h-[30vh]'
               />
             ) : (
               <>
@@ -749,7 +746,6 @@ export default function TemplatesPage() {
                 title='No archived templates found'
                 description='Archived templates will appear here.'
                 showButton={false}
-                height='min-h-[30vh]'
               />
             ) : (
               <div className='space-y-8'>

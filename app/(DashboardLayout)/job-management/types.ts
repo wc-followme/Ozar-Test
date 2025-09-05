@@ -41,6 +41,12 @@ export interface Job {
   weekend_work: boolean | null;
   has_animals: boolean | null;
   pet_type: string | null;
+  badgeStatus?: {
+    status?: string;
+    text?: string;
+  };
+  jobCreatedDay?: number;
+  jobDaysLeft?: number;
 }
 
 // CreateJobForm related types
