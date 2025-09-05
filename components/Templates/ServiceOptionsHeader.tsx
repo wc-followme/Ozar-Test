@@ -43,10 +43,6 @@ export default function ServiceOptionsHeader({
           <h1 className='text-xl font-semibold text-gray-900 truncate'>
             {selectedServiceOptionData?.name || 'New Service Option'}
           </h1>
-          <p className='text-sm text-gray-500'>
-            {selectedCategory?.name || 'General Services'} /{' '}
-            {selectedServiceOptionData?.name || 'New Service Option'}
-          </p>
         </div>
 
         <div className='flex items-center space-x-2'>

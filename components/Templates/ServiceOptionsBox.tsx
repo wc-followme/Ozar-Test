@@ -277,9 +277,16 @@ export default function ServiceOptionsBox(
           'services'
         );
         return (category.serviceOptions || []).map(serviceOption => {
-          console.log('Processing service option:', {
+          console.log('=== PROCESSING SERVICE OPTION ===');
+          console.log('serviceOption object:', serviceOption);
+          console.log('serviceOption.name:', serviceOption.name);
+          console.log('serviceOption.description:', serviceOption.description);
+          console.log('serviceOption.uuid:', serviceOption.uuid);
+          console.log('serviceOption.id:', serviceOption.id);
+          console.log('Processing service option summary:', {
             id: serviceOption.id,
             name: serviceOption.name,
+            description: serviceOption.description,
             materials: serviceOption.materials?.length || 0,
             finishes: serviceOption.finishes?.length || 0,
             tools: serviceOption.tools?.length || 0,
@@ -291,14 +298,20 @@ export default function ServiceOptionsBox(
 
           const serviceData = {
             service_id: serviceOption.uuid || serviceOption.id,
-            description: serviceOption.description || serviceOption.name,
+            name: serviceOption.name, // Store the actual service name
+            description: serviceOption.description, // Store the actual description
             qty: serviceOption.qty ?? 1,
             rate: serviceOption.rate, // Use the user's input rate, not the calculated price
             materials: mapItemsWithUuidAsId(serviceOption.materials),
             finishes: mapItemsWithUuidAsId(serviceOption.finishes),
             tools: mapItemsWithUuidAsId(serviceOption.tools),
           };
-          console.log('Storing service data:', {
+          console.log('=== STORING SERVICE DATA ===');
+          console.log('serviceData object:', serviceData);
+          console.log('serviceData.name:', serviceData.name);
+          console.log('serviceData.description:', serviceData.description);
+          console.log('Storing service data summary:', {
+            name: serviceData.name,
             description: serviceData.description,
             qty: serviceData.qty,
             rate: serviceData.rate,
@@ -376,8 +389,8 @@ export default function ServiceOptionsBox(
                   return {
                     id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
                     uuid: service.service_id,
-                    name: service.description,
-                    description: service.description,
+                    name: service.name || service.description || 'Service', // Use stored name, fallback to description, then default
+                    description: service.description || '', // Use stored description or empty string
                     rate: service.rate, // User input rate
                     price: totals.tradeTotal, // Calculated trade total for sidebar
                     qty: service.qty ?? 1,
@@ -649,7 +662,13 @@ export default function ServiceOptionsBox(
   };
 
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
-    console.log('handleServiceOptionUpdate called with:', updatedServiceOption);
+    console.log('=== HANDLE SERVICE OPTION UPDATE ===');
+    console.log('updatedServiceOption object:', updatedServiceOption);
+    console.log('updatedServiceOption.name:', updatedServiceOption.name);
+    console.log(
+      'updatedServiceOption.description:',
+      updatedServiceOption.description
+    );
     console.log('Materials in update:', updatedServiceOption.materials);
     console.log('Finishes in update:', updatedServiceOption.finishes);
     console.log('Tools in update:', updatedServiceOption.tools);
@@ -1260,7 +1279,13 @@ export default function ServiceOptionsBox(
                   }
                 }}
                 onServiceUpdate={updatedService => {
-                  console.log('onServiceUpdate called with:', updatedService);
+                  console.log('=== ON SERVICE UPDATE CALLED ===');
+                  console.log('updatedService object:', updatedService);
+                  console.log('updatedService.name:', updatedService.name);
+                  console.log(
+                    'updatedService.description:',
+                    updatedService.description
+                  );
                   if (selectedServiceOptionData) {
                     // Get the current service data from categories state to ensure we have the latest materials, finishes, and tools
                     const currentServiceData = categories
