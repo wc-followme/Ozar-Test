@@ -93,14 +93,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             templateData.category?.uuid || templateData.category_id || '';
           let tradeId = templateData.trade_id || '';
 
-          console.log('Template data for debugging:', {
-            template_type: templateData.template_type,
-            category_id: templateData.category_id,
-            trade_id: templateData.trade_id,
-            category_object: templateData.category,
-            service_options_template: templateData.service_options_template,
-          });
-
           // For service options templates, also check service_options_template for trade_id
           if (
             templateData.template_type === 'OPTION_BID_TEMPLATES' &&
@@ -109,8 +101,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
           ) {
             tradeId = templateData.service_options_template.trade_id;
           }
-
-          console.log('Extracted IDs:', { categoryId, tradeId });
 
           setFormData({
             templateName: templateData.name || '',
@@ -189,20 +179,10 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               ? templateData.service_options_template
               : templateData.service_options_template.service_options || [];
 
-            console.log(
-              'Storing service options as-is from API:',
-              serviceOptionsArray
-            );
-
             // Store in localStorage with the key that ServiceOptionsBox expects
             localStorage.setItem(
               'service_options_template_edit',
               JSON.stringify(serviceOptionsArray)
-            );
-
-            console.log(
-              'Stored in localStorage:',
-              localStorage.getItem('service_options_template_edit')
             );
           }
         } else {
@@ -245,9 +225,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             }
           })()
         : '';
-
-      console.log('Fetching categories with company ID:', companyUuid);
-      console.log('SELECTED_COMPANY from localStorage:', selectedCompanyRaw);
 
       const response = await apiService.fetchCategoriesPublic({
         page: 1,
@@ -311,13 +288,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             })()
           : '';
 
-        console.log(
-          'Fetching trades with company ID:',
-          companyUuid,
-          'and category ID:',
-          categoryId
-        );
-
         const response = await apiService.fetchTradesPublic({
           page: 1,
           limit: 50,
@@ -370,9 +340,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     const computeTotal = () => {
       try {
         const raw = localStorage.getItem('service_options_template_edit');
-        console.log('Raw localStorage data:', raw);
         if (!raw) {
-          console.log('No localStorage data found, setting Project Total to 0');
           setProjectTotal(0);
           return;
         }
@@ -396,15 +364,10 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
           }>;
         }>;
         if (!Array.isArray(data)) {
-          console.log(
-            'localStorage data is not an array, setting Project Total to 0'
-          );
           setProjectTotal(0);
           return;
         }
         // Use centralized calculation function to ensure consistency
-        console.log('Computing Project Total from localStorage data:', data);
-        console.log('Number of service options in localStorage:', data.length);
 
         const total = data.reduce((sum, svc, index) => {
           // Use the simplified function that handles both cases
@@ -414,25 +377,8 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
             materials: svc.materials || [],
             finishes: svc.finishes || [],
           });
-          console.log(
-            `Service ${index + 1}:`,
-            svc.description || 'Unknown',
-            'Rate:',
-            svc.rate,
-            'Qty:',
-            svc.qty,
-            'Materials:',
-            svc.materials?.length || 0,
-            'Finishes:',
-            svc.finishes?.length || 0,
-            'Trade Total:',
-            tradeTotal,
-            'Running Sum:',
-            sum + tradeTotal
-          );
           return sum + tradeTotal;
         }, 0);
-        console.log('Final Project Total:', total);
         setProjectTotal(total);
       } catch {
         setProjectTotal(0);
@@ -441,14 +387,12 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
     // Add a small delay to ensure data is loaded
     const initialTimeout = setTimeout(() => {
-      console.log('Initial Project Total calculation after delay');
       computeTotal();
     }, 100);
 
     // Listen for localStorage changes
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'service_options_template_edit') {
-        console.log('localStorage changed, recomputing Project Total');
         computeTotal();
       }
     };
@@ -456,7 +400,6 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
     // Listen for custom storage change events (same-tab updates)
     const onCustomStorageChange = () => {
-      console.log('Custom storage change event, recomputing Project Total');
       computeTotal();
     };
     window.addEventListener('customStorageChange', onCustomStorageChange);

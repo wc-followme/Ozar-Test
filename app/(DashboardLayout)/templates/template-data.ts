@@ -389,11 +389,13 @@ export const demoTools: Tool[] = [
   },
 ];
 
+import { TEMPLATE_MESSAGES } from './template-messages';
+
 // Initial rooms data from EstimationBox.tsx
 export const initialRooms: Room[] = [
   {
     id: 'room-1',
-    name: 'Room 1',
+    name: TEMPLATE_MESSAGES.ROOM_1,
     total: 0.0,
     trades: [],
     isExpanded: true,

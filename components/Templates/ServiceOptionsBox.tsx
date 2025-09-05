@@ -145,7 +145,6 @@ export const getServiceOptionTradeTotal = (serviceOption: {
   // For localStorage data, we need to recalculate because the stored lineTotal values might be wrong
   // Always use the centralized calculation function to ensure accuracy
   const totals = calculateServiceOptionTotals(serviceOption);
-  console.log('Calculated trade total:', totals.tradeTotal);
   return totals.tradeTotal;
 };
 
@@ -274,10 +273,7 @@ export default function ServiceOptionsBox(
   // Centralized localStorage management function - this is the ONLY function that should update localStorage
   const updateLocalStorage = (sourceCategories?: ServiceCategory[]) => {
     try {
-      console.log('=== updateLocalStorage called ===');
       const dataSource = sourceCategories || categories;
-      console.log('Current categories state:', dataSource);
-      console.log('Categories length:', dataSource.length);
 
       // Transform the data to match the estimation template service format
       const serviceOptionsData = (dataSource || []).flatMap(category => {
@@ -288,33 +284,7 @@ export default function ServiceOptionsBox(
             id: item?.uuid || item?.id,
           }));
         };
-        console.log(
-          'Processing category:',
-          category.name,
-          'with',
-          category.serviceOptions.length,
-          'services'
-        );
         return (category.serviceOptions || []).map(serviceOption => {
-          console.log('=== PROCESSING SERVICE OPTION ===');
-          console.log('serviceOption object:', serviceOption);
-          console.log('serviceOption.name:', serviceOption.name);
-          console.log('serviceOption.description:', serviceOption.description);
-          console.log('serviceOption.uuid:', serviceOption.uuid);
-          console.log('serviceOption.id:', serviceOption.id);
-          console.log('Processing service option summary:', {
-            id: serviceOption.id,
-            name: serviceOption.name,
-            description: serviceOption.description,
-            materials: serviceOption.materials?.length || 0,
-            finishes: serviceOption.finishes?.length || 0,
-            tools: serviceOption.tools?.length || 0,
-          });
-          // Debug: Check what materials, finishes, and tools contain
-          console.log('serviceOption.materials:', serviceOption.materials);
-          console.log('serviceOption.finishes:', serviceOption.finishes);
-          console.log('serviceOption.tools:', serviceOption.tools);
-
           const serviceData = {
             service_id: serviceOption.uuid || serviceOption.id,
             name: serviceOption.name, // Store the actual service name
@@ -325,45 +295,15 @@ export default function ServiceOptionsBox(
             finishes: mapItemsWithUuidAsId(serviceOption.finishes),
             tools: mapItemsWithUuidAsId(serviceOption.tools),
           };
-          console.log('=== STORING SERVICE DATA ===');
-          console.log('serviceData object:', serviceData);
-          console.log('serviceData.name:', serviceData.name);
-          console.log('serviceData.description:', serviceData.description);
-          console.log('Storing service data summary:', {
-            name: serviceData.name,
-            description: serviceData.description,
-            qty: serviceData.qty,
-            rate: serviceData.rate,
-            price: serviceOption.price,
-            materials: serviceData.materials?.length || 0,
-            finishes: serviceData.finishes?.length || 0,
-          });
-          console.log('Materials being stored:', serviceData.materials);
-          console.log('Finishes being stored:', serviceData.finishes);
           return serviceData;
         });
       });
-
-      console.log(
-        'Final transformed data for localStorage:',
-        serviceOptionsData
-      );
-      console.log('Total services to save:', serviceOptionsData.length);
 
       // Save to the specified localStorage key
       localStorage.setItem(localStorageKey, JSON.stringify(serviceOptionsData));
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('customStorageChange'));
-
-      console.log(
-        'LocalStorage updated successfully with key:',
-        localStorageKey
-      );
-      console.log(
-        'Current localStorage content:',
-        localStorage.getItem(localStorageKey)
-      );
     } catch (error) {
       console.error('Error updating localStorage:', error);
     }
@@ -382,8 +322,6 @@ export default function ServiceOptionsBox(
       if (generalData) {
         const parsedGeneralData = JSON.parse(generalData);
         if (Array.isArray(parsedGeneralData) && parsedGeneralData.length > 0) {
-          console.log('Loading data from localStorage:', parsedGeneralData);
-
           // Transform the general format back to categories format
           const transformedCategories: ServiceCategory[] = [
             {
@@ -458,7 +396,6 @@ export default function ServiceOptionsBox(
           }
         } else {
           // If no data in localStorage, create initial empty state and save it
-          console.log('No data in localStorage, creating initial empty state');
           const initialCategory: ServiceCategory = {
             id: '0',
             uniqueKey: generateUniqueKey('category', '0', 0),
@@ -471,15 +408,11 @@ export default function ServiceOptionsBox(
 
           // Save initial empty state to localStorage
           setTimeout(() => {
-            console.log('Saving initial empty state to localStorage');
             updateLocalStorage();
           }, 0);
         }
       } else {
         // If localStorage key doesn't exist, create initial empty state and save it
-        console.log(
-          'LocalStorage key does not exist, creating initial empty state'
-        );
         const initialCategory: ServiceCategory = {
           id: '0',
           uniqueKey: generateUniqueKey('category', '0', 0),
@@ -495,7 +428,6 @@ export default function ServiceOptionsBox(
 
         // Save initial empty state to localStorage
         setTimeout(() => {
-          console.log('Saving initial empty state to localStorage');
           updateLocalStorage();
         }, 0);
       }
@@ -503,9 +435,6 @@ export default function ServiceOptionsBox(
       console.error('Error loading service options from localStorage:', error);
 
       // If there's an error, create initial empty state and save it
-      console.log(
-        'Error loading from localStorage, creating initial empty state'
-      );
       const initialCategory: ServiceCategory = {
         id: '0',
         uniqueKey: generateUniqueKey('category', '0', 0),
@@ -521,7 +450,6 @@ export default function ServiceOptionsBox(
 
       // Save initial empty state to localStorage
       setTimeout(() => {
-        console.log('Saving initial empty state to localStorage after error');
         updateLocalStorage();
       }, 0);
     }
@@ -677,19 +605,8 @@ export default function ServiceOptionsBox(
   };
 
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
-    console.log('=== HANDLE SERVICE OPTION UPDATE ===');
-    console.log('updatedServiceOption object:', updatedServiceOption);
-    console.log('updatedServiceOption.name:', updatedServiceOption.name);
-    console.log(
-      'updatedServiceOption.description:',
-      updatedServiceOption.description
-    );
-    console.log('Materials in update:', updatedServiceOption.materials);
-    console.log('Finishes in update:', updatedServiceOption.finishes);
-    console.log('Tools in update:', updatedServiceOption.tools);
     if (selectedServiceOption) {
       setCategories(prev => {
-        console.log('Previous categories state:', prev);
         const updatedCategories = prev.map(category =>
           (
             selectedCategoryUniqueKey
@@ -706,13 +623,9 @@ export default function ServiceOptionsBox(
               }
             : category
         );
-        console.log('Updated categories state:', updatedCategories);
         const ensured = ensureUniqueKeys(updatedCategories);
         // Update localStorage after state update with latest snapshot
         setTimeout(() => {
-          console.log(
-            'Calling updateLocalStorage from handleServiceOptionUpdate'
-          );
           updateLocalStorage(ensured);
         }, 0);
         return ensured;
@@ -953,10 +866,6 @@ export default function ServiceOptionsBox(
                 onTotalsChange={({ tradeTotal }) => {
                   // Keep the three purple totals in the header in sync with form
                   // We persist trade total (including materials and finishes) on the selected service option
-                  console.log(
-                    'onTotalsChange called with tradeTotal:',
-                    tradeTotal
-                  );
                   if (selectedServiceOption) {
                     setCategories(prev => {
                       // Check if the price actually needs to be updated
@@ -1009,10 +918,6 @@ export default function ServiceOptionsBox(
                               ),
                             }
                           : category
-                      );
-                      console.log(
-                        'Updated categories with new price:',
-                        updated
                       );
                       setTimeout(() => updateLocalStorage(updated), 0);
                       return ensureUniqueKeys(updated);
@@ -1099,7 +1004,6 @@ export default function ServiceOptionsBox(
                       : {}),
                 }}
                 onMaterialAdd={newMaterial => {
-                  console.log('onMaterialAdd called with:', newMaterial);
                   // Update the selected service option with the new material
                   const baseOption =
                     selectedServiceOptionData ||
@@ -1108,16 +1012,11 @@ export default function ServiceOptionsBox(
                           opt => opt.id === selectedServiceOption
                         ) || null
                       : null);
-                  console.log('baseOption for material add:', baseOption);
                   if (baseOption) {
                     const updatedServiceOption = {
                       ...baseOption,
                       materials: [...(baseOption.materials || []), newMaterial],
                     } as ServiceOption;
-                    console.log(
-                      'Updated service option with new material:',
-                      updatedServiceOption
-                    );
                     handleServiceOptionUpdate(updatedServiceOption);
                   }
                 }}
@@ -1272,13 +1171,6 @@ export default function ServiceOptionsBox(
                   }
                 }}
                 onServiceUpdate={updatedService => {
-                  console.log('=== ON SERVICE UPDATE CALLED ===');
-                  console.log('updatedService object:', updatedService);
-                  console.log('updatedService.name:', updatedService.name);
-                  console.log(
-                    'updatedService.description:',
-                    updatedService.description
-                  );
                   if (selectedServiceOptionData) {
                     // Get the current service data from categories state to ensure we have the latest materials, finishes, and tools
                     const currentServiceData = categories
@@ -1290,20 +1182,6 @@ export default function ServiceOptionsBox(
                       ?.serviceOptions.find(
                         opt => opt.id === selectedServiceOption
                       );
-
-                    console.log('currentServiceData:', currentServiceData);
-                    console.log(
-                      'selectedServiceOptionData:',
-                      selectedServiceOptionData
-                    );
-                    console.log(
-                      'currentServiceData materials:',
-                      currentServiceData?.materials
-                    );
-                    console.log(
-                      'selectedServiceOptionData materials:',
-                      selectedServiceOptionData?.materials
-                    );
 
                     // Update existing service option - preserve materials, finishes, and tools from form
                     const updatedServiceOption: ServiceOption = {
@@ -1330,10 +1208,6 @@ export default function ServiceOptionsBox(
                       })),
                       tools: updatedService.tools || [],
                     };
-                    console.log(
-                      'updatedServiceOption materials:',
-                      updatedServiceOption.materials
-                    );
                     if (updatedService.uuid) {
                       (
                         updatedServiceOption as unknown as { uuid?: string }
@@ -1374,9 +1248,6 @@ export default function ServiceOptionsBox(
 
                       // Update localStorage from within the callback to ensure state is updated
                       setTimeout(() => {
-                        console.log(
-                          'Calling updateLocalStorage for new service option from setCategories callback'
-                        );
                         updateLocalStorage(updatedCategories);
                       }, 0);
 

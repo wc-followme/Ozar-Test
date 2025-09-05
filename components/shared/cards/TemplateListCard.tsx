@@ -129,12 +129,6 @@ export function TemplateListCard({
 
   const handleCardClick = () => {
     if (isSelectionMode && onSelectionChange) {
-      console.log('Card clicked:', {
-        templateId: template.id,
-        templateName: template.templateName,
-        currentIsSelected: isSelected,
-        willToggleTo: !isSelected,
-      });
       onSelectionChange(template.id, !isSelected);
     }
   };
@@ -254,13 +248,6 @@ export function TemplateListCard({
                 '
                 checked={isSelected}
                 onCheckedChange={checked => {
-                  console.log('Checkbox changed:', {
-                    templateId: template.id,
-                    templateName: template.templateName,
-                    currentIsSelected: isSelected,
-                    newChecked: checked,
-                    willCallOnSelectionChange: !!onSelectionChange,
-                  });
                   onSelectionChange?.(template.id, !!checked);
                 }}
               />

@@ -44,11 +44,7 @@ export default function CreateTemplatePage({
 
   // Debug selectedTemplates changes
   useEffect(() => {
-    console.log('selectedTemplates state changed:', {
-      count: selectedTemplates.length,
-      selectedTemplates,
-      isModalOpen: isTemplateSheetOpen,
-    });
+    // selectedTemplates state tracking removed for production
   }, [selectedTemplates, isTemplateSheetOpen]);
   const [formData, setFormData] = useState({
     templateName: '',
@@ -510,8 +506,6 @@ export default function CreateTemplatePage({
           return;
         }
         // Use centralized calculation function to ensure consistency
-        console.log('Computing Project Total from localStorage data:', data);
-        console.log('Number of service options in localStorage:', data.length);
 
         const total = data.reduce((sum, svc, index) => {
           // Use the simplified function that handles both cases
@@ -521,25 +515,8 @@ export default function CreateTemplatePage({
             materials: svc.materials || [],
             finishes: svc.finishes || [],
           });
-          console.log(
-            `Service ${index + 1}:`,
-            svc.description || 'Unknown',
-            'Rate:',
-            svc.rate,
-            'Qty:',
-            svc.qty,
-            'Materials:',
-            svc.materials?.length || 0,
-            'Finishes:',
-            svc.finishes?.length || 0,
-            'Trade Total:',
-            tradeTotal,
-            'Running Sum:',
-            sum + tradeTotal
-          );
           return sum + tradeTotal;
         }, 0);
-        console.log('Final Project Total:', total);
         setProjectTotal(total);
       } catch {
         setProjectTotal(0);
@@ -552,7 +529,6 @@ export default function CreateTemplatePage({
     // Monitor localStorage changes
     const onStorage = (e: StorageEvent) => {
       if (e.key === 'service_options_template') {
-        console.log('localStorage changed, recomputing Project Total');
         computeTotal();
       }
     };
@@ -560,7 +536,6 @@ export default function CreateTemplatePage({
 
     // Also monitor for same-tab changes using a custom event
     const onCustomStorageChange = () => {
-      console.log('Custom storage change event, recomputing Project Total');
       computeTotal();
     };
     window.addEventListener('customStorageChange', onCustomStorageChange);
@@ -626,19 +601,6 @@ export default function CreateTemplatePage({
           material: 'Default Material', // Default value since API doesn't provide this
         }));
 
-        console.log('Transforming tool templates:', {
-          originalCount: toolTemplates.length,
-          transformedCount: transformedTemplates.length,
-          originalTemplates: toolTemplates.map(t => ({
-            uuid: t.uuid,
-            name: t.name,
-          })),
-          transformedTemplates: transformedTemplates.map(t => ({
-            id: t.id,
-            name: t.templateName,
-          })),
-        });
-
         return transformedTemplates;
       case 'disclaimers':
         return [
@@ -692,45 +654,21 @@ export default function CreateTemplatePage({
       const newSelection = selected
         ? [...prev, templateId]
         : prev.filter(id => id !== templateId);
-      console.log('Template selection changed:', {
-        templateId,
-        selected,
-        previousCount: prev.length,
-        newCount: newSelection.length,
-        newSelection,
-      });
       return newSelection;
     });
   };
 
   const handleAddSelectedTemplates = () => {
-    console.log('handleAddSelectedTemplates called with:', {
-      type,
-      selectedTemplatesCount: selectedTemplates.length,
-      selectedTemplates,
-      toolTemplatesCount: toolTemplates.length,
-    });
-
     if (type === 'tools' && selectedTemplates.length > 0) {
       // Extract tools from selected templates
       const selectedTemplateData = toolTemplates.filter(template =>
         selectedTemplates.includes(template.uuid)
       );
 
-      console.log('Selected template data:', selectedTemplateData);
-
       // Extract all tools from selected templates (using templateTools)
       const toolsFromTemplates = selectedTemplateData.flatMap(
         template => template.templateTools || []
       );
-
-      console.log('Tools from selected templates:', toolsFromTemplates);
-      console.log('Sample tool structure:', toolsFromTemplates[0]);
-      console.log(
-        'All properties of sample tool:',
-        toolsFromTemplates[0] ? Object.keys(toolsFromTemplates[0]) : 'No tools'
-      );
-      console.log('Sample tool.tool property:', toolsFromTemplates[0]?.tool);
 
       // Get unique tools by ACTUAL tool UUID (not association UUID) and create template tools
       const uniqueToolsMap = new Map();
@@ -754,19 +692,6 @@ export default function CreateTemplatePage({
       const uniqueTemplateTools = Array.from(uniqueToolsMap.values());
       const toolUuids = uniqueTemplateTools.map(tool => tool.uuid);
 
-      console.log('Unique ACTUAL tool UUIDs:', toolUuids);
-      console.log('Template tools for form:', uniqueTemplateTools);
-      console.log('Deduplication stats:', {
-        originalCount: toolsFromTemplates.length,
-        uniqueCount: uniqueTemplateTools.length,
-        duplicatesRemoved:
-          toolsFromTemplates.length - uniqueTemplateTools.length,
-        associationUuids: toolsFromTemplates.map(t => t.uuid),
-        actualToolUuids: toolsFromTemplates
-          .map(t => t.tool?.uuid)
-          .filter(Boolean),
-      });
-
       // Store template tools for the form
       setTemplateTools(uniqueTemplateTools);
 
@@ -775,14 +700,7 @@ export default function CreateTemplatePage({
         ...prev,
         tools: toolUuids,
       }));
-
-      console.log('Updated formData with tools:', toolUuids);
     } else {
-      console.log('No tools to add - conditions not met:', {
-        type,
-        isToolsType: type === 'tools',
-        hasSelectedTemplates: selectedTemplates.length > 0,
-      });
     }
 
     // Close modal and clear selections
@@ -1106,15 +1024,6 @@ export default function CreateTemplatePage({
               >
                 {(() => {
                   const templates = getTemplates();
-                  console.log('Rendering templates:', {
-                    count: templates.length,
-                    templates: templates.map(t => ({
-                      id: t.id,
-                      name: t.templateName,
-                    })),
-                    selectedTemplates,
-                    selectedCount: selectedTemplates.length,
-                  });
                   return templates.map(({ id, ...template }) => (
                     <TemplateListCard
                       key={id}
