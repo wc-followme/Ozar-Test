@@ -65,6 +65,7 @@ export const JOB_MESSAGES = {
   // Menu Options
   EDIT_MENU: 'Edit',
   DELETE_MENU: 'Archive',
+  RESTORE_MENU: 'Retrieve',
   CLOSE_JOB_MENU: 'Close job',
   ADD_EMPLOYEE_MENU: 'Add Employee',
   MOVE_TO_ARCHIVE_MENU: 'Move to Archive',
@@ -73,10 +74,14 @@ export const JOB_MESSAGES = {
   // Confirm Modal Messages
   DELETE_CONFIRM_TITLE: 'Are you sure you want to archive?',
   DELETE_CONFIRM_SUBTITLE: 'This action cannot be undone.',
+  RESTORE_CONFIRM_TITLE: 'Are you sure you want to retrieve?',
+  RESTORE_CONFIRM_SUBTITLE: 'This will retrieve the job to active status.',
 
   // Job Details Page Messages
   ARCHIVE_SUCCESS: 'Job moved to archive successfully.',
   ARCHIVE_ERROR: 'Failed to move job to archive.',
+  RESTORE_SUCCESS: 'Job retrieved successfully.',
+  RESTORE_ERROR: 'Failed to retrieve job.',
   CLOSE_SUCCESS: 'Job closed successfully.',
   CLOSE_ERROR: 'Failed to close job.',
   JOB_NOT_FOUND: 'Job not found',

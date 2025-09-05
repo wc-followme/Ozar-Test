@@ -1,18 +1,14 @@
 'use client';
-import LoadingComponent from '@/components/shared/common/LoadingComponent';
-import NoDataFound from '@/components/shared/common/NoDataFound';
-
-import { JobCard } from '@/components/shared/cards/JobCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 
 import ComingSoon from '@/components/shared/common/ComingSoon';
+import NoDataFound from '@/components/shared/common/NoDataFound';
 import SideSheet from '@/components/shared/common/SideSheet';
 import { CreateJobForm } from '@/components/shared/forms/CreateJobForm';
-import { JobCardSkeleton } from '@/components/shared/skeleton/JobCardSkeleton';
 import JobManagementPageSkeleton from '@/components/shared/skeleton/JobManagementPageSkeleton';
-import { Badge } from '@/components/ui/badge';
+
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import {
   APP_CONFIG,
@@ -34,15 +30,18 @@ import {
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { DynamicScrollArea } from '../../../components/shared/common/DynamicScrollArea';
+
+import { ArchiveTab } from './components/ArchiveTab';
+import { JobTabsList } from './components/JobTabsList';
+import { NewLeadsTab } from './components/NewLeadsTab';
 import { JOB_MESSAGES } from './job-messages';
 import { CreateJobFormData, Job, JobFilterCounts } from './types';
 
 export default function JobManagement() {
   // Destructure constants for better readability
   const { ACTIVE, INACTIVE } = CommonStatus;
-  const { NEW_LEADS, ALL } = JobFilterType;
-  const { DONE } = JobStatus;
+  const { NEW_LEADS, ALL, ARCHIVED} = JobFilterType;
+  const { DONE, PENDING } = JobStatus;
   const { HOME_OWNER } = ROUTES;
   const { JOBS_LIMIT } = PAGINATION;
   const { BASE_URL } = APP_CONFIG;
@@ -164,6 +163,7 @@ export default function JobManagement() {
         switch (tab) {
           case NEW_LEADS_TAB:
             params.status = ACTIVE;
+            params.job_status = PENDING;
             params.type = NEW_LEADS;
             break;
           case INFO:
@@ -182,8 +182,8 @@ export default function JobManagement() {
           // params.type = WAITING_ON_CLIENT;
           // break;
           case ARCHIVE:
-            params.status = INACTIVE;
-            params.type = ALL;
+            params.type = ARCHIVED;
+            params.job_status = DONE;
             break;
           case CLOSED:
             params.status = ACTIVE;
@@ -194,9 +194,8 @@ export default function JobManagement() {
             params.status = ACTIVE;
             params.type = ALL;
         }
-
+       
         const response = await apiService.fetchJobs(params);
-
         // Handle different possible response structures
         let newJobs: Job[] = [];
         let total = 0;
@@ -341,6 +340,41 @@ export default function JobManagement() {
     setSelectedTab(value);
   };
 
+  // Handle job restoration
+  const handleRestoreJob = async (uuid: string) => {
+    try {
+      // Find the job to get its current job_status
+      const job = jobs.find(j => j.uuid === uuid);
+      
+      const updatePayload: any = { status: ACTIVE };
+      
+      // Add job_status update conditionally
+      if (job?.job_status === DONE) {
+        updatePayload.job_status = 'PENDING';
+      }
+     
+      const response = await apiService.updateJob(uuid, updatePayload);
+      showSuccessToast(
+        extractApiSuccessMessage(response, JOB_MESSAGES.RESTORE_SUCCESS)
+      );
+      
+      // Remove the restored job from the current list immediately
+      setJobs(prev => prev.filter(job => job.uuid !== uuid));
+      
+      // Refresh jobs and counts to reflect latest server state
+      await fetchJobsByTab(selectedTab, 1, false);
+      fetchFilterCounts();
+    } catch (err: unknown) {
+      // Handle auth errors first (will redirect to login if 401)
+      if (handleAuthError(err)) {
+        return; // Don't show toast if it's an auth error
+      }
+
+      const message = extractApiErrorMessage(err, JOB_MESSAGES.RESTORE_ERROR);
+      showErrorToast(message);
+    }
+  };
+
   // Handle job creation
   const handleCreateJob = async (data: CreateJobFormData) => {
     // Destructure form data for cleaner code
@@ -420,58 +454,25 @@ export default function JobManagement() {
     }
   };
 
+  // Scroll handler for infinite loading
+  const handleScroll = useCallback((tab: string) => (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    if (loading || tabLoading || !hasMore) return;
+
+    const { scrollTop, clientHeight, scrollHeight } = target;
+    if (scrollTop + clientHeight >= scrollHeight - 200) {
+      setPage(prevPage => {
+        const nextPage = prevPage + 1;
+        fetchJobsByTab(tab, nextPage, true);
+        return nextPage;
+      });
+    }
+  }, [loading, tabLoading, hasMore, fetchJobsByTab]);
+
   // Only show full page skeleton on initial load
   if (loading) {
     return <JobManagementPageSkeleton />;
   }
-
-  // Reusable job grid component
-  const JobGrid = ({ jobs }: { jobs: Job[] }) => (
-    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-      {jobs.map((job: Job) => {
-        // Destructure job data for cleaner code
-        const {
-          uuid,
-          client_name,
-          project_id,
-          job_image,
-          client_email,
-          client_address,
-          project_start_date,
-        } = job;
-
-        return (
-          <JobCard
-            key={job.id}
-            job={{
-              id: uuid,
-              title: client_name || '-',
-              jobId: project_id || '-',
-              progress: 50, // Static value since not in API
-              image:
-                job_image ||
-                'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
-              email: client_email || '-',
-              address: client_address || '-',
-              startDate: project_start_date
-                ? new Date(project_start_date).toLocaleDateString()
-                : '-',
-              daysLeft: 0, // Static value since not in API
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-
-  // Skeleton grid component for tab loading
-  const JobSkeletonGrid = () => (
-    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-      {[...Array(4)].map((_, index) => (
-        <JobCardSkeleton key={`job-skeleton-${index}`} />
-      ))}
-    </div>
-  );
 
   // Check if user has permission to view jobs
   if (userPermissions && !canViewJobs) {
@@ -512,137 +513,20 @@ export default function JobManagement() {
           onValueChange={handleTabChange}
           className='w-full'
         >
-          <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_32px)] sm:max-w-full'>
-            <DynamicScrollArea className='w-full'>
-              <TabsList className='flex overflow-auto w-fit bg-[var(--dark-background)] p-1.5 sm:p-1 rounded-[32px] sm:rounded-[30px] h-auto font-normal justify-start max-w-full shadow-lg sm:shadow-none border border-[var(--border-dark)] sm:border-none'>
-                <TabsTrigger
-                  value={NEW_LEADS_TAB}
-                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span className='text-sm xl:text-base'>New Leads</span>
-                    <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === NEW_LEADS_TAB ? 'bg-[var(--badge-bg)] text-white shadow-sm sm:shadow-none' : 'bg-transparent text-limebrand'}`}
-                    >
-                      {filterCounts.new_leads}
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value={INFO}
-                  className='hidden px-4 py-2 text-sm xl:text-base gap-3 transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
-                >
-                  Need Attention{' '}
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === INFO ? 'bg-sidebarpurple text-white' : 'bg-transparent text-sidebarpurple'}`}
-                  >
-                    {filterCounts.need_attention}
-                  </Badge>
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value={ONGOING_JOB}
-                  className='hidden px-8 py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
-                >
-                  Ongoing Job
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === ONGOING_JOB ? 'bg-yellowbrand text-white' : 'bg-transparent text-yellowbrand'}`}
-                  >
-                    {filterCounts.ongoing_jobs}
-                  </Badge>
-                </TabsTrigger>
-                <TabsTrigger
-                  value={WAITING_ON_CLIENT}
-                  className='hidden px-8 py-2 text-sm xl:text-base gap-3 text-[var(--text-dark)] transition-colors data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white rounded-[30px] font-normal'
-                >
-                  {filterCounts.waiting_on_client}
-                  <Badge
-                    className={`py-[2px] px-[10px] text-sm font-medium rounded-lg ${selectedTab === WAITING_ON_CLIENT ? 'bg-greenbrand text-white' : 'bg-transparent text-greenbrand'}`}
-                  >
-                    {filterCounts.waiting_on_client || 0}
-                  </Badge>
-                </TabsTrigger>
-
-                <TabsTrigger
-                  value={ARCHIVE}
-                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span className='text-sm xl:text-base'>Archived</span>
-                    <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === ARCHIVE ? 'bg-graybrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-graybrand'}`}
-                    >
-                      {filterCounts.archived}
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger
-                  value={CLOSED}
-                  className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
-                >
-                  <span className='flex items-center gap-2'>
-                    <span className='text-sm xl:text-base'>Closed</span>
-                    <Badge
-                      className={`py-1 sm:py-[2px] px-2.5 sm:px-[10px] text-xs sm:text-sm font-bold sm:font-medium rounded-full sm:rounded-lg transition-all duration-300 ${selectedTab === CLOSED ? 'bg-greenbrand text-white shadow-sm sm:shadow-none' : 'bg-transparent text-greenbrand'}`}
-                    >
-                      {filterCounts.closed || 0}
-                    </Badge>
-                  </span>
-                </TabsTrigger>
-              </TabsList>
-            </DynamicScrollArea>
-            {canEdit && (
-              <div className='flex gap-3'>
-                <button
-                  onClick={() => setIsOpen(true)}
-                  className='btn-primary !hidden sm:!flex items-center shrink-0 justify-center !px-0 sm:!px-8 text-base text-center !h-12 !w-12 sm:!w-auto rounded-full transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 fixed sm:static bottom-6 right-6 z-50 sm:z-auto w-14 h-14 sm:w-auto sm:h-12 shadow-[0_8px_25px_-5px_rgba(0,0,0,0.3)] sm:shadow-none hover:shadow-[0_12px_35px_-8px_rgba(0,0,0,0.4)] sm:hover:shadow-none'
-                >
-                  <span className='hidden sm:inline text-base'>
-                    {JOB_MESSAGES.ADD_JOB_BUTTON}
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>
-          <TabsContent value={NEW_LEADS_TAB} className='pt-4 sm:pt-8'>
-            <ScrollArea
-              className='h-[calc(100vh_-_276px)]'
-              onScroll={e => {
-                const target = e.currentTarget;
-                if (loading || tabLoading || !hasMore) return;
-
-                const { scrollTop, clientHeight, scrollHeight } = target;
-                if (scrollTop + clientHeight >= scrollHeight - 200) {
-                  setPage(prevPage => {
-                    const nextPage = prevPage + 1;
-                    fetchJobsByTab(NEW_LEADS_TAB, nextPage, true);
-                    return nextPage;
-                  });
-                }
-              }}
-            >
-              {jobs.length === 0 && (loading || tabLoading) ? (
-                // Show skeleton for initial loading or tab loading
-                <JobSkeletonGrid />
-              ) : jobs.length === 0 && !loading && !tabLoading ? (
-                <NoDataFound
-                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                  onButtonClick={() => setIsOpen(true)}
-                />
-              ) : (
-                <>
-                  <JobGrid jobs={jobs} />
-                  {/* Loading more jobs */}
-                  {tabLoading && jobs.length > 0 && (
-                    <div className='w-full text-center py-4'>
-                      <LoadingComponent variant='inline' size='md' text={''} />
-                    </div>
-                  )}
-                </>
-              )}
-            </ScrollArea>
-          </TabsContent>
+          <JobTabsList
+            selectedTab={selectedTab}
+            filterCounts={filterCounts}
+            canEdit={canEdit || false}
+            onCreateJob={() => setIsOpen(true)}
+            buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+          />
+          <NewLeadsTab
+            jobs={jobs}
+            loading={loading}
+            tabLoading={tabLoading}
+            onScroll={handleScroll(NEW_LEADS_TAB)}
+            onCreateJob={() => setIsOpen(true)}
+          />
 
           <TabsContent value={INFO} className='pt-4 sm:pt-8'>
             <ScrollArea className='h-[calc(100vh_-_276px)]'>
@@ -660,84 +544,14 @@ export default function JobManagement() {
               <NoDataFound buttonText='Create Job' />
             </ScrollArea>
           </TabsContent>
-          <TabsContent value={CLOSED} className='pt-4 sm:pt-8'>
-            <ScrollArea
-              className='h-[calc(100vh_-_276px)]'
-              onScroll={e => {
-                const target = e.currentTarget;
-                if (loading || tabLoading || !hasMore) return;
-
-                const { scrollTop, clientHeight, scrollHeight } = target;
-                if (scrollTop + clientHeight >= scrollHeight - 200) {
-                  setPage(prevPage => {
-                    const nextPage = prevPage + 1;
-                    fetchJobsByTab(CLOSED, nextPage, true);
-                    return nextPage;
-                  });
-                }
-              }}
-            >
-              {jobs.length === 0 && (loading || tabLoading) ? (
-                // Show skeleton for initial loading or tab loading
-                <JobSkeletonGrid />
-              ) : jobs.length === 0 && !loading && !tabLoading ? (
-                <NoDataFound
-                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                  onButtonClick={() => setIsOpen(true)}
-                />
-              ) : (
-                <>
-                  <JobGrid jobs={jobs} />
-                  {/* Loading more jobs */}
-                  {tabLoading && jobs.length > 0 && (
-                    <div className='w-full text-center py-4'>
-                      <LoadingComponent variant='inline' size='md' text={''} />
-                    </div>
-                  )}
-                </>
-              )}
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value={ARCHIVE} className='pt-4 sm:pt-8'>
-            <ScrollArea
-              className='h-[calc(100vh_-_276px)]'
-              onScroll={e => {
-                const target = e.currentTarget;
-                if (loading || tabLoading || !hasMore) return;
-
-                const { scrollTop, clientHeight, scrollHeight } = target;
-                if (scrollTop + clientHeight >= scrollHeight - 200) {
-                  setPage(prevPage => {
-                    const nextPage = prevPage + 1;
-                    fetchJobsByTab(ARCHIVE, nextPage, true);
-                    return nextPage;
-                  });
-                }
-              }}
-            >
-              {jobs.length === 0 && (loading || tabLoading) ? (
-                // Show skeleton for initial loading or tab loading
-                <JobSkeletonGrid />
-              ) : jobs.length === 0 && !loading && !tabLoading ? (
-                <NoDataFound
-                  description={JOB_MESSAGES.NO_JOBS_FOUND_DESCRIPTION}
-                  buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-                  onButtonClick={() => setIsOpen(true)}
-                />
-              ) : (
-                <>
-                  <JobGrid jobs={jobs} />
-                  {/* Loading more jobs */}
-                  {tabLoading && jobs.length > 0 && (
-                    <div className='w-full text-center py-4'>
-                      <LoadingComponent variant='inline' size='md' text={''} />
-                    </div>
-                  )}
-                </>
-              )}
-            </ScrollArea>
-          </TabsContent>
+          <ArchiveTab
+            jobs={jobs}
+            loading={loading}
+            tabLoading={tabLoading}
+            onScroll={handleScroll(ARCHIVE)}
+            onCreateJob={() => setIsOpen(true)}
+            onRestoreJob={handleRestoreJob}
+          />
         </Tabs>
       </div>
 
