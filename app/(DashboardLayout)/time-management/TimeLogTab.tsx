@@ -1,9 +1,7 @@
 'use client';
 
 import { DynamicTable } from '@/components/shared/common/DynamicTable';
-import SideSheet from '@/components/shared/common/SideSheet';
 import { TimeLogComponent } from '@/components/shared/common/TimeLogComponent';
-import { PunchInForm } from '@/components/shared/forms/PunchInForm';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -11,150 +9,53 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { timeLogData } from '@/constants/dummy-data';
+import { TIME_LOG_COLUMNS } from '@/constants/tablecolumns';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { InfoCircle, Map, TickCircle } from 'iconsax-react';
 import { Clock } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export const TimeLogTab = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30 DAYS');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [isGPSEnabled, setIsGPSEnabled] = useState(false); // GPS status state
-  const [isPunchInOpen, setIsPunchInOpen] = useState(false); // Punch In side sheet state
+  const { sidebarWidth, isClient } = useSidebarState();
 
   const periods = ['30 DAYS', 'JAN', 'DEC', 'NOV', 'OCT', 'SEP', 'AUG'];
 
-  // Function to check GPS permission status
-  const checkGPSPermission = async () => {
-    if (!navigator.geolocation) {
-      setIsGPSEnabled(false);
-      return;
+  // Calculate dynamic table max-width based on sidebar state
+  const getTableStyle = () => {
+    console.log('TimeLogTab - getTableStyle called:', {
+      isClient,
+      sidebarWidth,
+    });
+
+    if (!isClient) {
+      console.log('Not client yet, using conservative default style');
+      return { maxWidth: 'calc(100vw - 200px)' };
     }
 
-    try {
-      // Check if we can get the current position without requesting permission
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: false, // Use low accuracy for permission check
-            timeout: 5000, // Shorter timeout for permission check
-            maximumAge: 300000, // 5 minutes cache
-          });
-        }
-      );
+    // Check if screen is 1024px or less (mobile/tablet)
+    const isMobileOrTablet = window.innerWidth <= 1024;
 
-      if (position) {
-        setIsGPSEnabled(true);
-        console.log('GPS already enabled:', position.coords);
-      }
-    } catch (error: any) {
-      // Check specific error codes
-      if (error.code === error.PERMISSION_DENIED) {
-        setIsGPSEnabled(false);
-        console.log('GPS permission denied');
-      } else if (error.code === error.POSITION_UNAVAILABLE) {
-        setIsGPSEnabled(false);
-        console.log('GPS position unavailable');
-      } else if (error.code === error.TIMEOUT) {
-        setIsGPSEnabled(false);
-        console.log('GPS timeout');
-      } else {
-        setIsGPSEnabled(false);
-        console.log('GPS error:', error.message);
-      }
-    }
-  };
-
-  // Check GPS permission on component mount
-  useEffect(() => {
-    checkGPSPermission();
-  }, []);
-
-  // Function to clear GPS permissions and force popup
-  const forceGPSPermission = async () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
-      return;
+    if (isMobileOrTablet) {
+      console.log('Screen width <= 1024px, using mobile width calculation');
+      // For mobile/tablet: very conservative calculation to prevent any scrolling
+      // Account for main padding (48px) + extra safety margin (32px)
+      return { maxWidth: 'calc(100vw - 80px)' };
     }
 
-    try {
-      // Force a new permission request by using a different approach
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 15000, // Longer timeout for permission request
-            maximumAge: 0, // No cache, always get fresh position
-          });
-        }
-      );
-
-      if (position) {
-        setIsGPSEnabled(true);
-        console.log('GPS permission granted:', position.coords);
-        alert('GPS permission granted! You can now punch in.');
-      }
-    } catch (error: any) {
-      console.error('GPS permission error:', error);
-
-      if (error.code === error.PERMISSION_DENIED) {
-        // If permission is denied, show instructions to enable it manually
-        alert(
-          'GPS permission denied. Please:\n1. Click the lock/info icon in your browser address bar\n2. Change GPS permission to "Allow"\n3. Refresh the page'
-        );
-      } else if (error.code === error.POSITION_UNAVAILABLE) {
-        alert(
-          'GPS position unavailable. Please check your device GPS settings.'
-        );
-      } else if (error.code === error.TIMEOUT) {
-        alert('GPS request timed out. Please try again.');
-      } else {
-        alert('GPS error: ' + error.message);
-      }
-
-      setIsGPSEnabled(false);
-    }
-  };
-
-  // Function to request GPS permission and check status
-  const handleGPSRequest = async () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
-      return;
-    }
-
-    try {
-      // Request GPS permission and get current position
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000,
-          });
-        }
-      );
-
-      if (position) {
-        setIsGPSEnabled(true);
-        console.log('GPS enabled:', position.coords);
-      }
-    } catch (error) {
-      console.error('GPS permission denied or error:', error);
-      setIsGPSEnabled(false);
-      alert('GPS permission denied. Please enable GPS to punch in.');
-    }
-  };
-
-  // Function to handle punch-in when GPS is enabled
-  const handlePunchIn = async () => {
-    if (!isGPSEnabled) {
-      // If GPS is not enabled, request it first
-      await handleGPSRequest();
-      return;
-    }
-
-    // If GPS is enabled, open the punch-in side sheet
-    setIsPunchInOpen(true);
+    // Desktop: use very conservative sidebar-aware calculation
+    // Account for: sidebar width + main padding (48px) + container padding (24px) + extra safety margin (48px)
+    const totalOffset = sidebarWidth + 48 + 24 + 48; // Very conservative padding
+    const maxWidthValue = `calc(100vw - ${totalOffset}px)`;
+    console.log(
+      'Using desktop calculated max-width:',
+      maxWidthValue,
+      'totalOffset:',
+      totalOffset,
+      'sidebarWidth:',
+      sidebarWidth
+    );
+    return { maxWidth: maxWidthValue };
   };
 
   const renderAttendanceVisual = (hours: number, isWeeklyOff: boolean) => {
@@ -171,9 +72,9 @@ export const TimeLogTab = () => {
     const breakWidth = hasBreak ? 20 : 0; // Break width is 20% of the bar
 
     return (
-      <div className='w-full h-2 bg-[#34AD4426] rounded-full relative overflow-hidden'>
+      <div className='w-full h-2 bg-[var(--secondary-15)] rounded-full relative overflow-hidden'>
         {/* Background */}
-        <div className='w-full h-full bg-[#34AD4426] absolute inset-0' />
+        <div className='w-full h-full bg-[var(--secondary-15)] absolute inset-0' />
 
         {/* Progress segments with break */}
         {hasBreak ? (
@@ -273,7 +174,7 @@ export const TimeLogTab = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <button className='mx-auto hover:scale-110 transition-transform cursor-pointer'>
-                  <InfoCircle size='20' color='#EBB402' />
+                  <InfoCircle size='20' color='var(--error)' />
                 </button>
               </PopoverTrigger>
               <PopoverContent
@@ -303,7 +204,7 @@ export const TimeLogTab = () => {
           <Popover>
             <PopoverTrigger asChild>
               <button className='mx-auto hover:scale-110 transition-transform cursor-pointer'>
-                <InfoCircle size='20' color='#EBB402' />
+                <InfoCircle size='20' color='var(--error)' />
               </button>
             </PopoverTrigger>
             <PopoverContent
@@ -375,68 +276,52 @@ export const TimeLogTab = () => {
     }
   };
 
-  const columns = [
-    {
-      key: 'date',
-      label: 'Date',
-      width: 'w-24',
-      type: 'text' as const,
-    },
-    {
-      key: 'attendanceVisual',
-      label: 'Attendance Visual',
-      width: 'w-32',
-      type: 'custom' as const,
-      render: (value: any, row: any) =>
-        renderAttendanceVisual(value, row.isWeeklyOff),
-    },
-    {
-      key: 'effectiveHours',
-      label: 'Effective Hours',
-      width: 'w-28',
-      type: 'text' as const,
-      render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
-    },
-    {
-      key: 'grossHours',
-      label: 'Gross Hours',
-      width: 'w-28',
-      type: 'text' as const,
-      render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
-    },
-    {
-      key: 'arrival',
-      label: 'Arrival',
-      width: 'w-28',
-      type: 'text' as const,
-      render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
-    },
-    {
-      key: 'overTime',
-      label: 'Over Time',
-      width: 'w-28',
-      type: 'text' as const,
-      render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
-    },
-    {
-      key: 'gps',
-      label: 'GPS',
-      width: 'w-20',
-      type: 'custom' as const,
-      render: (value: any, row: any) => renderGPS(value, row.isWeeklyOff),
-    },
-    {
-      key: 'log',
-      label: 'Log',
-      width: 'w-16',
-      type: 'custom' as const,
-      render: (value: any, row: any) =>
-        renderLog(value, row.effectiveHours || '', row.isWeeklyOff, row),
-      align: 'center' as const,
-    },
-  ];
+  // Create columns with custom render functions
+  const columns = TIME_LOG_COLUMNS.map(column => {
+    switch (column.key) {
+      case 'attendanceVisual':
+        return {
+          ...column,
+          render: (value: any, row: any) =>
+            renderAttendanceVisual(value, row.isWeeklyOff),
+        };
+      case 'effectiveHours':
+        return {
+          ...column,
+          render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
+        };
+      case 'grossHours':
+        return {
+          ...column,
+          render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
+        };
+      case 'arrival':
+        return {
+          ...column,
+          render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
+        };
+      case 'overTime':
+        return {
+          ...column,
+          render: (value: any, row: any) => (row.isWeeklyOff ? null : value),
+        };
+      case 'gps':
+        return {
+          ...column,
+          render: (value: any, row: any) => renderGPS(value, row.isWeeklyOff),
+        };
+      case 'log':
+        return {
+          ...column,
+          render: (value: any, row: any) =>
+            renderLog(value, row.effectiveHours || '', row.isWeeklyOff, row),
+        };
+      default:
+        return column;
+    }
+  });
 
-  const filteredData = timeLogData.filter(item => {
+  const filteredData = timeLogData.filter(() => {
     if (selectedPeriod === '30 DAYS') return true;
     // Add month filtering logic here if needed
     return true;
@@ -445,17 +330,17 @@ export const TimeLogTab = () => {
   return (
     <div className='space-y-6'>
       {/* Date Filters and Overtime Summary */}
-      <div className='flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4'>
+      <div className='flex flex-col lg:flex-row flex-wrap justify-between items-start lg:items-center gap-4'>
         {/* Date Filters with TabsList styling */}
-        <div className='flex flex-wrap items-center gap-2'>
-          <div className='bg-[var(--dark-background)] p-1 rounded-[32px] border border-[var(--border-dark)]'>
-            <div className='flex items-center gap-0.5'>
+        <div className='flex items-center gap-2 w-full overflow-x-auto max-w-[calc(100vw_-_80px)] sm:max-w-full rounded-full'>
+          <div className='bg-[var(--dark-background)] p-1 rounded-[32px] border border-[var(--border-dark)] min-w-fit'>
+            <div className='flex items-center gap-0.5 overflow-x-auto'>
               {periods.map(period => (
                 <Button
                   variant='ghost'
                   key={period}
                   onClick={() => setSelectedPeriod(period)}
-                  className={`px-6 py-2 text-base font-normal rounded-[28px] ${
+                  className={`px-4 sm:px-6 py-2 text-sm sm:text-base font-normal rounded-[28px] whitespace-nowrap flex-shrink-0 ${
                     selectedPeriod === period
                       ? '!bg-[var(--primary)] !text-white shadow-lg font-semibold'
                       : 'text-[var(--text-dark)] hover:!bg-[var(--primary)] hover:text-white'
@@ -467,28 +352,14 @@ export const TimeLogTab = () => {
             </div>
           </div>
         </div>
-
-        {/* GPS Punch-in Button */}
-        <div className='flex justify-end'>
-          <Button
-            variant={isGPSEnabled ? 'default' : 'outline'}
-            className={
-              isGPSEnabled
-                ? 'btn-primary'
-                : 'bg-[var(--text-placeholder)] rounded-full text-white border-[var(--text-placeholder)] hover:bg-[var(--text-placeholder)] hover:opacity-90'
-            }
-            onClick={isGPSEnabled ? handlePunchIn : forceGPSPermission}
-          >
-            {isGPSEnabled ? 'Punch In' : 'Turn on GPS to Punch in!'}
-          </Button>
-        </div>
       </div>
 
       {/* Time Log Table */}
       <DynamicTable
         columns={columns}
         data={filteredData}
-        className='w-full'
+        className='relative block w-full overflow-x-auto overflow-y-hidden overscroll-x-auto'
+        style={getTableStyle()}
         showRowNumbers={false}
         rowClassName={row =>
           row.isWeeklyOff ? 'bg-[var(--border-light)]' : ''
@@ -497,23 +368,6 @@ export const TimeLogTab = () => {
           headerBgColor: 'bg-[var(--background)]',
         }}
       />
-
-      {/* Punch In Side Sheet */}
-      <SideSheet
-        open={isPunchInOpen}
-        onOpenChange={setIsPunchInOpen}
-        title='Punch In'
-        size='600px'
-      >
-        <PunchInForm
-          onCancel={() => setIsPunchInOpen(false)}
-          onSubmit={(data: any) => {
-            console.log('Punch In submitted:', data);
-            // Handle punch in submission here
-            setIsPunchInOpen(false);
-          }}
-        />
-      </SideSheet>
     </div>
   );
 };

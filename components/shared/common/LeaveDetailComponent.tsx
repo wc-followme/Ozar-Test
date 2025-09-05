@@ -16,7 +16,7 @@ export const LeaveDetailComponent = ({
   leaveBalances,
 }: LeaveDetailComponentProps) => {
   return (
-    <div className='grid grid-cols-5 gap-4 p-5 border border-[var(--border-dark)] rounded-md'>
+    <div className='grid xl:grid-cols-5 lg:grid-cols-3 grid-cols-2 gap-4 p-5 border border-[var(--border-dark)] rounded-md'>
       <div className=''>
         <div className='text-sm text-[var(--text-secondary)]'>Available</div>
         <div className='text-sm font-medium text-[var(--text-dark)]'>

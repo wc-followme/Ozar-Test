@@ -244,15 +244,6 @@ export const ApplyLeaveForm = ({ onCancel, onSubmit }: ApplyLeaveFormProps) => {
     <div className='space-y-6'>
       {/* Form */}
       <form onSubmit={handleSubmit} className='space-y-6'>
-        {/* Type of Leave */}
-        <SelectField
-          label='Type of Leave'
-          value={formData.leaveType}
-          onValueChange={value => handleInputChange('leaveType', value)}
-          options={leaveTypeOptions}
-          placeholder='Select leave type'
-        />
-
         {/* Date Range - From and To in one row */}
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
           {/* From Date */}
@@ -339,7 +330,14 @@ export const ApplyLeaveForm = ({ onCancel, onSubmit }: ApplyLeaveFormProps) => {
             </Popover>
           </div>
         </div>
-
+        {/* Type of Leave */}
+        <SelectField
+          label='Type of Leave'
+          value={formData.leaveType}
+          onValueChange={value => handleInputChange('leaveType', value)}
+          options={leaveTypeOptions}
+          placeholder='Select leave type'
+        />
         {/* Requesting for */}
         <SelectField
           label='Requesting for'

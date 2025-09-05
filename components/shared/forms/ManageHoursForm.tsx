@@ -52,7 +52,7 @@ export const ManageHoursForm = ({
             type='text'
             value={formData.selectedDate}
             onChange={e => handleInputChange('selectedDate', e.target.value)}
-            className='input-field disabled:bg-[#E8EAED] disabled:text-[var(--text-dark)]'
+            className='input-field disabled:bg-[var(--dark-background)] disabled:text-[var(--text-dark)]'
             placeholder='Select date'
             disabled
           />

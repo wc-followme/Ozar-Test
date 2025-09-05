@@ -59,6 +59,7 @@ interface DynamicTableProps {
   data: any[];
   actions?: TableAction[];
   className?: string;
+  style?: React.CSSProperties;
   emptyMessage?: string;
   showRowNumbers?: boolean;
   rowNumberLabel?: string;
@@ -75,6 +76,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
   data,
   actions = [],
   className = '',
+  style,
   emptyMessage = 'No data available',
   showRowNumbers = true,
   rowNumberLabel = 'NO.',
@@ -269,6 +271,7 @@ export const DynamicTable: React.FC<DynamicTableProps> = ({
         'relative block w-full overflow-x-auto overflow-y-hidden overscroll-x-auto',
         className
       )}
+      style={style}
     >
       <Table className='w-full'>
         <TableHeader className={headerBgColor}>
