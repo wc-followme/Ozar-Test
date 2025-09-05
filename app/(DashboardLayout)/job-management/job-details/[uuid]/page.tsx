@@ -1,10 +1,18 @@
 'use client';
 
 import { MoveBoxIcon } from '@/components/icons/MoveBoxIcon';
+import JobDetailsBottomBlock from '@/components/sections/JobDetailsBottomBlock';
+import JobDetailsTopBlock from '@/components/sections/JobDetailsTopBlock';
 import { Breadcrumb, BreadcrumbItem } from '@/components/shared/Breadcrumb';
+import { NoteListCard } from '@/components/shared/cards/NoteListCard';
 import AccessDenied from '@/components/shared/common/AccessDenied';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import Dropdown from '@/components/shared/common/Dropdown';
+import SideSheet from '@/components/shared/common/SideSheet';
+import UserDropdownField from '@/components/shared/common/UserDropdownField';
+import { AddEmployeeToJobForm } from '@/components/shared/forms/AddEmployeeToJobForm';
+import { EditJobDetailsForm } from '@/components/shared/forms/EditJobDetailsForm';
+import { NoteListForm } from '@/components/shared/forms/NoteListForm';
 import JobDetailsSkeleton from '@/components/shared/skeleton/JobDetailsSkeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
@@ -18,12 +26,17 @@ import {
   getUserPermissionsFromStorage,
 } from '@/lib/utils';
 import { IconDotsVertical } from '@tabler/icons-react';
-import { ClipboardClose, Setting2, UserAdd } from 'iconsax-react';
-import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { ClipboardClose, Note, Setting2, UserAdd } from 'iconsax-react';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { JOB_MESSAGES } from '../../job-messages';
 import { Job } from '../../types';
+
+interface Note {
+  id: string;
+  content: string;
+  timestamp: Date;
+}
 
 export default function JobDetailsPage() {
   // Destructure constants for better readability
@@ -32,6 +45,7 @@ export default function JobDetailsPage() {
   const { JOB_MANAGEMENT } = ROUTES;
 
   const params = useParams();
+  const router = useRouter();
   const uuid = params['uuid'] as string;
   const [job, setJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +54,14 @@ export default function JobDetailsPage() {
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [isNoteSheetOpen, setIsNoteSheetOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [_isSubmittingNote, _setIsSubmittingNote] = useState(false);
+  const [isAddEmployeeSheetOpen, setIsAddEmployeeSheetOpen] = useState(false);
+  const [isSubmittingEmployee, setIsSubmittingEmployee] = useState(false);
+  const [isEditJobSheetOpen, setIsEditJobSheetOpen] = useState(false);
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const { showErrorToast, showSuccessToast } = useToast();
   const { handleAuthError } = useAuth();
 
@@ -101,6 +123,8 @@ export default function JobDetailsPage() {
       // Update the local job state to reflect the change
       setJob(prev => (prev ? { ...prev, status: INACTIVE } : null));
       setShowArchiveConfirm(false);
+      // Redirect to job listing page after successful archive
+      router.push(JOB_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -126,6 +150,8 @@ export default function JobDetailsPage() {
       // Update the local job state to reflect the change
       setJob(prev => (prev ? { ...prev, job_status: DONE } : null));
       setShowCloseConfirm(false);
+      // Redirect to job listing page after successful close
+      router.push(JOB_MANAGEMENT);
     } catch (err: unknown) {
       // Handle auth errors first (will redirect to login if 401)
       if (handleAuthError(err)) {
@@ -143,6 +169,152 @@ export default function JobDetailsPage() {
     { name: JOB_MESSAGES.JOB_MANAGEMENT_BREADCRUMB, href: JOB_MANAGEMENT },
     { name: job?.project_id || job?.['uuid'] || 'Job Details' },
   ];
+
+  // Mock users data for the UserDropdownField component
+  const mockUsers = [
+    { id: '1', name: 'John Doe', image: '/images/profile.jpg' },
+    { id: '2', name: 'Jane Smith', image: '/images/profile.jpg' },
+    { id: '3', name: 'Mike Johnson', image: '/images/profile.jpg' },
+    { id: '4', name: 'Sarah Wilson', image: '/images/profile.jpg' },
+    { id: '5', name: 'David Brown', image: '/images/profile.jpg' },
+    { id: '6', name: 'Lisa Davis', image: '/images/profile.jpg' },
+  ];
+
+  // Mock available employees for the AddEmployeeToJobForm
+  const availableEmployees = [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john.doe@company.com',
+      role: 'Developer',
+    },
+    {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane.smith@company.com',
+      role: 'Designer',
+    },
+    {
+      id: '3',
+      name: 'Mike Johnson',
+      email: 'mike.johnson@company.com',
+      role: 'QA Engineer',
+    },
+    {
+      id: '4',
+      name: 'Sarah Wilson',
+      email: 'sarah.wilson@company.com',
+      role: 'Project Manager',
+    },
+    {
+      id: '5',
+      name: 'David Brown',
+      email: 'david.brown@company.com',
+      role: 'DevOps Engineer',
+    },
+    {
+      id: '6',
+      name: 'Lisa Davis',
+      email: 'lisa.davis@company.com',
+      role: 'Business Analyst',
+    },
+  ];
+
+  const handleUserAction = (action: string) => {
+    console.log('User action:', action);
+    // Handle user actions here
+  };
+
+  // Note handling functions
+  const handleAddNote = (note: Note) => {
+    setNotes(prev => [note, ...prev]);
+    setIsNoteSheetOpen(false);
+    showSuccessToast('Note added successfully');
+  };
+
+  const handleEditNote = (note: Note) => {
+    setEditingNote(note);
+    setIsNoteSheetOpen(true);
+  };
+
+  const handleUpdateNote = (updatedNote: Note) => {
+    setNotes(prev =>
+      prev.map(note => (note.id === updatedNote.id ? updatedNote : note))
+    );
+    setEditingNote(null);
+    setIsNoteSheetOpen(false);
+    showSuccessToast('Note updated successfully');
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+      showSuccessToast('Note deleted successfully');
+    } catch (error) {
+      showErrorToast('Failed to delete note');
+    }
+  };
+
+  const handleNoteSheetClose = () => {
+    setIsNoteSheetOpen(false);
+    setEditingNote(null);
+  };
+
+  const handleNoteSubmit = (noteData: {
+    id: string;
+    content: string;
+    timestamp: Date;
+  }) => {
+    if (editingNote) {
+      handleUpdateNote({ ...noteData, id: editingNote.id });
+    } else {
+      handleAddNote(noteData);
+    }
+  };
+
+  const handleAddEmployee = async (employeeData: {
+    projectName: string;
+    room: string;
+    trade: string;
+    service: string;
+    startDate: string;
+    dueDate: string;
+    employeeIds: string[];
+  }) => {
+    try {
+      setIsSubmittingEmployee(true);
+      // Here you would typically make an API call to add the employee to the job
+      console.log('Adding employee to job:', employeeData);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showSuccessToast('Employee added to job successfully');
+      setIsAddEmployeeSheetOpen(false);
+    } catch (error) {
+      showErrorToast('Failed to add employee to job');
+    } finally {
+      setIsSubmittingEmployee(false);
+    }
+  };
+
+  const handleEditJob = async (jobData: any) => {
+    try {
+      setIsSubmittingEdit(true);
+      // Here you would typically make an API call to update the job
+      console.log('Updating job:', jobData);
+
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      showSuccessToast('Job updated successfully');
+      setIsEditJobSheetOpen(false);
+    } catch (error) {
+      showErrorToast('Failed to update job');
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
 
   if (loading) {
     return <JobDetailsSkeleton />;
@@ -204,7 +376,7 @@ export default function JobDetailsPage() {
       {
         label: JOB_MESSAGES.ADD_EMPLOYEE_MENU,
         icon: UserAdd,
-        action: () => {},
+        action: () => setIsAddEmployeeSheetOpen(true),
         className:
           'text-sm px-3 py-2 rounded-md cursor-pointer transition-colors flex items-center gap-2 hover:bg-gray-100',
       },
@@ -252,13 +424,33 @@ export default function JobDetailsPage() {
   }
 
   return (
-    <div className=''>
-      {/* Breadcrumb */}
-      <div className='flex flex-wrap flex-col sm:flex-row gap-2 items-start text-sm font-normal mb-1 w-full md:text-base md:mb-3'>
+    <div className='space-y-6'>
+      {/* Header Section with Breadcrumb and Actions */}
+      <div className='flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between'>
+        {/* Breadcrumb */}
         <Breadcrumb items={breadcrumbData} className='flex-1' />
-        {/* 3-dots menu */}
+
+        {/* Action Buttons */}
         {isClient && (
-          <div className='ml-auto mt-2 md:mt-0'>
+          <div className='flex items-center gap-3 ml-auto'>
+            {/* Notes Button */}
+            <Button
+              variant='outline'
+              className='bg-[var(--error-20)] hover:bg-[var(--error-light)] border-[var(--error)] text-[var(--text-dark)] px-4 py-2 rounded-full flex items-center gap-2'
+              onClick={() => setIsNoteSheetOpen(true)}
+            >
+              <Note className='!w-5 !h-5' color='var(--text-dark)' />
+              <span className='hidden sm:inline'>Notes</span>
+            </Button>
+
+            {/* User Dropdown Field */}
+            <UserDropdownField
+              users={mockUsers}
+              maxVisible={3}
+              onAction={handleUserAction}
+            />
+
+            {/* 3-dots menu */}
             <Dropdown
               menuOptions={dropdownMenuItems
                 .filter(item => !item.disabled)
@@ -280,7 +472,7 @@ export default function JobDetailsPage() {
                 <Button
                   variant='ghost'
                   size='icon'
-                  className='h-8 w-8 p-0 rotate-90'
+                  className='h-8 w-8 p-0 rotate-90 self-center'
                   disabled={archiving || closing}
                 >
                   <IconDotsVertical
@@ -295,123 +487,31 @@ export default function JobDetailsPage() {
           </div>
         )}
       </div>
-      {/* Card */}
-      <div className='bg-[var(--card-background)] rounded-[20px] p-4 md:p-6 flex flex-col md:flex-row md:justify-between border border-[var(--border-dark)] max-w-full gap-4 md:gap-0 relative shadow-lg sm:shadow-none'>
-        {status === INACTIVE && (
-          <div className='absolute top-4 right-4 bg-gray-500 text-white px-3 py-1 rounded-full text-sm font-medium'>
-            {JOB_MESSAGES.ARCHIVED_STATUS}
-          </div>
-        )}
-        {job_status === DONE && (
-          <div className='absolute top-4 right-4 bg-[var(--secondary)] text-white px-3 py-1 rounded-full text-sm font-medium'>
-            {JOB_MESSAGES.CLOSED_STATUS}
-          </div>
-        )}
-        {/* Project Image */}
-        <div className='flex-shrink-0 flex justify-center md:block mb-4 md:mb-0'>
-          <Image
-            src={projectImage}
-            alt='Project'
-            width={120}
-            height={120}
-            className='rounded-[8px] object-cover w-[100px] h-[100px] md:w-[120px] md:h-[120px]'
-          />
-        </div>
-        {/* Details */}
-        <div className='flex-1 px-0 md:px-6 w-full'>
-          <div className='flex flex-wrap gap-y-4 md:gap-4 border-b border-[var(--border-dark)] pb-2 mb-3'>
-            <div className='break-words flex-1 min-w-52'>
-              <div className='text-sm text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.PROJECT_ID_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {projectId}
-              </div>
-            </div>
-            <div className='break-words flex-1'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.PROJECT_NAME_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {projectName}
-              </div>
-            </div>
-            <div className='break-words flex-1'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.JOB_CATEGORY_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {categoryName}
-              </div>
-            </div>
-            <div className='flex-1 flex flex-col md:flex-row md:items-center gap-2 break-words'>
-              <div>
-                <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                  {JOB_MESSAGES.BUDGET_LABEL}
-                </div>
-                <div className='flex items-center gap-2'>
-                  <span className='font-semibold text-base text-[var(--text-dark)]'>
-                    ${spent.toLocaleString()}
-                  </span>
-                  <div className='w-32 h-2 bg-gray-200 rounded-full overflow-hidden'>
-                    <div
-                      className='h-2 bg-[var(--secondary)]'
-                      style={{ width: `${(spent / budgetAmount) * 100}%` }}
-                    />
-                  </div>
-                  <span className='text-[var(--text-secondary)] font-medium'>
-                    ${budgetAmount.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className='flex flex-wrap gap-y-4 md:gap-4 items-start md:items-center mt-2'>
-            <div className='min-w-60 break-words'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.CLIENT_NAME_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {clientName}
-              </div>
-            </div>
-            <div className='flex-1 min-w-fit'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.EMAIL_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {clientEmail}
-              </div>
-            </div>
-            <div className='flex-1 min-w-36 break-words'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.PHONE_NUMBER_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {clientPhone}
-              </div>
-            </div>
-            <div className='min-w-48 flex-1 break-words'>
-              <div className='text-xs text-[var(--text-secondary)] font-normal mb-1'>
-                {JOB_MESSAGES.ADDRESS_LABEL}
-              </div>
-              <div className='font-semibold text-base text-[var(--text-dark)]'>
-                {clientAddress}
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* Map Image */}
-        <div className='flex justify-center gap-2 mt-4 md:mt-0'>
-          <Image
-            src={mapImage}
-            alt='Map'
-            width={100}
-            height={100}
-            className='rounded-[8px] object-cover w-[100px] h-[100px] md:w-[120px] md:h-[120px]'
-          />
-        </div>
-      </div>
+
+      {/* Job Details Card */}
+      <JobDetailsTopBlock
+        isArchived={status === INACTIVE}
+        isClosed={job_status === DONE}
+        projectId={projectId}
+        projectName={projectName}
+        categoryName={categoryName}
+        spent={spent}
+        budgetAmount={budgetAmount}
+        clientName={clientName}
+        clientEmail={clientEmail}
+        clientPhone={clientPhone}
+        clientAddress={clientAddress}
+        projectImage={projectImage}
+        mapImage={mapImage}
+        archivedStatusMessage={JOB_MESSAGES.ARCHIVED_STATUS}
+        closedStatusMessage={JOB_MESSAGES.CLOSED_STATUS}
+        onEditClick={() => {
+          setIsEditJobSheetOpen(true);
+        }}
+      />
+
+      {/* Job Details Bottom Block */}
+      <JobDetailsBottomBlock />
 
       {/* Archive Confirmation Modal */}
       <ConfirmDeleteModal
@@ -428,8 +528,84 @@ export default function JobDetailsPage() {
         title={JOB_MESSAGES.CLOSE_JOB_TITLE}
         subtitle={JOB_MESSAGES.CLOSE_JOB_SUBTITLE}
         onCancel={() => setShowCloseConfirm(false)}
+        archiveButtonText='Close Job'
         onDelete={closeJob}
       />
+
+      {/* Notes Sidesheet */}
+      <SideSheet
+        open={isNoteSheetOpen}
+        onOpenChange={setIsNoteSheetOpen}
+        title={editingNote ? 'Edit Note' : 'Add Note'}
+        size='600px'
+      >
+        <div className='space-y-6'>
+          {/* Note Form */}
+          {/* Notes List */}
+          {notes.length > 0 && (
+            <div className='space-y-4'>
+              <div className='space-y-3 max-h-96 overflow-y-auto'>
+                {notes.map(note => (
+                  <NoteListCard
+                    key={note.id}
+                    note={note}
+                    onEdit={handleEditNote}
+                    onDelete={handleDeleteNote}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+          <NoteListForm
+            onSave={handleNoteSubmit}
+            onCancel={handleNoteSheetClose}
+            isSubmitting={_isSubmittingNote}
+          />
+        </div>
+      </SideSheet>
+
+      {/* Add Employee Sidesheet */}
+      <SideSheet
+        open={isAddEmployeeSheetOpen}
+        onOpenChange={setIsAddEmployeeSheetOpen}
+        title='Add Employee to Job'
+        size='600px'
+      >
+        <AddEmployeeToJobForm
+          onSave={handleAddEmployee}
+          onCancel={() => setIsAddEmployeeSheetOpen(false)}
+          isSubmitting={isSubmittingEmployee}
+          availableEmployees={availableEmployees}
+        />
+      </SideSheet>
+
+      {/* Edit Job Details Sidesheet */}
+      <SideSheet
+        open={isEditJobSheetOpen}
+        onOpenChange={setIsEditJobSheetOpen}
+        title='Edit Job Details'
+        size='600px'
+      >
+        <EditJobDetailsForm
+          onSave={handleEditJob}
+          onCancel={() => setIsEditJobSheetOpen(false)}
+          isSubmitting={isSubmittingEdit}
+          defaultValues={{
+            generalInfo: {
+              fullName: job?.client_name || '',
+              email: job?.client_email || '',
+              phone: job?.client_phone_number || '',
+              address: job?.client_address || '',
+            },
+            propertyInfo: {},
+            projectInfo: {
+              projectName: job?.project_name || '',
+            },
+            category: {},
+            company_id: job?.company_id || '',
+          }}
+        />
+      </SideSheet>
     </div>
   );
 }

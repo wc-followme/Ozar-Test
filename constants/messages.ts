@@ -109,3 +109,39 @@ export const ESTIMATION_MESSAGES = {
   NO_TRADE_OPTIONS_AVAILABLE: 'No trade options available',
   DEFAULT_TRADE_NAME: 'Default Trade',
 };
+
+// Warranty Messages
+export const WARRANTY_MESSAGES = {
+  SUCCESS: 'Warranty saved successfully!',
+  ERROR: {
+    GENERIC: 'Failed to save warranty. Please try again.',
+    VALIDATION: 'Please check your input and try again.',
+    NETWORK_ERROR: 'Network error. Please check your connection.',
+  },
+  VALIDATION: {
+    TYPE_REQUIRED: 'Type of warranty is required',
+    CATEGORY_REQUIRED: 'Category is required',
+    DESCRIPTION_REQUIRED: 'Description is required',
+    DURATION_REQUIRED: 'Duration is required',
+  },
+  LABELS: {
+    TYPE: 'Type of warranty',
+    CATEGORY: 'Category',
+    DESCRIPTION: 'Description',
+    DURATION: 'Duration',
+  },
+  PLACEHOLDERS: {
+    TYPE: 'Enter warranty type (e.g., Workmanship, Product, Brand)',
+    CATEGORY: 'Enter category (e.g., Interior, Exterior, Structural)',
+    DESCRIPTION: 'Enter Description',
+    DURATION: 'Enter duration (e.g., 1 Year, 2 Years, Lifetime)',
+  },
+  FORM: {
+    TITLE: 'Warranty Form',
+    SUBTITLE: 'Add or edit warranty information',
+    BUTTON_SAVE: 'Save',
+    BUTTON_CANCEL: 'Cancel',
+    TYPE_DISABLED_MESSAGE:
+      'Type cannot be changed when editing an existing warranty',
+  },
+};

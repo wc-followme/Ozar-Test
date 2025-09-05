@@ -27,6 +27,8 @@ interface EstimationItemsAccordionProps {
   borderClass?: string; // New prop to control border styling
   showAddButton?: boolean; // New prop to control add button visibility
   disableVariant?: boolean; // New prop to disable variant field in items
+  isDisabled?: boolean; // New prop to disable all form fields
+  isFromReceivedTrades?: boolean; // New prop to show Offer Rate instead of Markup
 }
 
 export default function EstimationItemsAccordion({
@@ -44,6 +46,8 @@ export default function EstimationItemsAccordion({
   borderClass = 'border-none', // Default to border-none
   showAddButton = true, // Default to true to maintain current behavior
   disableVariant = false,
+  isDisabled = false,
+  isFromReceivedTrades = false,
 }: EstimationItemsAccordionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
@@ -136,6 +140,8 @@ export default function EstimationItemsAccordion({
                     useFixedWidths={useFixedWidths}
                     containerWidthClass={containerWidthClass}
                     disableVariant={disableVariant}
+                    isDisabled={isDisabled}
+                    isFromReceivedTrades={isFromReceivedTrades}
                   />
                 ))}
               </div>

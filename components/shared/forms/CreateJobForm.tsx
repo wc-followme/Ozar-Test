@@ -239,7 +239,7 @@ export function CreateJobForm({
               )}
               {/* Dropdown */}
               {userOptions.length > 0 && showDropdown && (
-                <div className='absolute z-10 left-0 right-0 bg-white border border-gray-200 rounded shadow mt-1 max-h-56 overflow-auto'>
+                <div className='absolute z-10 left-0 right-0 bg-[var(--white-background)] border border-[var(--border-dark)] rounded shadow mt-1 max-h-56 overflow-auto'>
                   {userLoading && (
                     <div className='p-2 text-gray-500 text-sm'>Loading...</div>
                   )}
@@ -247,12 +247,12 @@ export function CreateJobForm({
                     userOptions.map((user, idx) => (
                       <div
                         key={user.id || idx}
-                        className='p-2 hover:bg-gray-100 cursor-pointer text-sm'
+                        className='p-2 hover:bg-[--card-hover] cursor-pointer text-sm text-[var(--text-dark)]'
                         onMouseDown={() => handleSelectUser(user)}
                       >
                         {user.name}{' '}
                         {user.email ? (
-                          <span className='text-gray-400'>
+                          <span className='text-[var(--text-secondary)]'>
                             ({`${user.email},${user.phone_number}`})
                           </span>
                         ) : null}

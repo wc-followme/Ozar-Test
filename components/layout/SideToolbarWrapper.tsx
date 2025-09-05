@@ -11,8 +11,8 @@ import {
 export const SideToolbarWrapper: React.FC = () => {
   const pathname = usePathname();
 
-  // Check if current path is job-management or job-details
-  const isJobPage = pathname?.startsWith('/job-management');
+  // Check if current path is only job-management (not job-details)
+  const isJobPage = pathname === '/job-management';
 
   if (!isJobPage) {
     return null;

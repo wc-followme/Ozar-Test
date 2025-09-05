@@ -305,9 +305,9 @@ const CategoryManagement = () => {
   // Handler for retrieving a category
   const handleRetrieveCategory = async (uuid: string) => {
     try {
-      console.log('Retrieving category:', uuid); // Debug log
+      
       const response = await apiService.updateCategoryStatus(uuid, 'ACTIVE');
-      console.log('Retrieve response:', response); // Debug log
+     
 
       showSuccessToast(
         extractApiSuccessMessage(response, CATEGORY_MESSAGES.RETRIEVE_SUCCESS)

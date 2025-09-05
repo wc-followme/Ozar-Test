@@ -11,9 +11,9 @@ import {
 } from '@dnd-kit/core';
 import {
   arrayMove,
+  rectSortingStrategy,
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { ReactNode } from 'react';
 
@@ -22,22 +22,17 @@ interface SortableProps {
   onReorder: (items: any[]) => void;
   children: ReactNode;
   idField?: string;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
 }
-
-// Custom modifier to restrict dragging to vertical axis only
-const restrictToVerticalAxis = (args: { transform: any }) => {
-  const { transform } = args;
-  return {
-    ...transform,
-    x: 0, // Prevent horizontal movement
-  };
-};
 
 export function Sortable({
   items,
   onReorder,
   children,
   idField = 'id',
+  onDragStart,
+  onDragEnd,
 }: SortableProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -46,7 +41,17 @@ export function Sortable({
     })
   );
 
+  function handleDragStart() {
+    if (onDragStart) {
+      onDragStart();
+    }
+  }
+
   function handleDragEnd(event: DragEndEvent) {
+    if (onDragEnd) {
+      onDragEnd();
+    }
+
     const { active, over } = event;
 
     if (active.id !== over?.id) {
@@ -62,14 +67,15 @@ export function Sortable({
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
-      modifiers={[restrictToVerticalAxis]}
+      modifiers={[]}
     >
       <SortableContext
         items={items.map(item => item[idField])}
-        strategy={verticalListSortingStrategy}
+        strategy={rectSortingStrategy}
       >
-        {children}
+        <div className='relative'>{children}</div>
       </SortableContext>
     </DndContext>
   );

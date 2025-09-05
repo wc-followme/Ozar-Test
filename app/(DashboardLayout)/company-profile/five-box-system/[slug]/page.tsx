@@ -90,8 +90,6 @@ const DynamicBoxPage = ({ params }: PageProps) => {
         }
 
         // Box settings fetched successfully
-      } else {
-        showErrorToast(response?.message ?? SLUG_MESSAGES.FETCH_ERROR);
       }
     } catch (err: unknown) {
       if (handleAuthError(err)) {
