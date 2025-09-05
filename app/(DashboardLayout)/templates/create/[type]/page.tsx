@@ -391,20 +391,7 @@ export default function CreateTemplatePage({
         service_id: serviceId, // This should already be a UUID from service options
         trade_id: formData.trade, // UUID from form
         category_id: formData.category, // UUID from form
-        service_options_template: {
-          trade_id: formData.trade, // UUID from form
-          category_id: formData.category, // UUID from form
-          service_options: parsedServiceOptions.map((service: any) => ({
-            service_name: service.description || service.service_id,
-            description: service.description || '',
-            price: service.rate || 0,
-            duration: 'Custom',
-            materials: service.materials || [],
-            finishes: service.finishes || [],
-            tools: service.tools || [],
-            qty: service.qty || 1,
-          })),
-        },
+        service_options_template: parsedServiceOptions, // Pass data as-is from localStorage
       };
 
       // Call API to create template

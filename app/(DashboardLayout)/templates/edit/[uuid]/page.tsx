@@ -189,66 +189,15 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               ? templateData.service_options_template
               : templateData.service_options_template.service_options || [];
 
-            const transformedServiceOptions = serviceOptionsArray.map(
-              (service: any) => ({
-                service_id:
-                  service.service_id ||
-                  service.service_name ||
-                  service.description,
-                description: service.description || service.service_name,
-                qty: service.qty || 1,
-                rate: service.rate || service.price || 0,
-                materials: (service.materials || []).map(
-                  (material: any, index: number) => ({
-                    ...material,
-                    id:
-                      material.id ||
-                      material.uuid ||
-                      `material-${service.service_id}-${index + 1}`,
-                    uuid:
-                      material.uuid ||
-                      material.id ||
-                      `material-${service.service_id}-${index + 1}`,
-                  })
-                ),
-                finishes: (service.finishes || []).map(
-                  (finish: any, index: number) => ({
-                    ...finish,
-                    id:
-                      finish.id ||
-                      finish.uuid ||
-                      `finish-${service.service_id}-${index + 1}`,
-                    uuid:
-                      finish.uuid ||
-                      finish.id ||
-                      `finish-${service.service_id}-${index + 1}`,
-                  })
-                ),
-                tools: (service.tools || []).map(
-                  (tool: any, index: number) => ({
-                    ...tool,
-                    id:
-                      tool.id ||
-                      tool.uuid ||
-                      `tool-${service.service_id}-${index + 1}`,
-                    uuid:
-                      tool.uuid ||
-                      tool.id ||
-                      `tool-${service.service_id}-${index + 1}`,
-                  })
-                ),
-              })
-            );
-
             console.log(
-              'Transformed service options for localStorage:',
-              transformedServiceOptions
+              'Storing service options as-is from API:',
+              serviceOptionsArray
             );
 
             // Store in localStorage with the key that ServiceOptionsBox expects
             localStorage.setItem(
               'service_options_template',
-              JSON.stringify(transformedServiceOptions)
+              JSON.stringify(serviceOptionsArray)
             );
 
             console.log(
