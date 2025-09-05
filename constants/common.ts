@@ -281,6 +281,7 @@ export enum JobFilterType {
   NEW_LEADS = 'NEW_LEADS',
   WAITING_ON_CLIENT = 'WAITING_ON_CLIENT',
   ONGOING = 'ONGOING',
+  ARCHIVED = 'ARCHIVED',
 }
 
 // Job Management Tab Values
