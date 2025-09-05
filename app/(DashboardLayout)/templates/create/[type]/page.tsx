@@ -34,6 +34,22 @@ export default function CreateTemplatePage({
   const { showErrorToast, showSuccessToast } = useToast();
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false);
   const [selectedTemplates, setSelectedTemplates] = useState<string[]>([]);
+
+  // Clear selections when modal is closed
+  useEffect(() => {
+    if (!isTemplateSheetOpen) {
+      setSelectedTemplates([]);
+    }
+  }, [isTemplateSheetOpen]);
+
+  // Debug selectedTemplates changes
+  useEffect(() => {
+    console.log('selectedTemplates state changed:', {
+      count: selectedTemplates.length,
+      selectedTemplates,
+      isModalOpen: isTemplateSheetOpen,
+    });
+  }, [selectedTemplates, isTemplateSheetOpen]);
   const [formData, setFormData] = useState({
     templateName: '',
     service: '',
@@ -41,7 +57,7 @@ export default function CreateTemplatePage({
     propertyType: '',
     category: '',
     trade: '',
-    tools: '',
+    tools: [] as string[],
     warranty: '',
     duration: '',
   });
@@ -67,9 +83,14 @@ export default function CreateTemplatePage({
   const [hasMoreTemplates, setHasMoreTemplates] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
+  // State for template tools (tools from selected templates)
+  const [templateTools, setTemplateTools] = useState<
+    Array<{ uuid: string; name: string }>
+  >([]);
+
   // Fetch tool templates from API with pagination
   const fetchToolTemplates = useCallback(
-    async (pageNum = 1, append = false) => {
+    async (pageNum = 1, append = false, serviceId?: string) => {
       if (type !== 'tools') return;
 
       if (append) {
@@ -96,8 +117,9 @@ export default function CreateTemplatePage({
         };
 
         // Add service filter if service is selected
-        if (formData.service) {
-          apiParams.service_id = formData.service;
+        const currentServiceId = serviceId || formData.service;
+        if (currentServiceId) {
+          apiParams.service_id = currentServiceId;
         }
 
         const response = await apiService.fetchTemplates(apiParams);
@@ -151,7 +173,7 @@ export default function CreateTemplatePage({
 
       // For tools template, fetch templates when service is selected
       if (type === 'tools' && serviceId) {
-        fetchToolTemplates(1, false);
+        fetchToolTemplates(1, false, serviceId);
       }
     },
     [type, fetchToolTemplates]
@@ -160,7 +182,7 @@ export default function CreateTemplatePage({
   // Load more templates for infinite scroll
   const loadMoreTemplates = () => {
     if (!loadingMoreTemplates && hasMoreTemplates) {
-      fetchToolTemplates(currentPage + 1, true);
+      fetchToolTemplates(currentPage + 1, true, formData.service);
     }
   };
 
@@ -559,7 +581,7 @@ export default function CreateTemplatePage({
         ];
       case 'tools':
         // Transform API data to TemplateData format
-        return toolTemplates.map(template => ({
+        const transformedTemplates = toolTemplates.map(template => ({
           id: template.uuid,
           type: 'tools' as const,
           templateName: template.name,
@@ -569,6 +591,21 @@ export default function CreateTemplatePage({
           service: template.service?.name || 'Unknown Service',
           material: 'Default Material', // Default value since API doesn't provide this
         }));
+
+        console.log('Transforming tool templates:', {
+          originalCount: toolTemplates.length,
+          transformedCount: transformedTemplates.length,
+          originalTemplates: toolTemplates.map(t => ({
+            uuid: t.uuid,
+            name: t.name,
+          })),
+          transformedTemplates: transformedTemplates.map(t => ({
+            id: t.id,
+            name: t.templateName,
+          })),
+        });
+
+        return transformedTemplates;
       case 'disclaimers':
         return [
           {
@@ -617,13 +654,104 @@ export default function CreateTemplatePage({
     templateId: string,
     selected: boolean
   ) => {
-    setSelectedTemplates(prev =>
-      selected ? [...prev, templateId] : prev.filter(id => id !== templateId)
-    );
+    setSelectedTemplates(prev => {
+      const newSelection = selected
+        ? [...prev, templateId]
+        : prev.filter(id => id !== templateId);
+      console.log('Template selection changed:', {
+        templateId,
+        selected,
+        previousCount: prev.length,
+        newCount: newSelection.length,
+        newSelection,
+      });
+      return newSelection;
+    });
   };
 
   const handleAddSelectedTemplates = () => {
-    // TODO: Implement logic to add selected templates to the form
+    console.log('handleAddSelectedTemplates called with:', {
+      type,
+      selectedTemplatesCount: selectedTemplates.length,
+      selectedTemplates,
+      toolTemplatesCount: toolTemplates.length,
+    });
+
+    if (type === 'tools' && selectedTemplates.length > 0) {
+      // Extract tools from selected templates
+      const selectedTemplateData = toolTemplates.filter(template =>
+        selectedTemplates.includes(template.uuid)
+      );
+
+      console.log('Selected template data:', selectedTemplateData);
+
+      // Extract all tools from selected templates (using templateTools)
+      const toolsFromTemplates = selectedTemplateData.flatMap(
+        template => template.templateTools || []
+      );
+
+      console.log('Tools from selected templates:', toolsFromTemplates);
+      console.log('Sample tool structure:', toolsFromTemplates[0]);
+      console.log(
+        'All properties of sample tool:',
+        toolsFromTemplates[0] ? Object.keys(toolsFromTemplates[0]) : 'No tools'
+      );
+      console.log('Sample tool.tool property:', toolsFromTemplates[0]?.tool);
+
+      // Get unique tools by ACTUAL tool UUID (not association UUID) and create template tools
+      const uniqueToolsMap = new Map();
+
+      toolsFromTemplates.forEach(tool => {
+        // Use the actual tool UUID from tool.tool.uuid, not the association UUID
+        const actualToolUuid = tool.tool?.uuid;
+        if (actualToolUuid && !uniqueToolsMap.has(actualToolUuid)) {
+          uniqueToolsMap.set(actualToolUuid, {
+            uuid: actualToolUuid,
+            name:
+              tool.tool?.name ||
+              tool.name ||
+              tool.tool_name ||
+              `Tool ${tool.id}` ||
+              'Unknown Tool',
+          });
+        }
+      });
+
+      const uniqueTemplateTools = Array.from(uniqueToolsMap.values());
+      const toolUuids = uniqueTemplateTools.map(tool => tool.uuid);
+
+      console.log('Unique ACTUAL tool UUIDs:', toolUuids);
+      console.log('Template tools for form:', uniqueTemplateTools);
+      console.log('Deduplication stats:', {
+        originalCount: toolsFromTemplates.length,
+        uniqueCount: uniqueTemplateTools.length,
+        duplicatesRemoved:
+          toolsFromTemplates.length - uniqueTemplateTools.length,
+        associationUuids: toolsFromTemplates.map(t => t.uuid),
+        actualToolUuids: toolsFromTemplates
+          .map(t => t.tool?.uuid)
+          .filter(Boolean),
+      });
+
+      // Store template tools for the form
+      setTemplateTools(uniqueTemplateTools);
+
+      // Update form data with extracted tool UUIDs
+      setFormData(prev => ({
+        ...prev,
+        tools: toolUuids,
+      }));
+
+      console.log('Updated formData with tools:', toolUuids);
+    } else {
+      console.log('No tools to add - conditions not met:', {
+        type,
+        isToolsType: type === 'tools',
+        hasSelectedTemplates: selectedTemplates.length > 0,
+      });
+    }
+
+    // Close modal and clear selections
     setIsTemplateSheetOpen(false);
     setSelectedTemplates([]);
   };
@@ -830,7 +958,10 @@ export default function CreateTemplatePage({
               />
               <Button
                 className='btn-primary'
-                onClick={() => setIsTemplateSheetOpen(true)}
+                onClick={() => {
+                  setSelectedTemplates([]); // Clear previous selections
+                  setIsTemplateSheetOpen(true);
+                }}
                 disabled={loadingToolTemplates || !formData.service}
               >
                 {loadingToolTemplates ? 'Loading...' : 'Add From Templates'}
@@ -846,9 +977,11 @@ export default function CreateTemplatePage({
                 initialData={{
                   templateName: formData.templateName,
                   service: formData.service,
-                  tools: [],
+                  tools: formData.tools || [],
                 }}
                 onServiceChange={handleServiceChange}
+                templateTools={templateTools}
+                externalTools={formData.tools || []}
               />
             </div>
           </div>
@@ -924,17 +1057,29 @@ export default function CreateTemplatePage({
                   type === 'tools' ? handleTemplateSheetScroll : undefined
                 }
               >
-                {getTemplates().map(({ id, ...template }) => (
-                  <TemplateListCard
-                    key={id}
-                    template={{ id, ...template }}
-                    isSelectionMode={true}
-                    isSelected={selectedTemplates.includes(id)}
-                    onSelectionChange={handleTemplateSelectionChange}
-                    onEdit={() => handleTemplateSelect({ id, ...template })}
-                    className='hover:shadow-md transition-shadow'
-                  />
-                ))}
+                {(() => {
+                  const templates = getTemplates();
+                  console.log('Rendering templates:', {
+                    count: templates.length,
+                    templates: templates.map(t => ({
+                      id: t.id,
+                      name: t.templateName,
+                    })),
+                    selectedTemplates,
+                    selectedCount: selectedTemplates.length,
+                  });
+                  return templates.map(({ id, ...template }) => (
+                    <TemplateListCard
+                      key={id}
+                      template={{ id, ...template }}
+                      isSelectionMode={true}
+                      isSelected={selectedTemplates.includes(id)}
+                      onSelectionChange={handleTemplateSelectionChange}
+                      onEdit={() => handleTemplateSelect({ id, ...template })}
+                      className='hover:shadow-md transition-shadow'
+                    />
+                  ));
+                })()}
 
                 {/* Loading indicators for infinite scroll */}
                 {type === 'tools' && loadingMoreTemplates && (
@@ -957,7 +1102,10 @@ export default function CreateTemplatePage({
               <div className='flex gap-3 items-center pt-4'>
                 <Button
                   variant='outline'
-                  onClick={() => setIsTemplateSheetOpen(false)}
+                  onClick={() => {
+                    setSelectedTemplates([]); // Clear selections when canceling
+                    setIsTemplateSheetOpen(false);
+                  }}
                   className='btn-secondary'
                 >
                   Cancel

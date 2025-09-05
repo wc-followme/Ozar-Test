@@ -47,7 +47,7 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   placeholder = 'Select',
   error,
   name,
-  getOptionLabel = (option: any) => option.label,
+  getOptionLabel = (option: any) => option.label || option.name || 'Unknown',
   getOptionSubLabel = (option: any) => option.subLabel,
   getOptionValue = (option: any) => option.value,
   getOptionImage = (option: any) => option.image,
@@ -79,9 +79,14 @@ const MultiSelect = <OptionType = MultiSelectOption,>({
   };
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    getOptionLabel(option).toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter(option => {
+    const label = getOptionLabel(option);
+    return (
+      label &&
+      typeof label === 'string' &&
+      label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   // Show different number of tags based on screen size
   const maxTagsToShow = isMobile ? 1 : 3;

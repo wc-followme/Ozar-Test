@@ -129,6 +129,12 @@ export function TemplateListCard({
 
   const handleCardClick = () => {
     if (isSelectionMode && onSelectionChange) {
+      console.log('Card clicked:', {
+        templateId: template.id,
+        templateName: template.templateName,
+        currentIsSelected: isSelected,
+        willToggleTo: !isSelected,
+      });
       onSelectionChange(template.id, !isSelected);
     }
   };
@@ -231,25 +237,34 @@ export function TemplateListCard({
           </h3>
 
           {isSelectionMode ? (
-            <Checkbox
-              id={`template-${template.id}`}
-              className='
-                rounded-[6px] 
-                border-2 
-                border-[var(--dark-border-other)]
-                data-[state=checked]:bg-[--primary]
-                data-[state=checked]:border-[--primary]
-                data-[state=checked]:text-white
-                text-white 
-                w-6 h-6
-                flex items-center justify-center -mt-0.4
-                ml-auto
-              '
-              checked={isSelected}
-              onCheckedChange={() =>
-                onSelectionChange?.(template.id, !isSelected)
-              }
-            />
+            <div onClick={e => e.stopPropagation()}>
+              <Checkbox
+                id={`template-${template.id}`}
+                className='
+                  rounded-[6px] 
+                  border-2 
+                  border-[var(--dark-border-other)]
+                  data-[state=checked]:bg-[--primary]
+                  data-[state=checked]:border-[--primary]
+                  data-[state=checked]:text-white
+                  text-white 
+                  w-6 h-6
+                  flex items-center justify-center -mt-0.4
+                  ml-auto
+                '
+                checked={isSelected}
+                onCheckedChange={checked => {
+                  console.log('Checkbox changed:', {
+                    templateId: template.id,
+                    templateName: template.templateName,
+                    currentIsSelected: isSelected,
+                    newChecked: checked,
+                    willCallOnSelectionChange: !!onSelectionChange,
+                  });
+                  onSelectionChange?.(template.id, checked);
+                }}
+              />
+            </div>
           ) : (
             showMenu && (
               <Dropdown
