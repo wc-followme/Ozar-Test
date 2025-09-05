@@ -261,7 +261,7 @@ export function TemplateListCard({
                     newChecked: checked,
                     willCallOnSelectionChange: !!onSelectionChange,
                   });
-                  onSelectionChange?.(template.id, checked);
+                  onSelectionChange?.(template.id, !!checked);
                 }}
               />
             </div>

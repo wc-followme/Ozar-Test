@@ -29,9 +29,7 @@ export default function TemplatesPage() {
   const { showErrorToast, showSuccessToast } = useToast();
   const { isAuthenticated, handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('estimate');
-  const [templates, setTemplates] = useState<TemplateApiData[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [hasMore, setHasMore] = useState<boolean>(true);
 
   // Separate state for each tab's templates and pagination
   const [tabTemplates, setTabTemplates] = useState<{
@@ -147,22 +145,6 @@ export default function TemplatesPage() {
               };
             }
           });
-
-          // Update legacy state for backward compatibility
-          setTemplates(prev => {
-            if (append) {
-              const existingUuids = new Set(
-                prev.map(template => template.uuid)
-              );
-              const uniqueNewTemplates = templatesData.filter(
-                (template: TemplateApiData) => !existingUuids.has(template.uuid)
-              );
-              return [...prev, ...uniqueNewTemplates];
-            } else {
-              return templatesData;
-            }
-          });
-          setHasMore(pageNum < totalPages);
         } else {
           showErrorToast(
             extractApiErrorMessage(response, 'Failed to fetch templates.')
@@ -176,8 +158,6 @@ export default function TemplatesPage() {
               currentPage: 1,
             },
           }));
-          if (!append) setTemplates([]);
-          setHasMore(false);
         }
       } catch (error: any) {
         // Handle authentication errors
@@ -197,8 +177,6 @@ export default function TemplatesPage() {
             currentPage: 1,
           },
         }));
-        if (!append) setTemplates([]);
-        setHasMore(false);
       } finally {
         if (!append) {
           setInitialLoading(false);
@@ -255,18 +233,17 @@ export default function TemplatesPage() {
         if (response.statusCode === 200) {
           showSuccessToast('Template archived successfully.');
           // Remove the archived template from all tab lists
-          setTemplates(prev =>
-            prev.filter(template => template.uuid !== templateUuid)
-          );
           setTabTemplates(prev => {
             const updated = { ...prev };
             Object.keys(updated).forEach(tab => {
-              updated[tab] = {
-                ...updated[tab],
-                templates: updated[tab].templates.filter(
-                  template => template.uuid !== templateUuid
-                ),
-              };
+              if (updated[tab]) {
+                updated[tab] = {
+                  ...updated[tab],
+                  templates: updated[tab].templates.filter(
+                    template => template.uuid !== templateUuid
+                  ),
+                };
+              }
             });
             return updated;
           });
@@ -302,14 +279,15 @@ export default function TemplatesPage() {
         if (statusCode === 200) {
           showSuccessToast(message || 'Template retrieved successfully.');
           // Remove the retrieved template from the archive list in UI immediately
-          setTemplates(prev => prev.filter(t => t.uuid !== templateUuid));
           setTabTemplates(prev => ({
             ...prev,
             archive: {
-              ...prev.archive,
-              templates: prev.archive.templates.filter(
-                t => t.uuid !== templateUuid
-              ),
+              templates:
+                prev['archive']?.templates.filter(
+                  t => t.uuid !== templateUuid
+                ) || [],
+              hasMore: prev['archive']?.hasMore || false,
+              currentPage: prev['archive']?.currentPage || 1,
             },
           }));
           fetchTemplateCounts();
@@ -356,8 +334,6 @@ export default function TemplatesPage() {
   // Fetch templates on component mount
   useEffect(() => {
     if (isAuthenticated) {
-      setTemplates([]);
-      setHasMore(true);
       fetchTemplates(1, false, selectedTab);
       fetchTemplateCounts();
     }
@@ -389,12 +365,12 @@ export default function TemplatesPage() {
   }, [tabTemplates, selectedTab, fetchTemplates, isAuthenticated]);
 
   // Get templates for each tab from tab-specific state
-  const estimateTemplates = tabTemplates.estimate?.templates || [];
+  const estimateTemplates = tabTemplates['estimate']?.templates || [];
   const serviceOptionTemplates =
     tabTemplates['service-option']?.templates || [];
-  const toolsTemplates = tabTemplates.tools?.templates || [];
-  const disclaimersTemplates = tabTemplates.disclaimers?.templates || [];
-  const archiveTemplates = tabTemplates.archive?.templates || [];
+  const toolsTemplates = tabTemplates['tools']?.templates || [];
+  const disclaimersTemplates = tabTemplates['disclaimers']?.templates || [];
+  const archiveTemplates = tabTemplates['archive']?.templates || [];
 
   // Archived templates by section for Archive tab
   const archivedEstimates = archiveTemplates.filter(
