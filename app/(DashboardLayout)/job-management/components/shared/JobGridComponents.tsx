@@ -23,7 +23,6 @@ export const JobGrid = ({ jobs,  onRestoreJob, isArchiveTab, isNewLeadsTab }: Jo
   
   <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
     {jobs.map((job: Job) => {
-      console.log('jobs===>', job.jobCreatedDay);
       // Destructure job data for cleaner code
       const {
         uuid,

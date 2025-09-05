@@ -47,8 +47,6 @@ interface JobCardProps {
 }
 
 export function JobCard({ job, onRestoreJob, menuOptions, onMenuAction, isArchiveTab, isNewLeadsTab, badgeStatus, jobCreatedDay, jobDaysLeft }: JobCardProps) {
-
-  console.log('jobCreatedDay===>', jobCreatedDay);
   const [imgSrc, setImgSrc] = useState(
     job.image || '/images/img-placeholder-md.png'
   );
