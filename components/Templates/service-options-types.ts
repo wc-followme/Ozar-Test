@@ -10,6 +10,7 @@ export interface ServiceOption {
   category: string;
   is_hidden?: boolean;
   materials?: Array<{
+    id: string;
     name: string;
     variant: string;
     qty: number;
@@ -21,6 +22,7 @@ export interface ServiceOption {
     lineTotal: number;
   }>;
   finishes?: Array<{
+    id: string;
     name: string;
     variant: string;
     qty: number;

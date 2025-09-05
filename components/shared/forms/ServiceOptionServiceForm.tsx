@@ -81,6 +81,18 @@ export default function ServiceOptionServiceForm({
   );
   const [tools, setTools] = useState<Tool[]>(service.tools || []);
 
+  // Debug: Log when service changes
+  useEffect(() => {
+    console.log('Service changed:', {
+      uuid: service.uuid,
+      name: service.name,
+      rate: service.rate,
+      qty: service.qty,
+      materialsCount: service.materials?.length || 0,
+      materials: service.materials?.map(m => ({ id: m.id, name: m.name, qty: m.qty })) || []
+    });
+  }, [service.uuid, service.name, service.rate, service.qty, service.materials]);
+
   // Track previous service values to prevent unnecessary updates
   const prevServiceRef = useRef<{
     uuid?: string;
@@ -100,8 +112,12 @@ export default function ServiceOptionServiceForm({
     (updatedService: Service) => {
       // Skip if not initialized to prevent initial update loops
       if (!isInitialized.current) {
+        console.log('Skipping update - not initialized');
         return;
       }
+
+      console.log('debouncedUpdate called with service:', updatedService);
+      console.log('Materials in debouncedUpdate:', updatedService.materials?.map(m => ({ id: m.id, name: m.name, qty: m.qty })));
 
       if (updateTimeoutRef.current) {
         clearTimeout(updateTimeoutRef.current);
@@ -113,7 +129,7 @@ export default function ServiceOptionServiceForm({
             'debouncedUpdate calling onServiceUpdate with:',
             updatedService
           );
-          console.log('Materials in updatedService:', updatedService.materials);
+          console.log('Materials in updatedService:', updatedService.materials?.map(m => ({ id: m.id, name: m.name, qty: m.qty })));
           console.log('Finishes in updatedService:', updatedService.finishes);
           console.log('Tools in updatedService:', updatedService.tools);
           onServiceUpdate(updatedService);
@@ -137,6 +153,11 @@ export default function ServiceOptionServiceForm({
       isInitialized.current = true;
     }, 100);
   }, []); // Only run on mount
+
+  // Debug: Log when materials change
+  useEffect(() => {
+    console.log('Materials changed:', materials.map(m => ({ id: m.id, name: m.name, qty: m.qty })));
+  }, [materials]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -596,7 +617,7 @@ export default function ServiceOptionServiceForm({
         addButtonText='Material'
         onAddItem={() => {
           const newMaterial: EstimationItem = {
-            id: `material-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `material-${service.uuid || 'new'}-${materials.length + 1}`,
             name: 'New Material',
             variant: 'Standard',
             qty: 1,
@@ -612,7 +633,12 @@ export default function ServiceOptionServiceForm({
           onLocalStorageUpdate?.();
         }}
         onItemUpdate={(id, updated) => {
-          setMaterials(prev => prev.map(m => (m.id === id ? updated : m)));
+          console.log('Material update:', { id, updated });
+          setMaterials(prev => {
+            const newMaterials = prev.map(m => (m.id === id ? updated : m));
+            console.log('New materials after update:', newMaterials);
+            return newMaterials;
+          });
           _onMaterialUpdate?.(id, updated);
           // Update localStorage when materials change
           onLocalStorageUpdate?.();
@@ -638,7 +664,7 @@ export default function ServiceOptionServiceForm({
         addButtonText='Finishes'
         onAddItem={() => {
           const newFinish: EstimationItem = {
-            id: `finish-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `finish-${service.uuid || 'new'}-${finishes.length + 1}`,
             name: 'New Finish',
             variant: 'Standard',
             qty: 1,

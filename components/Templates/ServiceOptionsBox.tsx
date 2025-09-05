@@ -2,25 +2,18 @@
 
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import ServiceOptionServiceForm from '@/components/shared/forms/ServiceOptionServiceForm';
-import { useToast } from '@/components/ui/use-toast';
 import {
   calculateServiceTotal,
   calculateServiceTotalMaterialCost,
   formatCurrency,
 } from '@/lib/estimation-calculations';
-import { extractApiErrorMessage } from '@/lib/utils';
 import { useEffect, useState } from 'react';
 import ServiceOptionsHeader from './ServiceOptionsHeader';
 import { ServiceOptionsSidebar } from './ServiceOptionsSidebar';
 import { ServiceCategory, ServiceOption } from './service-options-types';
 
 interface ServiceOptionsBoxProps {
-  _onClose: () => void;
-  templateId?: string;
-  onSaveSuccess?: () => void;
-  onSaveError?: (error: unknown) => void;
-  onFormSubmit?: number;
-  tradeId?: string; // Add trade ID prop for service filtering
+  localStorageKey?: string; // Add localStorage key prop for different keys
 }
 
 // Utility function to generate unique keys
@@ -48,37 +41,61 @@ export const calculateServiceOptionTotals = (serviceOption: {
   rate?: number;
   qty?: number;
   materials?: Array<{
-    rate?: number;
+    id?: string;
+    name?: string;
+    variant?: string;
     qty?: number;
+    unit?: string;
+    description?: string;
+    rate?: number;
     is_hidden?: boolean;
     markup?: number;
     markup_type?: string;
+    lineTotal?: number;
   }>;
   finishes?: Array<{
-    rate?: number;
+    id?: string;
+    name?: string;
+    variant?: string;
     qty?: number;
+    unit?: string;
+    description?: string;
+    rate?: number;
     is_hidden?: boolean;
     markup?: number;
     markup_type?: string;
+    lineTotal?: number;
   }>;
 }) => {
   const rate = serviceOption.rate || 0;
   const qty = serviceOption.qty || 1;
   const materials = (serviceOption.materials || []).map(m => ({
-    rate: m.rate || 0,
+    id: m.id, // Preserve the ID to prevent recreation
+    name: m.name,
+    variant: m.variant || '',
     qty: m.qty || 0,
+    unit: m.unit || '',
+    description: m.description || '',
+    rate: m.rate || 0,
     is_hidden: m.is_hidden || false,
     markup: m.markup || 0,
     markup_type:
       (m.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+    lineTotal: m.lineTotal || 0,
   }));
   const finishes = (serviceOption.finishes || []).map(f => ({
-    rate: f.rate || 0,
+    id: f.id, // Preserve the ID to prevent recreation
+    name: f.name,
+    variant: f.variant || '',
     qty: f.qty || 0,
+    unit: f.unit || '',
+    description: f.description || '',
+    rate: f.rate || 0,
     is_hidden: f.is_hidden || false,
     markup: f.markup || 0,
     markup_type:
       (f.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+    lineTotal: f.lineTotal || 0,
   }));
 
   // Calculate service total (rate * qty)
@@ -135,7 +152,9 @@ export const getServiceOptionTradeTotal = (serviceOption: {
 export default function ServiceOptionsBox(
   props: Readonly<ServiceOptionsBoxProps>
 ) {
-  const { showErrorToast } = useToast();
+  const {
+    localStorageKey = 'service_options_template', // Default to create page key
+  } = props;
   const [isEditing, setIsEditing] = useState(false);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['0']);
@@ -331,21 +350,19 @@ export default function ServiceOptionsBox(
       );
       console.log('Total services to save:', serviceOptionsData.length);
 
-      // Save ONLY to the single key 'service_options_template' as requested
-      localStorage.setItem(
-        'service_options_template',
-        JSON.stringify(serviceOptionsData)
-      );
+      // Save to the specified localStorage key
+      localStorage.setItem(localStorageKey, JSON.stringify(serviceOptionsData));
 
       // Dispatch custom event to notify other components
       window.dispatchEvent(new CustomEvent('customStorageChange'));
 
       console.log(
-        'LocalStorage updated successfully with key: service_options_template'
+        'LocalStorage updated successfully with key:',
+        localStorageKey
       );
       console.log(
         'Current localStorage content:',
-        localStorage.getItem('service_options_template')
+        localStorage.getItem(localStorageKey)
       );
     } catch (error) {
       console.error('Error updating localStorage:', error);
@@ -360,8 +377,8 @@ export default function ServiceOptionsBox(
   // Load data from localStorage on mount
   useEffect(() => {
     try {
-      // Load ONLY from the single key 'service_options_template'
-      const generalData = localStorage.getItem('service_options_template');
+      // Load from the specified localStorage key
+      const generalData = localStorage.getItem(localStorageKey);
       if (generalData) {
         const parsedGeneralData = JSON.parse(generalData);
         if (Array.isArray(parsedGeneralData) && parsedGeneralData.length > 0) {
@@ -522,10 +539,8 @@ export default function ServiceOptionsBox(
 
   // Listen for form submission and trigger save
   useEffect(() => {
-    if (props.onFormSubmit && props.onFormSubmit > 0) {
-      handleSave();
-    }
-  }, [props.onFormSubmit]);
+    // Form submission handling removed - no longer needed
+  }, []);
 
   const handleAddCategory = () => {
     if (categories.length === 0) {
@@ -848,27 +863,6 @@ export default function ServiceOptionsBox(
     }).format(amount);
   };
 
-  const handleSave = async () => {
-    try {
-      updateLocalStorage();
-
-      if (props.onSaveSuccess) {
-        props.onSaveSuccess();
-      }
-    } catch (error) {
-      showErrorToast(
-        extractApiErrorMessage(
-          error,
-          'Failed to save service options. Please try again.'
-        )
-      );
-
-      if (props.onSaveError) {
-        props.onSaveError(error);
-      }
-    }
-  };
-
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
@@ -955,7 +949,7 @@ export default function ServiceOptionsBox(
               {/* Service Form */}
               <ServiceOptionServiceForm
                 key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
-                tradeId={props.tradeId} // Pass trade ID for service filtering
+                tradeId={undefined} // Trade ID no longer needed
                 onTotalsChange={({ tradeTotal }) => {
                   // Keep the three purple totals in the header in sync with form
                   // We persist trade total (including materials and finishes) on the selected service option

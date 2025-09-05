@@ -196,13 +196,13 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
             // Store in localStorage with the key that ServiceOptionsBox expects
             localStorage.setItem(
-              'service_options_template',
+              'service_options_template_edit',
               JSON.stringify(serviceOptionsArray)
             );
 
             console.log(
               'Stored in localStorage:',
-              localStorage.getItem('service_options_template')
+              localStorage.getItem('service_options_template_edit')
             );
           }
         } else {
@@ -369,7 +369,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
     const computeTotal = () => {
       try {
-        const raw = localStorage.getItem('service_options_template');
+        const raw = localStorage.getItem('service_options_template_edit');
         console.log('Raw localStorage data:', raw);
         if (!raw) {
           console.log('No localStorage data found, setting Project Total to 0');
@@ -447,7 +447,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
     // Listen for localStorage changes
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'service_options_template') {
+      if (e.key === 'service_options_template_edit') {
         console.log('localStorage changed, recomputing Project Total');
         computeTotal();
       }
@@ -515,7 +515,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
       // Get service options data from localStorage
       const serviceOptionsData = localStorage.getItem(
-        'service_options_template'
+        'service_options_template_edit'
       );
       if (!serviceOptionsData) {
         throw new Error('No service options data found');
@@ -558,7 +558,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
       if (statusCode === 200 || statusCode === 201) {
         showSuccessToast(message || 'Template updated successfully');
         // Clear service options template from localStorage after successful update
-        localStorage.removeItem('service_options_template');
+        localStorage.removeItem('service_options_template_edit');
         // Redirect to templates page
         router.push('/templates');
       } else {
@@ -796,22 +796,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
 
             {/* Service Options Box */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <ServiceOptionsBox
-                _onClose={() => {}}
-                templateId={uuid}
-                onSaveSuccess={() => {
-                  // Handle successful save
-                  showSuccessToast('Service options updated successfully');
-                }}
-                onSaveError={error => {
-                  showErrorToast(
-                    extractApiErrorMessage(
-                      error,
-                      'Failed to update service options'
-                    )
-                  );
-                }}
-              />
+              <ServiceOptionsBox localStorageKey='service_options_template_edit' />
               <div className='mt-6'>
                 <div className='flex justify-between items-center'>
                   <div className='flex items-center gap-4'>

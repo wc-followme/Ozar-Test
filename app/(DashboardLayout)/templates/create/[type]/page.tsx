@@ -61,6 +61,58 @@ export default function CreateTemplatePage({
     warranty: '',
     duration: '',
   });
+
+  // Form validation state
+  const [formErrors, setFormErrors] = useState<{
+    templateName?: string;
+    category?: string;
+    trade?: string;
+  }>({});
+
+  // Validation functions
+  const validateField = (field: string, value: string): string | undefined => {
+    switch (field) {
+      case 'templateName':
+        if (!value.trim()) {
+          return 'Template name is required';
+        }
+        if (value.trim().length < 3) {
+          return 'Template name must be at least 3 characters';
+        }
+        return undefined;
+      case 'category':
+        if (!value) {
+          return 'Category is required';
+        }
+        return undefined;
+      case 'trade':
+        if (!value) {
+          return 'Trade is required';
+        }
+        return undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: typeof formErrors = {};
+
+    const templateNameError = validateField(
+      'templateName',
+      formData.templateName
+    );
+    const categoryError = validateField('category', formData.category);
+    const tradeError = validateField('trade', formData.trade);
+
+    if (templateNameError) errors.templateName = templateNameError;
+    if (categoryError) errors.category = categoryError;
+    if (tradeError) errors.trade = tradeError;
+
+    setFormErrors(errors);
+
+    return !Object.values(errors).some(error => error !== undefined);
+  };
   const [projectTotal, setProjectTotal] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -336,15 +388,10 @@ export default function CreateTemplatePage({
         throw new Error('No company selected');
       }
 
-      // Validate required form fields
-      if (!formData.templateName.trim()) {
-        throw new Error('Template name is required');
-      }
-      if (!formData.category) {
-        throw new Error('Category is required');
-      }
-      if (!formData.trade) {
-        throw new Error('Trade is required');
+      // Validate form using the validation function
+      if (!validateForm()) {
+        // Don't show toast for validation errors, just return early
+        return;
       }
 
       // Get service options data from localStorage
@@ -772,10 +819,20 @@ export default function CreateTemplatePage({
       if (field === 'category' && value) {
         next.trade = '';
         fetchTrades(value);
+        // Clear trade error when category changes
+        setFormErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.trade;
+          return newErrors;
+        });
       }
 
       return next;
     });
+
+    // Real-time validation
+    const error = validateField(field, value);
+    setFormErrors(prev => ({ ...prev, [field]: error }));
   };
 
   const renderFormFields = () => {
@@ -842,8 +899,13 @@ export default function CreateTemplatePage({
                     onChange={e =>
                       handleInputChange('templateName', e.target.value)
                     }
-                    className='input-field'
+                    className={`input-field ${formErrors.templateName ? 'border-red-500' : ''}`}
                   />
+                  {formErrors.templateName && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {formErrors.templateName}
+                    </p>
+                  )}
                 </div>
 
                 <div className='space-y-2'>
@@ -858,7 +920,13 @@ export default function CreateTemplatePage({
                         : 'Select Category'
                     }
                     disabled={loadingCategories}
+                    className={formErrors.category ? 'border-red-500' : ''}
                   />
+                  {formErrors.category && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {formErrors.category}
+                    </p>
+                  )}
                 </div>
 
                 <div className='space-y-2'>
@@ -875,28 +943,20 @@ export default function CreateTemplatePage({
                           : 'Select Category First'
                     }
                     disabled={loadingTrades || !formData.category}
+                    className={formErrors.trade ? 'border-red-500' : ''}
                   />
+                  {formErrors.trade && (
+                    <p className='text-red-500 text-sm mt-1'>
+                      {formErrors.trade}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Template Details Section */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <ServiceOptionsBox
-                _onClose={() => {}}
-                templateId='new-service-option-template'
-                tradeId={formData.trade} // Pass selected trade ID
-                onSaveSuccess={() => {
-                  console.log('Service options template saved successfully');
-                }}
-                onSaveError={(error: any) => {
-                  console.error(
-                    'Failed to save service options template:',
-                    error
-                  );
-                }}
-                // Listen to localStorage changes to recompute project total
-              />
+              <ServiceOptionsBox localStorageKey='service_options_template' />
               <div className='mt-6'>
                 <div className='flex justify-between items-center'>
                   <div className='flex items-center gap-4'>
