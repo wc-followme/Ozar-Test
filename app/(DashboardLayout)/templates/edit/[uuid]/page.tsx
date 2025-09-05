@@ -369,7 +369,7 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         }
         // Use centralized calculation function to ensure consistency
 
-        const total = data.reduce((sum, svc, index) => {
+        const total = data.reduce((sum, svc) => {
           // Use the simplified function that handles both cases
           const tradeTotal = getServiceOptionTradeTotal({
             rate: svc.rate || 0,
