@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { WARRANTY_MESSAGES } from '@/constants/messages';
 import { useEffect, useState } from 'react';
 
 interface WarrantyFormProps {
@@ -54,16 +55,16 @@ export const WarrantyForm = ({
     const newErrors: Partial<WarrantyFormData> = {};
 
     if (!formData.type) {
-      newErrors.type = 'Type of warranty is required';
+      newErrors.type = WARRANTY_MESSAGES.VALIDATION.TYPE_REQUIRED;
     }
     if (!formData.category) {
-      newErrors.category = 'Category is required';
+      newErrors.category = WARRANTY_MESSAGES.VALIDATION.CATEGORY_REQUIRED;
     }
     if (!formData.description) {
-      newErrors.description = 'Description is required';
+      newErrors.description = WARRANTY_MESSAGES.VALIDATION.DESCRIPTION_REQUIRED;
     }
     if (!formData.duration) {
-      newErrors.duration = 'Duration is required';
+      newErrors.duration = WARRANTY_MESSAGES.VALIDATION.DURATION_REQUIRED;
     }
 
     setErrors(newErrors);
@@ -99,38 +100,32 @@ export const WarrantyForm = ({
       {/* Type Of Warranty */}
       <div className='space-y-2'>
         <Label htmlFor='type' className='field-label'>
-          Type Of Warranty
+          {WARRANTY_MESSAGES.LABELS.TYPE}
         </Label>
         <Input
           id='type'
           type='text'
-          placeholder='Enter warranty type (e.g., Workmanship, Product, Brand)'
+          placeholder={WARRANTY_MESSAGES.PLACEHOLDERS.TYPE}
           value={formData.type}
           onChange={e => handleInputChange('type', e.target.value)}
-          disabled={!!initialData} // Disable type field when editing existing warranty
           className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
             errors.type
               ? '!border-[var(--warning)] focus:!border-[var(--warning)]'
               : 'border-[var(--border-dark)] focus:border-[var(--secondary)]'
-          } ${initialData ? 'opacity-60 cursor-not-allowed' : ''}`}
+          }`}
         />
         {errors.type && <FormErrorMessage message={errors.type} />}
-        {initialData && (
-          <p className='text-sm text-[var(--text-secondary)] mt-1'>
-            Type cannot be changed when editing an existing warranty
-          </p>
-        )}
       </div>
 
       {/* Category */}
       <div className='space-y-2'>
         <Label htmlFor='category' className='field-label'>
-          Category
+          {WARRANTY_MESSAGES.LABELS.CATEGORY}
         </Label>
         <Input
           id='category'
           type='text'
-          placeholder='Enter category (e.g., Interior, Exterior, Structural)'
+          placeholder={WARRANTY_MESSAGES.PLACEHOLDERS.CATEGORY}
           value={formData.category}
           onChange={e => handleInputChange('category', e.target.value)}
           className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
@@ -145,11 +140,11 @@ export const WarrantyForm = ({
       {/* Description */}
       <div className='space-y-2'>
         <Label htmlFor='description' className='field-label'>
-          Description
+          {WARRANTY_MESSAGES.LABELS.DESCRIPTION}
         </Label>
         <Textarea
           id='description'
-          placeholder='Enter Description'
+          placeholder={WARRANTY_MESSAGES.PLACEHOLDERS.DESCRIPTION}
           value={formData.description}
           onChange={e => handleInputChange('description', e.target.value)}
           className={`min-h-[120px] resize-none border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
@@ -166,12 +161,12 @@ export const WarrantyForm = ({
       {/* Duration */}
       <div className='space-y-2'>
         <Label htmlFor='duration' className='field-label'>
-          Duration
+          {WARRANTY_MESSAGES.LABELS.DURATION}
         </Label>
         <Input
           id='duration'
           type='text'
-          placeholder='Enter duration (e.g., 1 Year, 2 Years, Lifetime)'
+          placeholder={WARRANTY_MESSAGES.PLACEHOLDERS.DURATION}
           value={formData.duration}
           onChange={e => handleInputChange('duration', e.target.value)}
           className={`w-full border-2 focus:ring-[var(--secondary)] bg-[var(--white-background)] rounded-[10px] ${
@@ -192,14 +187,14 @@ export const WarrantyForm = ({
           className='btn-secondary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={isLoading}
         >
-          Cancel
+          {WARRANTY_MESSAGES.FORM.BUTTON_CANCEL}
         </Button>
         <Button
           type='submit'
           className='btn-primary flex-1 sm:flex-none shadow-lg sm:shadow-none hover:shadow-xl sm:hover:shadow-none transition-all duration-300 transform hover:scale-105 sm:hover:scale-100 active:scale-95 sm:active:scale-100 rounded-full'
           disabled={isLoading}
         >
-          Save
+          {WARRANTY_MESSAGES.FORM.BUTTON_SAVE}
         </Button>
       </div>
     </form>
