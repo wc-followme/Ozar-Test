@@ -80,16 +80,20 @@ const appointmentFormSchema = yup.object({
       function (value) {
         if (!value) return false;
 
-        // Get today's date in local timezone
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        try {
+          // Get today's date in local timezone
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
 
-        // Ensure the value is also normalized to start of day for accurate comparison
-        const selectedDate = new Date(value);
-        selectedDate.setHours(0, 0, 0, 0);
+          // Ensure the value is also normalized to start of day for accurate comparison
+          const selectedDate = new Date(value);
+          selectedDate.setHours(0, 0, 0, 0);
 
-        // Allow today's date and future dates
-        return selectedDate.getTime() >= today.getTime();
+          // Allow today's date and future dates
+          return selectedDate.getTime() >= today.getTime();
+        } catch {
+          return false;
+        }
       }
     ),
   starts: yup.string().required(APPOINTMENT_MESSAGES.STARTS_REQUIRED),
@@ -200,7 +204,7 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
       notes: '',
       employees: [],
     },
-    mode: 'onChange', // Add this to see validation errors immediately
+    mode: 'onBlur',
   });
 
   // Watch start time to trigger end time validation
@@ -512,8 +516,14 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       mode='single'
                       selected={field.value}
                       onSelect={date => {
-                        field.onChange(date);
-                        setDatePickerOpen(false);
+                        if (date) {
+                          field.onChange(date);
+                          setDatePickerOpen(false);
+                          // Trigger validation after setting the date
+                          setTimeout(() => {
+                            trigger('date');
+                          }, 100);
+                        }
                       }}
                       disabled={date => {
                         const today = new Date();
