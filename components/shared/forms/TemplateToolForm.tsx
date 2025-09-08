@@ -12,7 +12,7 @@ import { extractApiErrorMessage } from '@/lib/utils';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { CloseCircle } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as yup from 'yup';
 
@@ -26,6 +26,9 @@ interface TemplateToolFormProps {
   onSubmit?: (data: TemplateToolFormData) => void;
   initialData?: Partial<TemplateToolFormData>;
   templateId?: string; // when provided, use PATCH /templates/:id
+  onServiceChange?: (serviceId: string | null) => void; // New callback for service changes
+  templateTools?: Array<{ uuid: string; name: string }>; // Tools from selected templates
+  externalTools?: string[]; // External tools that should be synced with form state
 }
 
 type Option = { value: string; label: string };
@@ -34,6 +37,9 @@ export function TemplateToolForm({
   onSubmit,
   initialData,
   templateId,
+  onServiceChange,
+  templateTools = [],
+  externalTools = [],
 }: TemplateToolFormProps) {
   // Validation schema (match estimate form style)
   const toolTemplateSchema = yup.object({
@@ -70,16 +76,12 @@ export function TemplateToolForm({
   const toolsValue = watch('tools');
   const { toast } = useToast();
   const router = useRouter();
-
   // Dynamic options state
   const [serviceOptions, setServiceOptions] = useState<Option[]>([]);
   const [toolOptions, setToolOptions] = useState<Option[]>([]);
 
-  // Tool management state
-  const [selectedToolIds, setSelectedToolIds] = useState<string[]>(toolsValue);
-  const [selectedTools, setSelectedTools] = useState<
-    Array<{ id: string; name: string }>
-  >([]);
+  // Tool management state - now using useMemo instead of useState
+  const lastExternalToolsRef = useRef<string[]>([]);
 
   const handleInputChange = (
     field: keyof TemplateToolFormData,
@@ -92,23 +94,20 @@ export function TemplateToolForm({
   };
 
   const handleRemoveTool = (toolId: string) => {
-    setSelectedTools(prev => prev.filter(tool => tool.id !== toolId));
-    setSelectedToolIds(prev => prev.filter(id => id !== toolId));
-    handleInputChange(
-      'tools',
-      selectedToolIds.filter(id => id !== toolId)
-    );
+    const currentTools = Array.isArray(toolsValue) ? toolsValue : [];
+    const updatedTools = currentTools.filter(id => id !== toolId);
+    handleInputChange('tools', updatedTools);
   };
 
   const handleToolSelectionChange = (selectedIds: string[]) => {
-    setSelectedToolIds(selectedIds);
-    // Update selectedTools based on selected IDs
-    const newSelectedTools = selectedIds.map(toolId => {
-      const toolData = toolOptions.find(tool => tool.value === toolId);
-      return { id: toolId, name: toolData?.label || 'Unknown Tool' };
-    });
-    setSelectedTools(newSelectedTools);
+    // Prevent tool selection if no service is selected
+    if (!serviceValue) {
+      return;
+    }
+
     handleInputChange('tools', selectedIds);
+    // Trigger validation to clear any existing errors
+    trigger('tools');
   };
 
   const onSave = async (data: TemplateToolFormData) => {
@@ -241,44 +240,73 @@ export function TemplateToolForm({
           : Array.isArray((payload?.data as { tools?: Item[] })?.tools)
             ? ((payload.data as { tools?: Item[] }).tools as Item[])
             : [];
-        const opts: Option[] = list
+        const serviceToolOptions: Option[] = list
           .filter(i => !!i?.name)
           .map(i => ({ value: String(i.uuid || i.id), label: String(i.name) }));
-        setToolOptions(opts);
-        // If we have initial tool ids (from edit), make sure state reflects them and chips show labels
-        if (
-          Array.isArray(toolsValue) &&
-          toolsValue.length > 0 &&
-          selectedToolIds.length === 0
-        ) {
-          setSelectedToolIds(toolsValue as string[]);
-        }
-        // Build selectedTools from options whenever options or selected ids change
-        const mapped = (
-          selectedToolIds.length > 0
-            ? selectedToolIds
-            : (toolsValue as string[] | undefined) || []
-        ).map(id => {
-          const match = opts.find(o => o.value === id);
-          return { id, name: match?.label || id };
+
+        // Add template tools to the options
+        const templateToolOptions: Option[] = templateTools.map(tool => ({
+          value: tool.uuid,
+          label: tool.name,
+        }));
+
+        // Combine and deduplicate tools
+        const allToolOptions = [...serviceToolOptions];
+        templateToolOptions.forEach(templateTool => {
+          if (
+            !allToolOptions.find(option => option.value === templateTool.value)
+          ) {
+            allToolOptions.push(templateTool);
+          }
         });
-        setSelectedTools(mapped);
+
+        // Final deduplication to ensure no duplicates in the final array
+        const finalToolOptions = allToolOptions.filter(
+          (option, index, self) =>
+            self.findIndex(o => o.value === option.value) === index
+        );
+
+        setToolOptions(finalToolOptions);
       } catch {
         setToolOptions([]);
       }
     })();
-  }, [serviceValue]);
+  }, [serviceValue, templateTools]);
 
-  // Keep selectedToolIds in sync with default form tools when provided
-  useEffect(() => {
-    if (
-      Array.isArray(toolsValue) &&
-      toolsValue.length > 0 &&
-      selectedToolIds.length === 0
-    ) {
-      setSelectedToolIds(toolsValue as string[]);
+  // Build selectedTools from current form value - use useMemo to prevent unnecessary re-renders
+  const selectedTools = useMemo(() => {
+    const currentTools = Array.isArray(toolsValue) ? toolsValue : [];
+    if (toolOptions.length > 0 && currentTools.length > 0) {
+      return currentTools.map(id => {
+        const match = toolOptions.find(o => o.value === id);
+        return { id, name: match?.label || id };
+      });
     }
-  }, [toolsValue, selectedToolIds.length]);
+    return [];
+  }, [toolOptions, toolsValue]);
+
+  // Sync external tools with form state - optimized to prevent unnecessary updates
+  useEffect(() => {
+    if (!externalTools) return;
+
+    const currentExternalTools = [...new Set(externalTools)].sort();
+    const lastExternalTools = [...new Set(lastExternalToolsRef.current)].sort();
+
+    // Only update if external tools have actually changed
+    if (
+      JSON.stringify(currentExternalTools) !== JSON.stringify(lastExternalTools)
+    ) {
+      lastExternalToolsRef.current = externalTools;
+
+      if (currentExternalTools.length > 0) {
+        setValue('tools', currentExternalTools);
+        trigger('tools');
+      } else {
+        setValue('tools', []);
+        trigger('tools');
+      }
+    }
+  }, [externalTools, setValue, trigger]);
 
   return (
     <div className='space-y-6'>
@@ -308,10 +336,11 @@ export function TemplateToolForm({
               // Update selected service
               handleInputChange('service', value);
               // Clear tools state when service changes to avoid stale UUID chips
-              setSelectedToolIds([]);
-              setSelectedTools([]);
               setToolOptions([]);
               handleInputChange('tools', []);
+              if (onServiceChange) {
+                onServiceChange(value);
+              }
             }}
             options={serviceOptions}
             placeholder='Select Service'
@@ -325,11 +354,17 @@ export function TemplateToolForm({
           <MultiSelect
             label='Tools'
             options={toolOptions}
-            value={selectedToolIds}
+            value={Array.isArray(toolsValue) ? toolsValue : []}
             onChange={handleToolSelectionChange}
-            placeholder='Select Tools'
+            placeholder={serviceValue ? 'Select Tools' : 'Select Service First'}
+            disabled={!serviceValue}
           />
-          {errors.tools && (
+          {!serviceValue && (
+            <p className='text-sm text-[var(--text-secondary)]'>
+              Please select a service first to choose tools
+            </p>
+          )}
+          {errors.tools && serviceValue && (
             <p className='text-red-500 text-sm'>
               {Array.isArray(errors.tools)
                 ? 'Select at least one tool'

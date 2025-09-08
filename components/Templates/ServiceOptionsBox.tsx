@@ -1,20 +1,19 @@
 'use client';
 
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
-import { useToast } from '@/components/ui/use-toast';
-import { extractApiErrorMessage } from '@/lib/utils';
+import ServiceOptionServiceForm from '@/components/shared/forms/ServiceOptionServiceForm';
+import {
+  calculateServiceTotal,
+  calculateServiceTotalMaterialCost,
+  formatCurrency,
+} from '@/lib/estimation-calculations';
 import { useEffect, useState } from 'react';
-import ServiceOptionServiceForm from '../shared/forms/ServiceOptionServiceForm';
 import ServiceOptionsHeader from './ServiceOptionsHeader';
 import { ServiceOptionsSidebar } from './ServiceOptionsSidebar';
 import { ServiceCategory, ServiceOption } from './service-options-types';
 
 interface ServiceOptionsBoxProps {
-  _onClose: () => void;
-  templateId?: string;
-  onSaveSuccess?: () => void;
-  onSaveError?: (error: any) => void;
-  onFormSubmit?: number;
+  localStorageKey?: string; // Add localStorage key prop for different keys
 }
 
 // Utility function to generate unique keys
@@ -36,10 +35,125 @@ const generateUniqueKey = (
   return `${prefix}_${timestamp}_${random}`;
 };
 
+// 🎯 CENTRALIZED CALCULATION FUNCTION
+// This function handles ALL calculations for service options and should be used everywhere
+export const calculateServiceOptionTotals = (serviceOption: {
+  rate?: number;
+  qty?: number;
+  materials?: Array<{
+    id?: string;
+    name?: string;
+    variant?: string;
+    qty?: number;
+    unit?: string;
+    description?: string;
+    rate?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+  finishes?: Array<{
+    id?: string;
+    name?: string;
+    variant?: string;
+    qty?: number;
+    unit?: string;
+    description?: string;
+    rate?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+}) => {
+  const rate = serviceOption.rate || 0;
+  const qty = serviceOption.qty || 1;
+  const materials = (serviceOption.materials || []).map(m => ({
+    id: m.id, // Preserve the ID to prevent recreation
+    name: m.name,
+    variant: m.variant || '',
+    qty: m.qty || 0,
+    unit: m.unit || '',
+    description: m.description || '',
+    rate: m.rate || 0,
+    is_hidden: m.is_hidden || false,
+    markup: m.markup || 0,
+    markup_type:
+      (m.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+    lineTotal: m.lineTotal || 0,
+  }));
+  const finishes = (serviceOption.finishes || []).map(f => ({
+    id: f.id, // Preserve the ID to prevent recreation
+    name: f.name,
+    variant: f.variant || '',
+    qty: f.qty || 0,
+    unit: f.unit || '',
+    description: f.description || '',
+    rate: f.rate || 0,
+    is_hidden: f.is_hidden || false,
+    markup: f.markup || 0,
+    markup_type:
+      (f.markup_type as 'PERCENTAGE' | 'FLAT_AMOUNT') || 'FLAT_AMOUNT',
+    lineTotal: f.lineTotal || 0,
+  }));
+
+  // Calculate service total (rate * qty)
+  const serviceTotal = calculateServiceTotal(rate, qty);
+
+  // Calculate material cost (materials + finishes)
+  const materialCost = calculateServiceTotalMaterialCost(materials, finishes);
+
+  // Calculate trade total (service total + material cost)
+  const tradeTotal = serviceTotal + materialCost;
+
+  return {
+    lineTotal: serviceTotal,
+    serviceTotal: serviceTotal,
+    tradeTotal: tradeTotal,
+    materialCost: materialCost,
+    // Formatted versions for display
+    formattedLineTotal: formatCurrency(serviceTotal),
+    formattedServiceTotal: formatCurrency(serviceTotal),
+    formattedTradeTotal: formatCurrency(tradeTotal),
+    formattedMaterialCost: formatCurrency(materialCost),
+  };
+};
+
+// 🎯 SIMPLIFIED CALCULATION FUNCTION FOR PROJECT TOTAL
+// This function is used when the rate field already contains the final trade total
+export const getServiceOptionTradeTotal = (serviceOption: {
+  rate?: number;
+  qty?: number;
+  materials?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+  finishes?: Array<{
+    rate?: number;
+    qty?: number;
+    is_hidden?: boolean;
+    markup?: number;
+    markup_type?: string;
+    lineTotal?: number;
+  }>;
+}) => {
+  // For localStorage data, we need to recalculate because the stored lineTotal values might be wrong
+  // Always use the centralized calculation function to ensure accuracy
+  const totals = calculateServiceOptionTotals(serviceOption);
+  return totals.tradeTotal;
+};
+
 export default function ServiceOptionsBox(
   props: Readonly<ServiceOptionsBoxProps>
 ) {
-  const { showErrorToast } = useToast();
+  const {
+    localStorageKey = 'service_options_template', // Default to create page key
+  } = props;
   const [isEditing, setIsEditing] = useState(false);
   const [editingCategoryName, setEditingCategoryName] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<string[]>(['0']);
@@ -59,10 +173,13 @@ export default function ServiceOptionsBox(
   const [deleteType, setDeleteType] = useState<
     'category' | 'service-option' | null
   >(null);
+  const [formKey, setFormKey] = useState(0);
+  const [newlyCreatedServiceOption, setNewlyCreatedServiceOption] =
+    useState<ServiceOption | null>(null);
   const [categories, setCategories] = useState<ServiceCategory[]>([
     {
       id: '0',
-      uniqueKey: generateUniqueKey('category'),
+      uniqueKey: generateUniqueKey('category', '0', 0),
       name: 'General Services',
       total: 0.0,
       serviceOptions: [],
@@ -77,11 +194,33 @@ export default function ServiceOptionsBox(
     : categories.find(category => category.id === selectedCategoryId);
 
   const selectedServiceOptionData =
-    selectedServiceOption && selectedCategoryData
+    newlyCreatedServiceOption ||
+    (selectedServiceOption && selectedCategoryData
       ? selectedCategoryData.serviceOptions.find(
           option => option.id === selectedServiceOption
         )
-      : undefined;
+      : undefined);
+
+  // Clear newlyCreatedServiceOption when the service option is properly stored in categories
+  useEffect(() => {
+    if (
+      newlyCreatedServiceOption &&
+      selectedServiceOption &&
+      selectedCategoryData
+    ) {
+      const foundInCategories = selectedCategoryData.serviceOptions.find(
+        option => option.id === selectedServiceOption
+      );
+      if (foundInCategories) {
+        setNewlyCreatedServiceOption(null);
+      }
+    }
+  }, [
+    categories,
+    newlyCreatedServiceOption,
+    selectedServiceOption,
+    selectedCategoryData,
+  ]);
 
   // Function to update calculations for a service option
   const updateServiceOptionCalculations = (
@@ -97,7 +236,7 @@ export default function ServiceOptionsBox(
   const updateCategoryCalculations = (
     category: ServiceCategory
   ): ServiceCategory => {
-    const updatedServiceOptions = category.serviceOptions.map(
+    const updatedServiceOptions = (category.serviceOptions || []).map(
       updateServiceOptionCalculations
     );
     const categoryTotal = updatedServiceOptions.reduce(
@@ -112,37 +251,212 @@ export default function ServiceOptionsBox(
     };
   };
 
+  // Function to ensure all categories have unique keys
+  const ensureUniqueKeys = (
+    categoriesList: ServiceCategory[]
+  ): ServiceCategory[] => {
+    return categoriesList.map((category, index) => ({
+      ...category,
+      uniqueKey:
+        category.uniqueKey || generateUniqueKey('category', category.id, index),
+    }));
+  };
+
   // Function to update all calculations
   const updateAllCalculations = (): void => {
     setCategories(prevCategories => {
       const updatedCategories = prevCategories.map(updateCategoryCalculations);
-      return updatedCategories;
+      return ensureUniqueKeys(updatedCategories);
     });
   };
 
-  const saveCurrentState = () => {
-    // Save to localStorage or API
-    const categoriesData = categories.map(category => ({
-      id: category.id,
-      name: category.name,
-      serviceOptions: category.serviceOptions || [],
-    }));
+  // Centralized localStorage management function - this is the ONLY function that should update localStorage
+  const updateLocalStorage = (sourceCategories?: ServiceCategory[]) => {
+    try {
+      const dataSource = sourceCategories || categories;
 
-    if (props.templateId) {
-      localStorage.setItem(
-        `service_options_${props.templateId}`,
-        JSON.stringify(categoriesData)
-      );
+      // Transform the data to match the estimation template service format
+      const serviceOptionsData = (dataSource || []).flatMap(category => {
+        const mapItemsWithUuidAsId = (items: unknown): unknown[] => {
+          if (!Array.isArray(items)) return [];
+          return items.map((item: any) => ({
+            ...item,
+            id: item?.uuid || item?.id,
+          }));
+        };
+        return (category.serviceOptions || []).map(serviceOption => {
+          const serviceData = {
+            service_id: serviceOption.uuid || serviceOption.id,
+            name: serviceOption.name, // Store the actual service name
+            description: serviceOption.description, // Store the actual description
+            qty: serviceOption.qty ?? 1,
+            rate: serviceOption.rate, // Use the user's input rate, not the calculated price
+            materials: mapItemsWithUuidAsId(serviceOption.materials),
+            finishes: mapItemsWithUuidAsId(serviceOption.finishes),
+            tools: mapItemsWithUuidAsId(serviceOption.tools),
+          };
+          return serviceData;
+        });
+      });
+
+      // Save to the specified localStorage key
+      localStorage.setItem(localStorageKey, JSON.stringify(serviceOptionsData));
+
+      // Dispatch custom event to notify other components
+      window.dispatchEvent(new CustomEvent('customStorageChange'));
+    } catch (error) {
+      console.error('Error updating localStorage:', error);
     }
   };
 
-  // Save state whenever categories change
+  // Legacy function for backward compatibility - now just calls the centralized function
+
+  // Function to update localStorage immediately when materials, finishes, or tools change
+  // This is now handled by the main updateLocalStorage function below
+
+  // Load data from localStorage on mount
   useEffect(() => {
-    if (categories.length > 0) {
-      // Save to localStorage or API
-      saveCurrentState();
+    try {
+      // Load from the specified localStorage key
+      const generalData = localStorage.getItem(localStorageKey);
+      if (generalData) {
+        const parsedGeneralData = JSON.parse(generalData);
+        if (Array.isArray(parsedGeneralData) && parsedGeneralData.length > 0) {
+          // Transform the general format back to categories format
+          const transformedCategories: ServiceCategory[] = [
+            {
+              id: '0',
+              uniqueKey: generateUniqueKey('category', '0', 0),
+              name: 'General Services',
+              total: 0.0,
+              isExpanded: true,
+              serviceOptions: parsedGeneralData
+                .filter(service => service && typeof service === 'object')
+                .map((service: any, _index: number) => {
+                  // Calculate the proper trade total for the price field
+                  const totals = calculateServiceOptionTotals({
+                    rate: service.rate,
+                    qty: service.qty ?? 1,
+                    materials: service.materials || [],
+                    finishes: service.finishes || [],
+                  });
+
+                  return {
+                    id: `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                    uuid: service.service_id,
+                    name: service.name || service.description || 'Service', // Use stored name, fallback to description, then default
+                    description: service.description || '', // Use stored description or empty string
+                    rate: service.rate, // User input rate
+                    price: totals.tradeTotal, // Calculated trade total for sidebar
+                    qty: service.qty ?? 1,
+                    duration: '',
+                    category: 'General Services',
+                    materials: Array.isArray(service.materials)
+                      ? service.materials.map(
+                          (material: any, index: number) => ({
+                            ...material,
+                            id:
+                              material.id ||
+                              material.uuid ||
+                              `material-${service.service_id}-${index + 1}`,
+                          })
+                        )
+                      : [],
+                    finishes: Array.isArray(service.finishes)
+                      ? service.finishes.map((finish: any, index: number) => ({
+                          ...finish,
+                          id:
+                            finish.id ||
+                            finish.uuid ||
+                            `finish-${service.service_id}-${index + 1}`,
+                        }))
+                      : [],
+                    tools: Array.isArray(service.tools)
+                      ? service.tools.map((tool: any, index: number) => ({
+                          ...tool,
+                          id:
+                            tool.id ||
+                            tool.uuid ||
+                            `tool-${service.service_id}-${index + 1}`,
+                        }))
+                      : [],
+                  };
+                }),
+            },
+          ];
+          setCategories(transformedCategories);
+          // Auto-select the loaded category and first service option to avoid creating duplicates
+          setSelectedCategoryId('0');
+          setSelectedCategory('0');
+          setSelectedCategoryUniqueKey(transformedCategories[0]!.uniqueKey);
+          const firstLoaded = transformedCategories[0]!.serviceOptions[0];
+          if (firstLoaded) {
+            setSelectedServiceOption(firstLoaded.id);
+            setShowServiceForm(true);
+          }
+        } else {
+          // If no data in localStorage, create initial empty state and save it
+          const initialCategory: ServiceCategory = {
+            id: '0',
+            uniqueKey: generateUniqueKey('category', '0', 0),
+            name: 'General Services',
+            total: 0.0,
+            serviceOptions: [],
+            isExpanded: true,
+          };
+          setCategories([initialCategory]);
+
+          // Save initial empty state to localStorage
+          setTimeout(() => {
+            updateLocalStorage();
+          }, 0);
+        }
+      } else {
+        // If localStorage key doesn't exist, create initial empty state and save it
+        const initialCategory: ServiceCategory = {
+          id: '0',
+          uniqueKey: generateUniqueKey('category', '0', 0),
+          name: 'General Services',
+          total: 0.0,
+          serviceOptions: [],
+          isExpanded: true,
+        };
+        setCategories([initialCategory]);
+        setSelectedCategoryId('0');
+        setSelectedCategory('0');
+        setSelectedCategoryUniqueKey(initialCategory.uniqueKey);
+
+        // Save initial empty state to localStorage
+        setTimeout(() => {
+          updateLocalStorage();
+        }, 0);
+      }
+    } catch (error) {
+      console.error('Error loading service options from localStorage:', error);
+
+      // If there's an error, create initial empty state and save it
+      const initialCategory: ServiceCategory = {
+        id: '0',
+        uniqueKey: generateUniqueKey('category', '0', 0),
+        name: 'General Services',
+        total: 0.0,
+        serviceOptions: [],
+        isExpanded: true,
+      };
+      setCategories([initialCategory]);
+      setSelectedCategoryId('0');
+      setSelectedCategory('0');
+      setSelectedCategoryUniqueKey(initialCategory.uniqueKey);
+
+      // Save initial empty state to localStorage
+      setTimeout(() => {
+        updateLocalStorage();
+      }, 0);
     }
-  }, [categories]);
+  }, []);
+
+  // Save state whenever categories change - REMOVED to prevent infinite loop
+  // localStorage is now updated only when explicitly needed (add/update/delete operations)
 
   // Update calculations on mount
   useEffect(() => {
@@ -153,23 +467,28 @@ export default function ServiceOptionsBox(
 
   // Listen for form submission and trigger save
   useEffect(() => {
-    if (props.onFormSubmit && props.onFormSubmit > 0) {
-      handleSave();
-    }
-  }, [props.onFormSubmit]);
+    // Form submission handling removed - no longer needed
+  }, []);
 
   const handleAddCategory = () => {
     if (categories.length === 0) {
       const defaultCategory: ServiceCategory = {
         id: '0',
-        uniqueKey: generateUniqueKey('category'),
+        uniqueKey: generateUniqueKey('category', '0', 0),
         name: 'General Services',
         total: 0.0,
         isExpanded: true,
         serviceOptions: [],
       };
 
-      setCategories([defaultCategory]);
+      setCategories(_prev => {
+        const updatedCategories = ensureUniqueKeys([defaultCategory]);
+
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => updateLocalStorage(), 0);
+
+        return updatedCategories;
+      });
       setExpandedCategories(['0']);
       setSelectedCategoryId('0');
       setSelectedCategory(null);
@@ -183,14 +502,25 @@ export default function ServiceOptionsBox(
     const categorySequenceNumber = categories.length;
     const newCategory: ServiceCategory = {
       id: categorySequenceNumber.toString(),
-      uniqueKey: generateUniqueKey('category'),
+      uniqueKey: generateUniqueKey(
+        'category',
+        categorySequenceNumber.toString(),
+        categorySequenceNumber
+      ),
       name: `Category ${categories.length + 1}`,
       total: 0.0,
       isExpanded: true,
       serviceOptions: [],
     };
 
-    setCategories(prev => [...prev, newCategory]);
+    setCategories(prev => {
+      const updatedCategories = ensureUniqueKeys([...prev, newCategory]);
+
+      // Update localStorage from within the callback to ensure state is updated
+      setTimeout(() => updateLocalStorage(), 0);
+
+      return updatedCategories;
+    });
     setExpandedCategories(prev => [...prev, newCategory.id]);
 
     setSelectedCategoryId(newCategory.id);
@@ -224,20 +554,29 @@ export default function ServiceOptionsBox(
       category: selectedCategoryData?.name || 'General',
     };
 
-    setCategories(prev =>
-      prev.map(category =>
-        category.id === selectedCategoryId
-          ? {
-              ...category,
-              serviceOptions: [...category.serviceOptions, newServiceOption],
-            }
-          : category
-      )
-    );
+    setCategories(prev => {
+      const updatedCategories = ensureUniqueKeys(
+        prev.map(category =>
+          category.id === selectedCategoryId
+            ? {
+                ...category,
+                serviceOptions: [...category.serviceOptions, newServiceOption],
+              }
+            : category
+        )
+      );
 
-    setTimeout(() => updateAllCalculations(), 0);
+      // Update localStorage from within the callback to ensure state is updated
+      setTimeout(() => {
+        updateAllCalculations();
+        updateLocalStorage(); // Update localStorage when adding new service option
+      }, 0);
+
+      return updatedCategories;
+    });
     setSelectedServiceOption(newServiceOption.id);
     setShowServiceForm(true);
+    setNewlyCreatedServiceOption(null); // Clear any previously created service option
   };
 
   const handleCategorySelect = (categoryUniqueKey: string) => {
@@ -266,14 +605,14 @@ export default function ServiceOptionsBox(
   };
 
   const handleServiceOptionUpdate = (updatedServiceOption: ServiceOption) => {
-    if (
-      selectedCategory &&
-      selectedServiceOption &&
-      selectedCategoryUniqueKey
-    ) {
+    if (selectedServiceOption) {
       setCategories(prev => {
         const updatedCategories = prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
+          (
+            selectedCategoryUniqueKey
+              ? category.uniqueKey === selectedCategoryUniqueKey
+              : category.id === selectedCategoryId
+          )
             ? {
                 ...category,
                 serviceOptions: category.serviceOptions.map(option =>
@@ -284,29 +623,40 @@ export default function ServiceOptionsBox(
               }
             : category
         );
-        return updatedCategories;
+        const ensured = ensureUniqueKeys(updatedCategories);
+        // Update localStorage after state update with latest snapshot
+        setTimeout(() => {
+          updateLocalStorage(ensured);
+        }, 0);
+        return ensured;
       });
-
-      setTimeout(() => updateAllCalculations(), 0);
     }
   };
 
   const handleServiceOptionDelete = (serviceOptionId: string) => {
     if (selectedCategory && selectedCategoryUniqueKey) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.uniqueKey === selectedCategoryUniqueKey
-            ? {
-                ...category,
-                serviceOptions: category.serviceOptions.filter(
-                  option => option.id !== serviceOptionId
-                ),
-              }
-            : category
-        )
-      );
+      setCategories(prev => {
+        const updatedCategories = ensureUniqueKeys(
+          prev.map(category =>
+            category.uniqueKey === selectedCategoryUniqueKey
+              ? {
+                  ...category,
+                  serviceOptions: category.serviceOptions.filter(
+                    option => option.id !== serviceOptionId
+                  ),
+                }
+              : category
+          )
+        );
 
-      setTimeout(() => updateAllCalculations(), 0);
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => {
+          updateAllCalculations();
+          updateLocalStorage(); // Update localStorage when deleting service option
+        }, 0);
+
+        return updatedCategories;
+      });
     }
   };
 
@@ -317,13 +667,20 @@ export default function ServiceOptionsBox(
 
   const handleNameSave = () => {
     if (editingCategoryName.trim()) {
-      setCategories(prev =>
-        prev.map(category =>
-          category.id === selectedCategoryId
-            ? { ...category, name: editingCategoryName.trim() }
-            : category
-        )
-      );
+      setCategories(prev => {
+        const updatedCategories = ensureUniqueKeys(
+          prev.map(category =>
+            category.id === selectedCategoryId
+              ? { ...category, name: editingCategoryName.trim() }
+              : category
+          )
+        );
+
+        // Update localStorage from within the callback to ensure state is updated
+        setTimeout(() => updateLocalStorage(), 0);
+
+        return updatedCategories;
+      });
     }
     setIsEditing(false);
   };
@@ -364,19 +721,27 @@ export default function ServiceOptionsBox(
         if (filteredCategories.length === 0) {
           const defaultCategory: ServiceCategory = {
             id: '0',
-            uniqueKey: generateUniqueKey('category'),
+            uniqueKey: generateUniqueKey('category', '0', 0),
             name: 'General Services',
             total: 0.0,
             serviceOptions: [],
             isExpanded: true,
           };
           setSelectedCategoryId('0');
-          return [defaultCategory];
+
+          // Update localStorage from within the callback to ensure state is updated
+          setTimeout(() => updateLocalStorage(), 0);
+
+          return ensureUniqueKeys([defaultCategory]);
         } else {
           if (filteredCategories.length > 0) {
             setSelectedCategoryId(filteredCategories[0]!.id);
           }
-          return filteredCategories;
+
+          // Update localStorage from within the callback to ensure state is updated
+          setTimeout(() => updateLocalStorage(), 0);
+
+          return ensureUniqueKeys(filteredCategories);
         }
       });
       setSelectedCategory(null);
@@ -394,6 +759,7 @@ export default function ServiceOptionsBox(
       setSelectedServiceOption(null);
       setShowServiceForm(false);
     }
+
     setShowDeleteModal(false);
     setDeleteType(null);
   };
@@ -408,28 +774,6 @@ export default function ServiceOptionsBox(
       style: 'currency',
       currency: 'USD',
     }).format(amount);
-  };
-
-  const handleSave = async () => {
-    try {
-      saveCurrentState();
-
-      if (props.onSaveSuccess) {
-        props.onSaveSuccess();
-      }
-    } catch (error) {
-      console.error('Error saving service options:', error);
-      showErrorToast(
-        extractApiErrorMessage(
-          error,
-          'Failed to save service options. Please try again.'
-        )
-      );
-
-      if (props.onSaveError) {
-        props.onSaveError(error);
-      }
-    }
   };
 
   const toggleSidebar = () => {
@@ -476,6 +820,7 @@ export default function ServiceOptionsBox(
         formatCurrency={formatCurrency}
         selectedCategoryId={selectedCategoryId}
         toggleMainAccordion={toggleMainAccordion}
+        selectedServiceOptionData={selectedServiceOptionData}
       />
 
       {/* Main Content */}
@@ -492,7 +837,6 @@ export default function ServiceOptionsBox(
           handleNameSave={handleNameSave}
           handleRoomNameKeyDown={handleRoomNameKeyDown}
           handleEditClick={handleEditClick}
-          selectedCategory={selectedCategoryData}
           showServiceForm={showServiceForm}
           selectedServiceOptionData={selectedServiceOptionData}
           handleAddCategory={handleAddCategory}
@@ -517,32 +861,407 @@ export default function ServiceOptionsBox(
             <div className='p-6 min-w-[800px] max-w-none w-full'>
               {/* Service Form */}
               <ServiceOptionServiceForm
+                key={`${selectedServiceOptionData?.uuid || selectedServiceOptionData?.id || 'default'}-${selectedServiceOptionData?.name || 'new'}-${formKey}`}
+                tradeId={undefined} // Trade ID no longer needed
+                onTotalsChange={({ tradeTotal }) => {
+                  // Keep the three purple totals in the header in sync with form
+                  // We persist trade total (including materials and finishes) on the selected service option
+                  if (selectedServiceOption) {
+                    setCategories(prev => {
+                      // Check if the price actually needs to be updated
+                      const targetCategory = prev.find(category =>
+                        selectedCategoryUniqueKey
+                          ? category.uniqueKey === selectedCategoryUniqueKey
+                          : category.id === selectedCategoryId
+                      );
+
+                      if (!targetCategory) return prev;
+
+                      const targetService = targetCategory.serviceOptions.find(
+                        opt => opt.id === selectedServiceOption
+                      );
+
+                      // If price hasn't changed, don't update state
+                      if (targetService && targetService.price === tradeTotal) {
+                        return prev;
+                      }
+
+                      const updated = prev.map(category =>
+                        (
+                          selectedCategoryUniqueKey
+                            ? category.uniqueKey === selectedCategoryUniqueKey
+                            : category.id === selectedCategoryId
+                        )
+                          ? {
+                              ...category,
+                              serviceOptions: category.serviceOptions.map(
+                                opt =>
+                                  opt.id === selectedServiceOption
+                                    ? {
+                                        ...opt,
+                                        price: tradeTotal,
+                                        // Debug log
+                                        _debug: {
+                                          oldPrice: opt.price,
+                                          newPrice: tradeTotal,
+                                        },
+                                      }
+                                    : opt
+                              ),
+                              total: category.serviceOptions.reduce(
+                                (sum, opt) =>
+                                  sum +
+                                  (opt.id === selectedServiceOption
+                                    ? tradeTotal
+                                    : opt.price),
+                                0
+                              ),
+                            }
+                          : category
+                      );
+                      setTimeout(() => updateLocalStorage(updated), 0);
+                      return ensureUniqueKeys(updated);
+                    });
+                  }
+                }}
                 service={{
-                  id: selectedServiceOptionData?.id || 'default',
-                  name: selectedServiceOptionData?.name || 'New Service Option',
-                  description: selectedServiceOptionData?.description || '',
-                  qty: 1,
-                  rate: selectedServiceOptionData?.price || 0,
-                  lineTotal: selectedServiceOptionData?.price || 0,
-                  serviceTotal: selectedServiceOptionData?.price || 0,
-                  tradeTotal: selectedServiceOptionData?.price || 0,
-                  materials: [],
-                  finishes: [],
-                  tools: [],
+                  id:
+                    newlyCreatedServiceOption?.uuid ||
+                    newlyCreatedServiceOption?.id ||
+                    selectedServiceOptionData?.uuid ||
+                    selectedServiceOptionData?.id ||
+                    'default',
+                  name:
+                    newlyCreatedServiceOption?.name ||
+                    selectedServiceOptionData?.name ||
+                    'New Service Option',
+                  description:
+                    newlyCreatedServiceOption?.description ||
+                    selectedServiceOptionData?.description ||
+                    '',
+                  qty:
+                    newlyCreatedServiceOption?.qty ||
+                    selectedServiceOptionData?.qty ||
+                    1,
+                  rate:
+                    newlyCreatedServiceOption?.rate ||
+                    selectedServiceOptionData?.rate ||
+                    (selectedServiceOptionData?.qty &&
+                    selectedServiceOptionData?.price
+                      ? selectedServiceOptionData.price /
+                        selectedServiceOptionData.qty
+                      : 0),
+                  lineTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  serviceTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  tradeTotal:
+                    newlyCreatedServiceOption?.price ||
+                    selectedServiceOptionData?.price ||
+                    0,
+                  materials: (
+                    newlyCreatedServiceOption?.materials ||
+                    selectedServiceOptionData?.materials ||
+                    []
+                  ).map((material: any) => ({
+                    ...material,
+                    id:
+                      material.id ||
+                      material.uuid ||
+                      `material-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
+                  finishes: (
+                    newlyCreatedServiceOption?.finishes ||
+                    selectedServiceOptionData?.finishes ||
+                    []
+                  ).map((finish: any) => ({
+                    ...finish,
+                    id:
+                      finish.id ||
+                      finish.uuid ||
+                      `finish-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
+                  tools: (
+                    newlyCreatedServiceOption?.tools ||
+                    selectedServiceOptionData?.tools ||
+                    []
+                  ).map((tool: any) => ({
+                    ...tool,
+                    id:
+                      tool.id ||
+                      tool.uuid ||
+                      `tool-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+                  })),
                   serviceOptions: [],
+                  ...(newlyCreatedServiceOption?.uuid
+                    ? { uuid: newlyCreatedServiceOption.uuid }
+                    : selectedServiceOptionData?.uuid
+                      ? { uuid: selectedServiceOptionData.uuid }
+                      : {}),
+                }}
+                onMaterialAdd={newMaterial => {
+                  // Update the selected service option with the new material
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: [...(baseOption.materials || []), newMaterial],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishAdd={newFinish => {
+                  // Update the selected service option with the new finish
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: [...(baseOption.finishes || []), newFinish],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onAddTool={newTool => {
+                  // Update the selected service option with the new tool
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: [...(baseOption.tools || []), newTool],
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onMaterialUpdate={(materialId, updatedMaterial) => {
+                  // Update the specific material in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: (baseOption.materials || []).map(m =>
+                        (m as unknown as { id?: string }).id === materialId
+                          ? updatedMaterial
+                          : m
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onMaterialDelete={materialId => {
+                  // Remove the specific material from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      materials: (baseOption.materials || []).filter(
+                        m => (m as unknown as { id?: string }).id !== materialId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishUpdate={(finishId, updatedFinish) => {
+                  // Update the specific finish in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: (baseOption.finishes || []).map(f =>
+                        (f as unknown as { id?: string }).id === finishId
+                          ? updatedFinish
+                          : f
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onFinishDelete={finishId => {
+                  // Remove the specific finish from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      finishes: (baseOption.finishes || []).filter(
+                        f => (f as unknown as { id?: string }).id !== finishId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onRemoveTool={toolId => {
+                  // Remove the specific tool from the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: (baseOption.tools || []).filter(
+                        t => (t as unknown as { id?: string }).id !== toolId
+                      ),
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
+                }}
+                onReplaceTools={newTools => {
+                  // Replace all tools in the selected service option
+                  const baseOption =
+                    selectedServiceOptionData ||
+                    (selectedServiceOption && selectedCategoryData
+                      ? selectedCategoryData.serviceOptions.find(
+                          opt => opt.id === selectedServiceOption
+                        ) || null
+                      : null);
+                  if (baseOption) {
+                    const updatedServiceOption = {
+                      ...baseOption,
+                      tools: newTools,
+                    } as ServiceOption;
+                    handleServiceOptionUpdate(updatedServiceOption);
+                  }
                 }}
                 onServiceUpdate={updatedService => {
                   if (selectedServiceOptionData) {
+                    // Get the current service data from categories state to ensure we have the latest materials, finishes, and tools
+                    const currentServiceData = categories
+                      .find(cat =>
+                        selectedCategoryUniqueKey
+                          ? cat.uniqueKey === selectedCategoryUniqueKey
+                          : cat.id === selectedCategoryId
+                      )
+                      ?.serviceOptions.find(
+                        opt => opt.id === selectedServiceOption
+                      );
+
+                    // Update existing service option - preserve materials, finishes, and tools from form
                     const updatedServiceOption: ServiceOption = {
-                      id: updatedService.id,
+                      ...(currentServiceData || selectedServiceOptionData), // Use current state data if available
                       name: updatedService.name,
                       description: updatedService.description,
-                      price: updatedService.rate,
-                      duration: selectedServiceOptionData.duration,
-                      category: selectedServiceOptionData.category,
-                      is_hidden: selectedServiceOptionData.is_hidden ?? false,
+                      rate: updatedService.rate,
+                      price: updatedService.serviceTotal, // Store the calculated service total as price
+                      qty:
+                        updatedService.qty ??
+                        (currentServiceData?.qty ||
+                          selectedServiceOptionData?.qty ||
+                          1),
+                      // Use materials, finishes, and tools from the form's updatedService
+                      materials: (updatedService.materials || []).map(
+                        material => ({
+                          ...material,
+                          markup_type: material.markup_type || 'FLAT_AMOUNT',
+                        })
+                      ),
+                      finishes: (updatedService.finishes || []).map(finish => ({
+                        ...finish,
+                        markup_type: finish.markup_type || 'FLAT_AMOUNT',
+                      })),
+                      tools: updatedService.tools || [],
                     };
+                    if (updatedService.uuid) {
+                      (
+                        updatedServiceOption as unknown as { uuid?: string }
+                      ).uuid = updatedService.uuid;
+                    }
                     handleServiceOptionUpdate(updatedServiceOption);
+                  } else {
+                    // Create new service option
+                    const uniqueId = `service-option-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+                    const newServiceOption: ServiceOption = {
+                      id: uniqueId,
+                      name: updatedService.name,
+                      description: updatedService.description,
+                      rate: updatedService.rate,
+                      price: updatedService.serviceTotal, // Store the calculated service total as price
+                      qty: updatedService.qty ?? 1,
+                      duration: '',
+                      category: selectedCategoryData?.name || 'General',
+                    };
+                    if (updatedService.uuid) {
+                      (newServiceOption as unknown as { uuid?: string }).uuid =
+                        updatedService.uuid;
+                    }
+
+                    // Add to categories and update localStorage from within the callback
+                    setCategories(prev => {
+                      const updatedCategories = ensureUniqueKeys(
+                        prev.map(category =>
+                          category.id === selectedCategoryId
+                            ? {
+                                ...category,
+                                // Replace instead of append to ensure only one service option exists
+                                serviceOptions: [newServiceOption],
+                              }
+                            : category
+                        )
+                      );
+
+                      // Update localStorage from within the callback to ensure state is updated
+                      setTimeout(() => {
+                        updateLocalStorage(updatedCategories);
+                      }, 0);
+
+                      return updatedCategories;
+                    });
+
+                    // Set as selected
+                    setSelectedServiceOption(newServiceOption.id);
+
+                    // Force re-render by updating the form key
+                    setFormKey(prev => prev + 1);
+
+                    // Store the new service option data for immediate use
+                    setNewlyCreatedServiceOption(newServiceOption);
                   }
                 }}
               />

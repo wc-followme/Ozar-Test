@@ -370,16 +370,12 @@ export default function EstimateComponent({
                   ]}
                   onAction={action => {
                     if (action === 'send-material-list') {
-                      console.log('Send Material List clicked');
                       // Add material list functionality here
                     } else if (action === 'save-as-template') {
-                      console.log('Save as Estimate Template clicked');
                       // Add save template functionality here
                     } else if (action === 'send-invite-estimate') {
-                      console.log('Send Invite Estimate clicked');
                       // Add invite estimate functionality here
                     } else if (action === 'send-pdf') {
-                      console.log('Send PDF clicked');
                       // Add PDF functionality here
                     }
                   }}

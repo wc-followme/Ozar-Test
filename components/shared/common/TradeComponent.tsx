@@ -150,7 +150,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
     {
       id: '0',
       uniqueKey: generateUniqueKey('room'),
-      name: 'Home 1',
+      name: 'Room 1',
       total: 0.0,
       trades: [],
       isExpanded: true,
@@ -1006,7 +1006,7 @@ export default function TradeComponent(props: Readonly<TradeComponentProps>) {
           const defaultRoom: Room = {
             id: '0',
             uniqueKey: generateUniqueKey('room'),
-            name: 'Home 1',
+            name: 'Room 1',
             total: 0.0,
             trades: [],
             isExpanded: true,

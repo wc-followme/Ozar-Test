@@ -112,4 +112,7 @@ export const TEMPLATE_MESSAGES = {
   AVAILABLE: 'available',
   IN_USE: 'in-use',
   MAINTENANCE: 'maintenance',
+
+  // Room names
+  ROOM_1: 'Room 1',
 } as const;

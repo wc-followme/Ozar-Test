@@ -1,6 +1,6 @@
 'use client';
 
-import { ServiceCategory } from './service-options-types';
+import { ServiceCategory, ServiceOption } from './service-options-types';
 
 interface ServiceOptionsSidebarProps {
   isSidebarCollapsed: boolean;
@@ -14,6 +14,7 @@ interface ServiceOptionsSidebarProps {
   formatCurrency: (amount: number) => string;
   selectedCategoryId: string;
   toggleMainAccordion: () => void;
+  selectedServiceOptionData: ServiceOption | null | undefined;
 }
 
 export function ServiceOptionsSidebar({
@@ -26,6 +27,7 @@ export function ServiceOptionsSidebar({
   formatCurrency,
   selectedCategoryId,
   toggleMainAccordion: _toggleMainAccordion,
+  selectedServiceOptionData,
 }: ServiceOptionsSidebarProps) {
   return (
     <div
@@ -63,10 +65,16 @@ export function ServiceOptionsSidebar({
                         : 'text-[var(--text-dark)]'
                     }`}
                   >
-                    {category.name}
+                    {selectedCategoryId === category.id &&
+                    selectedServiceOptionData
+                      ? selectedServiceOptionData.name
+                      : category.name}
                   </span>
                   <span className='text-xs font-semibold text-[var(--text-dark)] ml-auto'>
-                    {formatCurrency(category.total)}
+                    {selectedCategoryId === category.id &&
+                    selectedServiceOptionData
+                      ? formatCurrency(selectedServiceOptionData.price)
+                      : formatCurrency(category.total)}
                   </span>
                 </div>
               ))}
