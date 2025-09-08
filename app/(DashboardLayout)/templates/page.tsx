@@ -8,7 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
-import { PAGINATION, TEMPLATE_TYPES } from '@/constants/common';
+import {
+  PAGINATION,
+  TEMPLATE_FILTER_OPTIONS,
+  TEMPLATE_FILTER_VALUES,
+  TEMPLATE_TYPES,
+} from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { extractApiErrorMessage, getCompanyId } from '@/lib/utils';
@@ -31,29 +36,39 @@ export default function TemplatesPage() {
   const { isAuthenticated, handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('estimate');
   const [initialLoading, setInitialLoading] = useState(true);
-  const [archiveFilter, setArchiveFilter] = useState('estimate');
-
-  // Archive filter options
-  const archiveFilterOptions = [
-    { value: 'estimate', label: 'Estimate' },
-    { value: 'service-option', label: 'Service Options' },
-    { value: 'tools', label: 'Tools' },
-    { value: 'disclaimers', label: 'Disclaimers' },
-  ];
+  const [archiveFilter, setArchiveFilter] = useState<string>(
+    TEMPLATE_FILTER_VALUES.ESTIMATE
+  );
 
   // Map filter values to API template types
   const getTemplateTypeFromFilter = (filter: string): string => {
     switch (filter) {
-      case 'estimate':
+      case TEMPLATE_FILTER_VALUES.ESTIMATE:
         return TEMPLATE_TYPES.ESTIMATE_TEMPLATES;
-      case 'service-option':
+      case TEMPLATE_FILTER_VALUES.SERVICE_OPTION:
         return TEMPLATE_TYPES.OPTION_BID_TEMPLATES;
-      case 'tools':
+      case TEMPLATE_FILTER_VALUES.TOOLS:
         return TEMPLATE_TYPES.TOOL_TEMPLATES;
-      case 'disclaimers':
+      case TEMPLATE_FILTER_VALUES.DISCLAIMERS:
         return TEMPLATE_TYPES.DISCLAIMER_TEMPLATES;
       default:
         return TEMPLATE_TYPES.ESTIMATE_TEMPLATES;
+    }
+  };
+
+  // Map filter values to template display types
+  const getTemplateDisplayTypeFromFilter = (filter: string): string => {
+    switch (filter) {
+      case TEMPLATE_FILTER_VALUES.ESTIMATE:
+        return 'estimate';
+      case TEMPLATE_FILTER_VALUES.SERVICE_OPTION:
+        return 'service-option';
+      case TEMPLATE_FILTER_VALUES.TOOLS:
+        return 'tools';
+      case TEMPLATE_FILTER_VALUES.DISCLAIMERS:
+        return 'disclaimer';
+      default:
+        return 'estimate';
     }
   };
 
@@ -792,7 +807,7 @@ export default function TemplatesPage() {
                   <SelectField
                     value={archiveFilter}
                     onValueChange={handleArchiveFilterChange}
-                    options={archiveFilterOptions}
+                    options={TEMPLATE_FILTER_OPTIONS}
                     placeholder='Estimate'
                     className='w-full sm:w-40'
                     triggerClassName='bg-[var(--white-background)] rounded-[30px] border-2 border-[var(--border-dark)] h-[42px] shadow-sm sm:shadow-none'
@@ -812,7 +827,7 @@ export default function TemplatesPage() {
                           key={template.uuid}
                           template={transformTemplateData(
                             template,
-                            archiveFilter
+                            getTemplateDisplayTypeFromFilter(archiveFilter)
                           )}
                           isArchived={true}
                           onRetrieve={() =>
