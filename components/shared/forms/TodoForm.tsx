@@ -35,9 +35,17 @@ const todoFormSchema = yup.object({
     .required(TODO_MESSAGES.DATE_REQUIRED)
     .test('future-date', TODO_MESSAGES.DATE_FUTURE_REQUIRED, function (value) {
       if (!value) return false;
+
+      // Get today's date in local timezone
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      return value >= today;
+
+      // Ensure the value is also normalized to start of day for accurate comparison
+      const selectedDate = new Date(value);
+      selectedDate.setHours(0, 0, 0, 0);
+
+      // Allow today's date and future dates
+      return selectedDate.getTime() >= today.getTime();
     }),
   employees: yup
     .array()
@@ -119,9 +127,11 @@ export const TodoForm: React.FC<TodoFormProps> = ({
     setValue,
     watch,
     reset,
+    trigger,
     formState: { errors },
   } = useForm<TodoFormData>({
     resolver: yupResolver(todoFormSchema),
+    mode: 'onBlur',
     defaultValues: {
       job: '',
       date: new Date(),
@@ -497,6 +507,8 @@ export const TodoForm: React.FC<TodoFormProps> = ({
   const handleEmployeeChange = (employees: string[]) => {
     setSelectedEmployees(employees);
     setValue('employees', employees);
+    // Trigger validation to clear the error
+    trigger('employees');
   };
 
   return (
@@ -592,7 +604,9 @@ export const TodoForm: React.FC<TodoFormProps> = ({
                       disabled={date => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return date < today;
+                        const selectedDate = new Date(date);
+                        selectedDate.setHours(0, 0, 0, 0);
+                        return selectedDate < today;
                       }}
                       initialFocus
                     />

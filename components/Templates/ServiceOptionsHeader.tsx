@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Trash } from 'iconsax-react';
 import ShieldPlusIcon from '../icons/ShieldPlusIcon';
-import { ServiceCategory, ServiceOption } from './service-options-types';
+import { ServiceOption } from './service-options-types';
 
 interface ServiceOptionsHeaderProps {
   showAddServiceOption: boolean;
@@ -13,7 +13,6 @@ interface ServiceOptionsHeaderProps {
   handleNameSave: () => void;
   handleRoomNameKeyDown: (e: React.KeyboardEvent) => void;
   handleEditClick: () => void;
-  selectedCategory: ServiceCategory | undefined;
   showServiceForm: boolean;
   selectedServiceOptionData: ServiceOption | undefined;
   handleAddCategory: () => void;
@@ -29,9 +28,8 @@ export default function ServiceOptionsHeader({
   handleNameSave: _handleNameSave,
   handleRoomNameKeyDown: _handleRoomNameKeyDown,
   handleEditClick: _handleEditClick,
-  selectedCategory: _selectedCategory,
   showServiceForm: _showServiceForm,
-  selectedServiceOptionData: _selectedServiceOptionData,
+  selectedServiceOptionData,
   handleAddCategory: _handleAddCategory,
   handleAddServiceOption: _handleAddServiceOption,
   onDeleteClick,
@@ -41,11 +39,8 @@ export default function ServiceOptionsHeader({
       <div className='flex items-center justify-between w-full'>
         <div className='flex flex-col items-start'>
           <h1 className='text-xl font-semibold text-gray-900 truncate'>
-            Install Tub
+            {selectedServiceOptionData?.name || 'New Service Option'}
           </h1>
-          <p className='text-sm text-gray-500'>
-            Bed room 1 / Plumbing / Install Tub
-          </p>
         </div>
 
         <div className='flex items-center space-x-2'>

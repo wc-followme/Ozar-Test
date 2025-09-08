@@ -1,7 +1,6 @@
 'use client';
 
 import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
-import ComingSoon from '@/components/shared/common/ComingSoon';
 import { Dropdown } from '@/components/shared/common/Dropdown';
 import NoDataFound from '@/components/shared/common/NoDataFound';
 import { Badge } from '@/components/ui/badge';
@@ -30,9 +29,22 @@ export default function TemplatesPage() {
   const { showErrorToast, showSuccessToast } = useToast();
   const { isAuthenticated, handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('estimate');
-  const [templates, setTemplates] = useState<TemplateApiData[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [hasMore, setHasMore] = useState<boolean>(true);
+
+  // Separate state for each tab's templates and pagination
+  const [tabTemplates, setTabTemplates] = useState<{
+    [key: string]: {
+      templates: TemplateApiData[];
+      hasMore: boolean;
+      currentPage: number;
+    };
+  }>({
+    estimate: { templates: [], hasMore: true, currentPage: 1 },
+    'service-option': { templates: [], hasMore: true, currentPage: 1 },
+    tools: { templates: [], hasMore: true, currentPage: 1 },
+    disclaimers: { templates: [], hasMore: true, currentPage: 1 },
+    archive: { templates: [], hasMore: true, currentPage: 1 },
+  });
   const [counts, setCounts] = useState({
     estimate: 0,
     serviceOptions: 0,
@@ -42,9 +54,9 @@ export default function TemplatesPage() {
     total: 0,
   });
 
-  // Fetch templates from API
+  // Fetch templates from API with template_type filtering
   const fetchTemplates = useCallback(
-    async (pageNum = 1, append = false) => {
+    async (pageNum = 1, append = false, tabType?: string) => {
       try {
         // Check authentication first
         if (!isAuthenticated) {
@@ -65,39 +77,87 @@ export default function TemplatesPage() {
           return;
         }
 
+        // Determine template_type based on tab
+        const getTemplateType = (tab: string) => {
+          switch (tab) {
+            case 'estimate':
+              return TEMPLATE_TYPES.ESTIMATE_TEMPLATES;
+            case 'service-option':
+              return TEMPLATE_TYPES.OPTION_BID_TEMPLATES;
+            case 'tools':
+              return TEMPLATE_TYPES.TOOL_TEMPLATES;
+            case 'disclaimers':
+              return TEMPLATE_TYPES.DISCLAIMER_TEMPLATES;
+            default:
+              return undefined; // For archive tab, don't filter by type
+          }
+        };
+
+        const templateType = getTemplateType(tabType || selectedTab);
+        const isArchive = (tabType || selectedTab) === 'archive';
+
         const response = await apiService.fetchTemplates({
           page: pageNum,
           limit: PAGINATION.TEMPLATES_LIMIT,
           company_id: companyId,
-          status: selectedTab === 'archive' ? 'INACTIVE' : 'ACTIVE',
+          status: isArchive ? 'INACTIVE' : 'ACTIVE',
+          ...(templateType && { template_type: templateType }),
         });
 
         if (response.statusCode === 200 && response.data) {
           const { data: templatesData, totalPages } = response.data;
+          const currentTab = tabType || selectedTab;
 
-          setTemplates(prev => {
+          setTabTemplates(prev => {
+            const currentTabData = prev[currentTab] || {
+              templates: [],
+              hasMore: true,
+              currentPage: 1,
+            };
+
             if (append) {
               // Filter out duplicates when appending to prevent duplicate keys
               const existingUuids = new Set(
-                prev.map(template => template.uuid)
+                currentTabData.templates.map(template => template.uuid)
               );
               const uniqueNewTemplates = templatesData.filter(
                 (template: TemplateApiData) => !existingUuids.has(template.uuid)
               );
-              return [...prev, ...uniqueNewTemplates];
+              return {
+                ...prev,
+                [currentTab]: {
+                  templates: [
+                    ...currentTabData.templates,
+                    ...uniqueNewTemplates,
+                  ],
+                  hasMore: pageNum < totalPages,
+                  currentPage: pageNum,
+                },
+              };
             } else {
-              return templatesData;
+              return {
+                ...prev,
+                [currentTab]: {
+                  templates: templatesData,
+                  hasMore: pageNum < totalPages,
+                  currentPage: pageNum,
+                },
+              };
             }
           });
-
-          // Page is managed internally by the infinite scroll logic
-          setHasMore(pageNum < totalPages);
         } else {
           showErrorToast(
             extractApiErrorMessage(response, 'Failed to fetch templates.')
           );
-          if (!append) setTemplates([]);
-          setHasMore(false);
+          const currentTab = tabType || selectedTab;
+          setTabTemplates(prev => ({
+            ...prev,
+            [currentTab]: {
+              templates: append ? prev[currentTab]?.templates || [] : [],
+              hasMore: false,
+              currentPage: 1,
+            },
+          }));
         }
       } catch (error: any) {
         // Handle authentication errors
@@ -108,8 +168,15 @@ export default function TemplatesPage() {
         showErrorToast(
           extractApiErrorMessage(error, 'Failed to fetch templates.')
         );
-        if (!append) setTemplates([]);
-        setHasMore(false);
+        const currentTab = tabType || selectedTab;
+        setTabTemplates(prev => ({
+          ...prev,
+          [currentTab]: {
+            templates: append ? prev[currentTab]?.templates || [] : [],
+            hasMore: false,
+            currentPage: 1,
+          },
+        }));
       } finally {
         if (!append) {
           setInitialLoading(false);
@@ -165,10 +232,21 @@ export default function TemplatesPage() {
 
         if (response.statusCode === 200) {
           showSuccessToast('Template archived successfully.');
-          // Remove the archived template from the list
-          setTemplates(prev =>
-            prev.filter(template => template.uuid !== templateUuid)
-          );
+          // Remove the archived template from all tab lists
+          setTabTemplates(prev => {
+            const updated = { ...prev };
+            Object.keys(updated).forEach(tab => {
+              if (updated[tab]) {
+                updated[tab] = {
+                  ...updated[tab],
+                  templates: updated[tab].templates.filter(
+                    template => template.uuid !== templateUuid
+                  ),
+                };
+              }
+            });
+            return updated;
+          });
           fetchTemplateCounts();
         } else {
           showErrorToast(
@@ -201,7 +279,17 @@ export default function TemplatesPage() {
         if (statusCode === 200) {
           showSuccessToast(message || 'Template retrieved successfully.');
           // Remove the retrieved template from the archive list in UI immediately
-          setTemplates(prev => prev.filter(t => t.uuid !== templateUuid));
+          setTabTemplates(prev => ({
+            ...prev,
+            archive: {
+              templates:
+                prev['archive']?.templates.filter(
+                  t => t.uuid !== templateUuid
+                ) || [],
+              hasMore: prev['archive']?.hasMore || false,
+              currentPage: prev['archive']?.currentPage || 1,
+            },
+          }));
           fetchTemplateCounts();
         } else {
           showErrorToast(
@@ -230,58 +318,59 @@ export default function TemplatesPage() {
     [router]
   );
 
+  // Handle tab change
+  const handleTabChange = useCallback(
+    (newTab: string) => {
+      setSelectedTab(newTab);
+
+      // If the tab doesn't have templates loaded yet, fetch them
+      if (isAuthenticated && !tabTemplates[newTab]?.templates.length) {
+        fetchTemplates(1, false, newTab);
+      }
+    },
+    [isAuthenticated, tabTemplates, fetchTemplates]
+  );
+
   // Fetch templates on component mount
   useEffect(() => {
     if (isAuthenticated) {
-      setTemplates([]);
-      setHasMore(true);
-      fetchTemplates(1, false);
+      fetchTemplates(1, false, selectedTab);
       fetchTemplateCounts();
     }
-  }, [fetchTemplates, isAuthenticated]);
+  }, [fetchTemplates, isAuthenticated, selectedTab]);
 
-  // Infinite scroll
+  // Infinite scroll with tab-specific pagination
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    let currentPage = 1;
     let isLoadingMore = false;
 
     const handleScroll = () => {
+      const currentTabData = tabTemplates[selectedTab];
       if (
         window.innerHeight + window.scrollY >=
           document.body.offsetHeight - 200 &&
         !isLoadingMore &&
-        hasMore
+        currentTabData?.hasMore
       ) {
         isLoadingMore = true;
-        currentPage += 1;
-        fetchTemplates(currentPage, true).finally(() => {
+        const nextPage = (currentTabData?.currentPage || 1) + 1;
+        fetchTemplates(nextPage, true, selectedTab).finally(() => {
           isLoadingMore = false;
         });
       }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasMore, fetchTemplates, isAuthenticated]);
+  }, [tabTemplates, selectedTab, fetchTemplates, isAuthenticated]);
 
-  // Filter templates by type
-  const getTemplatesByType = (type: string) => {
-    return templates.filter(template => template.template_type === type);
-  };
-
-  // Get templates for each tab
-  const estimateTemplates = getTemplatesByType(
-    TEMPLATE_TYPES.ESTIMATE_TEMPLATES
-  );
-  // Deprecated alias kept for backward compat (unused)
-  const toolsTemplates = getTemplatesByType(TEMPLATE_TYPES.TOOL_TEMPLATES);
-  const disclaimersTemplates = getTemplatesByType(
-    TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
-  );
-  const archiveTemplates = templates.filter(
-    template => template.status === 'INACTIVE'
-  );
+  // Get templates for each tab from tab-specific state
+  const estimateTemplates = tabTemplates['estimate']?.templates || [];
+  const serviceOptionTemplates =
+    tabTemplates['service-option']?.templates || [];
+  const toolsTemplates = tabTemplates['tools']?.templates || [];
+  const disclaimersTemplates = tabTemplates['disclaimers']?.templates || [];
+  const archiveTemplates = tabTemplates['archive']?.templates || [];
 
   // Archived templates by section for Archive tab
   const archivedEstimates = archiveTemplates.filter(
@@ -379,7 +468,6 @@ export default function TemplatesPage() {
                     label: 'Service Options Template',
                     action: 'service-option',
                     icon: OptionBidIcon,
-                    disabled: true,
                   },
                   {
                     label: 'Tools Template',
@@ -442,7 +530,7 @@ export default function TemplatesPage() {
       <div className='flex flex-col sm:flex-row gap-4 md:items-center justify-between sm:mb-6 mb-4 xl:mb-8'>
         <Tabs
           value={selectedTab}
-          onValueChange={setSelectedTab}
+          onValueChange={handleTabChange}
           className='w-full'
         >
           <div className='flex flex-row items-center gap-2 w-full overflow-auto max-w-[calc(100vw_-_32px)] xl:max-w-full'>
@@ -557,15 +645,15 @@ export default function TemplatesPage() {
 
           {/* Service Options (Option Bid) Tab Content */}
           <TabsContent value='service-option' className='mt-6'>
-            <ComingSoon message="We're actively building this feature to make your experience even better. Got ideas or feedback? We'd love to hear them!" />
+            {/* <ComingSoon message="We're actively building this feature to make your experience even better. Got ideas or feedback? We'd love to hear them!" /> */}
 
             {/* Original dynamic code - commented out for now */}
-            {/*
+
             {initialLoading ? (
               <div className='flex justify-center items-center py-8'>
                 <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-[var(--primary)]'></div>
               </div>
-            ) : _serviceOptionTemplates.length === 0 ? (
+            ) : serviceOptionTemplates.length === 0 ? (
               <NoDataFound
                 title='No service option templates found'
                 description='Create a service option template to manage options quickly.'
@@ -575,7 +663,7 @@ export default function TemplatesPage() {
             ) : (
               <>
                 <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                  {_serviceOptionTemplates.map(template => (
+                  {serviceOptionTemplates.map(template => (
                     <TemplateListCard
                       key={template.uuid}
                       template={transformTemplateData(
@@ -589,7 +677,6 @@ export default function TemplatesPage() {
                 </div>
               </>
             )}
-            */}
           </TabsContent>
 
           {/* Tools Tab Content */}
