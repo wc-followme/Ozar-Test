@@ -1,5 +1,6 @@
 'use client';
 
+import { TEMPLATE_MESSAGES } from '@/app/(DashboardLayout)/templates/template-messages';
 import { TradeListCardComponent } from '@/components/shared/cards/TradeListCardComponent';
 import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModal';
 import { EstimationBoxSidebar } from '@/components/shared/common/EstimationBoxSidebar';
@@ -162,7 +163,7 @@ export default forwardRef<{ toggleEditMode: () => void }, EstimationBoxProps>(
       {
         id: '0', // Use sequence number as room ID
         uniqueKey: generateUniqueKey('room'),
-        name: 'Home 1',
+        name: TEMPLATE_MESSAGES.ROOM_1,
         total: 0.0,
         trades: [],
         isExpanded: true,
@@ -370,7 +371,7 @@ export default forwardRef<{ toggleEditMode: () => void }, EstimationBoxProps>(
         const defaultRoom: Room = {
           id: '0', // Use sequence number as room ID
           uniqueKey: generateUniqueKey('room'),
-          name: 'Home 1',
+          name: TEMPLATE_MESSAGES.ROOM_1,
           total: 0.0,
           isExpanded: true,
           trades: [],
@@ -1196,7 +1197,7 @@ export default forwardRef<{ toggleEditMode: () => void }, EstimationBoxProps>(
             const defaultRoom: Room = {
               id: '0', // Use sequence number as room ID
               uniqueKey: generateUniqueKey('room'),
-              name: 'Home 1',
+              name: TEMPLATE_MESSAGES.ROOM_1,
               total: 0.0,
               trades: [],
               isExpanded: true,

@@ -2950,17 +2950,31 @@ class ApiService {
     limit = 10,
     company_id,
     status = 'ACTIVE',
+    service_id,
+    template_type,
   }: {
     page?: number;
     limit?: number;
     company_id: string | number;
     status?: string;
+    service_id?: string | number;
+    template_type?: string;
   }): Promise<any> {
     const params = new URLSearchParams();
     params.append('page', String(page));
     params.append('limit', String(limit));
     params.append('company_id', String(company_id));
     params.append('status', status);
+
+    // Add service_id parameter if provided
+    if (service_id) {
+      params.append('service_id', String(service_id));
+    }
+
+    // Add template_type parameter if provided
+    if (template_type) {
+      params.append('template_type', String(template_type));
+    }
 
     return this.makeRequest(`/templates?${params.toString()}`, {
       method: 'GET',
@@ -3060,6 +3074,25 @@ class ApiService {
     return this.makeRequest(`/companies/warranties/${uuid}`, {
       method: 'DELETE',
       headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createTemplate(templateData: {
+    name: string;
+    template_type: string;
+    service_id?: string;
+    trade_id?: string;
+    category_id?: string;
+    company_id: string;
+    service_options_template?: any;
+  }): Promise<any> {
+    return this.makeRequest(`/templates`, {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(templateData),
     });
   }
 }

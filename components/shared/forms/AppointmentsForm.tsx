@@ -79,9 +79,17 @@ const appointmentFormSchema = yup.object({
       APPOINTMENT_MESSAGES.DATE_FUTURE_REQUIRED,
       function (value) {
         if (!value) return false;
+
+        // Get today's date in local timezone
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        return value >= today;
+
+        // Ensure the value is also normalized to start of day for accurate comparison
+        const selectedDate = new Date(value);
+        selectedDate.setHours(0, 0, 0, 0);
+
+        // Allow today's date and future dates
+        return selectedDate.getTime() >= today.getTime();
       }
     ),
   starts: yup.string().required(APPOINTMENT_MESSAGES.STARTS_REQUIRED),
@@ -344,6 +352,8 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
     console.log('AppointmentsForm - Employee selection changed:', employees);
     setSelectedEmployees(employees);
     setValue('employees', employees);
+    // Trigger validation to clear the error
+    trigger('employees');
     console.log('AppointmentsForm - Form value set for employees');
   };
 
@@ -508,7 +518,9 @@ export const AppointmentForm: React.FC<AppointmentFormProps> = ({
                       disabled={date => {
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
-                        return date < today;
+                        const selectedDate = new Date(date);
+                        selectedDate.setHours(0, 0, 0, 0);
+                        return selectedDate < today;
                       }}
                       initialFocus
                     />

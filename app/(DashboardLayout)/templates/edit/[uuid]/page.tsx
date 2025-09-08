@@ -1,19 +1,22 @@
 'use client';
 
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
+import SelectField from '@/components/shared/common/SelectField';
 import { DisclaimerForm } from '@/components/shared/forms/DisclaimerForm';
 import EstimationTemplateForm from '@/components/shared/forms/EstimationTemplateForm';
 import { TemplateToolForm } from '@/components/shared/forms/TemplateToolForm';
+import ServiceOptionsBox, {
+  getServiceOptionTradeTotal,
+} from '@/components/Templates/ServiceOptionsBox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import { STORAGE_KEYS } from '@/constants/common';
 import { apiService } from '@/lib/api';
 import { extractApiErrorMessage } from '@/lib/utils';
 import { ArrowLeft } from 'iconsax-react';
 import { useRouter } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
+import { use, useCallback, useEffect, useState } from 'react';
 import { TemplateApiData } from '../../template-types';
 
 // Utility function to generate unique keys (same as EstimationBox)
@@ -45,9 +48,8 @@ interface EditTemplatePageProps {
 export default function EditTemplatePage({ params }: EditTemplatePageProps) {
   const { uuid } = use(params);
   const router = useRouter();
-  const { showErrorToast } = useToast();
+  const { showErrorToast, showSuccessToast } = useToast();
   const [loading, setLoading] = useState(true);
-  // const [saving, setSaving] = useState(false);
   const [template, setTemplate] = useState<TemplateApiData | null>(null);
   const [formData, setFormData] = useState({
     templateName: '',
@@ -55,11 +57,26 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     material: '',
     propertyType: '',
     category: '',
+    trade: '',
     description: '',
     tools: '',
     warranty: '',
     duration: '',
   });
+  const [projectTotal, setProjectTotal] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State for dynamic categories
+  const [categories, setCategories] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [loadingCategories, setLoadingCategories] = useState(false);
+
+  // State for dynamic trades
+  const [trades, setTrades] = useState<Array<{ value: string; label: string }>>(
+    []
+  );
+  const [loadingTrades, setLoadingTrades] = useState(false);
 
   // Fetch template data
   useEffect(() => {
@@ -71,6 +88,20 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
         if (response.statusCode === 200 && response.data) {
           const templateData = response.data;
           setTemplate(templateData);
+          // Get category and trade from the correct locations
+          const categoryId =
+            templateData.category?.uuid || templateData.category_id || '';
+          let tradeId = templateData.trade_id || '';
+
+          // For service options templates, also check service_options_template for trade_id
+          if (
+            templateData.template_type === 'OPTION_BID_TEMPLATES' &&
+            templateData.service_options_template &&
+            templateData.service_options_template.trade_id
+          ) {
+            tradeId = templateData.service_options_template.trade_id;
+          }
+
           setFormData({
             templateName: templateData.name || '',
             // store UUID for selects
@@ -81,7 +112,8 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               '',
             material: '',
             propertyType: '',
-            category: templateData.category?.uuid || '', // Use UUID for category
+            category: categoryId, // Use UUID for category
+            trade: tradeId, // Use UUID for trade
             description: templateData.disclaimer || '',
             tools: '',
             warranty: templateData.warranty || '',
@@ -133,6 +165,26 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
               }
             }
           }
+
+          // Store service options template data in localStorage for ServiceOptionsBox
+          if (
+            templateData.service_options_template &&
+            templateData.template_type === 'OPTION_BID_TEMPLATES'
+          ) {
+            // Transform API data to ServiceOptionsBox expected format
+            // service_options_template is an array directly, not an object with service_options property
+            const serviceOptionsArray = Array.isArray(
+              templateData.service_options_template
+            )
+              ? templateData.service_options_template
+              : templateData.service_options_template.service_options || [];
+
+            // Store in localStorage with the key that ServiceOptionsBox expects
+            localStorage.setItem(
+              'service_options_template_edit',
+              JSON.stringify(serviceOptionsArray)
+            );
+          }
         } else {
           showErrorToast(
             extractApiErrorMessage(response, 'Failed to fetch template.')
@@ -152,27 +204,317 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
     }
   }, [uuid, showErrorToast]);
 
+  // Fetch categories from API
+  const fetchCategories = useCallback(async () => {
+    if (template?.template_type !== 'OPTION_BID_TEMPLATES') return;
+
+    setLoadingCategories(true);
+    try {
+      const selectedCompanyRaw =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+          : null;
+      const companyUuid = selectedCompanyRaw
+        ? (() => {
+            try {
+              const parsed: { uuid?: string; id?: string | number } =
+                JSON.parse(selectedCompanyRaw);
+              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+
+      const response = await apiService.fetchCategoriesPublic({
+        page: 1,
+        limit: 50,
+        company_id: companyUuid,
+        status: 'ACTIVE',
+      });
+
+      type CategoryItem = {
+        id?: string | number;
+        uuid?: string;
+        name?: string;
+      };
+      const payload = response as unknown as {
+        data?: CategoryItem[] | { data?: CategoryItem[] };
+      };
+      const list: CategoryItem[] = Array.isArray(payload?.data)
+        ? (payload.data as CategoryItem[])
+        : Array.isArray((payload?.data as { data?: CategoryItem[] })?.data)
+          ? ((payload.data as { data?: CategoryItem[] }).data as CategoryItem[])
+          : [];
+
+      const options = list
+        .filter(c => !!c?.name)
+        .map(c => ({
+          value: String(c.uuid || c.id || c.name),
+          label: String(c.name),
+        }));
+      setCategories(options);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, [template?.template_type]);
+
+  // Fetch trades from API based on selected category
+  const fetchTrades = useCallback(
+    async (categoryId: string) => {
+      if (template?.template_type !== 'OPTION_BID_TEMPLATES' || !categoryId) {
+        setTrades([]);
+        return;
+      }
+
+      setLoadingTrades(true);
+      try {
+        const selectedCompanyRaw =
+          typeof window !== 'undefined'
+            ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+            : null;
+        const companyUuid = selectedCompanyRaw
+          ? (() => {
+              try {
+                const parsed: { uuid?: string; id?: string | number } =
+                  JSON.parse(selectedCompanyRaw);
+                return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+              } catch {
+                return '';
+              }
+            })()
+          : '';
+
+        const response = await apiService.fetchTradesPublic({
+          page: 1,
+          limit: 50,
+          company_id: companyUuid,
+          category_id: categoryId,
+        });
+
+        type TradeItem = { id?: string | number; uuid?: string; name?: string };
+        const payload = response as unknown as {
+          data?: TradeItem[] | { data?: TradeItem[] };
+        };
+        const list: TradeItem[] = Array.isArray(payload?.data)
+          ? (payload.data as TradeItem[])
+          : Array.isArray((payload?.data as { data?: TradeItem[] })?.data)
+            ? ((payload.data as { data?: TradeItem[] }).data as TradeItem[])
+            : [];
+
+        const options = list
+          .filter(t => !!t?.name)
+          .map(t => ({
+            value: String(t.uuid || t.id || t.name),
+            label: String(t.name),
+          }));
+        setTrades(options);
+      } catch (error) {
+        console.error('Error fetching trades:', error);
+        setTrades([]);
+      } finally {
+        setLoadingTrades(false);
+      }
+    },
+    [template?.template_type]
+  );
+
+  // Fetch categories and trades when template is loaded
+  useEffect(() => {
+    if (template?.template_type === 'OPTION_BID_TEMPLATES') {
+      fetchCategories();
+      // If formData has a category, fetch trades for that category
+      if (formData.category) {
+        fetchTrades(formData.category);
+      }
+    }
+  }, [template, formData.category, fetchCategories, fetchTrades]);
+
+  // Project Total calculation for service options templates
+  useEffect(() => {
+    if (template?.template_type !== 'OPTION_BID_TEMPLATES') return;
+
+    const computeTotal = () => {
+      try {
+        const raw = localStorage.getItem('service_options_template_edit');
+        if (!raw) {
+          setProjectTotal(0);
+          return;
+        }
+        const data = JSON.parse(raw) as Array<{
+          rate?: number;
+          qty?: number;
+          description?: string;
+          materials?: Array<{
+            qty?: number;
+            rate?: number;
+            is_hidden?: boolean;
+            markup?: number;
+            markup_type?: string;
+          }>;
+          finishes?: Array<{
+            qty?: number;
+            rate?: number;
+            is_hidden?: boolean;
+            markup?: number;
+            markup_type?: string;
+          }>;
+        }>;
+        if (!Array.isArray(data)) {
+          setProjectTotal(0);
+          return;
+        }
+        // Use centralized calculation function to ensure consistency
+
+        const total = data.reduce((sum, svc) => {
+          // Use the simplified function that handles both cases
+          const tradeTotal = getServiceOptionTradeTotal({
+            rate: svc.rate || 0,
+            qty: svc.qty || 1,
+            materials: svc.materials || [],
+            finishes: svc.finishes || [],
+          });
+          return sum + tradeTotal;
+        }, 0);
+        setProjectTotal(total);
+      } catch {
+        setProjectTotal(0);
+      }
+    };
+
+    // Add a small delay to ensure data is loaded
+    const initialTimeout = setTimeout(() => {
+      computeTotal();
+    }, 100);
+
+    // Listen for localStorage changes
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'service_options_template_edit') {
+        computeTotal();
+      }
+    };
+    window.addEventListener('storage', onStorage);
+
+    // Listen for custom storage change events (same-tab updates)
+    const onCustomStorageChange = () => {
+      computeTotal();
+    };
+    window.addEventListener('customStorageChange', onCustomStorageChange);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('customStorageChange', onCustomStorageChange);
+    };
+  }, [template?.template_type]);
+
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+
+      // If category changes, clear trade selection and fetch trades
+      if (field === 'category' && value) {
+        next.trade = '';
+        fetchTrades(value);
+      }
+
+      return next;
+    });
   };
 
-  // const handleSave = async () => {
-  //   try {
-  //     setSaving(true);
-  //     // TODO: Implement update API call
-  //     showSuccessToast('Template updated successfully.');
-  //     router.push('/templates');
-  //   } catch (error: any) {
-  //     showErrorToast(
-  //       extractApiErrorMessage(error, 'Failed to update template.')
-  //     );
-  //   } finally {
-  //     setSaving(false);
-  //   }
-  // };
+  const handleSaveTemplate = async () => {
+    if (template?.template_type !== 'OPTION_BID_TEMPLATES') return;
+
+    setIsSubmitting(true);
+    try {
+      // Get selected company
+      const selectedCompanyRaw =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(STORAGE_KEYS.SELECTED_COMPANY)
+          : null;
+      const companyUuid = selectedCompanyRaw
+        ? (() => {
+            try {
+              const parsed: { uuid?: string; id?: string | number } =
+                JSON.parse(selectedCompanyRaw);
+              return parsed?.uuid || (parsed?.id ? String(parsed.id) : '');
+            } catch {
+              return '';
+            }
+          })()
+        : '';
+
+      if (!companyUuid) {
+        throw new Error('No company selected');
+      }
+
+      // Validate required form fields
+      if (!formData.templateName.trim()) {
+        throw new Error('Template name is required');
+      }
+
+      // Get service options data from localStorage
+      const serviceOptionsData = localStorage.getItem(
+        'service_options_template_edit'
+      );
+      if (!serviceOptionsData) {
+        throw new Error('No service options data found');
+      }
+
+      const parsedServiceOptions = JSON.parse(serviceOptionsData);
+
+      // Validate that we have service options
+      if (
+        !Array.isArray(parsedServiceOptions) ||
+        parsedServiceOptions.length === 0
+      ) {
+        throw new Error(
+          'No service options found. Please add at least one service option before saving.'
+        );
+      }
+
+      // Prepare template data for update
+      const templateData = {
+        name: formData.templateName,
+        category_id: formData.category,
+        template_type: 'OPTION_BID_TEMPLATES',
+        service_id: parsedServiceOptions[0]?.service_id || formData.category, // Use first service's service_id
+        trade_id: formData.trade,
+        company_id: companyUuid,
+        service_options_template: parsedServiceOptions, // Use localStorage data directly
+      };
+
+      // Call API to update template
+      const response = await apiService.makeGenericRequest(
+        `/templates/${uuid}`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(templateData),
+        }
+      );
+
+      const { statusCode, message } = response || {};
+
+      if (statusCode === 200 || statusCode === 201) {
+        showSuccessToast(message || 'Template updated successfully');
+        // Clear service options template from localStorage after successful update
+        localStorage.removeItem('service_options_template_edit');
+        // Redirect to templates page
+        router.push('/templates');
+      } else {
+        throw new Error(message || 'Failed to update template');
+      }
+    } catch (error: any) {
+      showErrorToast(
+        error?.message || 'Failed to update template. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleBack = () => {
     router.push('/templates');
@@ -330,23 +672,23 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
       case 'OPTION_BID_TEMPLATES':
         return (
           <div className='w-full'>
+            {/* Header with Breadcrumb */}
             <div className='flex items-end sm:items-center justify-between mb-6 sm:flex-row flex-col gap-3'>
               <Breadcrumb
                 items={[
                   { name: 'Templates', href: '/templates' },
-                  { name: 'Edit Option Bid Template' },
+                  { name: 'Edit Service Options Template' },
                 ]}
-                className='mb-6'
               />
             </div>
 
-            {/* Template Details Section */}
+            {/* Template Meta Fields */}
             <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
-              <div className='space-y-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='templateName' className='field-label'>
+              <div className='grid grid-cols-1 md:grid-cols-4 gap-4 mb-6'>
+                <div className='space-y-2 col-span-2'>
+                  <label htmlFor='templateName' className='field-label'>
                     Template Name
-                  </Label>
+                  </label>
                   <Input
                     id='templateName'
                     value={formData.templateName}
@@ -358,45 +700,69 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                   />
                 </div>
                 <div className='space-y-2'>
-                  <Label htmlFor='service' className='field-label'>
-                    Service
-                  </Label>
-                  <Input
-                    id='service'
-                    value={formData.service}
-                    onChange={e => handleInputChange('service', e.target.value)}
-                    placeholder='Enter service'
-                    className='input-field'
+                  <label htmlFor='category' className='field-label'>
+                    Category
+                  </label>
+                  <SelectField
+                    value={formData.category}
+                    onValueChange={val => handleInputChange('category', val)}
+                    options={categories}
+                    placeholder={
+                      loadingCategories
+                        ? 'Loading categories...'
+                        : 'Select Category'
+                    }
+                    disabled={loadingCategories}
                   />
                 </div>
+
                 <div className='space-y-2'>
-                  <Label htmlFor='material' className='field-label'>
-                    Material
-                  </Label>
-                  <Input
-                    id='material'
-                    value={formData.material}
-                    onChange={e =>
-                      handleInputChange('material', e.target.value)
+                  <label htmlFor='trade' className='field-label'>
+                    Trade
+                  </label>
+                  <SelectField
+                    value={formData.trade}
+                    onValueChange={val => handleInputChange('trade', val)}
+                    options={trades}
+                    placeholder={
+                      loadingTrades
+                        ? 'Loading trades...'
+                        : formData.category
+                          ? 'Select Trade'
+                          : 'Select Category First'
                     }
-                    placeholder='Enter material details'
-                    className='input-field'
+                    disabled={loadingTrades || !formData.category}
                   />
                 </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='description' className='field-label'>
-                    Description
-                  </Label>
-                  <Textarea
-                    id='description'
-                    value={formData.description}
-                    onChange={e =>
-                      handleInputChange('description', e.target.value)
-                    }
-                    placeholder='Enter template description'
-                    rows={4}
-                    className='input-field'
-                  />
+              </div>
+            </div>
+
+            {/* Service Options Box */}
+            <div className='bg-[var(--card-background)] rounded-3xl border border-[var(--border-dark)] p-6 mb-6'>
+              <ServiceOptionsBox localStorageKey='service_options_template_edit' />
+              <div className='mt-6'>
+                <div className='flex justify-between items-center'>
+                  <div className='flex items-center gap-4'>
+                    <h3 className='text-base font-semibold text-[var(--text-dark)]'>
+                      Project Total:
+                    </h3>
+                    <div className='h-10 w-[1px] bg-[var(--border-dark)]'></div>
+                    <span className='text-xl font-bold text-[var(--primary)]'>
+                      {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: 'USD',
+                      }).format(projectTotal)}
+                    </span>
+                  </div>
+                  <div className='flex gap-3'>
+                    <Button
+                      className='btn-primary'
+                      onClick={handleSaveTemplate}
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Updating...' : 'Update Template'}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -454,6 +820,13 @@ export default function EditTemplatePage({ params }: EditTemplatePageProps) {
                   })(),
                 }}
                 templateId={template.uuid}
+                onServiceChange={serviceId => {
+                  // Update form data when service changes
+                  setFormData(prev => ({
+                    ...prev,
+                    service: serviceId || '',
+                  }));
+                }}
               />
             </div>
           </div>

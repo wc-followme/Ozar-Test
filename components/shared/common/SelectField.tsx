@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import FormErrorMessage from './FormErrorMessage';
 
 interface Option {
@@ -45,16 +45,9 @@ const SelectField: React.FC<SelectFieldProps> = ({
   triggerClassName = '', // Destructure new prop
   disabled = false, // Destructure disabled prop
 }) => {
-  const [internalValue, setInternalValue] = useState(value);
-
-  // Sync internal value with external value
-  useEffect(() => {
-    setInternalValue(value);
-  }, [value]);
-
   const handleValueChange = (newValue: string) => {
     if (disabled) return; // Prevent changes when disabled
-    setInternalValue(newValue);
+    if (newValue === value) return; // Prevent redundant updates
     onValueChange(newValue);
   };
 
@@ -62,7 +55,7 @@ const SelectField: React.FC<SelectFieldProps> = ({
     <div className={`sm:space-y-2 space-y-1 ${className}`}>
       {label && <Label className='field-label'>{label}</Label>}
       <Select
-        value={internalValue}
+        value={value || ''}
         onValueChange={handleValueChange}
         disabled={disabled}
       >
