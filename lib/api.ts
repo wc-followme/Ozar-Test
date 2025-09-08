@@ -3013,6 +3013,51 @@ class ApiService {
       body: JSON.stringify(templateData),
     });
   }
+
+  // User Documents API methods
+  async getUserDocuments(params?: {
+    page?: number;
+    limit?: number;
+    user_id?: number;
+    search?: string;
+    status?: string;
+  }): Promise<any> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.user_id)
+      queryParams.append('user_id', params.user_id.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.status) queryParams.append('status', params.status);
+
+    const url = `/users/documents${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return this.makeRequest(url, {
+      method: 'GET',
+      headers: this.getRoleHeaders(),
+    });
+  }
+
+  async createUserDocument(params: {
+    user_id: number;
+    name: string;
+    url: string;
+  }): Promise<any> {
+    return this.makeRequest('/users/documents', {
+      method: 'POST',
+      headers: {
+        ...this.getRoleHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+  }
+
+  async deleteUserDocument(documentId: string): Promise<any> {
+    return this.makeRequest(`/users/documents/${documentId}`, {
+      method: 'DELETE',
+      headers: this.getRoleHeaders(),
+    });
+  }
 }
 
 export const apiService = new ApiService();

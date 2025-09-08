@@ -48,6 +48,12 @@ export const ACCESS_DENIED_MESSAGES = {
   TOOL_DETAILS_REDIRECT_TEXT: 'Go to Tool Management',
   TOOL_CREATE_MESSAGE: 'You do not have permission to create tools.',
   TOOL_EDIT_MESSAGE: 'You do not have permission to edit tools.',
+
+  // Organization Management
+  ORGANIZATION_DETAILS_TITLE: 'Access Denied',
+  ORGANIZATION_DETAILS_MESSAGE:
+    'You do not have permission to view organization details.',
+  ORGANIZATION_DETAILS_REDIRECT_TEXT: 'Go to Organization',
   TOOL_DELETE_MESSAGE: 'You do not have permission to delete tools.',
 
   // Trade Management
@@ -143,5 +149,35 @@ export const WARRANTY_MESSAGES = {
     BUTTON_CANCEL: 'Cancel',
     TYPE_DISABLED_MESSAGE:
       'Type cannot be changed when editing an existing warranty',
+  },
+};
+
+// Organization Messages
+export const ORGANIZATION_MESSAGES = {
+  TITLE: 'Work Profile',
+  TABS: {
+    PROMOTION: 'Promotion',
+    DOCUMENT: 'Document',
+    DISCIPLINARY: 'Disciplinary',
+  },
+  DOCUMENT: {
+    SEARCH_PLACEHOLDER: 'Search here...',
+    UPLOAD_BUTTON: 'Upload Document',
+    UPLOAD_TITLE: 'Add Documents',
+    SUCCESS: {
+      UPLOAD: 'Document uploaded successfully',
+      DELETE: 'Document deleted successfully',
+      UPDATE: 'Document updated successfully',
+    },
+    ERROR: {
+      UPLOAD: 'Failed to upload document',
+      DELETE: 'Failed to delete document',
+      UPDATE: 'Failed to update document',
+      FETCH: 'Failed to fetch documents',
+    },
+    VALIDATION: {
+      NAME_REQUIRED: 'Document name is required',
+      FILE_REQUIRED: 'Please select a file to upload',
+    },
   },
 };

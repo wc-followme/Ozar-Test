@@ -1,6 +1,6 @@
 'use client';
 
-import { MediaPreview } from '@/components/shared/common/MediaPreview';
+import { DocumentPreview } from '@/components/shared/common/DocumentPreview';
 import { ImageUpload } from '@/components/shared/ImageUpload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,12 +29,26 @@ export const DocumentUploadForm = ({
   };
 
   const handleFileChange = (file: File) => {
+    // Validate file type
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
+
+    if (!allowedTypes.includes(file.type)) {
+      alert('Please select only PDF or image files (JPG, PNG, GIF, WebP)');
+      return;
+    }
+
     setSelectedFile(file);
   };
 
-  const handleRemoveFile = (index: number) => {
+  const handleRemoveFile = () => {
     setSelectedFile(null);
-    console.log('Remove file', index);
   };
 
   return (
@@ -61,7 +75,7 @@ export const DocumentUploadForm = ({
           <>
             <ImageUpload
               onClick={() => document.getElementById('file-upload')?.click()}
-              label='Upload Photo or Drag and drop'
+              label='Upload PDF or Image (Drag and drop)'
               className='h-[150px]'
             />
             <input
@@ -72,16 +86,16 @@ export const DocumentUploadForm = ({
                 const file = e.target.files?.[0];
                 if (file) handleFileChange(file);
               }}
-              accept='.pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif'
+              accept='.pdf,.jpg,.jpeg,.png,.gif,.webp'
             />
           </>
         ) : (
-          // Show document preview when file is selected
-          <MediaPreview
+          // Show document preview when file is selected using DocumentPreview
+          <DocumentPreview
             files={selectedFile ? [selectedFile] : []}
             onRemove={handleRemoveFile}
             className='w-full'
-            previewClassName='h-[80px]'
+            previewClassName='h-[160px]'
           />
         )}
       </div>

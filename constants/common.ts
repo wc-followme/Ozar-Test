@@ -410,6 +410,7 @@ export const UPLOAD_PURPOSES = {
   COMPANY_PROJECT: 'company-project',
   USER_COVER_IMAGE: 'user-cover-image',
   USER_PROJECT: 'user-project',
+  USER_DOCUMENT: 'user-document',
   TOOL: 'tool',
   TOOL_TUTORIAL: 'tool-tutorial',
 } as const;

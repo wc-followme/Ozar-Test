@@ -4,7 +4,7 @@ import { ConfirmDeleteModal } from '@/components/shared/common/ConfirmDeleteModa
 import { Dropdown, DropdownOption } from '@/components/shared/common/Dropdown';
 import { Button } from '@/components/ui/button';
 import { Edit2, Gallery, Trash, VideoPlay } from 'iconsax-react';
-import { MoreVertical } from 'lucide-react';
+import { FileText, MoreVertical } from 'lucide-react';
 import Image from 'next/image';
 import { useRef, useState } from 'react';
 
@@ -14,6 +14,8 @@ interface PortfolioBoxProps {
   image?: string;
   /** Indicates if the image prop contains a video file URL */
   isVideo?: boolean;
+  /** Indicates if the image prop contains a PDF file URL */
+  isPDF?: boolean;
   imageCount?: number;
   videoCount?: number;
   /** Show only delete button instead of three dots menu */
@@ -29,6 +31,7 @@ export const PortfolioBox = ({
   title,
   image,
   isVideo = false,
+  isPDF = false,
   imageCount = 0,
   videoCount = 0,
   showDeleteOnly = false,
@@ -133,7 +136,19 @@ export const PortfolioBox = ({
                   />
                 )}
               </div>
+            ) : isPDF ? (
+              // Render PDF preview for PDF files
+              <div className='w-full h-full bg-gray-800 flex items-center justify-center'>
+                <div className='text-center text-white'>
+                  <FileText className='h-16 w-16 mx-auto mb-3' />
+                  <p className='text-sm font-medium'>PDF Document</p>
+                  <p className='text-xs opacity-75 mt-1 truncate px-4'>
+                    {title}
+                  </p>
+                </div>
+              </div>
             ) : (
+              // Render image for image files
               <Image
                 src={image}
                 alt={title}

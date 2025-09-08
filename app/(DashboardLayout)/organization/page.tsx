@@ -2,6 +2,8 @@
 
 import { DynamicScrollArea } from '@/components/shared/common/DynamicScrollArea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ORGANIZATION_MESSAGES } from '@/constants/messages';
+import { useAuth } from '@/lib/auth-context';
 import { useState } from 'react';
 import { DisciplinaryTab } from './DisciplinaryTab';
 import { DocumentTab } from './DocumentTab';
@@ -9,6 +11,7 @@ import { PromotionTab } from './PromotionTab';
 
 export default function OrganizationPage() {
   const [selectedTab, setSelectedTab] = useState('promotion');
+  const { user } = useAuth();
 
   const handleTabChange = (value: string) => {
     setSelectedTab(value);
@@ -18,7 +21,7 @@ export default function OrganizationPage() {
     <div className=''>
       <div className='mb-6'>
         <h1 className='text-2xl font-bold text-[var(--text-dark)]'>
-          Work Profile
+          {ORGANIZATION_MESSAGES.TITLE}
         </h1>
       </div>
 
@@ -34,19 +37,19 @@ export default function OrganizationPage() {
                 value='promotion'
                 className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
               >
-                Promotion
+                {ORGANIZATION_MESSAGES.TABS.PROMOTION}
               </TabsTrigger>
               <TabsTrigger
                 value='document'
                 className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
               >
-                Document
+                {ORGANIZATION_MESSAGES.TABS.DOCUMENT}
               </TabsTrigger>
               <TabsTrigger
                 value='disciplinary'
                 className='px-6 sm:px-8 py-3 sm:py-2 text-sm xl:text-base gap-2 sm:gap-3 text-[var(--text-dark)] transition-all duration-300 data-[state=active]:bg-[var(--primary)] data-[state=active]:text-white data-[state=active]:shadow-lg sm:data-[state=active]:shadow-none rounded-[28px] sm:rounded-[30px] font-semibold sm:font-normal data-[state=active]:hover:bg-[var(--primary)]'
               >
-                Disciplinary
+                {ORGANIZATION_MESSAGES.TABS.DISCIPLINARY}
               </TabsTrigger>
             </TabsList>
           </DynamicScrollArea>
@@ -57,7 +60,7 @@ export default function OrganizationPage() {
           </TabsContent>
 
           <TabsContent value='document' className=''>
-            <DocumentTab />
+            <DocumentTab {...(user?.id && { userId: user.id })} />
           </TabsContent>
 
           <TabsContent value='disciplinary' className=''>
