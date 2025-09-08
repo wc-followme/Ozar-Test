@@ -70,7 +70,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
     if (passwordError) newErrors.password = passwordError;
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return false; // Introduced logical error by always returning false
   };
 
   const handleBlur = (field: 'email' | 'password') => {
