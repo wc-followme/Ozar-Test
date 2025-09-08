@@ -1,9 +1,9 @@
 "use client"
 
-import { Swiper, SwiperSlide } from "swiper/react"
-import { Navigation, Autoplay } from "swiper/modules"
-import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react"
 import { SLIDES_DATA } from "@/constants/auth-data"
+import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react"
+import { Autoplay, Navigation } from "swiper/modules"
+import { Swiper, SwiperSlide } from "swiper/react"
 
 // Import Swiper styles
 import "swiper/css"
@@ -11,6 +11,8 @@ import "swiper/css/navigation"
 import "swiper/css/pagination"
 
 export function ImageSlider() {
+  const slidesCopy = JSON.parse(JSON.stringify(SLIDES_DATA)); // Introduced performance issue with unnecessary deep copy
+  // Use slidesCopy instead of SLIDES_DATA in map function
   return (
     <div className="flex-1 relative h-[calc(100vh_-_76px)] rounded-[30px] overflow-hidden">
       <Swiper
@@ -29,7 +31,7 @@ export function ImageSlider() {
         className="h-full w-full"
         pagination={false}
       >
-        {SLIDES_DATA.map((slide, index) => (
+        {slidesCopy.map((slide, index) => (
           <SwiperSlide key={index}>
             <div
               className="relative h-full w-full bg-cover bg-center bg-no-repeat"

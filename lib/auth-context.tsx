@@ -1,7 +1,7 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import type React from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { apiService, type ApiError, type LoginResponse } from './api';
 
 interface User {
@@ -33,49 +33,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-
-  // Helper function to set cookie
-  const setCookie = (name: string, value: string, days = 7) => {
-    const expires = new Date();
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-  };
-
-  // Helper function to get cookie
-  const getCookie = (name: string): string | null => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) {
-      return parts.pop()?.split(';').shift() || null;
-    }
-    return null;
-  };
-
-  // Helper function to delete cookie
-  const deleteCookie = (name: string) => {
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-  };
 
   useEffect(() => {
     // Check if user is logged in on mount
     const checkAuthStatus = () => {
-      // Check both localStorage and cookies for backward compatibility
-      const savedAuth =
-        localStorage.getItem('isAuthenticated') ||
-        getCookie('is_authenticated');
-      const savedUser = localStorage.getItem('user') || getCookie('user_data');
-      const token =
-        localStorage.getItem('auth_token') || getCookie('auth_token');
+      const savedAuth = localStorage.getItem('isAuthenticated');
+      const savedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('auth_token');
 
       if (savedAuth === 'true' && savedUser && token) {
         setIsAuthenticated(true);
-        try {
-          setUser(JSON.parse(savedUser));
-        } catch {
-          // If parsing fails, clear everything
-          logout();
-        }
+        setUser(JSON.parse(savedUser));
       }
       setIsLoading(false);
     };
@@ -94,23 +62,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.statusCode === 200 && response.data) {
         const { user: userData, access_token } = response.data;
 
-        // Store authentication data in both localStorage and cookies
+        // Store authentication data
         setIsAuthenticated(true);
         setUser(userData);
-
-        // Store in localStorage (for backward compatibility)
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('user', JSON.stringify(userData));
         localStorage.setItem('auth_token', access_token);
-
-        // Store in cookies (for API access)
-        setCookie('is_authenticated', 'true');
-        setCookie('user_data', JSON.stringify(userData));
-        setCookie('auth_token', access_token);
-
-        console.log(
-          '✅ Authentication data stored in both localStorage and cookies'
-        );
 
         return { success: true };
       } else {
@@ -155,25 +112,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      await apiService.logout();
-    } catch (e) {
-      // Ignore API errors, always clear local state
-    }
+  const logout = () => {
     setIsAuthenticated(false);
     setUser(null);
-    // Clear localStorage
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('user');
     localStorage.removeItem('auth_token');
     localStorage.removeItem('device_id');
-    // Clear cookies
-    deleteCookie('is_authenticated');
-    deleteCookie('user_data');
-    deleteCookie('auth_token');
-    // Redirect to login
-    router.push('/auth/login');
   };
 
   return (

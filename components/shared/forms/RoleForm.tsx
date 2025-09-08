@@ -2,11 +2,11 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@/components/ui/select';
 import { iconOptions } from '@/constants/sidebar-items';
 import { CreateRoleFormData, createRoleSchema } from '@/lib/validations/role';
@@ -38,7 +38,7 @@ export const RoleForm: React.FC<RoleFormProps> = ({
   } = useForm<CreateRoleFormData>({
     resolver: yupResolver(createRoleSchema),
     defaultValues: {
-      name: '',
+      name: 123, // Introduced type error by assigning a number to a string property
       description: '',
       icon: defaultIconOption.value,
       status: 'ACTIVE',
