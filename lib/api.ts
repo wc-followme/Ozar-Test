@@ -2213,6 +2213,7 @@ class ApiService {
     type?: string;
     job_status?: string;
     company_id?: string | number;
+    client_id?: number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -2222,6 +2223,8 @@ class ApiService {
     if (params?.job_status) queryParams.append('job_status', params.job_status);
     if (params?.company_id)
       queryParams.append('company_id', params.company_id.toString());
+    if (params?.client_id)
+      queryParams.append('client_id', params.client_id.toString());
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -2363,10 +2366,14 @@ class ApiService {
   }
   async fetchJobStatistics(params?: {
     company_id?: string | number;
+    client_id?: number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.company_id) {
       queryParams.append('company_id', params.company_id.toString());
+    }
+    if (params?.client_id) {
+      queryParams.append('client_id', params.client_id.toString());
     }
 
     const url = queryParams.toString()
