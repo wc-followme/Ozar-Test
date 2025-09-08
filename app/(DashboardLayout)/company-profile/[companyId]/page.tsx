@@ -44,6 +44,9 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
   const { handleAuthError, user, isAuthenticated } = useAuth();
   const { showSuccessToast, showErrorToast } = useToast();
 
+  // Common variable to check if user is a homeowner
+  const isUserHomeowner = user?.role?.id === ROLE_IDS.HOMEOWNER;
+
   const [company, setCompany] = useState<GetCompanyResponse['data'] | null>(
     null
   );
@@ -227,13 +230,25 @@ const CompanyProfile = ({ params }: CompanyProfileProps) => {
         enabledBoxes = FIVE_BOX_DATA.map(item => item.step);
       }
 
-      // Create job payload
-      const jobPayload = {
+      // Create job payload with user data if homeowner
+      let jobPayload: any = {
         job_privacy: PUBLIC,
         job_boxes_step: enabledBoxes, // Keep as array of step values
         company_id: uuid,
         question_json: questionJson,
       };
+
+      // If user is a homeowner, add client information from local storage
+      if (isUserHomeowner) {
+        const { name, email, phone_number, id } = user;
+        jobPayload = {
+          ...jobPayload,
+          client_name: name || '',
+          client_email: email || '',
+          client_phone_number: phone_number || '',
+          client_id: Number(id),
+        };
+      }
 
       // Create the job
       const response = await apiService.createJob(jobPayload);

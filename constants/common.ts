@@ -80,6 +80,7 @@ export const ROUTES = {
   TEMPLATES_MANAGEMENT: '/templates',
   CREATE_TEMPLATE: '/templates/create',
   AUTH_LOGIN: '/auth/login',
+  AUTH_FORGOT_PASSWORD: '/auth/forgot-password',
 } as const;
 
 // Action constants for menu options and permissions
@@ -499,6 +500,22 @@ export const TEMPLATE_TYPES = {
 } as const;
 
 export type TemplateType = (typeof TEMPLATE_TYPES)[keyof typeof TEMPLATE_TYPES];
+
+// Template filter options for archive tab
+export const TEMPLATE_FILTER_OPTIONS = [
+  { value: 'estimate', label: 'Estimate' },
+  { value: 'service-option', label: 'Service Options' },
+  { value: 'tools', label: 'Tools' },
+  { value: 'disclaimers', label: 'Disclaimers' },
+];
+
+// Template filter values
+export const TEMPLATE_FILTER_VALUES = {
+  ESTIMATE: 'estimate',
+  SERVICE_OPTION: 'service-option',
+  TOOLS: 'tools',
+  DISCLAIMERS: 'disclaimers',
+} as const;
 
 export const STORAGE_KEYS = {
   SELECTED_COMPANY: 'selected_company',
