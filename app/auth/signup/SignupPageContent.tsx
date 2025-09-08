@@ -1,29 +1,46 @@
 'use client';
 
-import { LoginForm } from '@/components/shared/forms/LoginForm';
 import { useToast } from '@/components/ui/use-toast';
-import { LOGIN_MESSAGES } from '@/constants/messages';
+import { SIGNUP_MESSAGES } from '@/constants/messages';
 import { useAuth } from '@/lib/auth-context';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ImageSlider } from '../../../components/layout/ImageSlider';
+import { SignupForm } from '../../../components/shared/forms/SignupForm';
+import { ROLE_IDS } from '../../../constants/common';
 
-export default function LoginPageContent() {
-  const { login, isLoading } = useAuth();
+export default function SignupPageContent() {
+  const { signup, isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showSuccessToast, showErrorToast } = useToast();
 
   // Get redirect param if present
   const redirectTo = searchParams.get('redirect');
-  const handleLogin = async (email: string, password: string) => {
-    const result = await login(email, password);
+
+  const handleSignup = async (
+    email: string,
+    password: string,
+    confirmPassword: string,
+    name: string,
+    phone_number?: string
+  ) => {
+    // Check if passwords match
+    if (password !== confirmPassword) {
+      showErrorToast(SIGNUP_MESSAGES.ERROR.PASSWORDS_MISMATCH);
+      return {
+        success: false,
+        error: SIGNUP_MESSAGES.ERROR.PASSWORDS_MISMATCH,
+      };
+    }
+    const roleId = String(ROLE_IDS.HOMEOWNER);
+    const result = await signup(email, password, roleId, name, phone_number);
     if (result.success) {
-      showSuccessToast(LOGIN_MESSAGES.SUCCESS);
+      showSuccessToast(SIGNUP_MESSAGES.SUCCESS);
 
       // Small delay to show success toast before redirect
       setTimeout(() => {
-        // Redirect after login
+        // Redirect after signup
         if (
           redirectTo &&
           redirectTo.startsWith('/') &&
@@ -35,7 +52,7 @@ export default function LoginPageContent() {
         }
       }, 500);
     } else {
-      showErrorToast(result.error || LOGIN_MESSAGES.ERROR.INVALID_CREDENTIALS);
+      showErrorToast(result.error || SIGNUP_MESSAGES.ERROR.GENERIC);
     }
     return result;
   };
@@ -58,32 +75,32 @@ export default function LoginPageContent() {
               {/* Heading */}
               <div className='text-center space-y-2 mb-4 xl:mb-[34px]'>
                 <h1 className='text-lg xl:text-3xl lg:text-xl font-bold text-[#2D2D2D] mb-4 xl:mb-6 leading-tight'>
-                  {LOGIN_MESSAGES.FORM.TITLE}
+                  {SIGNUP_MESSAGES.FORM.TITLE}
                 </h1>
                 <p className='text-[var(--text-secondary)] text-sm xl:text-[18px] lg:text-base'>
-                  {LOGIN_MESSAGES.FORM.SUBTITLE}
+                  {SIGNUP_MESSAGES.FORM.SUBTITLE}
                 </p>
                 {redirectTo && (
                   <p className='text-sm text-blue-600'>
-                    You need to login to access {redirectTo}
+                    {SIGNUP_MESSAGES.FORM.REDIRECT_MESSAGE} {redirectTo}
                   </p>
                 )}
               </div>
 
-              {/* Client-side Login Form */}
+              {/* Client-side Signup Form */}
               <div className='space-y-4 xl:space-y-6'>
-                <LoginForm onSubmit={handleLogin} isLoading={isLoading} />
+                <SignupForm onSubmit={handleSignup} isLoading={isLoading} />
               </div>
 
-              {/* Signup Link */}
+              {/* Login Link */}
               <div className='text-center mt-4 xl:mt-6'>
                 <p className='text-sm text-[var(--text-secondary)]'>
-                  {LOGIN_MESSAGES.FORM.SIGNUP_LINK}{' '}
+                  {SIGNUP_MESSAGES.FORM.LOGIN_LINK}{' '}
                   <a
-                    href='/auth/signup'
+                    href='/auth/login'
                     className='text-[#2d2d2d] hover:text-green-600 transition-colors font-semibold'
                   >
-                    {LOGIN_MESSAGES.FORM.SIGNUP_LINK_TEXT}
+                    {SIGNUP_MESSAGES.FORM.LOGIN_LINK_TEXT}
                   </a>
                 </p>
               </div>

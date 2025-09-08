@@ -72,6 +72,63 @@ interface ApiError {
   errors?: Record<string, string[]>;
 }
 
+// Signup interfaces
+interface CreateUserDto {
+  email: string;
+  password: string;
+  name?: string | undefined;
+  phone_number?: string | undefined;
+  company_id?: string | undefined;
+  role_id?: number;
+  device_token?: string | undefined;
+  app_type?: string | undefined;
+}
+
+interface SignupResponse {
+  statusCode: number;
+  message: string;
+  data?: {
+    access_token: string;
+    refresh_token: string;
+    expires_in: number;
+    token_type: string;
+    user: {
+      id: number;
+      uuid: string;
+      first_name: string;
+      last_name: string;
+      email: string;
+      phone_number: string | null;
+      profile_image: string | null;
+      status: string;
+      created_at: string;
+      updated_at: string;
+      created_by: number | null;
+      updated_by: number | null;
+      role: {
+        id: number;
+        uuid: string;
+        name: string;
+      };
+      company: {
+        uuid: string;
+        name: string;
+      };
+    };
+  };
+}
+
+// Forgot password interfaces
+interface ForgotPasswordDto {
+  email: string;
+}
+
+interface ForgotPasswordResponse {
+  statusCode: number;
+  message: string;
+  data: null;
+}
+
 // Role management interfaces
 interface CreateRoleRequest {
   name: string;
@@ -908,6 +965,24 @@ class ApiService {
     return this.makeRequest<LoginResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(loginData),
+    });
+  }
+
+  async signup(userData: CreateUserDto): Promise<SignupResponse> {
+    return this.makeRequest<SignupResponse>('/auth/signup', {
+      method: 'POST',
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
+    const forgotPasswordData: ForgotPasswordDto = {
+      email,
+    };
+
+    return this.makeRequest<ForgotPasswordResponse>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(forgotPasswordData),
     });
   }
 
@@ -2138,6 +2213,7 @@ class ApiService {
     type?: string;
     job_status?: string;
     company_id?: string | number;
+    client_id?: number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -2147,6 +2223,8 @@ class ApiService {
     if (params?.job_status) queryParams.append('job_status', params.job_status);
     if (params?.company_id)
       queryParams.append('company_id', params.company_id.toString());
+    if (params?.client_id)
+      queryParams.append('client_id', params.client_id.toString());
     const url = `/jobs${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
 
     return this.makeRequest(url, {
@@ -2288,10 +2366,14 @@ class ApiService {
   }
   async fetchJobStatistics(params?: {
     company_id?: string | number;
+    client_id?: number;
   }): Promise<any> {
     const queryParams = new URLSearchParams();
     if (params?.company_id) {
       queryParams.append('company_id', params.company_id.toString());
+    }
+    if (params?.client_id) {
+      queryParams.append('client_id', params.client_id.toString());
     }
 
     const url = queryParams.toString()

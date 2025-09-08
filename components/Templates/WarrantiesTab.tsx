@@ -341,7 +341,7 @@ export const WarrantiesTab = ({
           response = await apiService.updateCompanyWarranty(
             warrantyGroup.uuid,
             {
-              name,
+              name: name.toLowerCase(), // Ensure name is lowercase
               warranties_details: updatedWarrantiesDetails,
             }
           );
@@ -447,7 +447,7 @@ export const WarrantiesTab = ({
           try {
             apiResponse = await apiService.createCompanyWarranty({
               company_id: companyId,
-              name: warrantyTypeLower, // Save name in lowercase
+              name: warrantyTypeLower.toLowerCase(), // Ensure name is lowercase
               warranties_details: [newWarranty],
               status: 'ACTIVE',
             });
@@ -484,6 +484,14 @@ export const WarrantiesTab = ({
       setIsSubmitting(false);
     } catch (error) {
       if (handleAuthError(error)) return;
+
+      // Show error toast with API response message if available
+      const errorMessage =
+        (error as any)?.response?.data?.message ||
+        (error as any)?.message ||
+        'An error occurred while processing the warranty';
+      showErrorToast(errorMessage);
+
       setIsSubmitting(false);
     }
   };

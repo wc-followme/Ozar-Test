@@ -128,14 +128,19 @@ const CompanyProfile = ({ params }: PageProps) => {
       const { default_selected_json, question_json: questionJson } =
         boxSettings || {};
 
-      // Create job_boxes_step array based on enabled boxes
-      const enabledBoxes = (default_selected_json || [])
-        .filter((box: any) => box.enabled)
-        .map((box: any) => {
-          const fiveBoxItem = FIVE_BOX_DATA.find(item => item.id === box.id);
-          return fiveBoxItem ? fiveBoxItem.step : null;
-        })
-        .filter(Boolean);
+      let enabledBoxes: string[] = [];
+      if (default_selected_json && default_selected_json.length > 0) {
+        // Create job_boxes_step array based on enabled boxes
+        enabledBoxes = (default_selected_json || [])
+          .filter((box: any) => box.enabled)
+          .map((box: any) => {
+            const fiveBoxItem = FIVE_BOX_DATA.find(item => item.id === box.id);
+            return fiveBoxItem ? fiveBoxItem.step : null;
+          })
+          .filter(Boolean);
+      } else {
+        enabledBoxes = FIVE_BOX_DATA.map(item => item.step);
+      }
 
       // Create job payload
       const jobPayload = {

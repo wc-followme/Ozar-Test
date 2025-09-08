@@ -17,6 +17,7 @@ import {
   JobFilterType,
   JobStatus,
   PAGINATION,
+  ROLE_IDS,
   ROUTES,
 } from '@/constants/common';
 import { ACCESS_DENIED_MESSAGES } from '@/constants/messages';
@@ -31,7 +32,9 @@ import {
 } from '@/lib/utils';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+import { AdminJobTabsList } from './components/AdminJobTabsList';
 import { ArchiveTab } from './components/ArchiveTab';
+import { HomeownerJobTabsList } from './components/HomeownerJobTabsList';
 import { JobTabsList } from './components/JobTabsList';
 import { NewLeadsTab } from './components/NewLeadsTab';
 import { JOB_MESSAGES } from './job-messages';
@@ -40,7 +43,7 @@ import { CreateJobFormData, Job, JobFilterCounts } from './types';
 export default function JobManagement() {
   // Destructure constants for better readability
   const { ACTIVE, INACTIVE } = CommonStatus;
-  const { NEW_LEADS, ALL, ARCHIVED} = JobFilterType;
+  const { NEW_LEADS, ALL, ARCHIVED } = JobFilterType;
   const { DONE, PENDING } = JobStatus;
   const { HOME_OWNER } = ROUTES;
   const { JOBS_LIMIT } = PAGINATION;
@@ -70,7 +73,7 @@ export default function JobManagement() {
   }> | null>(null);
   const [questionJson, setQuestionJson] = useState<any>(null);
   const { showSuccessToast, showErrorToast } = useToast();
-  const { handleAuthError } = useAuth();
+  const { handleAuthError, user } = useAuth();
   const isInitialMount = useRef(true);
   const isInitialDataLoaded = useRef(false);
   const isInitialTabSet = useRef(false);
@@ -80,6 +83,11 @@ export default function JobManagement() {
 
   const canEdit = userPermissions?.jobs?.edit;
   const canViewJobs = userPermissions?.jobs?.view;
+
+  // Determine user role for tab display
+  const isUserHomeowner = user?.role?.id === ROLE_IDS.HOMEOWNER;
+  const isUserAdmin = user?.role?.id === ROLE_IDS.ADMIN;
+  const userId = user?.id;
 
   // Helper function to generate home-owner link
   const generateHomeOwnerLink = (jobUuid: string) =>
@@ -98,11 +106,21 @@ export default function JobManagement() {
 
   // Function to fetch filter counts
   const fetchFilterCounts = useCallback(async () => {
+    if (!user) {
+      return;
+    }
+
     try {
       // Get selected company ID using global utility function
       const company_id = getCompanyId();
 
-      const params = company_id ? { company_id } : {};
+      const params: any = company_id ? { company_id } : {};
+
+      // Add client_id for homeowners
+      if (isUserHomeowner && userId) {
+        params.client_id = userId;
+      }
+
       const response = await apiService.fetchJobStatistics(params);
       if (response.data) {
         setFilterCounts(response.data);
@@ -114,7 +132,10 @@ export default function JobManagement() {
       }
       // Error handled silently - filter counts are not critical
     }
-  }, [handleAuthError]);
+  }, [handleAuthError, isUserHomeowner, userId]);
+  useEffect(() => {
+    fetchFilterCounts();
+  }, [fetchFilterCounts, userId]);
 
   // Fetch 5-box default selections for the selected company
   const fetchBoxDefaults = useCallback(async () => {
@@ -139,6 +160,10 @@ export default function JobManagement() {
   // Function to fetch jobs based on selected tab
   const fetchJobsByTab = useCallback(
     async (tab: string, targetPage = 1, append = false) => {
+      if (!user) {
+        return;
+      }
+
       try {
         if (targetPage === 1) {
           // Only use loading for initial page load, use tabLoading for tab changes
@@ -158,6 +183,11 @@ export default function JobManagement() {
           limit: JOBS_LIMIT,
           ...(company_id ? { company_id } : {}),
         };
+
+        // Add client_id for homeowners
+        if (isUserHomeowner && userId) {
+          params.client_id = userId;
+        }
 
         // Set parameters based on selected tab
         switch (tab) {
@@ -194,7 +224,7 @@ export default function JobManagement() {
             params.status = ACTIVE;
             params.type = ALL;
         }
-       
+
         const response = await apiService.fetchJobs(params);
         // Handle different possible response structures
         let newJobs: Job[] = [];
@@ -266,12 +296,16 @@ export default function JobManagement() {
       NEW_LEADS,
       ALL,
       DONE,
+      PENDING,
+      ARCHIVED,
       NEW_LEADS_TAB,
       INFO,
       ONGOING_JOB,
       WAITING_ON_CLIENT,
       ARCHIVE,
       CLOSED,
+      isUserHomeowner,
+      userId,
     ]
   );
 
@@ -302,12 +336,20 @@ export default function JobManagement() {
   // Effect to fetch jobs when selected tab changes
   useEffect(() => {
     // Skip fetching for tabs that don't have API data
-    if (
-      selectedTab === INFO ||
-      selectedTab === ONGOING_JOB ||
-      selectedTab === WAITING_ON_CLIENT
-    ) {
-      return;
+    // For homeowners, only fetch NEW_LEADS and ARCHIVE tabs
+    if (isUserHomeowner) {
+      if (selectedTab !== NEW_LEADS_TAB && selectedTab !== ARCHIVE) {
+        return;
+      }
+    } else {
+      // For admin and other roles, skip tabs that don't have API data
+      if (
+        selectedTab === INFO ||
+        selectedTab === ONGOING_JOB ||
+        selectedTab === WAITING_ON_CLIENT
+      ) {
+        return;
+      }
     }
 
     // Skip initial call if this is the first time the tab is set
@@ -326,7 +368,16 @@ export default function JobManagement() {
     setHasMore(true);
     setJobs([]);
     fetchJobsByTab(selectedTab, 1, false);
-  }, [selectedTab]); // Remove fetchJobsByTab from dependencies
+  }, [
+    selectedTab,
+    isUserHomeowner,
+    NEW_LEADS_TAB,
+    ARCHIVE,
+    INFO,
+    ONGOING_JOB,
+    WAITING_ON_CLIENT,
+    fetchJobsByTab,
+  ]); // Add dependencies
 
   // Effect to fetch box defaults when form opens
   useEffect(() => {
@@ -345,22 +396,22 @@ export default function JobManagement() {
     try {
       // Find the job to get its current job_status
       const job = jobs.find(j => j.uuid === uuid);
-      
+
       const updatePayload: any = { status: ACTIVE };
-      
+
       // Add job_status update conditionally
       if (job?.job_status === DONE) {
         updatePayload.job_status = 'PENDING';
       }
-     
+
       const response = await apiService.updateJob(uuid, updatePayload);
       showSuccessToast(
         extractApiSuccessMessage(response, JOB_MESSAGES.RESTORE_SUCCESS)
       );
-      
+
       // Remove the restored job from the current list immediately
       setJobs(prev => prev.filter(job => job.uuid !== uuid));
-      
+
       // Refresh jobs and counts to reflect latest server state
       await fetchJobsByTab(selectedTab, 1, false);
       fetchFilterCounts();
@@ -455,19 +506,22 @@ export default function JobManagement() {
   };
 
   // Scroll handler for infinite loading
-  const handleScroll = useCallback((tab: string) => (e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.currentTarget;
-    if (loading || tabLoading || !hasMore) return;
+  const handleScroll = useCallback(
+    (tab: string) => (e: React.UIEvent<HTMLDivElement>) => {
+      const target = e.currentTarget;
+      if (loading || tabLoading || !hasMore) return;
 
-    const { scrollTop, clientHeight, scrollHeight } = target;
-    if (scrollTop + clientHeight >= scrollHeight - 200) {
-      setPage(prevPage => {
-        const nextPage = prevPage + 1;
-        fetchJobsByTab(tab, nextPage, true);
-        return nextPage;
-      });
-    }
-  }, [loading, tabLoading, hasMore, fetchJobsByTab]);
+      const { scrollTop, clientHeight, scrollHeight } = target;
+      if (scrollTop + clientHeight >= scrollHeight - 200) {
+        setPage(prevPage => {
+          const nextPage = prevPage + 1;
+          fetchJobsByTab(tab, nextPage, true);
+          return nextPage;
+        });
+      }
+    },
+    [loading, tabLoading, hasMore, fetchJobsByTab]
+  );
 
   // Only show full page skeleton on initial load
   if (loading) {
@@ -513,13 +567,31 @@ export default function JobManagement() {
           onValueChange={handleTabChange}
           className='w-full'
         >
-          <JobTabsList
-            selectedTab={selectedTab}
-            filterCounts={filterCounts}
-            canEdit={canEdit || false}
-            onCreateJob={() => setIsOpen(true)}
-            buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
-          />
+          {isUserHomeowner ? (
+            <HomeownerJobTabsList
+              selectedTab={selectedTab}
+              filterCounts={filterCounts}
+              canEdit={canEdit || false}
+              onCreateJob={() => setIsOpen(true)}
+              buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+            />
+          ) : isUserAdmin ? (
+            <AdminJobTabsList
+              selectedTab={selectedTab}
+              filterCounts={filterCounts}
+              canEdit={canEdit || false}
+              onCreateJob={() => setIsOpen(true)}
+              buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+            />
+          ) : (
+            <JobTabsList
+              selectedTab={selectedTab}
+              filterCounts={filterCounts}
+              canEdit={canEdit || false}
+              onCreateJob={() => setIsOpen(true)}
+              buttonText={JOB_MESSAGES.ADD_JOB_BUTTON}
+            />
+          )}
           <NewLeadsTab
             jobs={jobs}
             loading={loading}
@@ -528,22 +600,27 @@ export default function JobManagement() {
             onCreateJob={() => setIsOpen(true)}
           />
 
-          <TabsContent value={INFO} className='pt-4 sm:pt-8'>
-            <ScrollArea className='h-[calc(100vh_-_276px)]'>
-              <ComingSoon />
-            </ScrollArea>
-          </TabsContent>
+          {/* Admin-only tabs */}
+          {isUserAdmin && (
+            <>
+              <TabsContent value={INFO} className='pt-4 sm:pt-8'>
+                <ScrollArea className='h-[calc(100vh_-_276px)]'>
+                  <ComingSoon />
+                </ScrollArea>
+              </TabsContent>
 
-          <TabsContent value={ONGOING_JOB} className='p-8'>
-            <ScrollArea className='h-[calc(100vh_-_276px)]'>
-              <NoDataFound buttonText='Create Job' />
-            </ScrollArea>
-          </TabsContent>
-          <TabsContent value={WAITING_ON_CLIENT} className='p-8'>
-            <ScrollArea className='h-[calc(100vh_-_276px)]'>
-              <NoDataFound buttonText='Create Job' />
-            </ScrollArea>
-          </TabsContent>
+              <TabsContent value={ONGOING_JOB} className='p-8'>
+                <ScrollArea className='h-[calc(100vh_-_276px)]'>
+                  <NoDataFound buttonText='Create Job' />
+                </ScrollArea>
+              </TabsContent>
+              <TabsContent value={WAITING_ON_CLIENT} className='p-8'>
+                <ScrollArea className='h-[calc(100vh_-_276px)]'>
+                  <NoDataFound buttonText='Create Job' />
+                </ScrollArea>
+              </TabsContent>
+            </>
+          )}
           <ArchiveTab
             jobs={jobs}
             loading={loading}

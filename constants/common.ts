@@ -80,6 +80,7 @@ export const ROUTES = {
   TEMPLATES_MANAGEMENT: '/templates',
   CREATE_TEMPLATE: '/templates/create',
   AUTH_LOGIN: '/auth/login',
+  AUTH_FORGOT_PASSWORD: '/auth/forgot-password',
 } as const;
 
 // Action constants for menu options and permissions

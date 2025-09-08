@@ -14,6 +14,13 @@ interface AuthContextType {
     email: string,
     password: string
   ) => Promise<{ success: boolean; error?: string }>;
+  signup: (
+    email: string,
+    password: string,
+    roleId?: number | string,
+    name?: string,
+    phoneNumber?: string
+  ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isLoading: boolean;
   refreshAccessToken: () => Promise<boolean>;
@@ -317,12 +324,161 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signup = async (
+    email: string,
+    password: string,
+    roleId?: number | string, // Default role ID for new users
+    name?: string,
+    phoneNumber?: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const signupData = {
+        email,
+        password,
+        name,
+        phone_number: phoneNumber,
+        role_id: Number(roleId),
+      };
+
+      const response = await apiService.signup(signupData);
+
+      // Check for successful response
+      if (response.statusCode === 201 && response.data) {
+        const {
+          user: signupUserData,
+          access_token,
+          refresh_token,
+        } = response.data;
+
+        // Destructure signup user data for cleaner transformation (like login)
+        const {
+          id,
+          uuid,
+          first_name,
+          last_name,
+          email: userEmail,
+          phone_number,
+          profile_image,
+          status,
+          created_at,
+          updated_at,
+          role,
+          company,
+        } = signupUserData;
+
+        const { id: role_id, uuid: role_uuid, name: role_name } = role;
+        const { uuid: company_uuid, name: company_name } = company;
+
+        // Transform signup user data to match User interface (like login)
+        const userData: User = {
+          id,
+          uuid,
+          name: `${first_name || ''} ${last_name || ''}`.trim() || userEmail,
+          email: userEmail,
+          country_code: '',
+          phone_number: phone_number || '',
+          profile_picture_url: profile_image || '',
+          status,
+          created_at,
+          updated_at,
+          role: {
+            id: Number(role_id) || 0,
+            uuid: role_uuid,
+            name: role_name,
+          },
+          company: {
+            uuid: company_uuid,
+            name: company_name,
+          },
+        };
+
+        // Store authentication data
+        setIsAuthenticated(true);
+        setUser(userData);
+
+        // Store in localStorage
+        localStorage.setItem(STORAGE_KEYS.IS_AUTHENTICATED, 'true');
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+
+        // Store in cookies
+        setCookie(STORAGE_KEYS.IS_AUTHENTICATED_COOKIE, 'true');
+        setCookie(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+        setCookie(STORAGE_KEYS.AUTH_TOKEN, access_token);
+        setCookie(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+
+        // --- Fetch and securely store user permissions (like login) ---
+        try {
+          const permissionsRes = await apiService.getMyPermissions();
+          if (permissionsRes && permissionsRes.data) {
+            const { permissions } = permissionsRes.data;
+            const encrypted = encryptData(JSON.stringify(permissions));
+            localStorage.setItem(STORAGE_KEYS.USER_PERMISSIONS, encrypted);
+            setCookie(STORAGE_KEYS.USER_PERMISSIONS, encrypted);
+          }
+        } catch (permErr) {
+          // console.error('Failed to fetch/store user permissions:', permErr);
+        }
+
+        return { success: true };
+      } else {
+        const { message } = response;
+        return {
+          success: false,
+          error: message || 'Signup failed',
+        };
+      }
+    } catch (error: unknown) {
+      const apiError = error as ApiError;
+      const { status, message, errors } = apiError;
+
+      // Handle specific error cases
+      if (status === 400) {
+        if (message?.includes('Email already exists')) {
+          return {
+            success: false,
+            error: 'Email already exists. Please use a different email.',
+          };
+        }
+        return {
+          success: false,
+          error: message || 'Please check your input',
+        };
+      } else if (status === 422) {
+        // Validation errors
+        if (errors) {
+          const errorMessages = Object.values(errors).flat();
+          return {
+            success: false,
+            error: errorMessages.join(', '),
+          };
+        }
+        return {
+          success: false,
+          error: message || 'Please check your input',
+        };
+      } else if (status === 0) {
+        return {
+          success: false,
+          error: 'Network error. Please check your connection.',
+        };
+      } else {
+        return {
+          success: false,
+          error: message || 'An unexpected error occurred',
+        };
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         isAuthenticated,
         user,
         login,
+        signup,
         logout,
         isLoading,
         refreshAccessToken,
@@ -343,6 +499,7 @@ export function useAuth() {
     isAuthenticated,
     user,
     login,
+    signup,
     logout,
     isLoading,
     refreshAccessToken,
@@ -353,6 +510,7 @@ export function useAuth() {
     user,
     login,
     logout,
+    signup,
     isLoading,
     refreshAccessToken,
     handleAuthError,
