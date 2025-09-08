@@ -3,6 +3,7 @@
 import { TemplateListCard } from '@/components/shared/cards/TemplateListCard';
 import { Dropdown } from '@/components/shared/common/Dropdown';
 import NoDataFound from '@/components/shared/common/NoDataFound';
+import SelectField from '@/components/shared/common/SelectField';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,6 +31,31 @@ export default function TemplatesPage() {
   const { isAuthenticated, handleAuthError } = useAuth();
   const [selectedTab, setSelectedTab] = useState('estimate');
   const [initialLoading, setInitialLoading] = useState(true);
+  const [archiveFilter, setArchiveFilter] = useState('estimate');
+
+  // Archive filter options
+  const archiveFilterOptions = [
+    { value: 'estimate', label: 'Estimate' },
+    { value: 'service-option', label: 'Service Options' },
+    { value: 'tools', label: 'Tools' },
+    { value: 'disclaimers', label: 'Disclaimers' },
+  ];
+
+  // Map filter values to API template types
+  const getTemplateTypeFromFilter = (filter: string): string => {
+    switch (filter) {
+      case 'estimate':
+        return TEMPLATE_TYPES.ESTIMATE_TEMPLATES;
+      case 'service-option':
+        return TEMPLATE_TYPES.OPTION_BID_TEMPLATES;
+      case 'tools':
+        return TEMPLATE_TYPES.TOOL_TEMPLATES;
+      case 'disclaimers':
+        return TEMPLATE_TYPES.DISCLAIMER_TEMPLATES;
+      default:
+        return TEMPLATE_TYPES.ESTIMATE_TEMPLATES;
+    }
+  };
 
   // Separate state for each tab's templates and pagination
   const [tabTemplates, setTabTemplates] = useState<{
@@ -88,8 +114,11 @@ export default function TemplatesPage() {
               return TEMPLATE_TYPES.TOOL_TEMPLATES;
             case 'disclaimers':
               return TEMPLATE_TYPES.DISCLAIMER_TEMPLATES;
+            case 'archive':
+              // For archive tab, use the selected filter
+              return getTemplateTypeFromFilter(archiveFilter);
             default:
-              return undefined; // For archive tab, don't filter by type
+              return undefined;
           }
         };
 
@@ -183,7 +212,14 @@ export default function TemplatesPage() {
         }
       }
     },
-    [showErrorToast, selectedTab, isAuthenticated, router, handleAuthError]
+    [
+      showErrorToast,
+      selectedTab,
+      isAuthenticated,
+      router,
+      handleAuthError,
+      archiveFilter,
+    ]
   );
 
   // Fetch counts for tabs
@@ -318,6 +354,23 @@ export default function TemplatesPage() {
     [router]
   );
 
+  // Handle archive filter change
+  const handleArchiveFilterChange = useCallback(
+    (newFilter: string) => {
+      setArchiveFilter(newFilter);
+      // Reset archive tab data and fetch new data
+      setTabTemplates(prev => ({
+        ...prev,
+        archive: { templates: [], hasMore: true, currentPage: 1 },
+      }));
+      // Fetch templates for the new filter
+      if (selectedTab === 'archive') {
+        fetchTemplates(1, false, 'archive');
+      }
+    },
+    [selectedTab, fetchTemplates]
+  );
+
   // Handle tab change
   const handleTabChange = useCallback(
     (newTab: string) => {
@@ -371,20 +424,6 @@ export default function TemplatesPage() {
   const toolsTemplates = tabTemplates['tools']?.templates || [];
   const disclaimersTemplates = tabTemplates['disclaimers']?.templates || [];
   const archiveTemplates = tabTemplates['archive']?.templates || [];
-
-  // Archived templates by section for Archive tab
-  const archivedEstimates = archiveTemplates.filter(
-    template => template.template_type === TEMPLATE_TYPES.ESTIMATE_TEMPLATES
-  );
-  const archivedServiceOptions = archiveTemplates.filter(
-    template => template.template_type === TEMPLATE_TYPES.OPTION_BID_TEMPLATES
-  );
-  const archivedTools = archiveTemplates.filter(
-    template => template.template_type === TEMPLATE_TYPES.TOOL_TEMPLATES
-  );
-  const archivedDisclaimers = archiveTemplates.filter(
-    template => template.template_type === TEMPLATE_TYPES.DISCLAIMER_TEMPLATES
-  );
 
   // Transform API data to match TemplateListCard props based on template type
   const transformTemplateData = (
@@ -658,7 +697,6 @@ export default function TemplatesPage() {
                 title='No service option templates found'
                 description='Create a service option template to manage options quickly.'
                 showButton={false}
-                
               />
             ) : (
               <>
@@ -748,49 +786,33 @@ export default function TemplatesPage() {
                 showButton={false}
               />
             ) : (
-              <div className='space-y-8'>
-                {/* Estimate Section */}
-                <div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                    Estimate
-                  </h3>
-                  {archivedEstimates.length === 0 ? (
-                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
-                      No estimate templates found
-                    </div>
-                  ) : (
-                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                      {archivedEstimates.map(template => (
-                        <TemplateListCard
-                          key={template.uuid}
-                          template={transformTemplateData(template, 'estimate')}
-                          isArchived={true}
-                          onRetrieve={() =>
-                            handleRetrieveTemplate(template.uuid)
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
+              <>
+                {/* Filter Dropdown */}
+                <div className='flex items-center gap-3 sm:gap-2 lg:gap-4 justify-end w-full sm:w-auto mb-6'>
+                  <SelectField
+                    value={archiveFilter}
+                    onValueChange={handleArchiveFilterChange}
+                    options={archiveFilterOptions}
+                    placeholder='Estimate'
+                    className='w-full sm:w-40'
+                    triggerClassName='bg-[var(--white-background)] rounded-[30px] border-2 border-[var(--border-dark)] h-[42px] shadow-sm sm:shadow-none'
+                    optionClassName='text-[var(--text-dark)] hover:bg-[var(--select-option)] focus:bg-[var(--select-option)] cursor-pointer rounded-[5px]'
+                  />
                 </div>
-
-                {/* Service Options Section */}
-                <div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                    Service Options
-                  </h3>
-                  {archivedServiceOptions.length === 0 ? (
+                <div className='space-y-8'>
+                  {/* Show templates based on selected filter */}
+                  {archiveTemplates.length === 0 ? (
                     <div className='py-6 text-sm text-[var(--text-secondary)]'>
-                      No service option templates found
+                      No {archiveFilter} templates found
                     </div>
                   ) : (
                     <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                      {archivedServiceOptions.map(template => (
+                      {archiveTemplates.map(template => (
                         <TemplateListCard
                           key={template.uuid}
                           template={transformTemplateData(
                             template,
-                            'service-option'
+                            archiveFilter
                           )}
                           isArchived={true}
                           onRetrieve={() =>
@@ -801,60 +823,7 @@ export default function TemplatesPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Tools Section */}
-                <div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                    Tools
-                  </h3>
-                  {archivedTools.length === 0 ? (
-                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
-                      No tools templates found
-                    </div>
-                  ) : (
-                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                      {archivedTools.map(template => (
-                        <TemplateListCard
-                          key={template.uuid}
-                          template={transformTemplateData(template, 'tools')}
-                          isArchived={true}
-                          onRetrieve={() =>
-                            handleRetrieveTemplate(template.uuid)
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* Disclaimers Section */}
-                <div>
-                  <h3 className='text-base font-semibold text-[var(--text-dark)] mb-4'>
-                    Disclaimers
-                  </h3>
-                  {archivedDisclaimers.length === 0 ? (
-                    <div className='py-6 text-sm text-[var(--text-secondary)]'>
-                      No disclaimer templates found
-                    </div>
-                  ) : (
-                    <div className='grid grid-cols-autofit xl:grid-cols-autofit-xl gap-3 xl:gap-6'>
-                      {archivedDisclaimers.map(template => (
-                        <TemplateListCard
-                          key={template.uuid}
-                          template={transformTemplateData(
-                            template,
-                            'disclaimer'
-                          )}
-                          isArchived={true}
-                          onRetrieve={() =>
-                            handleRetrieveTemplate(template.uuid)
-                          }
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+              </>
             )}
           </TabsContent>
         </Tabs>
